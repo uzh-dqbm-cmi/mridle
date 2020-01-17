@@ -119,14 +119,14 @@ def find_no_shows(row: pd.DataFrame) -> bool:
     """
     threshold = 2
     ok_was_status_changes = ['requested']
-    ok_now_status_changes = ['requested', 'registered', 'written', 'waiting', 'started', 'examined']
+    now_show_now_status_changes = ['scheduled']
     relevant_columns = ['date', 'was_sched_for_date', 'was_status', 'now_status']
     for col in relevant_columns:
         if pd.isnull(row[col]):
             return False
     if row['PatientClass'] == 'ambulant' \
         and row['was_sched_for_date'] - row['date'] < pd.Timedelta(days=threshold) \
-        and row['now_status'] not in ok_now_status_changes \
+        and row['now_status'] in now_show_now_status_changes \
         and row['was_status'] not in ok_was_status_changes:
         return True
     return False
