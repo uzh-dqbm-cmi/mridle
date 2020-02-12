@@ -210,8 +210,7 @@ def one_line_per_no_show(status_change_df: pd.DataFrame) -> pd.DataFrame:
     Returns: dataframe with columns ['FillerOrderNo', 'start_time', 'slot_status'].
 
     """
-    noshow_appts = status_change_df[status_change_df['NoShow']][['FillerOrderNo', 'was_sched_for_date']
-                                                ].copy()
+    noshow_appts = status_change_df[status_change_df['NoShow']][['FillerOrderNo', 'was_sched_for_date']].copy()
     noshow_appts.columns = ['FillerOrderNo', 'start_time']
     noshow_appts['slot_status'] = 'no-show'
     return noshow_appts
