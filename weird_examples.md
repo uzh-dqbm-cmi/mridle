@@ -9,12 +9,8 @@ More than one transition into Examined
 `pd.pivot_table(df, index='FillerOrderNo', columns='now_status', values='date', aggfunc='count').sort_values('examined', ascending=False)`
 
 ```python
-5762491
 5708150
 5760317
-5760559
-5761440
-5762539
 ```
 
 ### Weird Transitions
@@ -25,45 +21,23 @@ df[(df['NoShow']) & (df['was_status'] == 'examined')]
 
 ```python
 was_status  now_status
-examined    scheduled      1
-started     scheduled      4
-waiting     scheduled      5
-scheduled   scheduled     55
-registered  scheduled     59
-```
-
-went from Examined -> Scheduled
-```python
-fon = 5760559  # two examinations for one appointment?
-
+waiting     scheduled      2
+registered  scheduled      5
+scheduled   scheduled     11
 ```
 
 went from Waiting -> Scheduled
 ```python
-fon = 5680627
 fon = 5224916
-fon = 5710557
-fon = 5708920
 fon = 5751777
 ```
 
-went from Waiting -> Scheduled
+went from Waiting -> Cancelled
 ```python
-fon = 5680627
-fon = 5224916
-fon = 5710557
-fon = 5708920
-fon = 5751777
+fon = 5653544
 ```
 
-went from Started -> Scheduled
-```python
-fon = 5760786
-fon = 5761349
-fon = 5761449
-fon = 5762856
-```
- 
+
 
 ## Resolved
 ```python

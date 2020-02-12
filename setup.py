@@ -7,9 +7,10 @@ setup(name='mridle',
       packages=['mridle'],
       python_requires='>3.5.0',
       install_requires=[
+            'datatc',
+            'matplotlib',
             'numpy>=1.15.0',
             'pandas==0.24.1',
-            'matplotlib',
       ],
       extras_requires={
             'dev': ['jupyter'],

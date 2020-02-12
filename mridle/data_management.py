@@ -24,7 +24,7 @@ STATUS_MAP = {
         'b': 'started',
         'u': 'examined',
         'd': 'dictated',
-        's': 'written',
+        's': 'cancelled',
         'f': 'verified',
         'g': 'deleted',
         'w': 'waiting',
@@ -33,19 +33,24 @@ STATUS_MAP = {
 SHOW_COLS = ['FillerOrderNo', 'date', 'was_status', 'was_sched_for', 'now_status', 'now_sched_for', 'NoShow',
              'was_sched_for_date', 'now_sched_for_date']
 
+RELEVANT_MACHINES = ['MR1', 'MR2', 'MRDL']
+SERVICE_NAMES_TO_EXCLUDE = ['Zweitbefundung MR']
 
-def load_data(data_path: str) -> pd.DataFrame:
+
+def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     """
     Load data from the file system.
 
     Args:
-        data_path: path to data file.
+        raw_df: raw data file of RIS export.
 
     Returns: Dataframe with one row per appointment status change.
 
     """
-    df = pd.read_excel(data_path)
+    df = raw_df.copy()
     df = convert_DtTm_cols(df)
+    df = restrict_to_relevant_machines(df, RELEVANT_MACHINES)
+    df = exclude_irrelevant_service_names(df, SERVICE_NAMES_TO_EXCLUDE)
     df = add_custom_status_change_cols(df)
     return df
 
@@ -71,6 +76,16 @@ def convert_DtTm_cols(df: pd.DataFrame, known_datetime_cols: List[str] = None) -
     for col in time_cols:
         df[col] = pd.to_datetime(df[col])
     return df
+
+
+def restrict_to_relevant_machines(df: pd.DataFrame, machines: List[str]) -> pd.DataFrame:
+    df_machine_subset = df[df['EnteringOrganisationDeviceID'].isin(machines)].copy()
+    return df_machine_subset
+
+
+def exclude_irrelevant_service_names(df: pd.DataFrame, service_names_to_exclude: List[str]) -> pd.DataFrame:
+    df_machine_subset = df[df['UniversalServiceName'].isin(service_names_to_exclude) == False].copy()
+    return df_machine_subset
 
 
 def add_custom_status_change_cols(df: pd.DataFrame) -> pd.DataFrame:
@@ -119,14 +134,14 @@ def find_no_shows(row: pd.DataFrame) -> bool:
     """
     threshold = 2
     ok_was_status_changes = ['requested']
-    now_show_now_status_changes = ['scheduled']
+    no_show_now_status_changes = ['scheduled']
     relevant_columns = ['date', 'was_sched_for_date', 'was_status', 'now_status']
     for col in relevant_columns:
         if pd.isnull(row[col]):
             return False
     if row['PatientClass'] == 'ambulant' \
         and row['was_sched_for_date'] - row['date'] < pd.Timedelta(days=threshold) \
-        and row['now_status'] in now_show_now_status_changes \
+        and row['now_status'] in no_show_now_status_changes \
         and row['was_status'] not in ok_was_status_changes:
         return True
     return False

@@ -11,16 +11,18 @@ import numpy as np
 from IPython.display import display
 import matplotlib.pyplot as plt
 
+from datatc import DataManager
 import mridle
 from mridle.data_management import SHOW_COLS
 
 %matplotlib inline
 
 
-data_path = '/opt/data/radiology_resource_allocation/raw/2020-01-13_RIS_Extract_3days_withHistory_v2.xlsx'
+dm = DataManager('mridle')
+raw_df = dm['rdsc_extracts']['2020-02-04_RIS_deID_3months'].select('xlsx').load()
 
 # build row-per-status-change data set
-df = mridle.data_management.load_data(data_path)
+df = mridle.data_management.build_status_df(raw_df)
 
 # build row-per-slot (no show or completed) data set
 one_per_slot = mridle.data_management.build_slot_df(df)
