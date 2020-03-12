@@ -62,3 +62,7 @@ Plot a day for one device:
 ```python
 mridle.plotting_utilities.plot_a_day_for_device(one_per_slot, 'MR-N1', year, month, day, labels=True, alpha=0.5)
 ```
+
+## Tests
+`mridle` contains a test suite for validating the no-show identification algorithm.
+Run the tests by navigating to the `mridle` directory and running `pytest`.

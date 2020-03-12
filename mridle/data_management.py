@@ -134,7 +134,7 @@ def find_no_shows(row: pd.DataFrame) -> bool:
     """
     threshold = 2
     ok_was_status_changes = ['requested']
-    no_show_now_status_changes = ['scheduled']
+    no_show_now_status_changes = ['scheduled', 'cancelled']
     relevant_columns = ['date', 'was_sched_for_date', 'was_status', 'now_status']
     for col in relevant_columns:
         if pd.isnull(row[col]):

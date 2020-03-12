@@ -48,6 +48,26 @@ class TestFindNoShowsPositive(unittest.TestCase):
         }, index=[0])
         self.assertTrue(example_row.apply(find_no_shows, axis=1).iloc[0])
 
+    def test_registered_to_cancelled_on_same_day(self):
+        example_row = pd.DataFrame({
+            'PatientClass': 'ambulant',
+            'date': pd.Timestamp(year=2019, month=1, day=1),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1),
+            'was_status': 'registered',
+            'now_status': 'cancelled',
+        }, index=[0])
+        self.assertTrue(example_row.apply(find_no_shows, axis=1).iloc[0])
+
+    def test_scheduled_to_cancelled_one_day_prior(self):
+        example_row = pd.DataFrame({
+            'PatientClass': 'ambulant',
+            'date': pd.Timestamp(year=2019, month=1, day=1),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=2),
+            'was_status': 'scheduled',
+            'now_status': 'cancelled',
+        }, index=[0])
+        self.assertTrue(example_row.apply(find_no_shows, axis=1).iloc[0])
+
 
 class TestFindNoShowsNegative(unittest.TestCase):
 
