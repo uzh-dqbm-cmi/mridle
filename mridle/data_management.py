@@ -165,6 +165,9 @@ def build_slot_df(status_change_df: pd.DataFrame) -> pd.DataFrame:
         'UniversalServiceId': 'min',
         'UniversalServiceName': 'min',
     }
+    if 'MRNCmpdId' in status_change_df.columns:
+        agg_dict['MRNCmpdId'] = 'min'
+
     one_per_slot_plus_details = add_column_details(status_change_df, one_per_slot, agg_dict)
     one_per_slot_plus_details['slot_status'] = np.where(one_per_slot_plus_details['PatientClass'] == 'stationär',
                                                         'inpatient',

@@ -33,6 +33,11 @@ def plot_a_day(df: pd.DataFrame, year: int, month: int, day: int, labels: bool =
         'inpatient': 'tab:gray',
     }
 
+    label_col = 'MRNCmpdId'
+    no_phi_label_col = 'FillerOrderNo'
+    if label_col not in df.columns:
+        label_col = no_phi_label_col
+
     device_row_height = 10
     default_duration = pd.Timedelta(minutes=30)
 
@@ -66,10 +71,10 @@ def plot_a_day(df: pd.DataFrame, year: int, month: int, day: int, labels: bool =
             ax.broken_barh(plot_data_subset_tuples, (device_height, 9), facecolors=slot_status_color_map[slot_status],
                            edgecolor=slot_status_color_map[slot_status], alpha=alpha)
 
-            # add FON labels
+            # add PatID/FON labels
             if labels:
                 fon_labels = [(row['start_time'],
-                               row['FillerOrderNo'])
+                               row[label_col])
                               for i, row in plot_data_subset.iterrows()
                               ]
                 for t in fon_labels:
@@ -137,6 +142,12 @@ def plot_a_day_for_device(df: pd.DataFrame, device: str, year: int, month: int, 
         'inpatient': 'tab:gray',
     }
 
+    label_col = 'MRNCmpdId'
+    no_phi_label_col = 'FillerOrderNo'
+    if label_col not in df.columns:
+        label_col = no_phi_label_col
+
+
     row_height = 10
     default_duration = pd.Timedelta(minutes=30)
 
@@ -170,10 +181,10 @@ def plot_a_day_for_device(df: pd.DataFrame, device: str, year: int, month: int, 
                            facecolors=slot_status_color_map[slot_status],
                            edgecolor=slot_status_color_map[slot_status], alpha=alpha)
 
-            # add FON labels
+            # add PatID/FON labels
             if labels:
                 ax.text(x=row['start_time'] + default_duration / 2, y=display_height + row_height / 2,
-                        s=row['FillerOrderNo'], ha='center', va='center', rotation=40)
+                        s=row[label_col], ha='center', va='center', rotation=40)
 
     ax.set_yticks(yticks)
     ax.set_yticklabels(ytick_labels)
