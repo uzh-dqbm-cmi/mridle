@@ -178,7 +178,8 @@ def build_slot_df(status_change_df: pd.DataFrame) -> pd.DataFrame:
     one_per_slot_plus_details['slot_status'] = np.where(one_per_slot_plus_details['PatientClass'] == 'stationär',
                                                         'inpatient',
                                                         one_per_slot_plus_details['slot_status'])
-    return one_per_slot_plus_details
+    slot_df_deduped = one_per_slot_plus_details.drop_duplicates()
+    return slot_df_deduped
 
 
 def one_line_per_completed_appt(status_change_df: pd.DataFrame) -> pd.DataFrame:
