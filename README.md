@@ -31,13 +31,15 @@ slot_df = mridle.data_management.build_slot_df(status_df)
 # integrate dicom data
 dicom_db_path = dm['dicom_data']['2020_02_09_dicom_from_Christian'].select('sqlite').path
 query_text = dm['dicom_data']['2020_02_09_dicom_from_Christian'].select('image_times.sql').load(data_interface_hint='txt')
-print(query_text)
 c = sqlite3.connect(dicom_db_path)
 dicom_times_df = pd.read_sql_query(query_text, c)
 dicom_times_df = mridle.data_management.format_dicom_times_df(dicom_times_df)
 slot_w_dicom_df = mridle.data_management.integrate_dicom_data(slot_df, dicom_times_df)
 
 ```
+
+### Look at Example Appointments
+
 To look at an example appointment history:
 ```python
 fon = 5758396
@@ -58,6 +60,8 @@ for i in range(50):
         break
 ```
 
+### Plotting
+
 Plot a day:
 ```python
 year = 2019
@@ -72,6 +76,7 @@ Plot a day for one device:
 mridle.plotting_utilities.plot_a_day_for_device(slot_df, 'MR-N1', year, month, day, labels=True, alpha=0.5)
 ```
 
+### Data Validation
 Compare to examples collected manually from Dispo
 (only works on USZ machine)
 ```python
@@ -84,11 +89,6 @@ year = 2019
 machine = 'MR1'
 slot_status = 'show'
 dispo_patids, slot_df_patids = mridle.data_management.validate_against_dispo_data(dispo_df, slot_df, day, month, year, slot_status)
-
-
-
-
-
 ```
 
 ## Tests
