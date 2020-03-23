@@ -52,6 +52,7 @@ def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     df = restrict_to_relevant_machines(df, RELEVANT_MACHINES)
     df = exclude_irrelevant_service_names(df, SERVICE_NAMES_TO_EXCLUDE)
     df = add_custom_status_change_cols(df)
+    df = format_patient_id_col(df)
     return df
 
 
@@ -108,6 +109,11 @@ def add_custom_status_change_cols(df: pd.DataFrame) -> pd.DataFrame:
     df['now_sched_for'] = (df['History_ObsStartPlanDtTm'] - df['History_MessageDtTm']).apply(lambda x: x.days)
     df['now_sched_for_date'] = df['History_ObsStartPlanDtTm']
     df['NoShow'] = df.apply(find_no_shows, axis=1)
+    return df
+
+def format_patient_id_col(df: pd.DataFrame) -> pd.DataFrame:
+    if 'MRNCmpdId' in df.columns:
+        df['MRNCmpdId'] = df['MRNCmpdId'].str.replace('\|USZ', '')
     return df
 
 
@@ -235,3 +241,8 @@ def add_column_details(detail_df: pd.DataFrame, slot_df: pd.DataFrame, agg_dict:
     appt_details = detail_df.groupby('FillerOrderNo').agg(agg_dict)
     df_with_details = pd.merge(slot_df, appt_details, left_on='FillerOrderNo', right_index=True, how='left')
     return df_with_details
+
+def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
+    dispo_df = pd.DataFrame(dispo_examples)
+    dispo_df['date'] = pd.to_datetime(dispo_df['date'])
+    return dispo_df
