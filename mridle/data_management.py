@@ -243,7 +243,54 @@ def add_column_details(detail_df: pd.DataFrame, slot_df: pd.DataFrame, agg_dict:
     df_with_details = pd.merge(slot_df, appt_details, left_on='FillerOrderNo', right_index=True, how='left')
     return df_with_details
 
+
 def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
     dispo_df = pd.DataFrame(dispo_examples)
     dispo_df['date'] = pd.to_datetime(dispo_df['date'])
     return dispo_df
+
+
+def format_dicom_times_df(df):
+    df['AccessionNumber'] = df['AccessionNumber'].astype(int)
+
+    time_cols = ['image_start', 'image_end']
+    for col in time_cols:
+        df[col] = pd.to_datetime(df[col])
+    return df
+
+
+def update_start_time_col_from_dicom(row):
+    if row['slot_status'] in ['show', 'inpatient'] and row['image_start'] is not None:
+        return row['image_start']
+    return row['status_start']
+
+
+def update_end_time_col_from_dicom(row):
+    if row['slot_status'] in ['show', 'inpatient'] and row['image_end'] is not None:
+        return row['image_end']
+    return row['status_end']
+
+
+def update_device_id_from_dicom(row):
+    if pd.isna(row['image_device_id']):
+        return row['EnteringOrganisationDeviceID']
+    else:
+        return 'MR{}'.format(int(row['image_device_id']))
+
+
+def integrate_dicom_data(slot_df, dicom_times_df):
+    slot_w_dicom_df = pd.merge(slot_df, dicom_times_df, how='left', left_on='FillerOrderNo', right_on='AccessionNumber')
+
+    # move times defined by status changes to separate columns to allow overwriting the original columns with dicom data
+    slot_w_dicom_df['status_start'] = slot_w_dicom_df['start_time']
+    slot_w_dicom_df['status_end'] = slot_w_dicom_df['end_time']
+
+    # for show and in-patient appointments, use dicom data for start and end times
+    slot_w_dicom_df['start_time'] = slot_w_dicom_df.apply(update_start_time_col_from_dicom, axis=1)
+    slot_w_dicom_df['end_time'] = slot_w_dicom_df.apply(update_end_time_col_from_dicom, axis=1)
+
+    # update device used
+    slot_w_dicom_df['device_from_status'] = slot_w_dicom_df['EnteringOrganisationDeviceID']
+    slot_w_dicom_df['EnteringOrganisationDeviceID'] = slot_w_dicom_df.apply(update_device_id_from_dicom, axis=1)
+
+    return slot_w_dicom_df
