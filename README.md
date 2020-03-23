@@ -8,6 +8,7 @@ Resource Optimization for Radiology
 
 import pandas as pd
 import numpy as np
+import sqlite3
 from IPython.display import display
 import matplotlib.pyplot as plt
 
@@ -27,6 +28,14 @@ status_df = mridle.data_management.build_status_df(raw_df)
 # build row-per-slot (no show or completed) data set
 slot_df = mridle.data_management.build_slot_df(status_df)
 
+# integrate dicom data
+dicom_db_path = dm['dicom_data']['2020_02_09_dicom_from_Christian'].select('sqlite').path
+query_text = dm['dicom_data']['2020_02_09_dicom_from_Christian'].select('image_times.sql').load(data_interface_hint='txt')
+print(query_text)
+c = sqlite3.connect(dicom_db_path)
+dicom_times_df = pd.read_sql_query(query_text, c)
+dicom_times_df = mridle.data_management.format_dicom_times_df(dicom_times_df)
+slot_w_dicom_df = mridle.data_management.integrate_dicom_data(slot_df, dicom_times_df)
 
 ```
 To look at an example appointment history:
@@ -68,6 +77,17 @@ Compare to examples collected manually from Dispo
 ```python
 dispo_examples = dm['dispo_data']['manual_examples.yaml'].load()
 dispo_df = mridle.data_management.build_dispo_df(dispo_examples)
+
+day = 14
+month = 1
+year = 2019
+machine = 'MR1'
+slot_status = 'show'
+dispo_patids, slot_df_patids = mridle.data_management.validate_against_dispo_data(dispo_df, slot_df, day, month, year, slot_status)
+
+
+
+
 
 ```
 

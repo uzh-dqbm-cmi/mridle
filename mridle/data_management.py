@@ -250,6 +250,40 @@ def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
     return dispo_df
 
 
+def string_set(l):
+    return set([str(i) for i in l])
+
+
+def validate_against_dispo_data(dispo_data, slot_df, day, month, year, slot_status):
+    """Identifies any appointment ids that are in dispo_data or slot_df and not vice versa. """
+    if slot_status == 'show':
+        slot_statuses = ['show', 'inpatient']
+    elif slot_status == 'no-show':
+        slot_statuses = ['no-show']
+    else:
+        print('invalid status')
+        return
+    selected_dispo_rows = dispo_data[(dispo_data['date'].dt.day == day)
+                                        & (dispo_data['date'].dt.month == month)
+                                        & (dispo_data['date'].dt.year == year)
+                                        & (dispo_data['status'].isin(slot_statuses))
+                                       ]
+    selected_slot_df_rows = slot_df[(slot_df['start_time'].dt.day == day)
+                                    & (slot_df['start_time'].dt.month == month)
+                                    & (slot_df['start_time'].dt.year == year)
+                                    & (slot_df['slot_status'].isin(slot_statuses))
+                                    ]
+    dispo_patids = string_set(list(selected_dispo_rows['patient_id'].unique()))
+    slot_df_patids = string_set(list(selected_slot_df_rows['MRNCmpdId'].unique()))
+    print('{} Dispo Pat IDs: \n{}'.format(len(dispo_patids), dispo_patids))
+    print('{} Slot_df Pat IDs: \n{}'.format(len(slot_df_patids), slot_df_patids))
+
+    print()
+    print('In Dispo but not in Slot_df: {}'.format(dispo_patids.difference(slot_df_patids)))
+    print('In Slot_df but not in Dispo: {}'.format(slot_df_patids.difference(dispo_patids)))
+    return dispo_patids, slot_df_patids
+
+
 def format_dicom_times_df(df):
     df['AccessionNumber'] = df['AccessionNumber'].astype(int)
 
@@ -292,5 +326,9 @@ def integrate_dicom_data(slot_df, dicom_times_df):
     # update device used
     slot_w_dicom_df['device_from_status'] = slot_w_dicom_df['EnteringOrganisationDeviceID']
     slot_w_dicom_df['EnteringOrganisationDeviceID'] = slot_w_dicom_df.apply(update_device_id_from_dicom, axis=1)
+
+    if slot_df.shape[0] != slot_w_dicom_df.shape[0]:
+        raise ValueError('Number of rows in slot_w_dicom_df ({:,.0f}) does not match original slot_df ({:,.0f})'.format(
+            slot_w_dicom_df.shape[0], slot_df.shape[0]))
 
     return slot_w_dicom_df
