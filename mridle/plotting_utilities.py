@@ -9,6 +9,10 @@ from copy import deepcopy
 from typing import Any, Dict
 
 
+# ==================================================================
+# ====== ALTAIR FUNCTIONS ==========================================
+# ==================================================================
+
 PROJECT_START_DATE = '01/14/2019'
 PROJECT_END_DATE = '02/14/2019'
 
@@ -34,8 +38,24 @@ DEFAULT_COLOR_MAP = {
 }
 
 
-def alt_plot_days(df, device='MR1', start_date=PROJECT_START_DATE, end_date=PROJECT_END_DATE,
-                  color_map=DEFAULT_COLOR_MAP, highlight=None, height_factor=10):
+def alt_plot_day_range_for_device(df: pd.DataFrame, device: str = 'MR1', start_date: str = PROJECT_START_DATE,
+                                  end_date: str = PROJECT_END_DATE, color_map: Dict = DEFAULT_COLOR_MAP,
+                                  highlight: Any = None, height_factor: int = 10) -> alt.Chart:
+    """
+    Use Altair to plot completed, inpatient, and no-show appointments for one device for a time range.
+
+    Args:
+        df: a one-row-per-slot dataframe.
+        device: the device to plot
+        start_date: starting date for date range to plot
+        end_date: ending date for date range to plot (open interval, does not include end date).
+        color_map: the colors to use for eah appointment type.
+        highlight: string or list of strings. Highlight one type of appointment, rendering the rest in grey.
+        height_factor: multiplier for how tall to make the plot based on the number of days plotted
+
+    Returns: alt.Chart
+
+    """
     df_filtered = df.copy()
     if start_date:
         df_filtered = df_filtered[df_filtered['start_time'] >= start_date]
@@ -72,7 +92,35 @@ def alt_plot_days(df, device='MR1', start_date=PROJECT_START_DATE, end_date=PROJ
     )
 
 
+def alt_plot_day_for_device(df: pd.DataFrame, date: str, device: str, highlight: Any = None) -> alt.Chart:
+    """
+    Helper function to plot jst one day for a device
+    Args:
+        df: a one-row-per-slot dataframe.
+        device: the device to plot
+        date: date to plot
+        highlight: string or list of strings. Highlight one type of appointment, rendering the rest in grey.
+
+    Returns: alt.Chart
+
+    """
+    start_date = pd.to_datetime(date)
+    end_date = start_date + pd.Timedelta(days=1)
+    return alt_plot_day_range_for_device(df, device, start_date, end_date, highlight)
+
+
 def update_color_map_with_highlight(highlight: Any, color_map: Dict, color_scheme: Dict = COLOR_SCHEME) -> Dict:
+    """
+    Given a higlight, grey out non-highlighted entries in an altair color_map.
+
+    Args:
+        highlight: string or list of strings to highlight in the color_map.
+        color_map: dict of plotted types to color names.
+        color_scheme: dict of color names to hex values.
+
+    Returns: revised color_map
+
+    """
     if highlight is not None:
         for entry in color_map:
             if type(highlight) == list:
@@ -82,6 +130,11 @@ def update_color_map_with_highlight(highlight: Any, color_map: Dict, color_schem
                 if entry != highlight:
                     color_map[entry] = color_scheme['grey']
     return color_map
+
+
+# ==================================================================
+# ====== MATPLOTLB FUNCTIONS =======================================
+# ==================================================================
 
 
 def plot_a_day(df: pd.DataFrame, year: int, month: int, day: int, labels: bool = True, alpha: float = 0.5) -> None:
