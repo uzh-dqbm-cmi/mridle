@@ -244,6 +244,14 @@ def add_column_details(detail_df: pd.DataFrame, slot_df: pd.DataFrame, agg_dict:
     return df_with_details
 
 
+def set_no_show_end_times(row: pd.DataFrame) -> pd.DataFrame:
+    """Set the end time for no show slots as start time + 30 minutes"""
+    if row['slot_status'] == 'no-show':
+        return row['start_time'] + pd.to_timedelta(30, unit='minutes')
+    else:
+        return row['end_time']
+
+
 def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
     dispo_df = pd.DataFrame(dispo_examples)
     dispo_df['date'] = pd.to_datetime(dispo_df['date'])
