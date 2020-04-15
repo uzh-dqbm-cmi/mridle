@@ -22,7 +22,7 @@ class TestFindNoShowsPositive(unittest.TestCase):
         example_row = pd.DataFrame({
             'PatientClass': 'ambulant',
             'date': pd.Timestamp(year=2019, month=1, day=1),
-            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': 'scheduled',
             'now_status': 'scheduled',
         }, index=[0])
@@ -32,7 +32,7 @@ class TestFindNoShowsPositive(unittest.TestCase):
         example_row = pd.DataFrame({
             'PatientClass': 'ambulant',
             'date': pd.Timestamp(year=2019, month=1, day=1),
-            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=2),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=2, hour=9),
             'was_status': 'scheduled',
             'now_status': 'scheduled',
         }, index=[0])
@@ -42,7 +42,7 @@ class TestFindNoShowsPositive(unittest.TestCase):
         example_row = pd.DataFrame({
             'PatientClass': 'ambulant',
             'date': pd.Timestamp(year=2019, month=1, day=1),
-            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': 'registered',
             'now_status': 'scheduled',
         }, index=[0])
@@ -52,7 +52,7 @@ class TestFindNoShowsPositive(unittest.TestCase):
         example_row = pd.DataFrame({
             'PatientClass': 'ambulant',
             'date': pd.Timestamp(year=2019, month=1, day=1),
-            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': 'registered',
             'now_status': 'cancelled',
         }, index=[0])
@@ -62,7 +62,7 @@ class TestFindNoShowsPositive(unittest.TestCase):
         example_row = pd.DataFrame({
             'PatientClass': 'ambulant',
             'date': pd.Timestamp(year=2019, month=1, day=1),
-            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=2),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=2, hour=9),
             'was_status': 'scheduled',
             'now_status': 'cancelled',
         }, index=[0])
@@ -75,7 +75,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
         example_row = pd.DataFrame({
             'PatientClass': 'ambulant',
             'date': pd.Timestamp(year=2019, month=1, day=1),
-            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=4),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=4, hour=9),
             'was_status': 'scheduled',
             'now_status': 'scheduled',
         }, index=[0])
@@ -85,7 +85,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
         example_row = pd.DataFrame({
             'PatientClass': 'ambulant',
             'date': pd.Timestamp(year=2019, month=1, day=1),
-            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=4),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=4, hour=9),
             'was_status': 'registered',
             'now_status': 'scheduled',
         }, index=[0])
@@ -95,7 +95,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
         example_row = pd.DataFrame({
             'PatientClass': 'stationär',
             'date': pd.Timestamp(year=2019, month=1, day=1),
-            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': 'scheduled',
             'now_status': 'scheduled',
         }, index=[0])
@@ -105,7 +105,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
         example_row = pd.DataFrame({
             'PatientClass': 'teilstationär',
             'date': pd.Timestamp(year=2019, month=1, day=1),
-            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': 'scheduled',
             'now_status': 'scheduled',
         }, index=[0])
@@ -115,7 +115,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
         example_row = pd.DataFrame({
             'PatientClass': 'ambulant',
             'date': pd.Timestamp(year=2019, month=1, day=1),
-            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': 'requested',
             'now_status': 'scheduled',
         }, index=[0])
@@ -125,7 +125,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
         example_row = pd.DataFrame({
             'PatientClass': 'ambulant',
             'date': pd.Timestamp(year=2019, month=1, day=1),
-            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': 'requested',
             'now_status': 'requested',
         }, index=[0])
@@ -135,7 +135,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
         example_row = pd.DataFrame({
             'PatientClass': 'ambulant',
             'date': pd.Timestamp(year=2019, month=1, day=1),
-            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': 'scheduled',
             'now_status': 'registered',
         }, index=[0])
@@ -145,7 +145,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
         example_row = pd.DataFrame({
             'PatientClass': 'ambulant',
             'date': pd.Timestamp(year=2019, month=1, day=1),
-            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': 'registered',
             'now_status': 'waiting',
         }, index=[0])
@@ -155,7 +155,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
         example_row = pd.DataFrame({
             'PatientClass': 'ambulant',
             'date': pd.Timestamp(year=2019, month=1, day=1),
-            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': 'waiting',
             'now_status': 'started',
         }, index=[0])
@@ -165,7 +165,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
         example_row = pd.DataFrame({
             'PatientClass': 'ambulant',
             'date': pd.Timestamp(year=2019, month=1, day=1),
-            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': 'started',
             'now_status': 'examined',
         }, index=[0])
@@ -175,7 +175,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
         example_row = pd.DataFrame({
             'PatientClass': 'ambulant',
             'date': pd.Timestamp(year=2019, month=1, day=1),
-            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': 'scheduled',
             'now_status': 'written',
         }, index=[0])
@@ -185,7 +185,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
         example_row = pd.DataFrame({
             'PatientClass': 'ambulant',
             'date': pd.Timestamp(year=2019, month=1, day=1),
-            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': None,
             'now_status': 'scheduled',
         }, index=[0])
@@ -196,6 +196,16 @@ class TestFindNoShowsNegative(unittest.TestCase):
             'PatientClass': 'ambulant',
             'date': pd.Timestamp(year=2019, month=1, day=1),
             'was_sched_for_date': None,
+            'was_status': 'scheduled',
+            'now_status': 'scheduled',
+        }, index=[0])
+        self.assertFalse(example_row.apply(find_no_shows, axis=1).iloc[0])
+
+    def test_was_sched_for_date_is_midnight(self):
+        example_row = pd.DataFrame({
+            'PatientClass': 'ambulant',
+            'date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=2, hour=0),
             'was_status': 'scheduled',
             'now_status': 'scheduled',
         }, index=[0])
