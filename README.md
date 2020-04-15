@@ -2,21 +2,19 @@
 Resource Optimization for Radiology
 
 ## Example Usage
+
+### Load Data
 ```python
 %load_ext autoreload
 %autoreload 2
 
 import pandas as pd
 import numpy as np
-import sqlite3
 from IPython.display import display
-import matplotlib.pyplot as plt
 
 from datatc import DataManager
 import mridle
 from mridle.data_management import SHOW_COLS
-
-%matplotlib inline
 
 
 dm = DataManager('mridle')
@@ -27,8 +25,13 @@ status_df = mridle.data_management.build_status_df(raw_df)
 
 # build row-per-slot (no show or completed) data set
 slot_df = mridle.data_management.build_slot_df(status_df)
+```
 
-# integrate dicom data
+
+### Integrate DICOM Data
+```python
+import sqlite3
+
 dicom_db_path = dm['dicom_data']['2020_02_09_dicom_from_Christian'].select('sqlite').path
 query_text = dm['dicom_data']['2020_02_09_dicom_from_Christian'].select('image_times.sql').load(data_interface_hint='txt')
 c = sqlite3.connect(dicom_db_path)
@@ -62,8 +65,29 @@ for i in range(50):
 
 ### Plotting
 
+`altair` plotting
+
+```python
+import altair as alt
+
+alt.renderers.enable('default')
+
+
+# the altair plot needs no-show end times set (by default they're NAT)
+slot_df['end_time'] = slot_df.apply(mridle.data_management.set_no_show_end_times, axis=1)
+
+mridle.plotting_utilities.alt_plot_date_range_for_device(slot_df, 'MR1', end_date='04/17/2019')
+
+# you can also highlight just one kind of appointment
+mridle.plotting_utilities.alt_plot_date_range_for_device(slot_df, 'MR1', end_date='04/17/2019', highlight='no-show')
+```
+
+`matplotlib` plotting
+
 Plot a day:
 ```python
+%matplotlib inline
+
 year = 2019
 month = 1
 day = 14
