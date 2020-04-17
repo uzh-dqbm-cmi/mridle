@@ -29,6 +29,8 @@ slot_df = mridle.data_management.build_slot_df(status_df)
 
 
 ### Integrate DICOM Data
+The appointment start times, end times, and radiology device used as described by the appointment status change data are unreliable.
+Integrate the status change dataset with DICOM data to get accurate start time, end time, and device usage information.
 ```python
 import sqlite3
 
