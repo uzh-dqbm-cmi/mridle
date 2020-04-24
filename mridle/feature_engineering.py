@@ -112,9 +112,9 @@ def build_harvey_et_al_features_set(status_df: pd.DataFrame, drop_id_col=True) -
     show_slot_df = show_slot_status_events.groupby(['FillerOrderNo']).agg(agg_dict).reset_index()
 
     # there may be multiple no-show appts per FillerOrderNo
-    no_show_slot_df = no_show_slot_status_events.groupby(['FillerOrderNo', 'start_time']).agg(
+    no_show_slot_df = no_show_slot_status_events.groupby(['FillerOrderNo', 'was_sched_for_date']).agg(
         agg_dict).reset_index()
-    no_show_slot_df.drop('start_time', inplace=True)
+    no_show_slot_df.drop('was_sched_for_date', inplace=True)
 
     new_slot_df = pd.concat([show_slot_df, no_show_slot_df])
 
