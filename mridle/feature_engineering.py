@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import pgeocode
 
 
 def find_end_times(row):
@@ -67,8 +68,10 @@ def feature_marital(status_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def feature_distance_to_usz(status_df: pd.DataFrame) -> pd.DataFrame:
-    # TODO: get zip distance
-    status_df['distance_to_usz'] = status_df['WohnadrPLZ']
+    dist = pgeocode.GeoDistance('ch')
+    usz_post_code = '8091'
+    status_df['WohnadrPLZ_str'] = status_df['WohnadrPLZ'].astype(str)
+    status_df['distance_to_usz'] = status_df['WohnadrPLZ_str'].apply(lambda x: dist.query_postal_code(x, usz_post_code))
     return status_df
 
 
