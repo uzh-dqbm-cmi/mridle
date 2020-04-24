@@ -29,7 +29,7 @@ def feature_days_scheduled_in_advance(status_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def feature_day_of_week(status_df: pd.DataFrame) -> pd.DataFrame:
-    status_df['day_of_week'] = status_df['start_time'].dt.dayofweek
+    status_df['day_of_week'] = status_df['was_sched_for_date'].dt.dayofweek
     return status_df
 
 
