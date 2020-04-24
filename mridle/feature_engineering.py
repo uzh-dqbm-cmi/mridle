@@ -68,6 +68,7 @@ def feature_marital(status_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def feature_distance_to_usz(status_df: pd.DataFrame) -> pd.DataFrame:
+    """ Note: this is slow!! 6:30 minutes for 3 month dataset"""
     dist = pgeocode.GeoDistance('ch')
     usz_post_code = '8091'
     status_df['WohnadrPLZ_str'] = status_df['WohnadrPLZ'].astype(str)
