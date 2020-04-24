@@ -9,6 +9,11 @@ def find_end_times(row):
         return None
 
 
+def feature_scheduled_for_hour(status_df: pd.DataFrame) -> pd.DataFrame:
+    status_df['sched_for_hour'] = status_df['was_sched_for_date'].dt.hour
+    return status_df
+
+
 def calc_days_sched_in_advance(row):
     if row['was_sched_for'] != row['now_sched_for']:
         return row['now_sched_for']
@@ -68,18 +73,17 @@ def feature_distance_to_usz(status_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def feature_historic_no_show_count(status_df: pd.DataFrame) -> pd.DataFrame:
-    status_df['no_show_cnt'] = status_df.groupby('MRNCmpdId')['NoShow'].cumsum()
+    status_df['historic_no_show_cnt'] = status_df.groupby('MRNCmpdId')['NoShow'].cumsum()
     return status_df
 
 
-def build_harvey_et_al_features_set(status_df: pd.DataFrame) -> pd.DataFrame:
+def build_harvey_et_al_features_set(status_df: pd.DataFrame, drop_id_col=True) -> pd.DataFrame:
     status_df = status_df.sort_values(['FillerOrderNo', 'date'])
 
-    status_df['start_time'] = np.where(status_df['NoShow'] == True, status_df['was_sched_for_date'], status_df['date'])
+    # status_df['end_time'] = status_df.apply(find_end_times, axis=1)
+    # status_df['end_time'] = status_df.groupby('FillerOrderNo')['end_time'].fillna(method='bfill')
 
-    status_df['end_time'] = status_df.apply(find_end_times, axis=1)
-    status_df['end_time'] = status_df.groupby('FillerOrderNo')['end_time'].fillna(method='bfill')
-
+    status_df = feature_scheduled_for_hour(status_df)
     status_df = feature_days_scheduled_in_advance(status_df)
     status_df = feature_day_of_week(status_df)
     status_df = feature_modality(status_df)
@@ -92,24 +96,29 @@ def build_harvey_et_al_features_set(status_df: pd.DataFrame) -> pd.DataFrame:
     show_slot_status_events = status_df[(status_df['PatientClass'] == 'ambulent') & (status_df['OrderStatus'] == 'u') &
                                         (status_df['now_status'] == 'started')].copy()
     no_show_slot_status_events = status_df[status_df['NoShow']].copy()
-    base_agg_dict = {
+
+    agg_dict = {
         'NoShow': 'min',
+        'sched_for_hour': 'first',
         'days_sched_in_advance': 'first',
         'modality': 'last',
         'day_of_week': 'last',
         'marital': 'last',
         'distance_to_usz': 'last',
-        'no_show_cnt': 'last',
+        'historic_no_show_cnt': 'last',
     }
-    show_agg_dict = {
-        'start_time': 'min',
-        'end_time': 'max',
-    }
-    show_agg_dict.update(base_agg_dict)
 
-    show_slot_df = show_slot_status_events.groupby(['FillerOrderNo']).agg(show_agg_dict).reset_index()
+    # there should be one show appt per FillerOrderNo
+    show_slot_df = show_slot_status_events.groupby(['FillerOrderNo']).agg(agg_dict).reset_index()
+
+    # there may be multiple no-show appts per FillerOrderNo
     no_show_slot_df = no_show_slot_status_events.groupby(['FillerOrderNo', 'start_time']).agg(
-        base_agg_dict).reset_index()
+        agg_dict).reset_index()
+    no_show_slot_df.drop('start_time', inplace=True)
 
     new_slot_df = pd.concat([show_slot_df, no_show_slot_df])
+
+    if drop_id_col:
+        new_slot_df.drop('FillerOrderNo', inplace=True)
+
     return new_slot_df
