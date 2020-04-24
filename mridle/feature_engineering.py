@@ -29,7 +29,7 @@ def feature_day_of_week(status_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def feature_modality(status_df: pd.DataFrame) -> pd.DataFrame:
-    status_df['modailty'] = status_df['UniversalServiceName']
+    status_df['modality'] = status_df['UniversalServiceName']
     return status_df
 
 
@@ -57,7 +57,7 @@ def feature_marital(status_df: pd.DataFrame) -> pd.DataFrame:
         # 'LE': 'civil partnership dissolved by declaration of death',
         np.NaN: 'blank',
     }
-    status_df['modailty'] = status_df['Zivilstand'].apply(lambda x: zivilstand_abbreviation_mapping[x])
+    status_df['marital'] = status_df['Zivilstand'].apply(lambda x: zivilstand_abbreviation_mapping[x])
     return status_df
 
 
@@ -95,7 +95,7 @@ def build_harvey_et_al_features_set(status_df: pd.DataFrame) -> pd.DataFrame:
     base_agg_dict = {
         'NoShow': 'min',
         'days_sched_in_advance': 'first',
-        'modailty': 'last',
+        'modality': 'last',
         'day_of_week': 'last',
         'marital': 'last',
         'distance_to_usz': 'last',
