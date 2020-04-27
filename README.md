@@ -117,6 +117,32 @@ slot_status = 'show'
 dispo_patids, slot_df_patids = mridle.data_management.validate_against_dispo_data(dispo_df, slot_df, day, month, year, slot_status)
 ```
 
+## Constructing Model Feature Sets
+Feature sets are constructed from `status_df`, using functionality from `mridle.feature_engineering`.
+
+Here's an example of using `datatc` to create and save a feature set:
+```python
+dm['feature_sets'].save(status_df, 'harvey_seven.csv', mridle.feature_engineering.build_harvey_et_al_features_set)
+```
+This uses `datatc`'s Saved Data Transform functionality to save a dataset and the code that generated it.
+This line of code:
+  * consumes `status_df`
+  * applies `mridle.feature_engineering.build_harvey_et_al_features_set`
+  * saves the result as `harvey_seven.csv`
+  * also stamps the code contained in `build_harvey_et_al_features_set` alongside the dataset for easy future reference
+
+Using `datatc`, one can not only load the dataset, but also view and re-use the code that generated that dataset:
+```python
+sdt = dm['feature_sets'].latest().load()
+
+# view and use the data
+sdt.data.head()
+
+# view the code that generated the dataset
+sdt.view_code()
+
+```
+
 ## Tests
 `mridle` contains a test suite for validating the no-show identification algorithm.
 Run the tests by navigating to the `mridle` directory and running `pytest`.
