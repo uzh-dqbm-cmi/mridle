@@ -186,7 +186,7 @@ def build_harvey_et_al_features_set(status_df: pd.DataFrame, drop_id_col=True) -
 
     # re-shape into slot_df
     status_df = status_df.sort_values(['FillerOrderNo', 'date'])
-    show_slot_status_events = status_df[(status_df['PatientClass'] == 'ambulent') & (status_df['OrderStatus'] == 'u') &
+    show_slot_status_events = status_df[(status_df['PatientClass'] == 'ambulant') & (status_df['OrderStatus'] == 'u') &
                                         (status_df['now_status'] == 'started')].copy()
     no_show_slot_status_events = status_df[status_df['NoShow']].copy()
 
