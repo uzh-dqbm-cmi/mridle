@@ -34,7 +34,7 @@ SHOW_COLS = ['FillerOrderNo', 'date', 'was_status', 'was_sched_for', 'now_status
              'was_sched_for_date', 'now_sched_for_date']
 
 RELEVANT_MACHINES = ['MR1', 'MR2', 'MRDL']
-SERVICE_NAMES_TO_EXCLUDE = ['Zweitbefundung MR']
+SERVICE_NAMES_TO_EXCLUDE = ['Zweitbefundung MR', 'Fremduntersuchung MR']
 
 
 # ========================================================================================
@@ -275,8 +275,8 @@ def one_line_per_completed_appt(status_df: pd.DataFrame) -> pd.DataFrame:
     """
     completed_appts_start_times = status_df[(status_df['OrderStatus'] == 'u')
                                            & (status_df['now_status'] == 'started')
-                                           & (status_df['UniversalServiceName'] != 'Fremduntersuchung MR')  # forieign
                                      ].groupby('FillerOrderNo').agg({'date': 'min'})
+
     completed_appts_start_times.columns = ['start_time']
 
     completed_appts_end_times = status_df[(status_df['OrderStatus'] == 'u')

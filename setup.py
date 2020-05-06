@@ -11,6 +11,7 @@ setup(name='mridle',
             'matplotlib>=3.1.0',
             'numpy>=1.15.0',
             'pandas==0.24.1',
+            'pgeocode',
       ],
       extras_requires={
             'dev': ['jupyter', 'pytest'],
