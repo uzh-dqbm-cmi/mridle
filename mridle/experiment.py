@@ -284,14 +284,14 @@ class ModelRun:
         else:
             return pd.DataFrame()
 
-    def get_hyperparams(self, identifier: str) -> pd.DataFrame:
+    def get_hyperparams(self, name: str = None) -> pd.DataFrame:
         """
         Get the hyperparameters of the model.
         Getting hyperparameters for various sklearn models is done differently, so ModelRun contains custom functions
          for retrieiving them (in model_hyperparam_func_map).
 
         Args:
-            identifier: The name of the model for labeling hte index of the resulting dataframe.
+            name: The name of the model for labeling the index of the resulting dataframe.
 
         Returns: Summary of model hyperparameters in a pd.DataFrame.
 
@@ -299,15 +299,19 @@ class ModelRun:
 
         """
         model_hyperparam_func_map = {
-            'RandomForestClassifier': self.get_selected_random_forest_hyperparams,
-            'SVC': self.get_selected_svc_hyperparams
+            "<class 'sklearn.ensemble._forest.RandomForestClassifier'>": self.get_selected_random_forest_hyperparams,
+            "<class 'sklearn.svm._classes.SVC'>": self.get_selected_svc_hyperparams
         }
         model_type = str(type(self.model))
         if model_type in model_hyperparam_func_map:
             model_hyperparam_func = model_hyperparam_func_map[model_type]
-            chosen_hyperparams = model_hyperparam_func()
+            chosen_hyperparams = model_hyperparam_func(self.model)
             chosen_hyperparams['num_features'] = len(self.feature_cols)
-            return pd.DataFrame(chosen_hyperparams, index=[identifier])
+
+            if name is None:
+                name = 'model'
+
+            return pd.DataFrame(chosen_hyperparams, index=[name])
         else:
             raise NotImplementedError('There is no hyperparameter retreival function implemented in ModelRun for {}'
                                       ' models'.format(model_type))
