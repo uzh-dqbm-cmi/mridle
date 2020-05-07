@@ -11,9 +11,9 @@ class ModelRun:
 
     To use this class, subclass this class and fill out the following placeholder functions with the specific
     implementation of the model experiment:
-     - `build_x_features`
-     - `train_encoders`
-     - `build_y_vector`
+     - `build_x_features` (required)
+     - `train_encoders` (optional)
+     - `build_y_vector` (optional)
     """
 
     def __init__(self, train_set: Any, test_set: Any, label_key: str, model: Any, hyperparams: Dict,
@@ -130,6 +130,7 @@ class ModelRun:
     def train_encoders(cls, train_set: Any) -> Dict[str, Any]:
         """
         Placeholder function to hold the custom encoder training functionality of a ModelRun.
+        By default, returns an empty dictionary.
 
         Args:
             train_set: Data set to train encoders on.
@@ -137,8 +138,7 @@ class ModelRun:
         Returns:
             Dict of encoders.
         """
-        raise NotImplementedError("The ModelRun class must be subclassed to be used, "
-                                  "with the `train_encoders` function implemented.")
+        return {}
 
     @classmethod
     def build_x_features(cls, data_set: Any, encoders: Dict) -> pd.DataFrame:
