@@ -399,3 +399,43 @@ def update_device_id_from_dicom(row):
         return row['EnteringOrganisationDeviceID']
     else:
         return 'MR{}'.format(int(row['image_device_id']))
+
+
+def preprocessing_dataframes_harvey(df_input: pd.DataFrame):
+    """
+    This function performs all relevant preprocessing for Harvey
+
+    Args:
+        dataframe with all variables of interest for the model
+
+    Returns:
+        dataframe with preprocessing from original feature set
+    """
+    df_output = df_input[['historic_no_show_cnt', 'days_sched_in_advance', 'sched_for_hour', 'NoShow']].copy()
+
+    return df_output
+
+
+def splitting_dataframes(df_input: pd.DataFrame):
+    """
+    Input: dataframe with all variables of interest for the model
+
+    Output:dataframe with variables split in train and test sets
+    """
+
+    # df_output = df_input[['historic_no_show_cnt','days_sched_in_advance', 'sched_for_hour', 'NoShow']].copy()
+    df_output = df_input.copy()
+
+    train_percent = .7
+    validate_percent = .15
+    seed = 0
+    np.random.seed(seed)
+    perm = np.random.permutation(df_output.index)
+    m = len(df_output.index)
+    train_end = int(train_percent * m)
+    validate_end = int(validate_percent * m) + train_end
+    train = df_output.iloc[perm[:train_end]]
+    validate = df_output.iloc[perm[train_end:validate_end]]
+    test = df_output.iloc[perm[validate_end:]]
+
+    return train, validate, test

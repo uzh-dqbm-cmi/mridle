@@ -300,7 +300,8 @@ class ModelRun:
         """
         model_hyperparam_func_map = {
             "<class 'sklearn.ensemble._forest.RandomForestClassifier'>": self.get_selected_random_forest_hyperparams,
-            "<class 'sklearn.svm._classes.SVC'>": self.get_selected_svc_hyperparams
+            "<class 'sklearn.svm._classes.SVC'>": self.get_selected_svc_hyperparams,
+            "<class 'sklearn.linear_model._logistic.LogisticRegression'>": self.get_selected_logistic_regression_hyperparams
         }
         model_type = str(type(self.model))
         if model_type in model_hyperparam_func_map:
@@ -333,6 +334,14 @@ class ModelRun:
     @classmethod
     def get_selected_svc_hyperparams(cls, model: Any) -> Dict:
         """Get hyperparams out of a sklearn SVC model. """
+
+        chosen_hyperparams = model.get_params()
+        return chosen_hyperparams
+
+    @classmethod
+    def get_selected_logistic_regression_hyperparams(cls, model: Any) -> Dict:
+        print('get_selected_logistic_regression_hyperparams method')
+        """Get hyperparams out of a sklearn LogisticRegression model. """
 
         chosen_hyperparams = model.get_params()
         return chosen_hyperparams
@@ -376,3 +385,16 @@ class Predictor:
         data_processed = self.preprocess_fun(data_point)
         x, feature_cols = self.transform_func(data_processed, self.encoders)
         return self.model.predict(x)
+
+
+class HarveyModel(ModelRun):
+
+    @classmethod
+    def build_x_features(cls, data_set, encoders):
+        print('build_x_features new method')
+        """Build a petal_area feature"""
+        print(data_set.columns)
+        # data_set['petal_area'] = data_set['petal_length'] * data_set['petal_width']
+
+        feature_columns = ['historic_no_show_cnt', 'days_sched_in_advance', 'sched_for_hour']
+        return data_set[feature_columns].copy(), feature_columns
