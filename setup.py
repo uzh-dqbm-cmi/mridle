@@ -19,3 +19,5 @@ setup(name='mridle',
             'dev': ['jupyter', 'pytest'],
       },
       zip_safe=False)
+
+x = 2
