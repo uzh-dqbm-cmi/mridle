@@ -394,7 +394,6 @@ class HarveyModel(ModelRun):
         print('build_x_features new method')
         """Build a petal_area feature"""
         print(data_set.columns)
-        # data_set['petal_area'] = data_set['petal_length'] * data_set['petal_width']
-
+        data_set['petal_area'] = data_set['petal_length'] * data_set['petal_width']
         feature_columns = ['historic_no_show_cnt', 'days_sched_in_advance', 'sched_for_hour']
         return data_set[feature_columns].copy(), feature_columns

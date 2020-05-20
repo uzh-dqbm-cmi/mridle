@@ -130,9 +130,9 @@ def find_no_shows(row: pd.DataFrame) -> bool:
             return False
     if row['PatientClass'] == 'ambulant' \
         and row['was_sched_for_date'] - row['date'] < pd.Timedelta(days=threshold) \
-        and row['now_status'] in no_show_now_status_changes \
-        and row['was_status'] not in ok_was_status_changes \
-        and row['was_sched_for_date'].hour != 0:
+            and row['now_status'] in no_show_now_status_changes \
+            and row['was_status'] not in ok_was_status_changes \
+            and row['was_sched_for_date'].hour != 0:
         return True
     return False
 
@@ -185,6 +185,7 @@ def integrate_dicom_data(slot_df: pd.DataFrame, dicom_times_df: pd.DataFrame) ->
             slot_w_dicom_df.shape[0], slot_df.shape[0]))
 
     return slot_w_dicom_df
+
 
 # ========================================================================================
 # === HELPER FUNCTIONS ===================================================================
@@ -274,14 +275,14 @@ def one_line_per_completed_appt(status_df: pd.DataFrame) -> pd.DataFrame:
 
     """
     completed_appts_start_times = status_df[(status_df['OrderStatus'] == 'u')
-                                           & (status_df['now_status'] == 'started')
-                                     ].groupby('FillerOrderNo').agg({'date': 'min'})
+                                            & (status_df['now_status'] == 'started')
+                                            ].groupby('FillerOrderNo').agg({'date': 'min'})
 
     completed_appts_start_times.columns = ['start_time']
 
     completed_appts_end_times = status_df[(status_df['OrderStatus'] == 'u')
-                                   & (status_df['now_status'] == 'examined')
-                                   ].groupby('FillerOrderNo').agg({'date': 'max'})
+                                          & (status_df['now_status'] == 'examined')
+                                          ].groupby('FillerOrderNo').agg({'date': 'max'})
     completed_appts_end_times.columns = ['end_time']
 
     completed_appts = pd.merge(completed_appts_start_times, completed_appts_end_times, left_index=True,
@@ -353,10 +354,10 @@ def validate_against_dispo_data(dispo_data, slot_df, day, month, year, slot_stat
         print('invalid status')
         return
     selected_dispo_rows = dispo_data[(dispo_data['date'].dt.day == day)
-                                        & (dispo_data['date'].dt.month == month)
-                                        & (dispo_data['date'].dt.year == year)
-                                        & (dispo_data['status'].isin(slot_statuses))
-                                       ]
+                                     & (dispo_data['date'].dt.month == month)
+                                     & (dispo_data['date'].dt.year == year)
+                                     & (dispo_data['status'].isin(slot_statuses))
+                                     ]
     selected_slot_df_rows = slot_df[(slot_df['start_time'].dt.day == day)
                                     & (slot_df['start_time'].dt.month == month)
                                     & (slot_df['start_time'].dt.year == year)

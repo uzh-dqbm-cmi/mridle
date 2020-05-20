@@ -40,8 +40,8 @@ DEFAULT_COLOR_MAP = {
 
 
 def alt_plot_date_range_for_device(df: pd.DataFrame, device: str = 'MR1', start_date: str = PROJECT_START_DATE,
-                                  end_date: str = PROJECT_END_DATE, color_map: Dict = DEFAULT_COLOR_MAP,
-                                  highlight: Any = None, height_factor: int = 10) -> alt.Chart:
+                                   end_date: str = PROJECT_END_DATE, color_map: Dict = DEFAULT_COLOR_MAP,
+                                   highlight: Any = None, height_factor: int = 10) -> alt.Chart:
     """
     Use Altair to plot completed, inpatient, and no-show appointments for one device for a time range.
 
@@ -279,7 +279,6 @@ def plot_a_day_for_device(df: pd.DataFrame, device: str, year: int, month: int, 
     if label_col not in df.columns:
         label_col = no_phi_label_col
 
-
     row_height = 10
     default_duration = pd.Timedelta(minutes=30)
 
@@ -336,14 +335,14 @@ def plot_a_day_for_device(df: pd.DataFrame, device: str, year: int, month: int, 
 def plot_noshowprob_asfunction(input_df, var_x, var2freq, var_y):
     print('here')
     '''
-    The objective of this function is to: 
-    (1) use the original feature set to generate a dataframe with three columns to get insights 
-    into the dataset: (a) var_x which is the variable of interest (b) Frequencies of no_show per 
-    value of var_x (c) Probability of noshow per value of var_x and 
+    The objective of this function is to:
+    (1) use the original feature set to generate a dataframe with three columns to get insights
+    into the dataset: (a) var_x which is the variable of interest (b) Frequencies of no_show per
+    value of var_x (c) Probability of noshow per value of var_x and
     (2) plot such dataframe
 
     Args:
-        input_df: dataframe containing features for Harvey 
+        input_df: dataframe containing features for Harvey
         var_x: variable of interest,e.g., 'historic_no_show_cnt'
         var2freq: frequency of NoShow per value of var_x
         var_y: probability of NoShow per value of var_x
