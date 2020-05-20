@@ -220,7 +220,7 @@ def restrict_to_relevant_machines(df: pd.DataFrame, machines: List[str]) -> pd.D
 
 
 def exclude_irrelevant_service_names(df: pd.DataFrame, service_names_to_exclude: List[str]) -> pd.DataFrame:
-    df_machine_subset = df[df['UniversalServiceName'].isin(service_names_to_exclude) == False].copy()
+    df_machine_subset = df[~df['UniversalServiceName'].isin(service_names_to_exclude)].copy()
     return df_machine_subset
 
 
@@ -249,7 +249,7 @@ def add_custom_status_change_cols(df: pd.DataFrame) -> pd.DataFrame:
 
 def format_patient_id_col(df: pd.DataFrame) -> pd.DataFrame:
     if 'MRNCmpdId' in df.columns:
-        df['MRNCmpdId'] = df['MRNCmpdId'].str.replace('\|USZ', '')
+        df['MRNCmpdId'] = df['MRNCmpdId'].str.replace('|USZ', '', regex=False)
     return df
 
 
