@@ -332,7 +332,7 @@ def plot_a_day_for_device(df: pd.DataFrame, device: str, year: int, month: int, 
     plt.show()
 
 
-def plot_noshowprob_asfunction(input_df, var_x, var2freq, var_y):
+def plot_frequencies_positiveclassification_pervarx(input_df: pd.DataFrame, var_x: str, var2freq: str, var_y: str):
     '''
     The objective of this function is to:
     (1) use the original feature set to generate a dataframe with three columns to get insights
@@ -341,7 +341,7 @@ def plot_noshowprob_asfunction(input_df, var_x, var2freq, var_y):
     (2) plot such dataframe
 
     Args:
-        input_df: dataframe containing features for Harvey
+        input_df: dataframe containing features for modeling
         var_x: variable of interest,e.g., 'historic_no_show_cnt'
         var2freq: frequency of NoShow per value of var_x
         var_y: probability of NoShow per value of var_x

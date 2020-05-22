@@ -340,7 +340,6 @@ class ModelRun:
 
     @classmethod
     def get_selected_logistic_regression_hyperparams(cls, model: Any) -> Dict:
-        print('get_selected_logistic_regression_hyperparams method')
         """Get hyperparams out of a sklearn LogisticRegression model. """
 
         chosen_hyperparams = model.get_params()
@@ -385,25 +384,3 @@ class Predictor:
         data_processed = self.preprocess_fun(data_point)
         x, feature_cols = self.transform_func(data_processed, self.encoders)
         return self.model.predict(x)
-
-
-class HarveyModel(ModelRun):
-
-    @classmethod
-    def build_x_features(cls, data_set: Any, encoders: Dict) -> Tuple[pd.DataFrame, List]:
-        """
-        Build custom features
-
-        Args:
-            data_set: Data set to transform into features.
-            encoders: Dict of pre-trained encoders for use in building features.
-
-        Returns:
-            dataframe
-            List of features
-        """
-        feature_columns = ['historic_no_show_cnt', 'days_sched_in_advance', 'sched_for_hour']
-        return data_set[feature_columns].copy(), feature_columns
-
-
-

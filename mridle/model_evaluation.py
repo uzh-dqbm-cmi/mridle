@@ -2,10 +2,14 @@ import altair as alt
 from sklearn.metrics import classification_report, roc_curve, roc_auc_score
 import pandas as pd
 from IPython.display import display
+from typing import Any, Dict, List, Tuple, Callable
 
-def evaluations_model_test_set(test_set, predictor):
-    '''Takes care of all LR model evaluations in test set'''
-    test_true_labels = test_set['NoShow'].copy()
+def evaluate_model_on_test_set(test_set: Any, predictor: Callable, label_name='NoShow'):
+    """
+    Takes care of all LR model evaluations in test set
+    """
+
+    test_true_labels = test_set[label_name].copy()
     test_true_labels = test_true_labels.to_numpy()
 
     # Numpy array with all predictions
@@ -36,5 +40,6 @@ def evaluations_model_test_set(test_set, predictor):
     )
     display(chart)
 
-    ## Evaluating model - Compute Area Under the Receiver Operating Characteristic Curve (ROC AUC)
+    # Evaluating model - Compute Area Under the Receiver Operating Characteristic Curve (ROC AUC)
     print('The ROC_AUC_SCORE is : {}'.format(roc_auc_score(test_true_labels, prediction_classes)))
+    

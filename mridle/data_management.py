@@ -409,7 +409,7 @@ def preprocess_dataframes_harvey(df_input: pd.DataFrame) -> pd.DataFrame:
     Args:
         df_input: dataframe with all variables of interest for the model
 
-    Returns: dataframe with preprocessing from original feature set
+    Returns: dataframe with a selection of columns from original feature set
     """
     df_output = df_input[['historic_no_show_cnt', 'days_sched_in_advance', 'sched_for_hour', 'NoShow']].copy()
 
@@ -418,20 +418,20 @@ def preprocess_dataframes_harvey(df_input: pd.DataFrame) -> pd.DataFrame:
 
 def split_df_to_train_validate_test(df_input: pd.DataFrame, train_percent=0.7, validate_percent=0.15):
     """
-    Input: dataframe with all variables of interest for the model
+    Args:
+         df_input: dataframe with all variables of interest for the model
 
-    Output:dataframe with variables split in train and test sets
+    Output:dataframe with variables split in train, validation and test sets
     """
 
-    # df_output = df_input[['historic_no_show_cnt','days_sched_in_advance', 'sched_for_hour', 'NoShow']].copy()
     df_output = df_input.copy()
 
     seed = 0
     np.random.seed(seed)
     perm = np.random.permutation(df_output.index)
-    m = len(df_output.index)
-    train_end = int(train_percent * m)
-    validate_end = int(validate_percent * m) + train_end
+    df_len = len(df_output.index)
+    train_end = int(train_percent * df_len)
+    validate_end = int(validate_percent * df_len) + train_end
     train = df_output.iloc[perm[:train_end]]
     validate = df_output.iloc[perm[train_end:validate_end]]
     test = df_output.iloc[perm[validate_end:]]
