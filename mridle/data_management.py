@@ -402,22 +402,21 @@ def update_device_id_from_dicom(row):
         return 'MR{}'.format(int(row['image_device_id']))
 
 
-def preprocessing_dataframes_harvey(df_input: pd.DataFrame):
+def preprocess_dataframes_harvey(df_input: pd.DataFrame) -> pd.DataFrame:
     """
-    This function performs all relevant preprocessing for Harvey
+    Performs all relevant preprocessing for Harvey
 
     Args:
-        dataframe with all variables of interest for the model
+        df_input: dataframe with all variables of interest for the model
 
-    Returns:
-        dataframe with preprocessing from original feature set
+    Returns: dataframe with preprocessing from original feature set
     """
     df_output = df_input[['historic_no_show_cnt', 'days_sched_in_advance', 'sched_for_hour', 'NoShow']].copy()
 
     return df_output
 
 
-def splitting_dataframes(df_input: pd.DataFrame):
+def split_df_to_train_validate_test(df_input: pd.DataFrame, train_percent=0.7, validate_percent=0.15):
     """
     Input: dataframe with all variables of interest for the model
 
@@ -427,8 +426,6 @@ def splitting_dataframes(df_input: pd.DataFrame):
     # df_output = df_input[['historic_no_show_cnt','days_sched_in_advance', 'sched_for_hour', 'NoShow']].copy()
     df_output = df_input.copy()
 
-    train_percent = .7
-    validate_percent = .15
     seed = 0
     np.random.seed(seed)
     perm = np.random.permutation(df_output.index)

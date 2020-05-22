@@ -333,7 +333,6 @@ def plot_a_day_for_device(df: pd.DataFrame, device: str, year: int, month: int, 
 
 
 def plot_noshowprob_asfunction(input_df, var_x, var2freq, var_y):
-    print('here')
     '''
     The objective of this function is to:
     (1) use the original feature set to generate a dataframe with three columns to get insights
@@ -355,7 +354,6 @@ def plot_noshowprob_asfunction(input_df, var_x, var2freq, var_y):
     # df_frequencies contains all the accumulated frequencies per value of X
     df_frequencies = table_frequencies.iloc[2]
 
-    # I leave this print here since there's a bug to debug
     print(df_frequencies)
     df_frequencies = df_frequencies.reset_index()
 
@@ -372,3 +370,4 @@ def plot_noshowprob_asfunction(input_df, var_x, var2freq, var_y):
 
     sns.set(style='white')
     sns.relplot(x=var_x, y=var_y, alpha=0.8, size='frequencies', sizes=(40, 400), data=output_df)
+
