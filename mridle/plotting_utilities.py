@@ -333,8 +333,8 @@ def plot_pos_class_freq_per_x(input_df: pd.DataFrame, var_x: str, var2freq: str,
     '''
     The objective of this function is to:
     (1) use the original feature set to generate a dataframe with three columns to get insights
-    into the dataset: (a) var_x which is the variable of interest (b) Frequencies of no_show per
-    value of var_x (c) Probability of noshow per value of var_x and
+    into the dataset: (a) var_x which is the variable of interest (b) Frequencies of var_y per
+    value of var_x (c) Probability of var_y per value of var_x and
     (2) plot such dataframe
 
     Args:
@@ -345,7 +345,7 @@ def plot_pos_class_freq_per_x(input_df: pd.DataFrame, var_x: str, var2freq: str,
 
     Returns: None
     '''
-    # First make a crosstabulation - NoShow / historic_no_show_cnt
+    # First make a crosstabulation - var2freq / var_x
     table_frequencies = pd.crosstab(input_df[var2freq], input_df[var_x], margins=True)
 
     # df_frequencies contains all the accumulated frequencies per value of X
@@ -362,7 +362,7 @@ def plot_pos_class_freq_per_x(input_df: pd.DataFrame, var_x: str, var2freq: str,
     output_df = output_df.reset_index()
     output_df = output_df.rename(columns={1: var_y})
 
-    # Now add the frequencies per historic_no_show_cnt in the new dataframe
+    # Now add the frequencies per var_x in the new dataframe
     output_df['frequencies'] = df_frequencies['All']
 
     sns.set(style='white')
