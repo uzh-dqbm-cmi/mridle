@@ -5,22 +5,15 @@ from IPython.display import display
 from typing import Any, Callable
 
 
-def evaluate_model_on_test_set(test_set: Any, predictor: Callable, label_name='NoShow'):
+def evaluate_model_on_test_set(true_labels: Any, predicted_labels: Any, label_name='NoShow'):
     """
     Prints a classification report, confusion matrix, and ROC curve for a predictor.
     """
-
-    test_true_labels = test_set[label_name].copy()
-    test_true_labels = test_true_labels.to_numpy()
-
-    # Numpy array with all predictions
-    prediction_classes = predictor.predict(test_set)
-
     # Evaluation model
-    print(classification_report(test_true_labels, prediction_classes))
+    print(classification_report(true_labels, predicted_labels))
 
-    # EVALUATION MODEL - plot of the ROC Curve
-    falsepositive_r, truepositive_r, roc_auc = roc_curve(test_true_labels, prediction_classes)
+    # Evaluation Model - plot of the ROC Curve
+    falsepositive_r, truepositive_r, roc_auc = roc_curve(true_labels, predicted_labels)
 
     source = pd.DataFrame({
         'False Positive Rate': falsepositive_r,
@@ -42,4 +35,4 @@ def evaluate_model_on_test_set(test_set: Any, predictor: Callable, label_name='N
     display(chart)
 
     # Evaluating model - Compute Area Under the Receiver Operating Characteristic Curve (ROC AUC)
-    print('The ROC_AUC_SCORE is : {}'.format(roc_auc_score(test_true_labels, prediction_classes)))
+    print('The ROC_AUC_SCORE is : {}'.format(roc_auc_score(true_labels, predicted_labels)))
