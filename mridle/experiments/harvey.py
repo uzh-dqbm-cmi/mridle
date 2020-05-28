@@ -1,6 +1,6 @@
 from mridle.mridle.experiment import ModelRun
 import pandas as pd
-from typing import Any, Dict, List, Tuple, Callable
+from typing import Any, Dict, List, Tuple
 
 
 class HarveyModel(ModelRun):
@@ -20,4 +20,3 @@ class HarveyModel(ModelRun):
         """
         feature_columns = ['historic_no_show_cnt', 'days_sched_in_advance', 'sched_for_hour']
         return data_set[feature_columns].copy(), feature_columns
-

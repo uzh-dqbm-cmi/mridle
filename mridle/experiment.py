@@ -301,7 +301,7 @@ class ModelRun:
         model_hyperparam_func_map = {
             "<class 'sklearn.ensemble._forest.RandomForestClassifier'>": self.get_selected_random_forest_hyperparams,
             "<class 'sklearn.svm._classes.SVC'>": self.get_selected_svc_hyperparams,
-            "<class 'sklearn.linear_model._logistic.LogisticRegression'>": self.get_selected_logistic_regression_hyperparams
+            "<class 'sklearn.linear_model._logistic.LogisticRegression'>": self.get_selected_logistic_reg_hyperparams
         }
         model_type = str(type(self.model))
         if model_type in model_hyperparam_func_map:
@@ -339,7 +339,7 @@ class ModelRun:
         return chosen_hyperparams
 
     @classmethod
-    def get_selected_logistic_regression_hyperparams(cls, model: Any) -> Dict:
+    def get_selected_logistic_reg_hyperparams(cls, model: Any) -> Dict:
         """Get hyperparams out of a sklearn LogisticRegression model. """
 
         chosen_hyperparams = model.get_params()

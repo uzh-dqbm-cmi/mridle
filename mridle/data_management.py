@@ -402,26 +402,12 @@ def update_device_id_from_dicom(row):
         return 'MR{}'.format(int(row['image_device_id']))
 
 
-def preprocess_dataframes_harvey(df_input: pd.DataFrame) -> pd.DataFrame:
-    """
-    Performs all relevant preprocessing for Harvey
-
-    Args:
-        df_input: dataframe with all variables of interest for the model
-
-    Returns: dataframe with a selection of columns from original feature set
-    """
-    df_output = df_input[['historic_no_show_cnt', 'days_sched_in_advance', 'sched_for_hour', 'NoShow']].copy()
-
-    return df_output
-
-
 def split_df_to_train_validate_test(df_input: pd.DataFrame, train_percent=0.7, validate_percent=0.15):
     """
     Args:
          df_input: dataframe with all variables of interest for the model
 
-    Output:dataframe with variables split in train, validation and test sets
+    Returns: dataframe with variables split into train, validation and test sets
     """
 
     df_output = df_input.copy()

@@ -302,9 +302,6 @@ def plot_a_day_for_device(df: pd.DataFrame, device: str, year: int, month: int, 
 
         plot_data_subset = one_day[(one_day['EnteringOrganisationDeviceID'] == device) &
                                    (one_day['slot_status'] == slot_status)]
-        plot_data_subset_tuples = [(row['start_time'], row['duration'])
-                                   for i, row in plot_data_subset.iterrows()
-                                   ]
         for i, row in plot_data_subset.iterrows():
             if jitter:
                 display_height = height + random.uniform(-0.5, 0.5)
@@ -332,7 +329,7 @@ def plot_a_day_for_device(df: pd.DataFrame, device: str, year: int, month: int, 
     plt.show()
 
 
-def plot_frequencies_positiveclassification_pervarx(input_df: pd.DataFrame, var_x: str, var2freq: str, var_y: str):
+def plot_pos_class_freq_per_x(input_df: pd.DataFrame, var_x: str, var2freq: str, var_y: str):
     '''
     The objective of this function is to:
     (1) use the original feature set to generate a dataframe with three columns to get insights
@@ -343,8 +340,8 @@ def plot_frequencies_positiveclassification_pervarx(input_df: pd.DataFrame, var_
     Args:
         input_df: dataframe containing features for modeling
         var_x: variable of interest,e.g., 'historic_no_show_cnt'
-        var2freq: frequency of NoShow per value of var_x
-        var_y: probability of NoShow per value of var_x
+        var2freq: frequency of var_y per value of var_x
+        var_y: probability of var_y per value of var_x
 
     Returns: None
     '''
@@ -363,11 +360,10 @@ def plot_frequencies_positiveclassification_pervarx(input_df: pd.DataFrame, var_
     # Extract the row with normalized probabilities
     output_df = table_normalized.iloc[1]
     output_df = output_df.reset_index()
-    output_df = output_df.rename(columns={1: "noshowprob"})
+    output_df = output_df.rename(columns={1: var_y})
 
     # Now add the frequencies per historic_no_show_cnt in the new dataframe
     output_df['frequencies'] = df_frequencies['All']
 
     sns.set(style='white')
     sns.relplot(x=var_x, y=var_y, alpha=0.8, size='frequencies', sizes=(40, 400), data=output_df)
-
