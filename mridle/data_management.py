@@ -130,9 +130,9 @@ def find_no_shows(row: pd.DataFrame) -> bool:
             return False
     if row['PatientClass'] == 'ambulant' \
         and row['was_sched_for_date'] - row['date'] < pd.Timedelta(days=threshold) \
-        and row['now_status'] in no_show_now_status_changes \
-        and row['was_status'] not in ok_was_status_changes \
-        and row['was_sched_for_date'].hour != 0:
+            and row['now_status'] in no_show_now_status_changes \
+            and row['was_status'] not in ok_was_status_changes \
+            and row['was_sched_for_date'].hour != 0:
         return True
     return False
 
@@ -186,6 +186,7 @@ def integrate_dicom_data(slot_df: pd.DataFrame, dicom_times_df: pd.DataFrame) ->
 
     return slot_w_dicom_df
 
+
 # ========================================================================================
 # === HELPER FUNCTIONS ===================================================================
 # ========================================================================================
@@ -219,7 +220,7 @@ def restrict_to_relevant_machines(df: pd.DataFrame, machines: List[str]) -> pd.D
 
 
 def exclude_irrelevant_service_names(df: pd.DataFrame, service_names_to_exclude: List[str]) -> pd.DataFrame:
-    df_machine_subset = df[df['UniversalServiceName'].isin(service_names_to_exclude) == False].copy()
+    df_machine_subset = df[~df['UniversalServiceName'].isin(service_names_to_exclude)].copy()
     return df_machine_subset
 
 
@@ -248,7 +249,7 @@ def add_custom_status_change_cols(df: pd.DataFrame) -> pd.DataFrame:
 
 def format_patient_id_col(df: pd.DataFrame) -> pd.DataFrame:
     if 'MRNCmpdId' in df.columns:
-        df['MRNCmpdId'] = df['MRNCmpdId'].str.replace('\|USZ', '')
+        df['MRNCmpdId'] = df['MRNCmpdId'].str.replace('|USZ', '', regex=False)
     return df
 
 
@@ -274,14 +275,14 @@ def one_line_per_completed_appt(status_df: pd.DataFrame) -> pd.DataFrame:
 
     """
     completed_appts_start_times = status_df[(status_df['OrderStatus'] == 'u')
-                                           & (status_df['now_status'] == 'started')
-                                     ].groupby('FillerOrderNo').agg({'date': 'min'})
+                                            & (status_df['now_status'] == 'started')
+                                            ].groupby('FillerOrderNo').agg({'date': 'min'})
 
     completed_appts_start_times.columns = ['start_time']
 
     completed_appts_end_times = status_df[(status_df['OrderStatus'] == 'u')
-                                   & (status_df['now_status'] == 'examined')
-                                   ].groupby('FillerOrderNo').agg({'date': 'max'})
+                                          & (status_df['now_status'] == 'examined')
+                                          ].groupby('FillerOrderNo').agg({'date': 'max'})
     completed_appts_end_times.columns = ['end_time']
 
     completed_appts = pd.merge(completed_appts_start_times, completed_appts_end_times, left_index=True,
@@ -353,10 +354,10 @@ def validate_against_dispo_data(dispo_data, slot_df, day, month, year, slot_stat
         print('invalid status')
         return
     selected_dispo_rows = dispo_data[(dispo_data['date'].dt.day == day)
-                                        & (dispo_data['date'].dt.month == month)
-                                        & (dispo_data['date'].dt.year == year)
-                                        & (dispo_data['status'].isin(slot_statuses))
-                                       ]
+                                     & (dispo_data['date'].dt.month == month)
+                                     & (dispo_data['date'].dt.year == year)
+                                     & (dispo_data['status'].isin(slot_statuses))
+                                     ]
     selected_slot_df_rows = slot_df[(slot_df['start_time'].dt.day == day)
                                     & (slot_df['start_time'].dt.month == month)
                                     & (slot_df['start_time'].dt.year == year)
@@ -399,3 +400,26 @@ def update_device_id_from_dicom(row):
         return row['EnteringOrganisationDeviceID']
     else:
         return 'MR{}'.format(int(row['image_device_id']))
+
+
+def split_df_to_train_validate_test(df_input: pd.DataFrame, train_percent=0.7, validate_percent=0.15):
+    """
+    Args:
+         df_input: dataframe with all variables of interest for the model
+
+    Returns: dataframe with variables split into train, validation and test sets
+    """
+
+    df_output = df_input.copy()
+
+    seed = 0
+    np.random.seed(seed)
+    perm = np.random.permutation(df_output.index)
+    df_len = len(df_output.index)
+    train_end = int(train_percent * df_len)
+    validate_end = int(validate_percent * df_len) + train_end
+    train = df_output.iloc[perm[:train_end]]
+    validate = df_output.iloc[perm[train_end:validate_end]]
+    test = df_output.iloc[perm[validate_end:]]
+
+    return train, validate, test
