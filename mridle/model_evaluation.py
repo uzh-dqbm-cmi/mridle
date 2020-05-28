@@ -2,10 +2,10 @@ import altair as alt
 from sklearn.metrics import classification_report, roc_curve, roc_auc_score
 import pandas as pd
 from IPython.display import display
-from typing import Any, Callable
+from typing import Any
 
 
-def evaluate_model_on_test_set(true_labels: Any, predicted_labels: Any, label_name='NoShow'):
+def evaluate_model_on_test_set(true_labels: Any, predicted_labels: Any):
     """
     Prints a classification report, confusion matrix, and ROC curve for a predictor.
     """
