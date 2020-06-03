@@ -157,7 +157,7 @@ def set_appt_type(row: pd.DataFrame) -> str:
         else:
             return 'no-show'
     else:
-        return row['slot_status']
+        return row['PatientClass']
 
 
 def integrate_dicom_data(slot_df: pd.DataFrame, dicom_times_df: pd.DataFrame) -> pd.DataFrame:
