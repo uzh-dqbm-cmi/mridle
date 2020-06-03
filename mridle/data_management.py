@@ -68,8 +68,8 @@ def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     df = add_custom_status_change_cols(df)
     df['NoShow'] = df.apply(find_no_shows, axis=1)
     df['NoShow_severity'] = df.apply(set_no_show_severity, axis=1)
-    df['appt_type'] = df.apply(set_appt_type, axis=1)
-    df['appt_type_detailed'] = df.apply(set_appt_type_detailed, axis=1)
+    df['slot_type'] = df.apply(set_slot_type, axis=1)
+    df['slot_type_detailed'] = df.apply(set_slot_type_detailed, axis=1)
     df = format_patient_id_col(df)
     return df
 
@@ -87,7 +87,7 @@ def build_slot_df(status_df: pd.DataFrame) -> pd.DataFrame:
          - FillerOrderNo
          - start_time
          - end_time
-         - slot_status ('show', 'no-show', or 'inpatient')
+         - slot_type ('show', 'no-show', or 'inpatient')
     """
     completed_appts = one_line_per_completed_appt(status_df)
     noshow_appts = one_line_per_no_show(status_df)
@@ -102,9 +102,9 @@ def build_slot_df(status_df: pd.DataFrame) -> pd.DataFrame:
         agg_dict['MRNCmpdId'] = 'min'
 
     one_per_slot_plus_details = add_column_details(status_df, one_per_slot, agg_dict)
-    one_per_slot_plus_details['slot_status'] = np.where(one_per_slot_plus_details['PatientClass'] == 'stationär',
-                                                        'inpatient',
-                                                        one_per_slot_plus_details['slot_status'])
+    one_per_slot_plus_details['slot_type'] = np.where(one_per_slot_plus_details['PatientClass'] == 'stationär',
+                                                      'inpatient',
+                                                      one_per_slot_plus_details['slot_type'])
     slot_df_deduped = one_per_slot_plus_details.drop_duplicates()
     return slot_df_deduped
 
@@ -149,18 +149,18 @@ def set_no_show_severity(row: pd.DataFrame) -> str:
             return 'soft'
 
 
-def set_appt_type(row: pd.DataFrame) -> str:
+def set_slot_type(row: pd.DataFrame) -> str:
     if row['NoShow']:
         return 'no-show'
     elif row['PatientClass'] == 'ambulant':
-        return 'ambulant'
+        return 'show'
     elif row['PatientClass'] == 'stationär':
         return 'inpatient'
     else:
         return None
 
 
-def set_appt_type_detailed(row: pd.DataFrame) -> str:
+def set_slot_type_detailed(row: pd.DataFrame) -> str:
     if row['NoShow']:
         if row['NoShow_severity'] == 'soft':
             return 'soft no-show'
@@ -169,7 +169,7 @@ def set_appt_type_detailed(row: pd.DataFrame) -> str:
         else:
             return 'no-show'
     elif row['PatientClass'] == 'ambulant':
-        return 'ambulant'
+        return 'show'
     elif row['PatientClass'] == 'stationär':
         return 'inpatient'
     else:
@@ -310,7 +310,7 @@ def one_line_per_completed_appt(status_df: pd.DataFrame) -> pd.DataFrame:
     Args:
         status_df: row-per-status-change dataframe
 
-    Returns: dataframe with columns ['FillerOrderNo', 'start_time', 'end_time', 'slot_status'].
+    Returns: dataframe with columns ['FillerOrderNo', 'start_time', 'end_time', 'slot_type'].
 
     """
     completed_appts_start_times = status_df[(status_df['OrderStatus'] == 'u')
@@ -326,7 +326,7 @@ def one_line_per_completed_appt(status_df: pd.DataFrame) -> pd.DataFrame:
 
     completed_appts = pd.merge(completed_appts_start_times, completed_appts_end_times, left_index=True,
                                right_index=True)
-    completed_appts['slot_status'] = 'show'
+    completed_appts['slot_type'] = 'show'
     completed_appts.reset_index(inplace=True)
     return completed_appts
 
@@ -338,12 +338,12 @@ def one_line_per_no_show(status_df: pd.DataFrame) -> pd.DataFrame:
     Args:
         status_df: row-per-status-change dataframe
 
-    Returns: dataframe with columns ['FillerOrderNo', 'start_time', 'slot_status'].
+    Returns: dataframe with columns ['FillerOrderNo', 'start_time', 'slot_type'].
 
     """
     noshow_appts = status_df[status_df['NoShow']][['FillerOrderNo', 'was_sched_for_date']].copy()
     noshow_appts.columns = ['FillerOrderNo', 'start_time']
-    noshow_appts['slot_status'] = 'no-show'
+    noshow_appts['slot_type'] = 'no-show'
     return noshow_appts
 
 
@@ -367,7 +367,7 @@ def add_column_details(detail_df: pd.DataFrame, slot_df: pd.DataFrame, agg_dict:
 
 def set_no_show_end_times(row: pd.DataFrame) -> pd.DataFrame:
     """Set the end time for no show slots as start time + 30 minutes"""
-    if row['slot_status'] == 'no-show':
+    if row['slot_type'] == 'no-show':
         return row['start_time'] + pd.to_timedelta(30, unit='minutes')
     else:
         return row['end_time']
@@ -383,24 +383,24 @@ def string_set(l):
     return set([str(i) for i in l])
 
 
-def validate_against_dispo_data(dispo_data, slot_df, day, month, year, slot_status):
+def validate_against_dispo_data(dispo_data, slot_df, day, month, year, slot_type):
     """Identifies any appointment ids that are in dispo_data or slot_df and not vice versa. """
-    if slot_status == 'show':
-        slot_statuses = ['show', 'inpatient']
-    elif slot_status == 'no-show':
-        slot_statuses = ['no-show']
+    if slot_type == 'show':
+        slot_typees = ['show', 'inpatient']
+    elif slot_type == 'no-show':
+        slot_typees = ['no-show']
     else:
         print('invalid status')
         return
     selected_dispo_rows = dispo_data[(dispo_data['date'].dt.day == day)
                                      & (dispo_data['date'].dt.month == month)
                                      & (dispo_data['date'].dt.year == year)
-                                     & (dispo_data['status'].isin(slot_statuses))
+                                     & (dispo_data['status'].isin(slot_typees))
                                      ]
     selected_slot_df_rows = slot_df[(slot_df['start_time'].dt.day == day)
                                     & (slot_df['start_time'].dt.month == month)
                                     & (slot_df['start_time'].dt.year == year)
-                                    & (slot_df['slot_status'].isin(slot_statuses))
+                                    & (slot_df['slot_type'].isin(slot_typees))
                                     ]
     dispo_patids = string_set(list(selected_dispo_rows['patient_id'].unique()))
     slot_df_patids = string_set(list(selected_slot_df_rows['MRNCmpdId'].unique()))
@@ -423,13 +423,13 @@ def format_dicom_times_df(df):
 
 
 def update_start_time_col_from_dicom(row):
-    if row['slot_status'] in ['show', 'inpatient'] and row['image_start'] is not None:
+    if row['slot_type'] in ['show', 'inpatient'] and row['image_start'] is not None:
         return row['image_start']
     return row['status_start']
 
 
 def update_end_time_col_from_dicom(row):
-    if row['slot_status'] in ['show', 'inpatient'] and row['image_end'] is not None:
+    if row['slot_type'] in ['show', 'inpatient'] and row['image_end'] is not None:
         return row['image_end']
     return row['status_end']
 
