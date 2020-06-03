@@ -69,6 +69,7 @@ def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     df['NoShow'] = df.apply(find_no_shows, axis=1)
     df['NoShow_severity'] = df.apply(set_no_show_severity, axis=1)
     df['appt_type'] = df.apply(set_appt_type, axis=1)
+    df['appt_type_detailed'] = df.apply(set_appt_type_detailed, axis=1)
     df = format_patient_id_col(df)
     return df
 
@@ -150,14 +151,29 @@ def set_no_show_severity(row: pd.DataFrame) -> str:
 
 def set_appt_type(row: pd.DataFrame) -> str:
     if row['NoShow']:
+        return 'no-show'
+    elif row['PatientClass'] == 'ambulant':
+        return 'ambulant'
+    elif row['PatientClass'] == 'stationär':
+        return 'inpatient'
+    else:
+        return None
+
+
+def set_appt_type_detailed(row: pd.DataFrame) -> str:
+    if row['NoShow']:
         if row['NoShow_severity'] == 'soft':
             return 'soft no-show'
         elif row['NoShow_severity'] == 'hard':
             return 'hard no-show'
         else:
             return 'no-show'
+    elif row['PatientClass'] == 'ambulant':
+        return 'ambulant'
+    elif row['PatientClass'] == 'stationär':
+        return 'inpatient'
     else:
-        return row['PatientClass']
+        return None
 
 
 def integrate_dicom_data(slot_df: pd.DataFrame, dicom_times_df: pd.DataFrame) -> pd.DataFrame:
