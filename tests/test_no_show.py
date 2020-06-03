@@ -1,6 +1,6 @@
 import unittest
 import pandas as pd
-from mridle.data_management import find_no_shows
+from mridle.data_management import find_no_shows, set_no_show_type
 
 # threshold = 2
 # ok_was_status_changes = ['requested']
@@ -210,3 +210,49 @@ class TestFindNoShowsNegative(unittest.TestCase):
             'now_status': 'scheduled',
         }, index=[0])
         self.assertFalse(example_row.apply(find_no_shows, axis=1).iloc[0])
+
+
+class TestSetNoShowType(unittest.TestCase):
+
+    def test_not_no_show_blank(self):
+        example_row = pd.DataFrame({
+            'NoShow': False,
+        }, index=[0])
+        expected_result = None
+        self.assertEquals(example_row.apply(set_no_show_type, axis=1).iloc[0], expected_result)
+
+    def test_rescheduled_two_days_in_advance_soft(self):
+        example_row = pd.DataFrame({
+            'date': pd.Timestamp(year=2019, month=1, day=2),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=4, hour=9),
+            'NoShow': True,
+        }, index=[0])
+        expected_result = 'soft'
+        self.assertEquals(example_row.apply(set_no_show_type, axis=1).iloc[0], expected_result)
+
+    def test_rescheduled_one_day_in_advance_soft(self):
+        example_row = pd.DataFrame({
+            'date': pd.Timestamp(year=2019, month=1, day=3),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=4, hour=9),
+            'NoShow': True,
+        }, index=[0])
+        expected_result = 'soft'
+        self.assertEquals(example_row.apply(set_no_show_type, axis=1).iloc[0], expected_result)
+
+    def test_rescheduled_one_hour_later_hard(self):
+        example_row = pd.DataFrame({
+            'date': pd.Timestamp(year=2019, month=1, day=4, hour=10),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=4, hour=9),
+            'NoShow': True,
+        }, index=[0])
+        expected_result = 'hard'
+        self.assertEquals(example_row.apply(set_no_show_type, axis=1).iloc[0], expected_result)
+
+    def test_rescheduled_one_day_later_hard(self):
+        example_row = pd.DataFrame({
+            'date': pd.Timestamp(year=2019, month=1, day=5, hour=9),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=4, hour=9),
+            'NoShow': True,
+        }, index=[0])
+        expected_result = 'hard'
+        self.assertEquals(example_row.apply(set_no_show_type, axis=1).iloc[0], expected_result)

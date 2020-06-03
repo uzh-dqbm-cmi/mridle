@@ -3,7 +3,7 @@ All processing functions for the data transformation pipeline.
 
 ### Major Data Processing Steps ###
 
-load_data():
+build_status_df():
  - reads raw file from filesystem and adds custom columns.
  - This data is in the format one-row-per-appt-status-change
 
@@ -18,17 +18,17 @@ from typing import Dict, List
 
 
 STATUS_MAP = {
-        'p': 'requested',
-        't': 'scheduled',
-        'a': 'registered',
-        'b': 'started',
-        'u': 'examined',
-        'd': 'dictated',
-        's': 'cancelled',
-        'f': 'verified',
-        'g': 'deleted',
-        'w': 'waiting',
-    }
+    'p': 'requested',
+    't': 'scheduled',
+    'a': 'registered',
+    'b': 'started',
+    'u': 'examined',
+    'd': 'dictated',
+    's': 'cancelled',
+    'f': 'verified',
+    'g': 'deleted',
+    'w': 'waiting',
+}
 
 SHOW_COLS = ['FillerOrderNo', 'date', 'was_status', 'was_sched_for', 'now_status', 'now_sched_for', 'NoShow',
              'was_sched_for_date', 'now_sched_for_date']
@@ -135,6 +135,14 @@ def find_no_shows(row: pd.DataFrame) -> bool:
             and row['was_sched_for_date'].hour != 0:
         return True
     return False
+
+
+def set_no_show_type(row: pd.DataFrame) -> str:
+    if row['NoShow']:
+        if row['date'] > row['was_sched_for_date']:
+            return 'hard'
+        else:
+            return 'soft'
 
 
 def integrate_dicom_data(slot_df: pd.DataFrame, dicom_times_df: pd.DataFrame) -> pd.DataFrame:

@@ -107,7 +107,7 @@ def alt_plot_day_for_device(df: pd.DataFrame, date: str, device: str, highlight:
     """
     start_date = pd.to_datetime(date)
     end_date = start_date + pd.Timedelta(days=1)
-    return alt_plot_date_range_for_device(df, device, start_date, end_date, highlight)
+    return alt_plot_date_range_for_device(df, device, start_date, end_date, highlight=highlight)
 
 
 def update_color_map_with_highlight(highlight: Any, color_map: Dict, color_scheme: Dict = COLOR_SCHEME) -> Dict:
