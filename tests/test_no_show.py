@@ -1,6 +1,6 @@
 import unittest
 import pandas as pd
-from mridle.data_management import find_no_shows, set_no_show_type
+from mridle.data_management import find_no_shows, set_no_show_severity
 
 # threshold = 2
 # ok_was_status_changes = ['requested']
@@ -212,14 +212,14 @@ class TestFindNoShowsNegative(unittest.TestCase):
         self.assertFalse(example_row.apply(find_no_shows, axis=1).iloc[0])
 
 
-class TestSetNoShowType(unittest.TestCase):
+class TestSetNoShowSeverity(unittest.TestCase):
 
     def test_not_no_show_blank(self):
         example_row = pd.DataFrame({
             'NoShow': False,
         }, index=[0])
         expected_result = None
-        self.assertEquals(example_row.apply(set_no_show_type, axis=1).iloc[0], expected_result)
+        self.assertEqual(example_row.apply(set_no_show_severity, axis=1).iloc[0], expected_result)
 
     def test_rescheduled_two_days_in_advance_soft(self):
         example_row = pd.DataFrame({
@@ -228,7 +228,7 @@ class TestSetNoShowType(unittest.TestCase):
             'NoShow': True,
         }, index=[0])
         expected_result = 'soft'
-        self.assertEquals(example_row.apply(set_no_show_type, axis=1).iloc[0], expected_result)
+        self.assertEqual(example_row.apply(set_no_show_severity, axis=1).iloc[0], expected_result)
 
     def test_rescheduled_one_day_in_advance_soft(self):
         example_row = pd.DataFrame({
@@ -237,7 +237,7 @@ class TestSetNoShowType(unittest.TestCase):
             'NoShow': True,
         }, index=[0])
         expected_result = 'soft'
-        self.assertEquals(example_row.apply(set_no_show_type, axis=1).iloc[0], expected_result)
+        self.assertEqual(example_row.apply(set_no_show_severity, axis=1).iloc[0], expected_result)
 
     def test_rescheduled_one_hour_later_hard(self):
         example_row = pd.DataFrame({
@@ -246,7 +246,7 @@ class TestSetNoShowType(unittest.TestCase):
             'NoShow': True,
         }, index=[0])
         expected_result = 'hard'
-        self.assertEquals(example_row.apply(set_no_show_type, axis=1).iloc[0], expected_result)
+        self.assertEqual(example_row.apply(set_no_show_severity, axis=1).iloc[0], expected_result)
 
     def test_rescheduled_one_day_later_hard(self):
         example_row = pd.DataFrame({
@@ -255,4 +255,4 @@ class TestSetNoShowType(unittest.TestCase):
             'NoShow': True,
         }, index=[0])
         expected_result = 'hard'
-        self.assertEquals(example_row.apply(set_no_show_type, axis=1).iloc[0], expected_result)
+        self.assertEqual(example_row.apply(set_no_show_severity, axis=1).iloc[0], expected_result)

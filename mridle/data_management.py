@@ -66,6 +66,9 @@ def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     df = restrict_to_relevant_machines(df, RELEVANT_MACHINES)
     df = exclude_irrelevant_service_names(df, SERVICE_NAMES_TO_EXCLUDE)
     df = add_custom_status_change_cols(df)
+    df['NoShow'] = df.apply(find_no_shows, axis=1)
+    df['NoShow_severity'] = df.apply(set_no_show_severity, axis=1)
+    df['appt_type'] = df.apply(set_appt_type, axis=1)
     df = format_patient_id_col(df)
     return df
 
@@ -137,12 +140,24 @@ def find_no_shows(row: pd.DataFrame) -> bool:
     return False
 
 
-def set_no_show_type(row: pd.DataFrame) -> str:
+def set_no_show_severity(row: pd.DataFrame) -> str:
     if row['NoShow']:
         if row['date'] > row['was_sched_for_date']:
             return 'hard'
         else:
             return 'soft'
+
+
+def set_appt_type(row: pd.DataFrame) -> str:
+    if row['NoShow']:
+        if row['NoShow_severity'] == 'soft':
+            return 'soft no-show'
+        elif row['NoShow_severity'] == 'hard':
+            return 'hard no-show'
+        else:
+            return 'no-show'
+    else:
+        return row['slot_status']
 
 
 def integrate_dicom_data(slot_df: pd.DataFrame, dicom_times_df: pd.DataFrame) -> pd.DataFrame:
