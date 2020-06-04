@@ -95,6 +95,7 @@ def build_slot_df(input_status_df: pd.DataFrame) -> pd.DataFrame:
          - NoShow_outcome
          - EnteringOrganisationDeviceID
          - UniversalServiceName
+         - MRNCmpdId (if available)
     """
     status_df = input_status_df.copy()
     status_df = status_df.sort_values(['FillerOrderNo', 'date'])
@@ -114,6 +115,8 @@ def build_slot_df(input_status_df: pd.DataFrame) -> pd.DataFrame:
         'EnteringOrganisationDeviceID': 'min',
         'UniversalServiceName': 'min',
     }
+    if 'MRNCmpdId' in status_df.columns:
+        agg_dict['MRNCmpdId'] = 'min'
 
     # there should be one show appt per FillerOrderNo
     show_slot_status_events = status_df[status_df['slot_type'].isin(['show', 'inpatient'])].copy()
@@ -412,21 +415,21 @@ def string_set(l):
 def validate_against_dispo_data(dispo_data, slot_df, day, month, year, slot_type):
     """Identifies any appointment ids that are in dispo_data or slot_df and not vice versa. """
     if slot_type == 'show':
-        slot_typees = ['show', 'inpatient']
+        slot_types = ['show', 'inpatient']
     elif slot_type == 'no-show':
-        slot_typees = ['no-show']
+        slot_types = ['no-show']
     else:
         print('invalid status')
         return
     selected_dispo_rows = dispo_data[(dispo_data['date'].dt.day == day)
                                      & (dispo_data['date'].dt.month == month)
                                      & (dispo_data['date'].dt.year == year)
-                                     & (dispo_data['status'].isin(slot_typees))
+                                     & (dispo_data['status'].isin(slot_types))
                                      ]
     selected_slot_df_rows = slot_df[(slot_df['start_time'].dt.day == day)
                                     & (slot_df['start_time'].dt.month == month)
                                     & (slot_df['start_time'].dt.year == year)
-                                    & (slot_df['slot_type'].isin(slot_typees))
+                                    & (slot_df['slot_type'].isin(slot_types))
                                     ]
     dispo_patids = string_set(list(selected_dispo_rows['patient_id'].unique()))
     slot_df_patids = string_set(list(selected_slot_df_rows['MRNCmpdId'].unique()))
