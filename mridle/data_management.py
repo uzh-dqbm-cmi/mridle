@@ -290,7 +290,7 @@ def adjust_patient_class(original_patient_class: str) -> str:
         'stationär': 'inpatient',
         'teilstationär': 'inpatient',
     }
-    if original_patient_class is None:
+    if pd.isnull(original_patient_class):
         return default_patient_class
     elif original_patient_class in patient_class_map.keys():
         return patient_class_map[original_patient_class]
