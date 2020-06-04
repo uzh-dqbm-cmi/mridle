@@ -24,7 +24,7 @@ STATUS_MAP = {
     'b': 'started',
     'u': 'examined',
     'd': 'dictated',
-    's': 'cancelled',
+    's': 'canceled',
     'f': 'verified',
     'g': 'deleted',
     'w': 'waiting',
@@ -70,6 +70,7 @@ def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     df['patient_class_adj'] = df['PatientClass'].apply(adjust_patient_class)
     df['NoShow'] = df.apply(find_no_shows, axis=1)
     df['NoShow_severity'] = df.apply(set_no_show_severity, axis=1)
+    df['NoShow_outcome'] = df.apply(set_no_show_outcome, axis=1)
     df['slot_type'] = df.apply(set_slot_type, axis=1)
     df['slot_type_detailed'] = df.apply(set_slot_type_detailed, axis=1)
     return df
@@ -91,6 +92,7 @@ def build_slot_df(input_status_df: pd.DataFrame) -> pd.DataFrame:
          - NoShow
          - slot_type ('show', 'no-show', or 'inpatient')
          - slot_type_detailed
+         - NoShow_outcome
          - EnteringOrganisationDeviceID
          - UniversalServiceName
     """
@@ -108,6 +110,7 @@ def build_slot_df(input_status_df: pd.DataFrame) -> pd.DataFrame:
         'NoShow': 'min',
         'slot_type': 'min',
         'slot_type_detailed': 'min',
+        'NoShow_outcome': 'min',
         'EnteringOrganisationDeviceID': 'min',
         'UniversalServiceName': 'min',
     }
@@ -145,7 +148,7 @@ def find_no_shows(row: pd.DataFrame) -> bool:
     """
     threshold = 2
     ok_was_status_changes = ['requested']
-    no_show_now_status_changes = ['scheduled', 'cancelled']
+    no_show_now_status_changes = ['scheduled', 'canceled']
     relevant_columns = ['date', 'was_sched_for_date', 'was_status', 'now_status']
     for col in relevant_columns:
         if pd.isnull(row[col]):
@@ -295,6 +298,14 @@ def set_no_show_severity(row: pd.DataFrame) -> str:
             return 'hard'
         else:
             return 'soft'
+
+
+def set_no_show_outcome(row: pd.DataFrame) -> str:
+    if row['NoShow']:
+        if row['now_status'] == 'canceled':
+            return 'canceled'
+        else:
+            return 'rescheduled'
 
 
 def set_slot_type(row: pd.DataFrame) -> str:
