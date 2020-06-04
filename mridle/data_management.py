@@ -280,7 +280,6 @@ def add_custom_status_change_cols(df: pd.DataFrame) -> pd.DataFrame:
     df['now_status'] = df['History_OrderStatus'].apply(lambda x: get_status_text(x))
     df['now_sched_for'] = (df['History_ObsStartPlanDtTm'] - df['History_MessageDtTm']).apply(lambda x: x.days)
     df['now_sched_for_date'] = df['History_ObsStartPlanDtTm']
-    df['NoShow'] = df.apply(find_no_shows, axis=1)
     return df
 
 
