@@ -156,7 +156,7 @@ def set_slot_type(row: pd.DataFrame) -> str:
     elif row['OrderStatus'] == 'u' and row['now_status'] == 'started':
         if row['patient_class_adj'] == 'ambulant':
             return 'show'
-        elif row['patient_class_adj'] == 'stationär':
+        elif row['patient_class_adj'] == 'inpatient':
             return 'inpatient'
     else:
         return None
@@ -168,7 +168,7 @@ def set_slot_type_detailed(row: pd.DataFrame) -> str:
     elif row['OrderStatus'] == 'u' and row['now_status'] == 'started':
         if row['patient_class_adj'] == 'ambulant':
             return 'show'
-        elif row['patient_class_adj'] == 'stationär':
+        elif row['patient_class_adj'] == 'inpatient':
             return 'inpatient'
     else:
         return None
