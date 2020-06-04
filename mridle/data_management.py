@@ -66,6 +66,7 @@ def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     df = restrict_to_relevant_machines(df, RELEVANT_MACHINES)
     df = exclude_irrelevant_service_names(df, SERVICE_NAMES_TO_EXCLUDE)
     df = add_custom_status_change_cols(df)
+    df['patient_class_adj'] = df['PatientClass'].apply(adjust_patient_class)
     df['NoShow'] = df.apply(find_no_shows, axis=1)
     df['NoShow_severity'] = df.apply(set_no_show_severity, axis=1)
     df['slot_type'] = df.apply(set_slot_type, axis=1)
@@ -132,7 +133,7 @@ def find_no_shows(row: pd.DataFrame) -> bool:
     for col in relevant_columns:
         if pd.isnull(row[col]):
             return False
-    if row['PatientClass'] == 'ambulant' \
+    if row['patient_class_adj'] == 'ambulant' \
         and row['was_sched_for_date'] - row['date'] < pd.Timedelta(days=threshold) \
             and row['now_status'] in no_show_now_status_changes \
             and row['was_status'] not in ok_was_status_changes \
@@ -152,26 +153,23 @@ def set_no_show_severity(row: pd.DataFrame) -> str:
 def set_slot_type(row: pd.DataFrame) -> str:
     if row['NoShow']:
         return 'no-show'
-    elif row['PatientClass'] == 'ambulant':
-        return 'show'
-    elif row['PatientClass'] == 'stationär':
-        return 'inpatient'
+    elif row['OrderStatus'] == 'u' and row['now_status'] == 'started':
+        if row['patient_class_adj'] == 'ambulant':
+            return 'show'
+        elif row['patient_class_adj'] == 'stationär':
+            return 'inpatient'
     else:
         return None
 
 
 def set_slot_type_detailed(row: pd.DataFrame) -> str:
     if row['NoShow']:
-        if row['NoShow_severity'] == 'soft':
-            return 'soft no-show'
-        elif row['NoShow_severity'] == 'hard':
-            return 'hard no-show'
-        else:
-            return 'no-show'
-    elif row['PatientClass'] == 'ambulant':
-        return 'show'
-    elif row['PatientClass'] == 'stationär':
-        return 'inpatient'
+        return '{} no-show'.format(row['NoShow_severity'])
+    elif row['OrderStatus'] == 'u' and row['now_status'] == 'started':
+        if row['patient_class_adj'] == 'ambulant':
+            return 'show'
+        elif row['patient_class_adj'] == 'stationär':
+            return 'inpatient'
     else:
         return None
 
@@ -284,6 +282,21 @@ def add_custom_status_change_cols(df: pd.DataFrame) -> pd.DataFrame:
     df['now_sched_for_date'] = df['History_ObsStartPlanDtTm']
     df['NoShow'] = df.apply(find_no_shows, axis=1)
     return df
+
+
+def adjust_patient_class(original_patient_class: str) -> str:
+    default_patient_class = 'ambulant'
+    patient_class_map = {
+        'ambulant': 'ambulant',
+        'stationär': 'inpatient',
+        'teilstationär': 'inpatient',
+    }
+    if np.isnan(original_patient_class):
+        return default_patient_class
+    elif original_patient_class in patient_class_map.keys():
+        return patient_class_map[original_patient_class]
+    else:
+        return 'unknown'
 
 
 def format_patient_id_col(df: pd.DataFrame) -> pd.DataFrame:
