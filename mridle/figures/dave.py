@@ -95,8 +95,6 @@ def plot_example_day(df: pd.DataFrame, date, device='MR1', color_map=DETAILED_CO
         color=alt.Color('slot_type_detailed:N', scale=color_scale, legend=alt.Legend(title='Slot Type (detailed)')),
         stroke=alt.Stroke('NoShow_outcome', scale=stroke_scale, legend=alt.Legend(title='Canceled Appts')),
         tooltip='FillerOrderNo',
-    ).configure_mark(
-        opacity=0.5,
     ).properties(
         width=800,
         height=recommended_height,
