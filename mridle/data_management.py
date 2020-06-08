@@ -408,8 +408,8 @@ def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
     return dispo_df
 
 
-def string_set(l):
-    return set([str(i) for i in l])
+def string_set(a_list):
+    return set([str(i) for i in a_list])
 
 
 def validate_against_dispo_data(dispo_data, slot_df, day, month, year, slot_type):
