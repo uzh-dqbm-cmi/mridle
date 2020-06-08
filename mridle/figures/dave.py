@@ -123,9 +123,11 @@ def main():
 
     if args.date is None:
         # choose a random date
-        slot_w_dicom_df[~slot_w_dicom_df['start_time'].isna()].sample(1)['start_time'].dt.floor('d')
+        date = slot_w_dicom_df[~slot_w_dicom_df['start_time'].isna()].sample(1)['start_time'].dt.floor('d').iloc[0]
+    else:
+        date = args.date
 
-    chart = alt_plot_day_for_device_by_status(slot_w_dicom_df, date=args.date, anonymize=True)
+    chart = alt_plot_day_for_device_by_status(slot_w_dicom_df, date=date, anonymize=True)
     chart.save('dave_b_1.png')
 
 
