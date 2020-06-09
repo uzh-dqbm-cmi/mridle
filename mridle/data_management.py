@@ -50,15 +50,20 @@ def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
 
     Returns: Dataframe with one row per appointment status change.
         The resulting dataframe has the columns (illustrative, not a complete list):
-         - FillerOrderNo
-         - date (MessageDtTm)
-         - was_status
-         - now_status
-         - was_sched_for
-         - now_sched_for
-         - was_sched_for_date
-         - now_sched_for_date
-         - NoShow
+         - FillerOrderNo: int, appt id
+         - date (MessageDtTm): datetime, the date and time of the status change
+         - was_status: str, the status the appt changed from
+         - now_status: str, the status the appt changed to
+         - was_sched_for: int, number of days ahead the appt was sched for before status change relative to `date`
+         - now_sched_for: int, number of days ahead the appt is sched for after status change relative to `date`
+         - was_sched_for_date: datetime, the date the appt was sched for before status change
+         - now_sched_for_date datetime, the date the appt is sched for after status change
+         - patient_class_adj: patient class (adjusted) ['ambulant', 'inpatient']
+         - NoShow: bool, [True, False]
+         - NoShow_severity: str, ['hard', 'soft']
+         - NoShow_outcome: str, ['rescheduled', 'canceled']
+         - slot_type: str, ['no-show', 'show', 'inpatient']
+         - slot_type_detailed: str, ['hard no-show', 'soft no-show', 'show', 'inpatient']
 
     """
     df = raw_df.copy()
@@ -78,7 +83,7 @@ def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
 
 def build_slot_df(input_status_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Convert status_df into slot_df. Identify "show" and "show show" appointment slots from status_df,
+    Convert status_df into slot_df. Identify "show" and "no show" appointment slots from status_df,
     and synthesize into a single dataframe of all appointments that occurred or were supposed to occur (but no-show'ed).
 
     Args:
@@ -86,16 +91,16 @@ def build_slot_df(input_status_df: pd.DataFrame) -> pd.DataFrame:
 
     Returns: row-per-appointment-slot dataframe.
         The resulting dataframe has the columns (illustrative, not a complete list):
-         - FillerOrderNo
-         - start_time
-         - end_time
-         - NoShow
-         - slot_type ('show', 'no-show', or 'inpatient')
-         - slot_type_detailed
-         - NoShow_outcome
-         - EnteringOrganisationDeviceID
-         - UniversalServiceName
-         - MRNCmpdId (if available)
+         - FillerOrderNo: int, appt id
+         - start_time: datetime, appt scheduled start time
+         - end_time: datetime, appt scheduled end time
+         - NoShow: bool, [True, False]
+         - NoShow_outcome: str, ['rescheduled', 'canceled']
+         - slot_type: str, ['no-show', 'show', 'inpatient']
+         - slot_type_detailed: str, ['hard no-show', 'soft no-show', 'show', 'inpatient']
+         - EnteringOrganisationDeviceID: str, device the appt was scheduled for
+         - UniversalServiceName: str, the kind of appointment
+         - MRNCmpdId (if available): int, patient id
     """
     status_df = input_status_df.copy()
     status_df = status_df.sort_values(['FillerOrderNo', 'date'])
@@ -119,12 +124,12 @@ def build_slot_df(input_status_df: pd.DataFrame) -> pd.DataFrame:
         agg_dict['MRNCmpdId'] = 'min'
 
     # there should be one show appt per FillerOrderNo
-    show_slot_status_events = status_df[status_df['slot_type'].isin(['show', 'inpatient'])].copy()
-    show_slot_df = show_slot_status_events.groupby(['FillerOrderNo']).agg(agg_dict).reset_index()
+    show_slot_type_events = status_df[status_df['slot_type'].isin(['show', 'inpatient'])].copy()
+    show_slot_df = show_slot_type_events.groupby(['FillerOrderNo']).agg(agg_dict).reset_index()
 
     # there may be multiple no-show appts per FillerOrderNo
-    no_show_slot_status_events = status_df[status_df['NoShow']].copy()
-    no_show_slot_df = no_show_slot_status_events.groupby(['FillerOrderNo', 'was_sched_for_date']).agg(
+    no_show_slot_type_events = status_df[status_df['NoShow']].copy()
+    no_show_slot_df = no_show_slot_type_events.groupby(['FillerOrderNo', 'was_sched_for_date']).agg(
         agg_dict).reset_index()
     no_show_slot_df.drop('was_sched_for_date', axis=1, inplace=True)
 
@@ -408,8 +413,8 @@ def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
     return dispo_df
 
 
-def string_set(l):
-    return set([str(i) for i in l])
+def string_set(a_list):
+    return set([str(i) for i in a_list])
 
 
 def validate_against_dispo_data(dispo_data, slot_df, day, month, year, slot_type):
