@@ -79,7 +79,7 @@ def alt_plot_date_range_for_device(df: pd.DataFrame, device: str = 'MR1', start_
     recommended_height = df_filtered['start_time'].dt.to_period('D').nunique() * height_factor
 
     return alt.Chart(df_filtered).mark_bar().encode(
-        alt.Color('slot_status:N', scale=color_scale),
+        alt.Color('slot_type:N', scale=color_scale),
         y='monthdate(start_time):T',
         x='hoursminutes(start_time):T',
         x2='hoursminutes(end_time):T',
@@ -107,7 +107,7 @@ def alt_plot_day_for_device(df: pd.DataFrame, date: str, device: str, highlight:
     """
     start_date = pd.to_datetime(date)
     end_date = start_date + pd.Timedelta(days=1)
-    return alt_plot_date_range_for_device(df, device, start_date, end_date, highlight)
+    return alt_plot_date_range_for_device(df, device, start_date, end_date, highlight=highlight)
 
 
 def update_color_map_with_highlight(highlight: Any, color_map: Dict, color_scheme: Dict = COLOR_SCHEME) -> Dict:
@@ -159,7 +159,7 @@ def plot_a_day(df: pd.DataFrame, year: int, month: int, day: int, labels: bool =
 
     # ======
 
-    slot_status_color_map = {
+    slot_type_color_map = {
         'show': 'tab:blue',
         'no-show': 'tab:red',
         'inpatient': 'tab:gray',
@@ -174,7 +174,7 @@ def plot_a_day(df: pd.DataFrame, year: int, month: int, day: int, labels: bool =
     default_duration = pd.Timedelta(minutes=30)
 
     # enter default end times for no shows
-    one_day['duration'] = np.where(one_day['slot_status'] == 'no-show',
+    one_day['duration'] = np.where(one_day['slot_type'] == 'no-show',
                                    default_duration,
                                    one_day['end_time'] - one_day['start_time']
                                    )
@@ -194,14 +194,14 @@ def plot_a_day(df: pd.DataFrame, year: int, month: int, day: int, labels: bool =
         ytick_labels.append(device)
 
         # plot each type of appointment slot in a different color...
-        for slot_status in one_day['slot_status'].unique():
+        for slot_type in one_day['slot_type'].unique():
             plot_data_subset = one_day[(one_day['EnteringOrganisationDeviceID'] == device) &
-                                       (one_day['slot_status'] == slot_status)]
+                                       (one_day['slot_type'] == slot_type)]
             plot_data_subset_tuples = [(row['start_time'], row['duration'])
                                        for i, row in plot_data_subset.iterrows()
                                        ]
-            ax.broken_barh(plot_data_subset_tuples, (device_height, 9), facecolors=slot_status_color_map[slot_status],
-                           edgecolor=slot_status_color_map[slot_status], alpha=alpha)
+            ax.broken_barh(plot_data_subset_tuples, (device_height, 9), facecolors=slot_type_color_map[slot_type],
+                           edgecolor=slot_type_color_map[slot_type], alpha=alpha)
 
             # add PatID/FON labels
             if labels:
@@ -268,7 +268,7 @@ def plot_a_day_for_device(df: pd.DataFrame, device: str, year: int, month: int, 
 
     # ======
 
-    slot_status_color_map = {
+    slot_type_color_map = {
         'show': 'tab:blue',
         'no-show': 'tab:red',
         'inpatient': 'tab:gray',
@@ -283,7 +283,7 @@ def plot_a_day_for_device(df: pd.DataFrame, device: str, year: int, month: int, 
     default_duration = pd.Timedelta(minutes=30)
 
     # enter default end times for no shows
-    one_day['duration'] = np.where(one_day['slot_status'] == 'no-show',
+    one_day['duration'] = np.where(one_day['slot_type'] == 'no-show',
                                    default_duration,
                                    one_day['end_time'] - one_day['start_time']
                                    )
@@ -295,19 +295,19 @@ def plot_a_day_for_device(df: pd.DataFrame, device: str, year: int, month: int, 
     ytick_labels = []
 
     # make a row for each device...
-    for index, slot_status in enumerate(one_day['slot_status'].unique()):
+    for index, slot_type in enumerate(one_day['slot_type'].unique()):
         height = index * row_height
         yticks.append(height + row_height / 2)
-        ytick_labels.append(slot_status)
+        ytick_labels.append(slot_type)
 
         plot_data_subset = one_day[(one_day['EnteringOrganisationDeviceID'] == device) &
-                                   (one_day['slot_status'] == slot_status)]
+                                   (one_day['slot_type'] == slot_type)]
         for i, row in plot_data_subset.iterrows():
             if jitter:
                 display_height = height + random.uniform(-0.5, 0.5)
             ax.broken_barh([(row['start_time'], row['duration'])], (display_height, row_height - 1),
-                           facecolors=slot_status_color_map[slot_status],
-                           edgecolor=slot_status_color_map[slot_status], alpha=alpha)
+                           facecolors=slot_type_color_map[slot_type],
+                           edgecolor=slot_type_color_map[slot_type], alpha=alpha)
 
             # add PatID/FON labels
             if labels:

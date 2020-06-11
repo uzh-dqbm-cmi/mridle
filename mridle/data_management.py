@@ -3,7 +3,7 @@ All processing functions for the data transformation pipeline.
 
 ### Major Data Processing Steps ###
 
-load_data():
+build_status_df():
  - reads raw file from filesystem and adds custom columns.
  - This data is in the format one-row-per-appt-status-change
 
@@ -18,17 +18,17 @@ from typing import Dict, List
 
 
 STATUS_MAP = {
-        'p': 'requested',
-        't': 'scheduled',
-        'a': 'registered',
-        'b': 'started',
-        'u': 'examined',
-        'd': 'dictated',
-        's': 'cancelled',
-        'f': 'verified',
-        'g': 'deleted',
-        'w': 'waiting',
-    }
+    'p': 'requested',
+    't': 'scheduled',
+    'a': 'registered',
+    'b': 'started',
+    'u': 'examined',
+    'd': 'dictated',
+    's': 'canceled',
+    'f': 'verified',
+    'g': 'deleted',
+    'w': 'waiting',
+}
 
 SHOW_COLS = ['FillerOrderNo', 'date', 'was_status', 'was_sched_for', 'now_status', 'now_sched_for', 'NoShow',
              'was_sched_for_date', 'now_sched_for_date']
@@ -50,15 +50,20 @@ def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
 
     Returns: Dataframe with one row per appointment status change.
         The resulting dataframe has the columns (illustrative, not a complete list):
-         - FillerOrderNo
-         - date (MessageDtTm)
-         - was_status
-         - now_status
-         - was_sched_for
-         - now_sched_for
-         - was_sched_for_date
-         - now_sched_for_date
-         - NoShow
+         - FillerOrderNo: int, appt id
+         - date (MessageDtTm): datetime, the date and time of the status change
+         - was_status: str, the status the appt changed from
+         - now_status: str, the status the appt changed to
+         - was_sched_for: int, number of days ahead the appt was sched for before status change relative to `date`
+         - now_sched_for: int, number of days ahead the appt is sched for after status change relative to `date`
+         - was_sched_for_date: datetime, the date the appt was sched for before status change
+         - now_sched_for_date datetime, the date the appt is sched for after status change
+         - patient_class_adj: patient class (adjusted) ['ambulant', 'inpatient']
+         - NoShow: bool, [True, False]
+         - NoShow_severity: str, ['hard', 'soft']
+         - NoShow_outcome: str, ['rescheduled', 'canceled']
+         - slot_type: str, ['no-show', 'show', 'inpatient']
+         - slot_type_detailed: str, ['hard no-show', 'soft no-show', 'show', 'inpatient']
 
     """
     df = raw_df.copy()
@@ -67,42 +72,70 @@ def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     df = exclude_irrelevant_service_names(df, SERVICE_NAMES_TO_EXCLUDE)
     df = add_custom_status_change_cols(df)
     df = format_patient_id_col(df)
+    df['patient_class_adj'] = df['PatientClass'].apply(adjust_patient_class)
+    df['NoShow'] = df.apply(find_no_shows, axis=1)
+    df['NoShow_severity'] = df.apply(set_no_show_severity, axis=1)
+    df['NoShow_outcome'] = df.apply(set_no_show_outcome, axis=1)
+    df['slot_type'] = df.apply(set_slot_type, axis=1)
+    df['slot_type_detailed'] = df.apply(set_slot_type_detailed, axis=1)
     return df
 
 
-def build_slot_df(status_df: pd.DataFrame) -> pd.DataFrame:
+def build_slot_df(input_status_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Convert status_df into slot_df. Identify "show" and "show show" appointment slots from status_df,
+    Convert status_df into slot_df. Identify "show" and "no show" appointment slots from status_df,
     and synthesize into a single dataframe of all appointments that occurred or were supposed to occur (but no-show'ed).
 
     Args:
-        status_df: row-per-status-change dataframe.
+        input_status_df: row-per-status-change dataframe.
 
     Returns: row-per-appointment-slot dataframe.
         The resulting dataframe has the columns (illustrative, not a complete list):
-         - FillerOrderNo
-         - start_time
-         - end_time
-         - slot_status ('show', 'no-show', or 'inpatient')
+         - FillerOrderNo: int, appt id
+         - start_time: datetime, appt scheduled start time
+         - end_time: datetime, appt scheduled end time
+         - NoShow: bool, [True, False]
+         - NoShow_outcome: str, ['rescheduled', 'canceled']
+         - slot_type: str, ['no-show', 'show', 'inpatient']
+         - slot_type_detailed: str, ['hard no-show', 'soft no-show', 'show', 'inpatient']
+         - EnteringOrganisationDeviceID: str, device the appt was scheduled for
+         - UniversalServiceName: str, the kind of appointment
+         - MRNCmpdId (if available): int, patient id
     """
-    completed_appts = one_line_per_completed_appt(status_df)
-    noshow_appts = one_line_per_no_show(status_df)
-    one_per_slot = pd.concat([completed_appts, noshow_appts], sort=False)
+    status_df = input_status_df.copy()
+    status_df = status_df.sort_values(['FillerOrderNo', 'date'])
+
+    status_df['start_time'] = status_df.apply(identify_start_times, axis=1)
+    status_df['end_time'] = status_df.apply(identify_end_times, axis=1)
+    status_df['end_time'] = status_df.groupby('FillerOrderNo')['end_time'].fillna(method='bfill')
+
+    # this agg dict will be used for getting data about both show and no-show appt slots
     agg_dict = {
+        'start_time': 'min',
+        'end_time': 'min',
+        'NoShow': 'min',
+        'slot_type': 'min',
+        'slot_type_detailed': 'min',
+        'NoShow_outcome': 'min',
         'EnteringOrganisationDeviceID': 'min',
-        'PatientClass': 'min',
-        'UniversalServiceId': 'min',
         'UniversalServiceName': 'min',
     }
     if 'MRNCmpdId' in status_df.columns:
         agg_dict['MRNCmpdId'] = 'min'
 
-    one_per_slot_plus_details = add_column_details(status_df, one_per_slot, agg_dict)
-    one_per_slot_plus_details['slot_status'] = np.where(one_per_slot_plus_details['PatientClass'] == 'stationär',
-                                                        'inpatient',
-                                                        one_per_slot_plus_details['slot_status'])
-    slot_df_deduped = one_per_slot_plus_details.drop_duplicates()
-    return slot_df_deduped
+    # there should be one show appt per FillerOrderNo
+    show_slot_type_events = status_df[status_df['slot_type'].isin(['show', 'inpatient'])].copy()
+    show_slot_df = show_slot_type_events.groupby(['FillerOrderNo']).agg(agg_dict).reset_index()
+
+    # there may be multiple no-show appts per FillerOrderNo
+    no_show_slot_type_events = status_df[status_df['NoShow']].copy()
+    no_show_slot_df = no_show_slot_type_events.groupby(['FillerOrderNo', 'was_sched_for_date']).agg(
+        agg_dict).reset_index()
+    no_show_slot_df.drop('was_sched_for_date', axis=1, inplace=True)
+
+    slot_df = pd.concat([show_slot_df, no_show_slot_df], sort=False)
+
+    return slot_df
 
 
 def find_no_shows(row: pd.DataFrame) -> bool:
@@ -123,12 +156,12 @@ def find_no_shows(row: pd.DataFrame) -> bool:
     """
     threshold = 2
     ok_was_status_changes = ['requested']
-    no_show_now_status_changes = ['scheduled', 'cancelled']
+    no_show_now_status_changes = ['scheduled', 'canceled']
     relevant_columns = ['date', 'was_sched_for_date', 'was_status', 'now_status']
     for col in relevant_columns:
         if pd.isnull(row[col]):
             return False
-    if row['PatientClass'] == 'ambulant' \
+    if row['patient_class_adj'] == 'ambulant' \
         and row['was_sched_for_date'] - row['date'] < pd.Timedelta(days=threshold) \
             and row['now_status'] in no_show_now_status_changes \
             and row['was_status'] not in ok_was_status_changes \
@@ -243,7 +276,6 @@ def add_custom_status_change_cols(df: pd.DataFrame) -> pd.DataFrame:
     df['now_status'] = df['History_OrderStatus'].apply(lambda x: get_status_text(x))
     df['now_sched_for'] = (df['History_ObsStartPlanDtTm'] - df['History_MessageDtTm']).apply(lambda x: x.days)
     df['now_sched_for_date'] = df['History_ObsStartPlanDtTm']
-    df['NoShow'] = df.apply(find_no_shows, axis=1)
     return df
 
 
@@ -251,6 +283,61 @@ def format_patient_id_col(df: pd.DataFrame) -> pd.DataFrame:
     if 'MRNCmpdId' in df.columns:
         df['MRNCmpdId'] = df['MRNCmpdId'].str.replace('|USZ', '', regex=False)
     return df
+
+
+def adjust_patient_class(original_patient_class: str) -> str:
+    default_patient_class = 'ambulant'
+    patient_class_map = {
+        'ambulant': 'ambulant',
+        'stationär': 'inpatient',
+        'teilstationär': 'inpatient',
+    }
+    if pd.isnull(original_patient_class):
+        return default_patient_class
+    elif original_patient_class in patient_class_map.keys():
+        return patient_class_map[original_patient_class]
+    else:
+        return 'unknown'
+
+
+def set_no_show_severity(row: pd.DataFrame) -> str:
+    if row['NoShow']:
+        if row['date'] > row['was_sched_for_date']:
+            return 'hard'
+        else:
+            return 'soft'
+
+
+def set_no_show_outcome(row: pd.DataFrame) -> str:
+    if row['NoShow']:
+        if row['now_status'] == 'canceled':
+            return 'canceled'
+        else:
+            return 'rescheduled'
+
+
+def set_slot_type(row: pd.DataFrame) -> str:
+    if row['NoShow']:
+        return 'no-show'
+    elif row['OrderStatus'] == 'u' and row['now_status'] == 'started':
+        if row['patient_class_adj'] == 'ambulant':
+            return 'show'
+        elif row['patient_class_adj'] == 'inpatient':
+            return 'inpatient'
+    else:
+        return None
+
+
+def set_slot_type_detailed(row: pd.DataFrame) -> str:
+    if row['NoShow']:
+        return '{} no-show'.format(row['NoShow_severity'])
+    elif row['OrderStatus'] == 'u' and row['now_status'] == 'started':
+        if row['patient_class_adj'] == 'ambulant':
+            return 'show'
+        elif row['patient_class_adj'] == 'inpatient':
+            return 'inpatient'
+    else:
+        return None
 
 
 def get_status_text(status_code: str) -> str:
@@ -264,48 +351,42 @@ def get_status_text(status_code: str) -> str:
         return 'unknown: {}'.format(status_code)
 
 
-def one_line_per_completed_appt(status_df: pd.DataFrame) -> pd.DataFrame:
+def identify_start_times(row: pd.DataFrame) -> pd.datetime:
     """
-    Determines the start and end time of all completed appointments in a row-per-status-change dataframe.
+    Identify start times of  appts. Could be used like this:
+      status_df['start_time'] = status_df.apply(identify_end_times, axis=1)
 
     Args:
-        status_df: row-per-status-change dataframe
+        row: row from status_df, as generated by using status_df.apply(axis=1).
 
-    Returns: dataframe with columns ['FillerOrderNo', 'start_time', 'end_time', 'slot_status'].
-
+    Returns: appt start datetime, or None if the row is not an appt starting event.
     """
-    completed_appts_start_times = status_df[(status_df['OrderStatus'] == 'u')
-                                            & (status_df['now_status'] == 'started')
-                                            ].groupby('FillerOrderNo').agg({'date': 'min'})
-
-    completed_appts_start_times.columns = ['start_time']
-
-    completed_appts_end_times = status_df[(status_df['OrderStatus'] == 'u')
-                                          & (status_df['now_status'] == 'examined')
-                                          ].groupby('FillerOrderNo').agg({'date': 'max'})
-    completed_appts_end_times.columns = ['end_time']
-
-    completed_appts = pd.merge(completed_appts_start_times, completed_appts_end_times, left_index=True,
-                               right_index=True)
-    completed_appts['slot_status'] = 'show'
-    completed_appts.reset_index(inplace=True)
-    return completed_appts
+    if row['NoShow']:
+        return row['was_sched_for_date']
+    elif row['now_status'] == 'started':
+        return row['date']
+    else:
+        return None
 
 
-def one_line_per_no_show(status_df: pd.DataFrame) -> pd.DataFrame:
+def identify_end_times(row: pd.DataFrame) -> pd.datetime:
     """
-    Determines the start and end time of all completed appointments in a row-per-status-change dataframe.
+    Identify end times of appts. Could be used like this:
+      status_df['end_time'] = status_df.apply(identify_end_times, axis=1)
+      status_df['end_time'] = status_df.groupby('FillerOrderNo')['end_time'].fillna(method='bfill')
 
     Args:
-        status_df: row-per-status-change dataframe
+        row: row from status_df, as generated by using status_df.apply(axis=1).
 
-    Returns: dataframe with columns ['FillerOrderNo', 'start_time', 'slot_status'].
+    Returns: appt end datetime, or None if the row is not an appt ending event.
 
     """
-    noshow_appts = status_df[status_df['NoShow']][['FillerOrderNo', 'was_sched_for_date']].copy()
-    noshow_appts.columns = ['FillerOrderNo', 'start_time']
-    noshow_appts['slot_status'] = 'no-show'
-    return noshow_appts
+    if row['NoShow']:
+        return row['was_sched_for_date'] + pd.to_timedelta(30, unit='minutes')
+    elif row['now_status'] == 'examined':
+        return row['date']
+    else:
+        return None
 
 
 def add_column_details(detail_df: pd.DataFrame, slot_df: pd.DataFrame, agg_dict: Dict) -> pd.DataFrame:
@@ -326,42 +407,34 @@ def add_column_details(detail_df: pd.DataFrame, slot_df: pd.DataFrame, agg_dict:
     return df_with_details
 
 
-def set_no_show_end_times(row: pd.DataFrame) -> pd.DataFrame:
-    """Set the end time for no show slots as start time + 30 minutes"""
-    if row['slot_status'] == 'no-show':
-        return row['start_time'] + pd.to_timedelta(30, unit='minutes')
-    else:
-        return row['end_time']
-
-
 def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
     dispo_df = pd.DataFrame(dispo_examples)
     dispo_df['date'] = pd.to_datetime(dispo_df['date'])
     return dispo_df
 
 
-def string_set(l):
-    return set([str(i) for i in l])
+def string_set(a_list):
+    return set([str(i) for i in a_list])
 
 
-def validate_against_dispo_data(dispo_data, slot_df, day, month, year, slot_status):
+def validate_against_dispo_data(dispo_data, slot_df, day, month, year, slot_type):
     """Identifies any appointment ids that are in dispo_data or slot_df and not vice versa. """
-    if slot_status == 'show':
-        slot_statuses = ['show', 'inpatient']
-    elif slot_status == 'no-show':
-        slot_statuses = ['no-show']
+    if slot_type == 'show':
+        slot_types = ['show', 'inpatient']
+    elif slot_type == 'no-show':
+        slot_types = ['no-show']
     else:
         print('invalid status')
         return
     selected_dispo_rows = dispo_data[(dispo_data['date'].dt.day == day)
                                      & (dispo_data['date'].dt.month == month)
                                      & (dispo_data['date'].dt.year == year)
-                                     & (dispo_data['status'].isin(slot_statuses))
+                                     & (dispo_data['status'].isin(slot_types))
                                      ]
     selected_slot_df_rows = slot_df[(slot_df['start_time'].dt.day == day)
                                     & (slot_df['start_time'].dt.month == month)
                                     & (slot_df['start_time'].dt.year == year)
-                                    & (slot_df['slot_status'].isin(slot_statuses))
+                                    & (slot_df['slot_type'].isin(slot_types))
                                     ]
     dispo_patids = string_set(list(selected_dispo_rows['patient_id'].unique()))
     slot_df_patids = string_set(list(selected_slot_df_rows['MRNCmpdId'].unique()))
@@ -384,13 +457,13 @@ def format_dicom_times_df(df):
 
 
 def update_start_time_col_from_dicom(row):
-    if row['slot_status'] in ['show', 'inpatient'] and row['image_start'] is not None:
+    if row['slot_type'] in ['show', 'inpatient'] and row['image_start'] is not None:
         return row['image_start']
     return row['status_start']
 
 
 def update_end_time_col_from_dicom(row):
-    if row['slot_status'] in ['show', 'inpatient'] and row['image_end'] is not None:
+    if row['slot_type'] in ['show', 'inpatient'] and row['image_end'] is not None:
         return row['image_end']
     return row['status_end']
 

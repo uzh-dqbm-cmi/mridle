@@ -190,9 +190,9 @@ def build_harvey_et_al_features_set(status_df: pd.DataFrame, drop_id_col=True) -
 
     # re-shape into slot_df
     status_df = status_df.sort_values(['FillerOrderNo', 'date'])
-    show_slot_status_events = status_df[(status_df['PatientClass'] == 'ambulant') & (status_df['OrderStatus'] == 'u') &
-                                        (status_df['now_status'] == 'started')].copy()
-    no_show_slot_status_events = status_df[status_df['NoShow']].copy()
+    show_slot_type_events = status_df[(status_df['PatientClass'] == 'ambulant') & (status_df['OrderStatus'] == 'u') &
+                                      (status_df['now_status'] == 'started')].copy()
+    no_show_slot_type_events = status_df[status_df['NoShow']].copy()
 
     agg_dict = {
         'NoShow': 'min',
@@ -206,10 +206,10 @@ def build_harvey_et_al_features_set(status_df: pd.DataFrame, drop_id_col=True) -
     }
 
     # there should be one show appt per FillerOrderNo
-    show_slot_df = show_slot_status_events.groupby(['FillerOrderNo']).agg(agg_dict).reset_index()
+    show_slot_df = show_slot_type_events.groupby(['FillerOrderNo']).agg(agg_dict).reset_index()
 
     # there may be multiple no-show appts per FillerOrderNo
-    no_show_slot_df = no_show_slot_status_events.groupby(['FillerOrderNo', 'was_sched_for_date']).agg(
+    no_show_slot_df = no_show_slot_type_events.groupby(['FillerOrderNo', 'was_sched_for_date']).agg(
         agg_dict).reset_index()
     no_show_slot_df.drop('was_sched_for_date', axis=1, inplace=True)
 

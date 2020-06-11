@@ -113,8 +113,8 @@ day = 14
 month = 1
 year = 2019
 machine = 'MR1'
-slot_status = 'show'
-dispo_patids, slot_df_patids = mridle.data_management.validate_against_dispo_data(dispo_df, slot_df, day, month, year, slot_status)
+slot_type = 'show'
+dispo_patids, slot_df_patids = mridle.data_management.validate_against_dispo_data(dispo_df, slot_df, day, month, year, slot_type)
 ```
 
 ## Constructing Model Feature Sets
