@@ -428,7 +428,7 @@ def string_set(a_list):
 
 
 def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, day: int, month: int, year: int,
-                                slot_type: str) -> List[str]:
+                                slot_type: str) -> Set[str]:
     """
     Identifies any appointment IDs that are in dispo_data or slot_df and not vice versa.
 
