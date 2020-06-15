@@ -1,0 +1,199 @@
+import altair as alt
+import altair_saver
+import argparse
+from copy import deepcopy
+import os
+import pandas as pd
+import random
+import sqlite3
+import mridle
+from datatc import DataManager
+
+
+COLOR_SCHEME = {
+    'orange': '#EC9139',
+    'teal': '#54B89C',
+    'purple': '#9329A0',
+    'dark blue': '#3C50AF',
+    'light blue': '#4CA8EF',
+    'pink': '#D8538C',
+    'yellow': '#EAC559',
+    'red': '#CF2D20',
+    'light red': '#E7968F',
+    'green': '#6FC53B',
+    'grey': '#BCBCBC',
+    'dark purple': '#681E72',
+    'light purple': '#C184C9',
+}
+
+DEFAULT_COLOR_MAP = {
+    'show': 'blue',
+    'no-show': 'red',
+    'inpatient': 'grey',
+}
+
+DETAILED_COLOR_MAP = {
+    'show': 'blue',
+    'soft no-show': 'orange',
+    'hard no-show': 'red',
+    'inpatient': 'grey',
+}
+STROKE_MAP = {
+    #     'rescheduled': 'black',
+    'canceled': 'black',
+}
+
+
+def plot_example_day(df: pd.DataFrame, date, device='MR1', color_map=DETAILED_COLOR_MAP, stroke_map=STROKE_MAP,
+                     anonymize=True, height_factor=20):
+    """
+    Plot completed, inpatient, and no-show appointments for one device for a day.
+
+    Args:
+        df: a one-row-per-slot dataframe.
+        device: the device to plot
+        date: date to plot
+        color_map: the colors to use for each appointment type.
+        stroke_map: the colors to use for each NoShow_outcome type.
+        anonymize: whether to anonymize the data by shifting it by a random amount.
+        height_factor: multiplier for how tall to make the plot based on the number of days plotted
+
+    Returns: alt.Chart
+
+    """
+    df_filtered = df.copy()
+    start_date = pd.to_datetime(date)
+    end_date = start_date + pd.Timedelta(days=1)
+    df_filtered = df_filtered[df_filtered['start_time'] >= start_date]
+    df_filtered = df_filtered[df_filtered['start_time'] < end_date]
+    if df_filtered.shape[0] == 0:
+        raise ValueError('No data found in that date range')
+
+    if device not in df['EnteringOrganisationDeviceID'].unique():
+        raise ValueError('Device {} not found in data set'.format(device))
+    df_filtered = df_filtered[df_filtered['EnteringOrganisationDeviceID'] == device].copy()
+
+    title = device
+
+    if anonymize:
+        randomizer = pd.Timedelta(minutes=random.randint(-15, 15))
+        df_filtered['start_time'] = df_filtered['start_time'] + randomizer
+        df_filtered['end_time'] = df_filtered['end_time'] + randomizer
+        title = 'Anonymized Appointment Data'
+
+    # create color scale from color_map, modifying it based on highlight if appropriate
+    plot_color_map = deepcopy(color_map)
+    color_scale = alt.Scale(domain=list(plot_color_map.keys()), range=list(plot_color_map.values()))
+    stroke_scale = alt.Scale(domain=list(stroke_map.keys()), range=list(stroke_map.values()))
+
+    recommended_height = len(DEFAULT_COLOR_MAP) * height_factor
+
+    return alt.Chart(df_filtered).mark_bar(strokeWidth=3).encode(
+        y=alt.Y('slot_type:N', title='Slot Type'),
+        x=alt.X('hoursminutes(start_time):T', title='Time'),
+        x2=alt.X2('hoursminutes(end_time):T'),
+        color=alt.Color('slot_type_detailed:N', scale=color_scale, legend=alt.Legend(title='Slot Type (detailed)')),
+        stroke=alt.Stroke('NoShow_outcome', scale=stroke_scale, legend=alt.Legend(title='Canceled Appts')),
+        tooltip='FillerOrderNo',
+    ).properties(
+        width=800,
+        height=recommended_height,
+        title=title
+    )
+
+
+def plot_appt_types_over_time(df: pd.DataFrame, start_date, end_date, color_map=DETAILED_COLOR_MAP):
+    df_filtered = df.copy()
+    start_date = pd.to_datetime(start_date)
+    end_date = pd.to_datetime(end_date)
+    df_filtered = df_filtered[df_filtered['start_time'] >= start_date]
+    df_filtered = df_filtered[df_filtered['start_time'] < end_date]
+    if df_filtered.shape[0] == 0:
+        raise ValueError('No data found in that date range')
+
+    # create color scale from color_map, modifying it based on highlight if appropriate
+    plot_color_map = deepcopy(color_map)
+    color_scale = alt.Scale(domain=list(plot_color_map.keys()), range=list(plot_color_map.values()))
+
+    return alt.Chart(df_filtered).mark_line(strokeWidth=3).encode(
+        y=alt.Y('count(FillerOrderNo):N', title='Appt Count'),
+        x=alt.X('monthdate(start_time):T', title='Day', axis=alt.Axis(format='%b %d')),
+        order=alt.Order("monthdate(start_time)"),
+        color=alt.Color('slot_type_detailed:N', scale=color_scale, legend=alt.Legend(title='Slot Type (detailed)')),
+        tooltip='monthdate(start_time)',
+    ).properties(
+        width=475,
+        height=250,
+        # title=title
+    )
+
+
+def plot_appt_types_by_day_of_week(df: pd.DataFrame, start_date, end_date, color_map=DETAILED_COLOR_MAP):
+    df_filtered = df.copy()
+    start_date = pd.to_datetime(start_date)
+    end_date = pd.to_datetime(end_date)
+    df_filtered = df_filtered[df_filtered['start_time'] >= start_date]
+    df_filtered = df_filtered[df_filtered['start_time'] < end_date]
+    if df_filtered.shape[0] == 0:
+        raise ValueError('No data found in that date range')
+
+    # create color scale from color_map
+    plot_color_map = deepcopy(color_map)
+    color_scale = alt.Scale(domain=list(plot_color_map.keys()), range=list(plot_color_map.values()))
+
+    return alt.Chart(df_filtered).mark_line(strokeWidth=3).encode(
+        y=alt.Y('count(FillerOrderNo):N', title='Appt Count'),
+        x=alt.X('day(start_time):T', title='Day of the Week', axis=alt.Axis(format='%A')),
+        order=alt.Order("day(start_time)"),
+        color=alt.Color('slot_type_detailed:N', scale=color_scale, legend=alt.Legend(title='Slot Type (detailed)')),
+        tooltip='day(start_time)',
+    ).properties(
+        width=250,
+        height=250,
+        # title=title
+    )
+
+
+def plot_dave_b(data_dir, example_date, start_date, end_date, anonymize=True):
+    dm = DataManager(data_dir)
+    raw_df = dm['rdsc_extracts'].latest().select('xlsx').load()
+    status_df = mridle.data_management.build_status_df(raw_df)
+    slot_df = mridle.data_management.build_slot_df(status_df)
+
+    dicom_db_path = dm['dicom_data'].latest().select('sqlite').path
+    query_text = dm['dicom_data'].latest().select('image_times.sql').load(data_interface_hint='txt')
+    c = sqlite3.connect(dicom_db_path)
+    dicom_times_df = pd.read_sql_query(query_text, c)
+    dicom_times_df = mridle.data_management.format_dicom_times_df(dicom_times_df)
+    slot_w_dicom_df = mridle.data_management.integrate_dicom_data(slot_df, dicom_times_df)
+
+    if example_date is None:
+        # choose a random date
+        random_row = slot_w_dicom_df[(~slot_w_dicom_df['start_time'].isna())
+                                     & (slot_w_dicom_df['start_time'] > start_date)
+                                     & (slot_w_dicom_df['end_time'] > end_date)
+                                     ].sample(1)
+        example_date = random_row['start_time'].dt.floor('d').iloc[0]
+
+    example_day = plot_example_day(slot_df, example_date, anonymize=anonymize)
+    daily_over_time = plot_appt_types_over_time(slot_df, start_date, end_date)
+    day_of_week = plot_appt_types_by_day_of_week(slot_df, start_date, end_date)
+    return (example_day & (daily_over_time | day_of_week)).configure_mark(opacity=0.5)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--data_dir', default='mridle', help='The path to the data directory, or key to DataManager')
+    parser.add_argument('--output_dir', default='mridle', help='The path of the location to save the figure to')
+    parser.add_argument('--example_date', default=None, help='The date to plot in the example day subplot')
+    parser.add_argument('--start_date', default='01/14/2019', help='The start date for the summary subplots')
+    parser.add_argument('--end_date', default='05/01/2019', help='The end date for the summary subplots')
+    args = parser.parse_args()
+
+    chart = plot_dave_b(args.data_dir, example_date=args.example_date, start_date=args.start_date,
+                        end_date=args.end_date, anonymize=True)
+    altair_saver.save(chart, os.path.join(args.output_dir, 'dave_b_1.png'))
+
+
+if __name__ == '__main__':
+    main()
