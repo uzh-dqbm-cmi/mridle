@@ -103,18 +103,16 @@ mridle.plotting_utilities.plot_a_day_for_device(slot_df, 'MR-N1', year, month, d
 ```
 
 ### Data Validation
-Compare to examples collected manually from Dispo
-(only works on USZ machine)
+Compares data from the extract to the examples collected manually from Dispo. Plot separates data per year and each point
+represents aggregated data for a single day. Each one of this individual points is calculated taking the ratio of appointments in the extract divided by the number of appointments in the dispo data. Ideally each one of these points should be close to 1 since the numbers should be similar. (only works on USZ machine)
 ```python
 dispo_examples = dm['dispo_data']['manual_examples.yaml'].load()
 dispo_df = mridle.data_management.build_dispo_df(dispo_examples)
 
-day = 14
-month = 1
-year = 2019
-machine = 'MR1'
-slot_type = 'show'
-dispo_patids, slot_df_patids = mridle.data_management.validate_against_dispo_data(dispo_df, slot_df, day, month, year, slot_type)
+slot_type_detailed = 'show'
+df_exp1 = mridle.data_management.generate_data_firstexperiment_plot(dispo_df, slot_df)
+df_ratios = mridle.data_management.calculate_ratios_experiment(df_exp1, 'show')
+mridle.plotting_utilities.plot_validation_experiment(df_ratios)
 ```
 
 ## Constructing Model Feature Sets
