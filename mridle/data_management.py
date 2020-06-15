@@ -527,9 +527,10 @@ def calculate_ratios_experiment(df_experiment: pd.DataFrame, slot_type_detailed:
         slot_type_detailed: string with value ['show', 'soft no-show', 'hard no-show', 'inpatient'].
 
 
-    Returns: dataframe with single column for ratio calculated between dispo and extract. If you specify 'show' as
-        the type, then the resulting dataframe will have one column with the ratio of 'show' appointments.
-        This ratio is calculated as: ratio = # of shows in the extract / # of shows in the dispo data
+    Returns: dataframe with three columns. These are ['date','year','ratio']. The last column being the
+        ratio calculated between dispo and extract. If you specify 'show' as the type, then the resulting
+        ratio column will have the ratio of 'show' appointments. This ratio is calculated as:
+        ratio = # of shows in the extract / # of shows in the dispo data
 
     """
 
