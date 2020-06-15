@@ -369,9 +369,10 @@ def plot_pos_class_freq_per_x(input_df: pd.DataFrame, var_x: str, var2freq: str,
     sns.relplot(x=var_x, y=var_y, alpha=0.8, size='frequencies', sizes=(40, 400), data=output_df)
 
 
-def plot_validation_experiment(df_ratio):
+def plot_validation_experiment(df_ratio: pd.DataFrame) -> alt.Chart:
     """
-    Plots ratio of a variable of interest between official value and extract value
+    Plots variable in a scatter column plot per year. Variable is the ratio between official value and extract value
+    obtained in pre-processing step.
 
     Args:
         df_ratio: dataframe with ratio calculated between dispo and extract
@@ -411,4 +412,4 @@ def plot_validation_experiment(df_ratio):
         stroke=None
     )
 
-    stripplot.display()
+    return stripplot

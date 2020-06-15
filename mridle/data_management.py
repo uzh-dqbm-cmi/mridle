@@ -412,7 +412,7 @@ def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
     Convert dispo file to dataframe and converts date column to pd.datetime format.
 
     Args:
-        dispo_examples: List of dictionary containing appointment information
+        dispo_examples: List of dictionaries containing appointment information
 
     Returns: Dataframe with datetime type conversions
 
@@ -426,9 +426,8 @@ def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
 def string_set(a_list):
     return set([str(i) for i in a_list])
 
-
 def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, day: int, month: int, year: int,
-                                slot_type: str) -> Set[str]:
+                                slot_type_detailed: str) -> Set[str]:
     """
     Identifies any appointment IDs that are in dispo_data or slot_df and not vice versa.
 
@@ -438,31 +437,32 @@ def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame,
         day: day numeric value
         month: month numeric value
         year: year numeric value
-        slot_type: string with value ['show', 'soft no-show', 'hard no-show']
+        slot_type: string with value ['show', 'soft no-show', 'hard no-show'].
+        When `show` is selected, `inpatient` appointments are also included.
 
     Returns:
         dispo_patids: set of strings with patient IDs from dispo
         slot_df_patids set of strings with patient IDs from extract
 
     """
-    if slot_type == 'show':
-        slot_types = ['show', 'inpatient']
-    elif slot_type == 'soft no-show':
-        slot_types = ['soft no-show']
-    elif slot_type == 'hard no-show':
-        slot_types = ['hard no-show']
+    if slot_type_detailed == 'show':
+        slot_type_detailed = ['show', 'inpatient']
+    elif slot_type_detailed == 'soft no-show':
+        slot_type_detailed = ['soft no-show']
+    elif slot_type_detailed == 'hard no-show':
+        slot_type_detailed = ['hard no-show']
     else:
         print('invalid type')
         return
     selected_dispo_rows = dispo_data[(dispo_data['date'].dt.day == day)
                                      & (dispo_data['date'].dt.month == month)
                                      & (dispo_data['date'].dt.year == year)
-                                     & (dispo_data['type'].isin(slot_types))
+                                     & (dispo_data['type'].isin(slot_type_detailed))
                                      ]
     selected_slot_df_rows = slot_df[(slot_df['start_time'].dt.day == day)
                                     & (slot_df['start_time'].dt.month == month)
                                     & (slot_df['start_time'].dt.year == year)
-                                    & (slot_df['slot_type_detailed'].isin(slot_types))
+                                    & (slot_df['slot_type_detailed'].isin(slot_type_detailed))
                                     ]
     dispo_patids = string_set(list(selected_dispo_rows['patient_id'].unique()))
     slot_df_patids = string_set(list(selected_slot_df_rows['MRNCmpdId'].unique()))
@@ -477,7 +477,7 @@ def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame,
 
 def generate_data_firstexperiment_plot(dispo_data: pd.DataFrame, slot_df: pd.DataFrame) -> pd.DataFrame:
     '''
-    Recursively iterates over unique dates in dispo_data (software data) and slot_df (extract)
+    Iterates over unique dates in dispo_data (software data) and slot_df (extract)
     For each UNIQUE date, counts how many ["show","soft no-show","hard no-show"] there are.
 
     Args:
@@ -516,25 +516,29 @@ def generate_data_firstexperiment_plot(dispo_data: pd.DataFrame, slot_df: pd.Dat
     return df
 
 
-def calculate_ratios(df_experiment: pd.DataFrame, status: str) -> pd.DataFrame:
+def calculate_ratios_experiment(df_experiment: pd.DataFrame, slot_type_detailed: str) -> pd.DataFrame:
     """
     Calculates ratios between number of show, soft no-show and hard no-show for plot
 
     Args:
         df_experiment: dataframe that contains num_shows, num_softnoshows,
              num_hard_noshow per date and if it is from extract or dispo
+        slot_type_detailed: string with value ['show', 'soft no-show', 'hard no-show', 'inpatient'].
 
-    Returns: dataframe with ratio calculated between dispo and extract
+
+    Returns: dataframe with single column for ratio calculated between dispo and extract. If you specify 'show' as
+        the type, then the resulting dataframe will have one column with the ratio of 'show' appointments.
+        This ratio is calculated as: ratio = # of shows in the extract / # of shows in the dispo data
 
     """
 
-    if status == 'show':
+    if slot_type_detailed == 'show':
         drop_col = ['dispo_sns', 'dispo_hns', 'extract_sns', 'extract_hns']
         drop_col2 = ['extract_show', 'dispo_show']
-    elif status == 'soft no-show':
+    elif slot_type_detailed == 'soft no-show':
         drop_col = ['dispo_show', 'dispo_hns', 'extract_show', 'extract_hns']
         drop_col2 = ['extract_sns', 'dispo_sns']
-    elif status == 'hard no-show':
+    elif slot_type_detailed == 'hard no-show':
         drop_col = ['dispo_sns', 'dispo_show', 'extract_sns', 'extract_show']
         drop_col2 = ['extract_hns', 'dispo_hns']
 
