@@ -426,6 +426,7 @@ def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
 def string_set(a_list):
     return set([str(i) for i in a_list])
 
+
 def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, day: int, month: int, year: int,
                                 slot_type_detailed: str) -> Set[str]:
     """
