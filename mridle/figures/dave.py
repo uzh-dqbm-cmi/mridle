@@ -124,10 +124,10 @@ def plot_appt_types_over_time(df: pd.DataFrame, start_date, end_date, color_map=
 
     return alt.Chart(df_filtered).mark_line(strokeWidth=3).encode(
         y=alt.Y('count(FillerOrderNo):N', title='Appt Count'),
-        x=alt.X('monthdate(week):T', title='Week', axis=alt.Axis(format='%b %d')),
+        x=alt.X('yearmonthdate(week):T', title='Week', axis=alt.Axis(format='%b %d')),
         order=alt.Order("monthdate(week)"),
         color=alt.Color('slot_type_detailed:N', scale=color_scale, legend=alt.Legend(title='Slot Type (detailed)')),
-        tooltip='monthdate(start_time)',
+        tooltip='monthdate(week)',
     ).properties(
         width=475,
         height=250,
