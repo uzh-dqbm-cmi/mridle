@@ -204,7 +204,7 @@ def plot_dave_b(data_dir, example_date, start_date, end_date, anonymize=True):
     example_day = plot_example_day(slot_df, example_date, anonymize=anonymize)
     daily_over_time = plot_appt_types_over_time(slot_df, start_date, end_date)
     day_of_week = plot_appt_types_by_day_of_week(slot_df, start_date, end_date)
-    return (example_day & (daily_over_time | day_of_week)).configure_mark(opacity=0.5)
+    return (example_day & (daily_over_time | day_of_week)).configure_mark(opacity=0.75)
 
 
 def main():
