@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import pgeocode
+from mridle.data_management import build_slot_df
 
 
 def identify_end_times(row: pd.DataFrame) -> pd.datetime:
@@ -188,12 +189,6 @@ def build_harvey_et_al_features_set(status_df: pd.DataFrame, drop_id_col=True) -
     status_df = feature_distance_to_usz(status_df)
     status_df = feature_historic_no_show_count(status_df)
 
-    # re-shape into slot_df
-    status_df = status_df.sort_values(['FillerOrderNo', 'date'])
-    show_slot_type_events = status_df[(status_df['PatientClass'] == 'ambulant') & (status_df['OrderStatus'] == 'u') &
-                                      (status_df['now_status'] == 'started')].copy()
-    no_show_slot_type_events = status_df[status_df['NoShow']].copy()
-
     agg_dict = {
         'NoShow': 'min',
         'sched_for_hour': 'first',
@@ -205,17 +200,6 @@ def build_harvey_et_al_features_set(status_df: pd.DataFrame, drop_id_col=True) -
         'historic_no_show_cnt': 'last',
     }
 
-    # there should be one show appt per FillerOrderNo
-    show_slot_df = show_slot_type_events.groupby(['FillerOrderNo']).agg(agg_dict).reset_index()
+    slot_df = build_slot_df(status_df, agg_dict, include_id_cols=False)
 
-    # there may be multiple no-show appts per FillerOrderNo
-    no_show_slot_df = no_show_slot_type_events.groupby(['FillerOrderNo', 'was_sched_for_date']).agg(
-        agg_dict).reset_index()
-    no_show_slot_df.drop('was_sched_for_date', axis=1, inplace=True)
-
-    new_slot_df = pd.concat([show_slot_df, no_show_slot_df])
-
-    if drop_id_col:
-        new_slot_df.drop('FillerOrderNo', axis=1, inplace=True)
-
-    return new_slot_df
+    return slot_df
