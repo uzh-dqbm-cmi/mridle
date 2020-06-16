@@ -107,7 +107,7 @@ def plot_appt_types_over_time(df: pd.DataFrame, start_date, end_date, color_map=
 
     # create week column for plotting
     df_filtered['week'] = df_filtered['start_time'] - pd.to_timedelta(df_filtered['start_time'].dt.dayofweek, unit='d')
-    df_filtered['week'] = df_filtered['week'].dt.date
+    df_filtered['week'] = pd.to_datetime(df_filtered['week'].dt.date)
 
     start_date = pd.to_datetime(start_date)
     end_date = pd.to_datetime(end_date)
@@ -157,6 +157,7 @@ def plot_appt_types_by_day_of_week(df: pd.DataFrame, start_date, end_date, color
     if df_filtered.shape[0] == 0:
         raise ValueError('No data found in that date range')
 
+    df_filtered['weekday'] = df_filtered['start_time'].dt.dayofweek
     day_of_week_pivot = pd.pivot_table(df_filtered, index='slot_type_detailed', columns='weekday',
                                        values='FillerOrderNo', aggfunc='count')
     day_of_week_pivot_percent = day_of_week_pivot / day_of_week_pivot.sum()
