@@ -96,6 +96,21 @@ def feature_modality(status_df: pd.DataFrame) -> pd.DataFrame:
     return status_df
 
 
+def feature_insurance_class(status_df: pd.DataFrame) -> pd.DataFrame:
+    status_df['insurance_class'] = status_df['Klasse']
+    return status_df
+
+
+def feature_sex(status_df: pd.DataFrame) -> pd.DataFrame:
+    status_df.rename(columns={'Sex': 'sex'}, inplace=True)
+    return status_df
+
+
+def feature_age(status_df: pd.DataFrame) -> pd.DataFrame:
+    status_df['age'] = pd.to_datetime(status_df['date']).dt.year - pd.to_datetime(status_df['DateOfBirth']).dt.year
+    return status_df
+
+
 def feature_marital(status_df: pd.DataFrame) -> pd.DataFrame:
     """
     Label teh Zivilstand of the patient in English.
@@ -129,7 +144,6 @@ def feature_marital(status_df: pd.DataFrame) -> pd.DataFrame:
 def feature_distance_to_usz(status_df: pd.DataFrame) -> pd.DataFrame:
     """
     Calculate distance between the patient's home post code and the post code of the hospital.
-    Note: this is slow!! 6:30 minutes for 3 month dataset
 
     Args:
         status_df: A row-per-status-change dataframe.
@@ -138,12 +152,11 @@ def feature_distance_to_usz(status_df: pd.DataFrame) -> pd.DataFrame:
     """
     dist = pgeocode.GeoDistance('ch')
     usz_post_code = '8091'
-    status_df['WohnadrPLZ_str'] = status_df['WohnadrPLZ'].astype(str)
+    status_df['Zip'] = status_df['Zip'].astype(str)
 
-    unique_zips = pd.DataFrame(status_df['WohnadrPLZ_str'].unique(), columns=['WohnadrPLZ_str'])
-    unique_zips['distance_to_usz'] = unique_zips['WohnadrPLZ_str'].apply(lambda x:
-                                                                         dist.query_postal_code(x, usz_post_code))
-    status_df = pd.merge(status_df, unique_zips, on='WohnadrPLZ_str', how='left')
+    unique_zips = pd.DataFrame(status_df['Zip'].unique(), columns=['Zip'])
+    unique_zips['distance_to_usz'] = unique_zips['Zip'].apply(lambda x: dist.query_postal_code(x, usz_post_code))
+    status_df = pd.merge(status_df, unique_zips, on='Zip', how='left')
     return status_df
 
 
@@ -185,6 +198,9 @@ def build_harvey_et_al_features_set(status_df: pd.DataFrame, drop_id_col=True) -
     status_df = feature_days_scheduled_in_advance(status_df)
     status_df = feature_day_of_week(status_df)
     status_df = feature_modality(status_df)
+    status_df = feature_insurance_class(status_df)
+    status_df = feature_sex(status_df)
+    status_df = feature_age(status_df)
     status_df = feature_marital(status_df)
     status_df = feature_distance_to_usz(status_df)
     status_df = feature_historic_no_show_count(status_df)
@@ -194,8 +210,12 @@ def build_harvey_et_al_features_set(status_df: pd.DataFrame, drop_id_col=True) -
         'sched_for_hour': 'first',
         'days_sched_in_advance': 'first',
         'modality': 'last',
+        'insurance_class': 'last',
         'day_of_week': 'last',
+        'sex': 'last',
+        'age': 'last',
         'marital': 'last',
+        'Zip': 'last',
         'distance_to_usz': 'last',
         'historic_no_show_cnt': 'last',
     }
