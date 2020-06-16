@@ -367,3 +367,49 @@ def plot_pos_class_freq_per_x(input_df: pd.DataFrame, var_x: str, var2freq: str,
 
     sns.set(style='white')
     sns.relplot(x=var_x, y=var_y, alpha=0.8, size='frequencies', sizes=(40, 400), data=output_df)
+
+
+def plot_validation_experiment(df_ratio: pd.DataFrame) -> alt.Chart:
+    """
+    Plots variable in a scatter column plot per year. Variable is the ratio between official value and extract value
+    obtained in pre-processing step.
+
+    Args:
+        df_ratio: dataframe with ratio calculated between dispo and extract
+
+    Returns: plot
+
+    """
+
+    df_ratio["date"] = pd.to_datetime(df_ratio["date"])
+    source = df_ratio
+
+    stripplot = alt.Chart(source, width=40).mark_circle(size=50).encode(
+        x=alt.X(
+            'jitter:Q',
+            title=None,
+            axis=alt.Axis(values=[0], ticks=True, grid=False, labels=False),
+            scale=alt.Scale(),
+        ),
+        y=alt.Y('ratio:Q'),
+        color=alt.Color('year:N', legend=None),
+        column=alt.Column(
+            'year:N',
+            header=alt.Header(
+                labelAngle=-90,
+                titleOrient='top',
+                labelOrient='bottom',
+                labelAlign='right',
+                labelPadding=3,
+            ),
+        ),
+    ).transform_calculate(
+        # Generate Gaussian jitter with a Box-Muller transform
+        jitter='sqrt(-2*log(random()))*cos(2*PI*random())'
+    ).configure_facet(
+        spacing=0
+    ).configure_view(
+        stroke=None
+    )
+
+    return stripplot
