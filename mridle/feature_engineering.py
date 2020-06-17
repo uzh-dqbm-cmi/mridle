@@ -1,10 +1,11 @@
+import datetime as dt
 import pandas as pd
 import numpy as np
 import pgeocode
 from mridle.data_management import build_slot_df
 
 
-def identify_end_times(row: pd.DataFrame) -> pd.datetime:
+def identify_end_times(row: pd.DataFrame) -> dt.datetime:
     """
     Identify end times of show appts. Could be used like this:
       status_df['end_time'] = status_df.apply(identify_end_times, axis=1)
@@ -35,7 +36,7 @@ def feature_scheduled_for_hour(status_df: pd.DataFrame) -> pd.DataFrame:
     return status_df
 
 
-def identify_sched_events(row: pd.DataFrame) -> pd.datetime:
+def identify_sched_events(row: pd.DataFrame) -> dt.datetime:
     """
     Identify scheduling events, for use in feature_days_scheduled_in_advance.
 
@@ -190,7 +191,7 @@ def feature_historic_no_show_count(status_df: pd.DataFrame) -> pd.DataFrame:
     return status_df
 
 
-def build_harvey_et_al_features_set(status_df: pd.DataFrame, drop_id_col=True) -> pd.DataFrame:
+def build_harvey_et_al_features_set(status_df: pd.DataFrame, include_id_cols=False) -> pd.DataFrame:
     """
     Builds a feature set that replicates the Harvey et al model as best we can.
     So far includes:
@@ -236,6 +237,6 @@ def build_harvey_et_al_features_set(status_df: pd.DataFrame, drop_id_col=True) -
         'historic_no_show_cnt': 'last',
     }
 
-    slot_df = build_slot_df(status_df, agg_dict, include_id_cols=False)
+    slot_df = build_slot_df(status_df, agg_dict, include_id_cols=include_id_cols)
 
     return slot_df
