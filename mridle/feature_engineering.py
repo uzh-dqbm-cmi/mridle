@@ -97,12 +97,22 @@ def feature_modality(status_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def feature_insurance_class(status_df: pd.DataFrame) -> pd.DataFrame:
-    status_df['insurance_class'] = status_df['Klasse']
+    insurance_class_map = {
+        'A': 'general',
+        'P': 'private',
+        'HP': 'half private',
+    }
+    status_df['insurance_class'] = status_df['Klasse'].apply(lambda x: insurance_class_map.get(x, 'unknown'))
     return status_df
 
 
 def feature_sex(status_df: pd.DataFrame) -> pd.DataFrame:
-    status_df.rename(columns={'Sex': 'sex'}, inplace=True)
+    gender_map = {
+        'weiblich': 'female',
+        'männlich': 'male',
+        'unbekannt': 'unknown',
+    }
+    status_df['sex'] = status_df['Sex'].apply(lambda x: gender_map.get(x, 'unknown'))
     return status_df
 
 
@@ -138,6 +148,11 @@ def feature_marital(status_df: pd.DataFrame) -> pd.DataFrame:
         np.NaN: 'blank',
     }
     status_df['marital'] = status_df['Zivilstand'].apply(lambda x: zivilstand_abbreviation_mapping[x])
+    return status_df
+
+
+def feature_post_code(status_df: pd.DataFrame) -> pd.DataFrame:
+    status_df['post_code'] = status_df['Zip']
     return status_df
 
 
@@ -202,6 +217,7 @@ def build_harvey_et_al_features_set(status_df: pd.DataFrame, drop_id_col=True) -
     status_df = feature_sex(status_df)
     status_df = feature_age(status_df)
     status_df = feature_marital(status_df)
+    status_df = feature_post_code(status_df)
     status_df = feature_distance_to_usz(status_df)
     status_df = feature_historic_no_show_count(status_df)
 
@@ -215,7 +231,7 @@ def build_harvey_et_al_features_set(status_df: pd.DataFrame, drop_id_col=True) -
         'sex': 'last',
         'age': 'last',
         'marital': 'last',
-        'Zip': 'last',
+        'post_code': 'last',
         'distance_to_usz': 'last',
         'historic_no_show_cnt': 'last',
     }
