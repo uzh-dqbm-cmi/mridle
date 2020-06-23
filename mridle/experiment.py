@@ -383,4 +383,4 @@ class Predictor:
         """
         data_processed = self.preprocess_fun(data_point)
         x, feature_cols = self.transform_func(data_processed, self.encoders)
-        return self.model.predict(x)
+        return self.model.predict(x), self.model.predict_proba(x)
