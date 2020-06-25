@@ -140,7 +140,7 @@ class ModelRun:
             Dict of encoders.
         """
         autoscaler = StandardScaler()
-        features = 'historic_no_show_cnt'
+        features = ['historic_no_show_cnt', 'no_show_before']
         train_set[features] = autoscaler.fit_transform(train_set[features])
 
         return {
