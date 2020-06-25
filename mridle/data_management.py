@@ -94,8 +94,7 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
         include_id_cols: whether to include patient and appointment id columns in the resulting dataset.
 
     Returns: row-per-appointment-slot dataframe.
-        If no agg_dict is passed, the resulting dataframe has the following default columns (illustrative, not a
-         complete list):
+        If no agg_dict is passed, the resulting dataframe has the following default columns:
          - FillerOrderNo: int, appt id
          - start_time: datetime, appt scheduled start time
          - end_time: datetime, appt scheduled end time
@@ -112,9 +111,9 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
         'start_time': 'min',
         'end_time': 'min',
         'NoShow': 'min',
+        'NoShow_outcome': 'min',
         'slot_type': 'min',
         'slot_type_detailed': 'min',
-        'NoShow_outcome': 'min',
         'EnteringOrganisationDeviceID': 'min',
         'UniversalServiceName': 'min',
     }
