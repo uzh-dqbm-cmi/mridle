@@ -81,16 +81,20 @@ def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def build_slot_df(input_status_df: pd.DataFrame) -> pd.DataFrame:
+def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None, include_id_cols: bool = True
+                  ) -> pd.DataFrame:
     """
     Convert status_df into slot_df. Identify "show" and "no show" appointment slots from status_df,
     and synthesize into a single dataframe of all appointments that occurred or were supposed to occur (but no-show'ed).
 
     Args:
         input_status_df: row-per-status-change dataframe.
+        agg_dict: aggregation dict to pass to pd.DataFrame.agg() that specifies  columns to include about the slots.
+            If no agg_dict is passed, the default will be used.
+        include_id_cols: whether to include patient and appointment id columns in the resulting dataset.
 
     Returns: row-per-appointment-slot dataframe.
-        The resulting dataframe has the columns (illustrative, not a complete list):
+        If no agg_dict is passed, the resulting dataframe has the following default columns:
          - FillerOrderNo: int, appt id
          - start_time: datetime, appt scheduled start time
          - end_time: datetime, appt scheduled end time
@@ -102,26 +106,29 @@ def build_slot_df(input_status_df: pd.DataFrame) -> pd.DataFrame:
          - UniversalServiceName: str, the kind of appointment
          - MRNCmpdId (if available): int, patient id
     """
+
+    default_agg_dict = {
+        'start_time': 'min',
+        'end_time': 'min',
+        'NoShow': 'min',
+        'NoShow_outcome': 'min',
+        'slot_type': 'min',
+        'slot_type_detailed': 'min',
+        'EnteringOrganisationDeviceID': 'min',
+        'UniversalServiceName': 'min',
+    }
+    if agg_dict is None:
+        agg_dict = default_agg_dict
+
+        if include_id_cols and 'MRNCmpdId' in input_status_df.columns:
+            agg_dict['MRNCmpdId'] = 'min'
+
     status_df = input_status_df.copy()
     status_df = status_df.sort_values(['FillerOrderNo', 'date'])
 
     status_df['start_time'] = status_df.apply(identify_start_times, axis=1)
     status_df['end_time'] = status_df.apply(identify_end_times, axis=1)
     status_df['end_time'] = status_df.groupby('FillerOrderNo')['end_time'].fillna(method='bfill')
-
-    # this agg dict will be used for getting data about both show and no-show appt slots
-    agg_dict = {
-        'start_time': 'min',
-        'end_time': 'min',
-        'NoShow': 'min',
-        'slot_type': 'min',
-        'slot_type_detailed': 'min',
-        'NoShow_outcome': 'min',
-        'EnteringOrganisationDeviceID': 'min',
-        'UniversalServiceName': 'min',
-    }
-    if 'MRNCmpdId' in status_df.columns:
-        agg_dict['MRNCmpdId'] = 'min'
 
     # there should be one show appt per FillerOrderNo
     show_slot_type_events = status_df[status_df['slot_type'].isin(['show', 'inpatient'])].copy()
@@ -134,6 +141,9 @@ def build_slot_df(input_status_df: pd.DataFrame) -> pd.DataFrame:
     no_show_slot_df.drop('was_sched_for_date', axis=1, inplace=True)
 
     slot_df = pd.concat([show_slot_df, no_show_slot_df], sort=False)
+
+    if not include_id_cols:
+        slot_df.drop('FillerOrderNo', axis=1, inplace=True)
 
     return slot_df
 

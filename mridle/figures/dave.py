@@ -104,8 +104,15 @@ def plot_example_day(df: pd.DataFrame, date, device='MR1', color_map=DETAILED_CO
 
 def plot_appt_types_over_time(df: pd.DataFrame, start_date, end_date, color_map=DETAILED_COLOR_MAP):
     df_filtered = df.copy()
+
+    # create week column for plotting
+    df_filtered['week'] = df_filtered['start_time'] - pd.to_timedelta(df_filtered['start_time'].dt.dayofweek, unit='d')
+    df_filtered['week'] = pd.to_datetime(df_filtered['week'].dt.date)
+
     start_date = pd.to_datetime(start_date)
     end_date = pd.to_datetime(end_date)
+    # make sure the end date is at a week boundary
+    end_date = end_date - pd.to_timedelta(end_date.dayofweek, unit='d')
     df_filtered = df_filtered[df_filtered['start_time'] >= start_date]
     df_filtered = df_filtered[df_filtered['start_time'] < end_date]
     if df_filtered.shape[0] == 0:
@@ -117,15 +124,28 @@ def plot_appt_types_over_time(df: pd.DataFrame, start_date, end_date, color_map=
 
     return alt.Chart(df_filtered).mark_line(strokeWidth=3).encode(
         y=alt.Y('count(FillerOrderNo):N', title='Appt Count'),
-        x=alt.X('monthdate(start_time):T', title='Day', axis=alt.Axis(format='%b %d')),
-        order=alt.Order("monthdate(start_time)"),
+        x=alt.X('yearmonthdate(week):T', title='Week', axis=alt.Axis(format='%b %d')),
+        order=alt.Order("monthdate(week)"),
         color=alt.Color('slot_type_detailed:N', scale=color_scale, legend=alt.Legend(title='Slot Type (detailed)')),
-        tooltip='monthdate(start_time)',
+        tooltip='monthdate(week)',
     ).properties(
         width=475,
         height=250,
         # title=title
     )
+
+
+def dayofweek_name(x):
+    days_of_week = {
+        0: 'Monday',
+        1: 'Tuesday',
+        2: 'Wednesday',
+        3: 'Thursday',
+        4: 'Friday',
+        5: 'Saturday',
+        6: 'Sunday'
+    }
+    return days_of_week[x]
 
 
 def plot_appt_types_by_day_of_week(df: pd.DataFrame, start_date, end_date, color_map=DETAILED_COLOR_MAP):
@@ -137,16 +157,22 @@ def plot_appt_types_by_day_of_week(df: pd.DataFrame, start_date, end_date, color
     if df_filtered.shape[0] == 0:
         raise ValueError('No data found in that date range')
 
-    # create color scale from color_map
+    df_filtered['weekday'] = df_filtered['start_time'].dt.dayofweek
+    day_of_week_pivot = pd.pivot_table(df_filtered, index='slot_type_detailed', columns='weekday',
+                                       values='FillerOrderNo', aggfunc='count')
+    day_of_week_pivot_percent = day_of_week_pivot / day_of_week_pivot.sum()
+    melted = pd.melt(day_of_week_pivot_percent.reset_index(), id_vars='slot_type_detailed', value_name='percent')
+    melted_filtered = melted[melted['weekday'] < 5].copy()
+    melted_filtered['weekday'] = melted_filtered['weekday'].apply(dayofweek_name)
+
     plot_color_map = deepcopy(color_map)
     color_scale = alt.Scale(domain=list(plot_color_map.keys()), range=list(plot_color_map.values()))
 
-    return alt.Chart(df_filtered).mark_line(strokeWidth=3).encode(
-        y=alt.Y('count(FillerOrderNo):N', title='Appt Count'),
-        x=alt.X('day(start_time):T', title='Day of the Week', axis=alt.Axis(format='%A')),
-        order=alt.Order("day(start_time)"),
+    return alt.Chart(melted_filtered).mark_line(strokeWidth=3).encode(
+        x=alt.X('weekday', title='Day of the Week', sort=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']),
+        y=alt.Y('percent', title='Percent of Total Appointments', axis=alt.Axis(format='%')),
         color=alt.Color('slot_type_detailed:N', scale=color_scale, legend=alt.Legend(title='Slot Type (detailed)')),
-        tooltip='day(start_time)',
+        tooltip='percent',
     ).properties(
         width=250,
         height=250,
@@ -178,7 +204,7 @@ def plot_dave_b(data_dir, example_date, start_date, end_date, anonymize=True):
     example_day = plot_example_day(slot_df, example_date, anonymize=anonymize)
     daily_over_time = plot_appt_types_over_time(slot_df, start_date, end_date)
     day_of_week = plot_appt_types_by_day_of_week(slot_df, start_date, end_date)
-    return (example_day & (daily_over_time | day_of_week)).configure_mark(opacity=0.5)
+    return (example_day & (daily_over_time | day_of_week)).configure_mark(opacity=0.75)
 
 
 def main():
