@@ -12,6 +12,7 @@ build_slot_df():
 
 """
 
+import datetime as dt
 import pandas as pd
 import numpy as np
 from typing import Dict, List, Set
@@ -361,7 +362,7 @@ def get_status_text(status_code: str) -> str:
         return 'unknown: {}'.format(status_code)
 
 
-def identify_start_times(row: pd.DataFrame) -> pd.datetime:
+def identify_start_times(row: pd.DataFrame) -> dt.datetime:
     """
     Identify start times of  appts. Could be used like this:
       status_df['start_time'] = status_df.apply(identify_end_times, axis=1)
@@ -379,7 +380,7 @@ def identify_start_times(row: pd.DataFrame) -> pd.datetime:
         return None
 
 
-def identify_end_times(row: pd.DataFrame) -> pd.datetime:
+def identify_end_times(row: pd.DataFrame) -> dt.datetime:
     """
     Identify end times of appts. Could be used like this:
       status_df['end_time'] = status_df.apply(identify_end_times, axis=1)
