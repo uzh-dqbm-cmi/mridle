@@ -431,6 +431,7 @@ def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
 
     """
     dispo_df = pd.DataFrame(dispo_examples)
+    dispo_df['patient_id'] = dispo_df['patient_id'].astype(int)
     dispo_df['start_time'] = pd.to_datetime(dispo_df['date'] + ' ' + dispo_df['start_time'], dayfirst=True)
     dispo_df['date'] = pd.to_datetime(dispo_df['date'], dayfirst=True)
     dispo_df['slot_type_detailed'] = np.where(dispo_df['type'] == 'no-show',
