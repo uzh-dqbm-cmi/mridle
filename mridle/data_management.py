@@ -472,7 +472,7 @@ def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame,
     selected_dispo_rows = dispo_data[(dispo_data['date'].dt.day == day)
                                      & (dispo_data['date'].dt.month == month)
                                      & (dispo_data['date'].dt.year == year)
-                                     & (dispo_data['type'].isin(slot_type_detailed))
+                                     & (dispo_data['slot_type_detailed'].isin(slot_type_detailed))
                                      ]
     selected_slot_df_rows = slot_df[(slot_df['start_time'].dt.day == day)
                                     & (slot_df['start_time'].dt.month == month)
