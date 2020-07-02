@@ -428,7 +428,11 @@ def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
 
     """
     dispo_df = pd.DataFrame(dispo_examples)
-    dispo_df['date'] = pd.to_datetime(dispo_df['date'])
+    dispo_df['date'] = pd.to_datetime(dispo_df['date'], dayfirst=True)
+    dispo_df['slot_type_detailed'] = np.where(dispo_df['type'] == 'no-show',
+                                              '{} no-show'.format(dispo_df['no_show_severity']),
+                                              dispo_df['type']
+                                              )
 
     return dispo_df
 
