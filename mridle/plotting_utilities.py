@@ -639,3 +639,54 @@ def plot_scatter_dispo_extract_per_year(dispo_data: pd.DataFrame, slot_df: pd.Da
         color='year').interactive()
 
     return plot_1 + plot_2
+
+
+def plot_scatter_dispo_extract_per_type(dispo_data: pd.DataFrame, slot_df: pd.DataFrame):
+    """
+    Generates a scatter plot where every point is represented by the (x, y) pair,
+    x being the # of patients in the dispo_df,
+    y being the # of patients in the extract_df,
+    all of these for a given slot_type_detailed
+
+    Args:
+        dispo_data: dataframe with appointment data from the dispo nurse
+        slot_df: dataframe with appointment data from extract
+
+    Returns: plot
+    """
+
+    x = np.arange(-10, 50, 0.5)
+    source = pd.DataFrame({
+        'x': x,
+        'y': x})
+
+    plot_1 = alt.Chart(source).mark_circle(size=10).encode(
+        x='x',
+        y='y',
+    )
+
+    df = pd.DataFrame(columns=['appointments_in_dispo', 'appointments_in_extract', 'slot_type_detailed'])
+    for date_elem in dispo_data.date.dt.date.unique():
+        print('\nCurrent date: {}'.format(date_elem))
+        day, month, year = date_elem.day, date_elem.month, date_elem.year
+        # 'show'
+        dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year, 'show')
+        df = df.append({'appointments_in_dispo': len(dispo_patids), 'appointments_in_extract': len(slot_df_patids),
+                        'slot_type_detailed': 'show'}, ignore_index=True)
+        # 'soft no-show'
+        dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year,
+                                                                   'soft no-show')
+        df = df.append({'appointments_in_dispo': len(dispo_patids), 'appointments_in_extract': len(slot_df_patids),
+                        'slot_type_detailed': 'soft no-show'}, ignore_index=True)
+        # 'hard no-show'
+        dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year,
+                                                                   'hard no-show')
+        df = df.append({'appointments_in_dispo': len(dispo_patids), 'appointments_in_extract': len(slot_df_patids),
+                        'slot_type_detailed': 'hard no-show'}, ignore_index=True)
+
+    plot_2 = alt.Chart(df).mark_circle(size=60).encode(
+        alt.X('appointments_in_dispo', scale=alt.Scale(domain=(-1, 40), clamp=False)),
+        alt.Y('appointments_in_extract', scale=alt.Scale(domain=(-1, 40), clamp=False)),
+        color='slot_type_detailed').interactive()
+
+    return plot_1 + plot_2
