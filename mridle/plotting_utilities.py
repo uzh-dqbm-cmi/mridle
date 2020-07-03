@@ -8,6 +8,7 @@ import altair as alt
 import seaborn as sns
 from copy import deepcopy
 from typing import Any, Dict
+from mridle.data_management import validate_against_dispo_data
 
 
 # ==================================================================
@@ -498,3 +499,38 @@ def plot_validation_experiment(df_ratio: pd.DataFrame) -> alt.Chart:
     )
 
     return stripplot
+
+
+def plot_dispo_extract_outside_overlap(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, slot_type_detailed: str):
+    """
+    Generates a scatter plot where evey point is represented by the (x, y) pair,
+    x being the # of patients in the dispo_df that are not in the extract and
+    y being the # of patients in the extract that are not in the dispo_df.
+
+    Args:
+        dispo_data: Dataframe with appointment data.
+        slot_df: Dataframe with appointment data from extract.
+
+    Returns: scatter plot explained above.
+    """
+    df = pd.DataFrame(columns=['year', 'dispo_not_extract', 'extract_not_dispo'])
+    for date_elem in dispo_data.date.dt.date.unique():
+        print('\nCurrent date: {}'.format(date_elem))
+        day, month, year = date_elem.day, date_elem.month, date_elem.year
+        # Identify how many appointments of a given 'type' in dispo_data and extract
+        dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year,
+                                                                   slot_type_detailed)
+
+        in_dispo_not_slot_df = len(dispo_patids.difference(slot_df_patids))
+        in_slot_df_not_dispo = len(slot_df_patids.difference(dispo_patids))
+        df = df.append({'year': date_elem.year, 'dispo_not_extract': in_dispo_not_slot_df,
+                        'extract_not_dispo': in_slot_df_not_dispo}, ignore_index=True)
+
+    df['year'] = df.year.astype(str)
+
+    plot = alt.Chart(df).mark_point(size=60).encode(
+        alt.X('dispo_not_extract', scale=alt.Scale(domain=(-1, 10), clamp=False)),
+        alt.Y('extract_not_dispo', scale=alt.Scale(domain=(-1, 10), clamp=False)),
+        color='year').interactive()
+
+    return plot
