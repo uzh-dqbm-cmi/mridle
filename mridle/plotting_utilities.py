@@ -8,7 +8,7 @@ import altair as alt
 import seaborn as sns
 from copy import deepcopy
 from typing import Any, Dict
-from mridle.data_management import validate_against_dispo_data
+from mridle.data_management import validate_against_dispo_data, jaccard_index
 
 
 # ==================================================================
@@ -534,3 +534,62 @@ def plot_dispo_extract_outside_overlap(dispo_data: pd.DataFrame, slot_df: pd.Dat
         color='year').interactive()
 
     return plot
+
+
+def plot_scatter_bar_jaccard_per_type(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, slot_type_detailed: str,
+                                      color_map: Dict = DETAILED_COLOR_MAP, highlight: Any = None):
+    """
+    Calculates the Jaccard Index per day and plots it per year
+
+    Args:
+        color_map: the colors to use for eah appointment type.
+        dispo_data: Dataframe with appointment data
+        slot_df: Dataframe with appointment data from extract
+
+    Returns: Scatter bar plot with each point representing the Jaccard index per day assessed.
+    """
+    # create color scale from color_map, modifying it based on highlight if appropriate
+    plot_color_map = deepcopy(color_map)
+    if highlight is not None:
+        plot_color_map = update_color_map_with_highlight(highlight, plot_color_map)
+
+    color_scale = alt.Scale(domain=list(plot_color_map.keys()), range=list(plot_color_map.values()))
+
+    df = pd.DataFrame(columns=['year', 'jaccard', 'slot_type'])
+    for date_elem in dispo_data.date.dt.date.unique():
+        print('\nCurrent date: {}'.format(date_elem))
+        day, month, year = date_elem.day, date_elem.month, date_elem.year
+        # Identify appointments for a given 'type' in dispo_data and extract
+        dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year,
+                                                                   slot_type_detailed)
+
+        jaccard = jaccard_index(dispo_patids, slot_df_patids)
+
+        df = df.append({'year': date_elem.year, 'jaccard': jaccard, 'slot_type': slot_type_detailed}, ignore_index=True)
+
+    stripplot = alt.Chart(df, width=40).mark_circle(size=50).encode(
+        x=alt.X(
+            'jitter:Q',
+            title=None,
+            axis=alt.Axis(values=[0], ticks=True, grid=False, labels=False),
+            scale=alt.Scale(),
+        ),
+        y=alt.Y('jaccard:Q'),
+        color=alt.Color('slot_type:N', scale=color_scale),
+        # color=alt.Color('year:N', legend=None),
+        column=alt.Column(
+            'year:N',
+            header=alt.Header(
+                labelAngle=-90,
+                titleOrient='top',
+                labelOrient='bottom',
+                labelAlign='right',
+                labelPadding=3,
+            ),
+        ),
+    ).transform_calculate(
+        # Generate Gaussian jitter with a Box-Muller transform
+        jitter='sqrt(-2*log(random()))*cos(2*PI*random())'
+    ).configure_facet(spacing=0).configure_view(stroke=None)
+
+    return stripplot
