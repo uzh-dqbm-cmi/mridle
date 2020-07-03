@@ -38,6 +38,17 @@ DEFAULT_COLOR_MAP = {
     'inpatient': 'grey',
 }
 
+DETAILED_COLOR_MAP = {
+    'show': 'blue',
+    'soft no-show': 'orange',
+    'hard no-show': 'red',
+    'inpatient': 'grey',
+}
+STROKE_MAP = {
+    #     'rescheduled': 'black',
+    'canceled': 'black',
+}
+
 
 def alt_plot_date_range_for_device(df: pd.DataFrame, device: str = 'MR1', start_date: str = PROJECT_START_DATE,
                                    end_date: str = PROJECT_END_DATE, color_map: Dict = DEFAULT_COLOR_MAP,
@@ -131,6 +142,80 @@ def update_color_map_with_highlight(highlight: Any, color_map: Dict, color_schem
                 if entry != highlight:
                     color_map[entry] = color_scheme['grey']
     return color_map
+
+
+def plot_example_day_against_dispo(slot_df: pd.DataFrame, dispo_df: pd.DataFrame, date, device='MR1',
+                                   color_map=DETAILED_COLOR_MAP, stroke_map=STROKE_MAP, anonymize=True,
+                                   height_factor=20):
+    """
+    Plot completed, inpatient, and no-show appointments for one device for a day.
+
+    Args:
+        df: a one-row-per-slot dataframe.
+        device: the device to plot
+        date: date to plot
+        color_map: the colors to use for each appointment type.
+        stroke_map: the colors to use for each NoShow_outcome type.
+        anonymize: whether to anonymize the data by shifting it by a random amount.
+        height_factor: multiplier for how tall to make the plot based on the number of days plotted
+
+    Returns: alt.Chart
+
+    """
+
+    # prep dispo_df and slot_df and combine them
+    dispo_df_copy = dispo_df.copy()
+    dispo_df_copy['source'] = 'dispo'
+    dispo_df_copy['end_time'] = dispo_df_copy['start_time'] + pd.to_timedelta(30, unit='minutes')
+    dispo_df['EnteringOrganisationDeviceID'] = dispo_df['machine']
+
+    slot_df_copy = slot_df.copy()
+    slot_df_copy['patient_id'] = slot_df_copy['MRNCmpdId']
+    slot_df_copy['source'] = 'extract'
+
+    slot_val_compare_df = pd.concat([dispo_df_copy, slot_df_copy])
+
+    # filter
+    start_date = pd.to_datetime(date)
+    end_date = start_date + pd.Timedelta(days=1)
+    slot_val_compare_df = slot_val_compare_df[slot_val_compare_df['start_time'] >= start_date]
+    slot_val_compare_df = slot_val_compare_df[slot_val_compare_df['start_time'] < end_date]
+    if slot_val_compare_df.shape[0] == 0:
+        raise ValueError('No data found in that date range')
+
+    if device not in slot_val_compare_df['EnteringOrganisationDeviceID'].unique():
+        raise ValueError('Device {} not found in data set'.format(device))
+    slot_val_compare_df = slot_val_compare_df[slot_val_compare_df['EnteringOrganisationDeviceID'] == device].copy()
+
+    title = device
+
+    if anonymize:
+        randomizer = pd.Timedelta(minutes=random.randint(-15, 15))
+        slot_val_compare_df['start_time'] = slot_val_compare_df['start_time'] + randomizer
+        slot_val_compare_df['end_time'] = slot_val_compare_df['end_time'] + randomizer
+        title = 'Anonymized Appointment Data'
+
+    # create color scale from color_map, modifying it based on highlight if appropriate
+    plot_color_map = deepcopy(color_map)
+    color_scale = alt.Scale(domain=list(plot_color_map.keys()), range=list(plot_color_map.values()))
+    stroke_scale = alt.Scale(domain=list(stroke_map.keys()), range=list(stroke_map.values()))
+
+    recommended_height = len(DEFAULT_COLOR_MAP) * height_factor
+
+    return alt.Chart(slot_val_compare_df).mark_bar(strokeWidth=3).encode(
+        y=alt.Y('source:N', title='Source'),
+        x=alt.X('hoursminutes(start_time):T', title='Time'),
+        x2=alt.X2('hoursminutes(end_time):T'),
+        color=alt.Color('slot_type_detailed:N', scale=color_scale, legend=alt.Legend(title='Slot Type (detailed)')),
+        stroke=alt.Stroke('NoShow_outcome', scale=stroke_scale, legend=alt.Legend(title='Canceled Appts')),
+        tooltip='patient_id',
+    ).configure_mark(
+        opacity=0.5,
+    ).properties(
+        width=800,
+        height=recommended_height,
+        title=title
+    )
 
 
 # ==================================================================

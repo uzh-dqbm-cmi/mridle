@@ -1,9 +1,11 @@
+import datetime as dt
 import pandas as pd
 import numpy as np
 import pgeocode
+from mridle.data_management import build_slot_df
 
 
-def identify_end_times(row: pd.DataFrame) -> pd.datetime:
+def identify_end_times(row: pd.DataFrame) -> dt.datetime:
     """
     Identify end times of show appts. Could be used like this:
       status_df['end_time'] = status_df.apply(identify_end_times, axis=1)
@@ -34,7 +36,7 @@ def feature_scheduled_for_hour(status_df: pd.DataFrame) -> pd.DataFrame:
     return status_df
 
 
-def identify_sched_events(row: pd.DataFrame) -> pd.datetime:
+def identify_sched_events(row: pd.DataFrame) -> dt.datetime:
     """
     Identify scheduling events, for use in feature_days_scheduled_in_advance.
 
@@ -95,6 +97,31 @@ def feature_modality(status_df: pd.DataFrame) -> pd.DataFrame:
     return status_df
 
 
+def feature_insurance_class(status_df: pd.DataFrame) -> pd.DataFrame:
+    insurance_class_map = {
+        'A': 'general',
+        'P': 'private',
+        'HP': 'half private',
+    }
+    status_df['insurance_class'] = status_df['Klasse'].apply(lambda x: insurance_class_map.get(x, 'unknown'))
+    return status_df
+
+
+def feature_sex(status_df: pd.DataFrame) -> pd.DataFrame:
+    gender_map = {
+        'weiblich': 'female',
+        'männlich': 'male',
+        'unbekannt': 'unknown',
+    }
+    status_df['sex'] = status_df['Sex'].apply(lambda x: gender_map.get(x, 'unknown'))
+    return status_df
+
+
+def feature_age(status_df: pd.DataFrame) -> pd.DataFrame:
+    status_df['age'] = pd.to_datetime(status_df['date']).dt.year - pd.to_datetime(status_df['DateOfBirth']).dt.year
+    return status_df
+
+
 def feature_marital(status_df: pd.DataFrame) -> pd.DataFrame:
     """
     Label teh Zivilstand of the patient in English.
@@ -125,10 +152,14 @@ def feature_marital(status_df: pd.DataFrame) -> pd.DataFrame:
     return status_df
 
 
+def feature_post_code(status_df: pd.DataFrame) -> pd.DataFrame:
+    status_df['post_code'] = status_df['Zip']
+    return status_df
+
+
 def feature_distance_to_usz(status_df: pd.DataFrame) -> pd.DataFrame:
     """
     Calculate distance between the patient's home post code and the post code of the hospital.
-    Note: this is slow!! 6:30 minutes for 3 month dataset
 
     Args:
         status_df: A row-per-status-change dataframe.
@@ -137,12 +168,11 @@ def feature_distance_to_usz(status_df: pd.DataFrame) -> pd.DataFrame:
     """
     dist = pgeocode.GeoDistance('ch')
     usz_post_code = '8091'
-    status_df['WohnadrPLZ_str'] = status_df['WohnadrPLZ'].astype(str)
+    status_df['Zip'] = status_df['Zip'].astype(str)
 
-    unique_zips = pd.DataFrame(status_df['WohnadrPLZ_str'].unique(), columns=['WohnadrPLZ_str'])
-    unique_zips['distance_to_usz'] = unique_zips['WohnadrPLZ_str'].apply(lambda x:
-                                                                         dist.query_postal_code(x, usz_post_code))
-    status_df = pd.merge(status_df, unique_zips, on='WohnadrPLZ_str', how='left')
+    unique_zips = pd.DataFrame(status_df['Zip'].unique(), columns=['Zip'])
+    unique_zips['distance_to_usz'] = unique_zips['Zip'].apply(lambda x: dist.query_postal_code(x, usz_post_code))
+    status_df = pd.merge(status_df, unique_zips, on='Zip', how='left')
     return status_df
 
 
@@ -161,7 +191,7 @@ def feature_historic_no_show_count(status_df: pd.DataFrame) -> pd.DataFrame:
     return status_df
 
 
-def build_harvey_et_al_features_set(status_df: pd.DataFrame, drop_id_col=True) -> pd.DataFrame:
+def build_harvey_et_al_features_set(status_df: pd.DataFrame, include_id_cols=False) -> pd.DataFrame:
     """
     Builds a feature set that replicates the Harvey et al model as best we can.
     So far includes:
@@ -184,38 +214,29 @@ def build_harvey_et_al_features_set(status_df: pd.DataFrame, drop_id_col=True) -
     status_df = feature_days_scheduled_in_advance(status_df)
     status_df = feature_day_of_week(status_df)
     status_df = feature_modality(status_df)
+    status_df = feature_insurance_class(status_df)
+    status_df = feature_sex(status_df)
+    status_df = feature_age(status_df)
     status_df = feature_marital(status_df)
+    status_df = feature_post_code(status_df)
     status_df = feature_distance_to_usz(status_df)
     status_df = feature_historic_no_show_count(status_df)
-
-    # re-shape into slot_df
-    status_df = status_df.sort_values(['FillerOrderNo', 'date'])
-    show_slot_type_events = status_df[(status_df['PatientClass'] == 'ambulant') & (status_df['OrderStatus'] == 'u') &
-                                      (status_df['now_status'] == 'started')].copy()
-    no_show_slot_type_events = status_df[status_df['NoShow']].copy()
 
     agg_dict = {
         'NoShow': 'min',
         'sched_for_hour': 'first',
         'days_sched_in_advance': 'first',
         'modality': 'last',
+        'insurance_class': 'last',
         'day_of_week': 'last',
+        'sex': 'last',
+        'age': 'last',
         'marital': 'last',
+        'post_code': 'last',
         'distance_to_usz': 'last',
         'historic_no_show_cnt': 'last',
     }
 
-    # there should be one show appt per FillerOrderNo
-    show_slot_df = show_slot_type_events.groupby(['FillerOrderNo']).agg(agg_dict).reset_index()
+    slot_df = build_slot_df(status_df, agg_dict, include_id_cols=include_id_cols)
 
-    # there may be multiple no-show appts per FillerOrderNo
-    no_show_slot_df = no_show_slot_type_events.groupby(['FillerOrderNo', 'was_sched_for_date']).agg(
-        agg_dict).reset_index()
-    no_show_slot_df.drop('was_sched_for_date', axis=1, inplace=True)
-
-    new_slot_df = pd.concat([show_slot_df, no_show_slot_df])
-
-    if drop_id_col:
-        new_slot_df.drop('FillerOrderNo', axis=1, inplace=True)
-
-    return new_slot_df
+    return slot_df
