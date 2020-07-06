@@ -375,7 +375,6 @@ def identify_start_times(row: pd.DataFrame) -> dt.datetime:
     if row['NoShow']:
         return row['was_sched_for_date']
     elif row['now_status'] == 'started':
-        # return row['date']
         return row['was_sched_for_date']
     else:
         return None
@@ -396,7 +395,6 @@ def identify_end_times(row: pd.DataFrame) -> dt.datetime:
     if row['NoShow']:
         return row['was_sched_for_date'] + pd.to_timedelta(30, unit='minutes')
     elif row['now_status'] == 'examined':
-        # return row['date']
         return row['was_sched_for_date'] + pd.to_timedelta(30, unit='minutes')
     else:
         return None
