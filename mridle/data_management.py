@@ -139,9 +139,12 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
     no_show_slot_type_events = status_df[status_df['NoShow']].copy()
     no_show_slot_df = no_show_slot_type_events.groupby(['FillerOrderNo', 'was_sched_for_date']).agg(
         agg_dict).reset_index()
-    no_show_slot_df.drop('was_sched_for_date', axis=1, inplace=True)
+    # this col may not exist, if there are no no-shows, because the groupby will be empty
+    if 'was_sched_for_date' in no_show_slot_df.columns:
+        no_show_slot_df.drop('was_sched_for_date', axis=1, inplace=True)
 
     slot_df = pd.concat([show_slot_df, no_show_slot_df], sort=False)
+    slot_df['FillerOrderNo'] = slot_df['FillerOrderNo'].astype(int)
 
     if not include_id_cols:
         slot_df.drop('FillerOrderNo', axis=1, inplace=True)
@@ -445,7 +448,7 @@ def string_set(a_list):
 
 
 def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, day: int, month: int, year: int,
-                                slot_type_detailed: str) -> Set[str]:
+                                slot_type_detailed: str, verbose=False) -> Set[str]:
     """
     Identifies any appointment IDs that are in dispo_data or slot_df and not vice versa.
 
@@ -484,12 +487,13 @@ def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame,
                                     ]
     dispo_patids = string_set(list(selected_dispo_rows['patient_id'].unique()))
     slot_df_patids = string_set(list(selected_slot_df_rows['MRNCmpdId'].unique()))
-    print('{} Dispo Pat IDs: \n{}'.format(len(dispo_patids), dispo_patids))
-    print('{} Slot_df Pat IDs: \n{}'.format(len(slot_df_patids), slot_df_patids))
+    if verbose:
+        print('{} Dispo Pat IDs: \n{}'.format(len(dispo_patids), dispo_patids))
+        print('{} Slot_df Pat IDs: \n{}'.format(len(slot_df_patids), slot_df_patids))
 
-    print()
-    print('In Dispo but not in Slot_df: {}'.format(dispo_patids.difference(slot_df_patids)))
-    print('In Slot_df but not in Dispo: {}'.format(slot_df_patids.difference(dispo_patids)))
+        print()
+        print('In Dispo but not in Slot_df: {}'.format(dispo_patids.difference(slot_df_patids)))
+        print('In Slot_df but not in Dispo: {}'.format(slot_df_patids.difference(dispo_patids)))
     return dispo_patids, slot_df_patids
 
 
