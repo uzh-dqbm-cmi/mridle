@@ -515,7 +515,6 @@ def plot_dispo_extract_slot_diffs(dispo_data: pd.DataFrame, slot_df: pd.DataFram
     """
     df = pd.DataFrame(columns=['year', 'dispo_not_extract', 'extract_not_dispo'])
     for date_elem in dispo_data.date.dt.date.unique():
-        print('\nCurrent date: {}'.format(date_elem))
         day, month, year = date_elem.day, date_elem.month, date_elem.year
         # Identify how many appointments of a given 'type' in dispo_data and extract
         dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year,
@@ -537,7 +536,8 @@ def plot_dispo_extract_slot_diffs(dispo_data: pd.DataFrame, slot_df: pd.DataFram
 def plot_scatter_bar_jaccard_per_type(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, slot_type_detailed: str,
                                       color_map: Dict = DETAILED_COLOR_MAP, highlight: Any = None):
     """
-    Calculates the Jaccard Index per day and plots it per year
+    Calculates the Jaccard Index per day, and plots the daily Jaccard values,
+    split into subplots for each year.
 
     Args:
         color_map: the colors to use for eah appointment type.
@@ -573,7 +573,6 @@ def plot_scatter_bar_jaccard_per_type(dispo_data: pd.DataFrame, slot_df: pd.Data
         ),
         y=alt.Y('jaccard:Q'),
         color=alt.Color('slot_type:N', scale=color_scale),
-        # color=alt.Color('year:N', legend=None),
         column=alt.Column(
             'year:N',
             header=alt.Header(
@@ -620,7 +619,6 @@ def plot_scatter_dispo_extract_slot_cnt_for_type(dispo_data: pd.DataFrame, slot_
 
     df = pd.DataFrame(columns=['year', 'appointments_in_dispo', 'appointments_in_extract'])
     for date_elem in dispo_data.date.dt.date.unique():
-        print('\nCurrent date: {}'.format(date_elem))
         day, month, year = date_elem.day, date_elem.month, date_elem.year
         # Identify how many 'shows' in dispo_data and extract
         dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year,
