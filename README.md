@@ -115,6 +115,75 @@ df_ratios = mridle.data_management.calculate_ratios_experiment(df_exp1, 'show')
 mridle.plotting_utilities.plot_validation_experiment(df_ratios)
 ```
 
+
+
+### Data Validation
+
+To compare data from the extract to the examples collected manually from Dispo using ratios.
+
+This function generates a scatter bar plot, where each scatter-bar corresponds to a single year, and every point within
+that scatter-bar corresponds to a single day. Each point representing a single day is obtained by aggregating
+appointment data from that day. It is calculated by taking the ratio of appointments in the extract divided by the
+number of appointments in the dispo data. Ideally each one of these points should be close to 1 since the numbers
+should be similar. A value over 1 represents a larger number of appointments in the extract than viewed by the dispo.
+(only works on USZ machine)
+
+```python
+dispo_examples = dm['dispo_data']['manual_examples.yaml'].load()
+dispo_df = mridle.data_management.build_dispo_df(dispo_examples)
+
+slot_type_detailed = 'show'
+df_exp1 = mridle.data_management.generate_data_firstexperiment_plot(dispo_df, slot_df)
+df_ratios = mridle.data_management.calculate_ratios_experiment(df_exp1, 'show')
+mridle.plotting_utilities.plot_validation_experiment(df_ratios)
+```
+
+To compare data from the extract to the examples collected manually from Dispo. Now using the Jaccard Index.
+
+This function generates a scatter bar plot, where each scatter-bar corresponds to a single year, and every point within
+that scatter-bar corresponds to a single day. Each point representing a single day is obtained by analyzing appointment
+data from that day. It is calculated by calculated the Jaccard Index.  When the sets match completely this number is 1.
+
+```python
+plot_scatter_bar_jaccard_per_type(dispo_df, slot_df, 'show')
+```
+
+To compare data from the extract to the examples collected manually from Dispo. Now with scatter plots.
+
+This function generates a scatter plot. X axis plots the number of appointments that are in the dispo but not in the
+hospital extract. Y axis plots the number of appointments that are in the hospital extract but not in the dispo.
+The closer that the points are plotted close to (0,0), the better the matching between Dispo and the hospital extract
+is.
+
+```python
+from mridle.plotting_utilities import plot_dispo_extract_slot_diffs
+plot_dispo_extract_slot_diffs(dispo_df, slot_df, 'show')
+```
+
+To compare data from the extract to the examples collected manually from Dispo. Still with scatter plots.
+
+This function generates a scatter plot where all available data is collected and split by 'slot_type_detailed' ('show',
+'soft no-show', 'hard no-show'). X axis plots the number of appointments in the dispo whereas Y axis plots the number
+of appointments in the hospital extract. Ideally, the plotted points should remain in the diagonal.
+
+```python
+from mridle.plotting_utilities import plot_scatter_dispo_extract_slot_cnt
+plot_scatter_dispo_extract_slot_cnt(dispo_df, slot_df)
+```
+
+To compare data from the extract to the examples collected manually from Dispo. Still with scatter plots.
+
+This function generates a scatter plot where all available data is collected for a given 'slot_type_detailed' ('show',
+'soft no-show', 'hard no-show'). Different colors in the graph represent different years collected in the data.number
+X axis plots the number of appointments in the dispo whereas Y axis plots the number of appointments in the hospital
+extract. Ideally, the plotted points should remain in the diagonal.
+
+```python
+from mridle.plotting_utilities import plot_scatter_dispo_extract_slot_cnt_for_type
+plot_scatter_dispo_extract_slot_cnt_for_type(dispo_df, slot_df, 'hard no-show')
+```
+
+
 ## Constructing Model Feature Sets
 Feature sets are constructed from `status_df`, using functionality from `mridle.feature_engineering`.
 
