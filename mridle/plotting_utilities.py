@@ -526,8 +526,6 @@ def plot_dispo_extract_slot_diffs(dispo_data: pd.DataFrame, slot_df: pd.DataFram
         df = df.append({'year': date_elem.year, 'dispo_not_extract': in_dispo_not_slot_df,
                         'extract_not_dispo': in_slot_df_not_dispo}, ignore_index=True)
 
-    # df['year'] = df.year.astype(str)
-
     plot = alt.Chart(df).mark_point(size=60).encode(
         alt.X('dispo_not_extract', scale=alt.Scale(domain=(-1, 10), clamp=False)),
         alt.Y('extract_not_dispo', scale=alt.Scale(domain=(-1, 10), clamp=False)),
@@ -630,8 +628,6 @@ def plot_scatter_dispo_extract_slot_cnt_for_type(dispo_data: pd.DataFrame, slot_
 
         df = df.append({'year': date_elem.year, 'appointments_in_dispo': len(dispo_patids),
                         'appointments_in_extract': len(slot_df_patids)}, ignore_index=True)
-
-    # df['year'] = df.year.astype(str)
 
     plot_slot_cnt = alt.Chart(df).mark_point(size=60).encode(
         alt.X('appointments_in_dispo', scale=alt.Scale(domain=(-1, 40), clamp=False)),
