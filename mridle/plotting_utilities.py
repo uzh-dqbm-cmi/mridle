@@ -501,7 +501,7 @@ def plot_validation_experiment(df_ratio: pd.DataFrame) -> alt.Chart:
     return stripplot
 
 
-def plot_dispo_extract_outside_overlap(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, slot_type_detailed: str):
+def plot_dispo_extract_slot_diffs(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, slot_type_detailed: str):
     """
     Generates a scatter plot where evey point is represented by the (x, y) pair,
     x being the # of patients in the dispo_df that are not in the extract and
@@ -526,12 +526,12 @@ def plot_dispo_extract_outside_overlap(dispo_data: pd.DataFrame, slot_df: pd.Dat
         df = df.append({'year': date_elem.year, 'dispo_not_extract': in_dispo_not_slot_df,
                         'extract_not_dispo': in_slot_df_not_dispo}, ignore_index=True)
 
-    df['year'] = df.year.astype(str)
+    # df['year'] = df.year.astype(str)
 
     plot = alt.Chart(df).mark_point(size=60).encode(
         alt.X('dispo_not_extract', scale=alt.Scale(domain=(-1, 10), clamp=False)),
         alt.Y('extract_not_dispo', scale=alt.Scale(domain=(-1, 10), clamp=False)),
-        color='year').interactive()
+        color='year:O').interactive()
 
     return plot
 
@@ -557,7 +557,6 @@ def plot_scatter_bar_jaccard_per_type(dispo_data: pd.DataFrame, slot_df: pd.Data
 
     df = pd.DataFrame(columns=['year', 'jaccard', 'slot_type'])
     for date_elem in dispo_data.date.dt.date.unique():
-        print('\nCurrent date: {}'.format(date_elem))
         day, month, year = date_elem.day, date_elem.month, date_elem.year
         # Identify appointments for a given 'type' in dispo_data and extract
         dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year,
@@ -615,7 +614,7 @@ def plot_scatter_dispo_extract_per_year(dispo_data: pd.DataFrame, slot_df: pd.Da
         'x': x,
         'y': x})
 
-    plot_1 = alt.Chart(source).mark_circle(size=10).encode(
+    plot_diagonal = alt.Chart(source).mark_circle(size=10).encode(
         x='x',
         y='y',
     )
@@ -631,17 +630,17 @@ def plot_scatter_dispo_extract_per_year(dispo_data: pd.DataFrame, slot_df: pd.Da
         df = df.append({'year': date_elem.year, 'appointments_in_dispo': len(dispo_patids),
                         'appointments_in_extract': len(slot_df_patids)}, ignore_index=True)
 
-    df['year'] = df.year.astype(str)
+    # df['year'] = df.year.astype(str)
 
-    plot_2 = alt.Chart(df).mark_point(size=60).encode(
+    plot_slot_cnt = alt.Chart(df).mark_point(size=60).encode(
         alt.X('appointments_in_dispo', scale=alt.Scale(domain=(-1, 40), clamp=False)),
         alt.Y('appointments_in_extract', scale=alt.Scale(domain=(-1, 40), clamp=False)),
-        color='year').interactive()
+        color='year:O').interactive()
 
-    return plot_1 + plot_2
+    return plot_diagonal + plot_slot_cnt
 
 
-def plot_scatter_dispo_extract_per_type(dispo_data: pd.DataFrame, slot_df: pd.DataFrame):
+def plot_scatter_dispo_extract_slot_cnt(dispo_data: pd.DataFrame, slot_df: pd.DataFrame):
     """
     Generates a scatter plot where every point is represented by the (x, y) pair,
     x being the # of patients in the dispo_df,
@@ -660,14 +659,13 @@ def plot_scatter_dispo_extract_per_type(dispo_data: pd.DataFrame, slot_df: pd.Da
         'x': x,
         'y': x})
 
-    plot_1 = alt.Chart(source).mark_circle(size=10).encode(
+    plot_diagonal = alt.Chart(source).mark_circle(size=10).encode(
         x='x',
         y='y',
     )
 
     df = pd.DataFrame(columns=['appointments_in_dispo', 'appointments_in_extract', 'slot_type_detailed'])
     for date_elem in dispo_data.date.dt.date.unique():
-        print('\nCurrent date: {}'.format(date_elem))
         day, month, year = date_elem.day, date_elem.month, date_elem.year
         # 'show'
         dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year, 'show')
@@ -684,9 +682,9 @@ def plot_scatter_dispo_extract_per_type(dispo_data: pd.DataFrame, slot_df: pd.Da
         df = df.append({'appointments_in_dispo': len(dispo_patids), 'appointments_in_extract': len(slot_df_patids),
                         'slot_type_detailed': 'hard no-show'}, ignore_index=True)
 
-    plot_2 = alt.Chart(df).mark_circle(size=60).encode(
+    plot_slot_cnt = alt.Chart(df).mark_circle(size=60).encode(
         alt.X('appointments_in_dispo', scale=alt.Scale(domain=(-1, 40), clamp=False)),
         alt.Y('appointments_in_extract', scale=alt.Scale(domain=(-1, 40), clamp=False)),
         color='slot_type_detailed').interactive()
 
-    return plot_1 + plot_2
+    return plot_diagonal + plot_slot_cnt
