@@ -594,7 +594,8 @@ def plot_scatter_bar_jaccard_per_type(dispo_data: pd.DataFrame, slot_df: pd.Data
     return stripplot
 
 
-def plot_scatter_dispo_extract_per_year(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, slot_type_detailed: str):
+def plot_scatter_dispo_extract_slot_cnt_for_type(dispo_data: pd.DataFrame, slot_df: pd.DataFrame,
+                                                 slot_type_detailed: str):
     """
     Generates a scatter plot where every point is represented by the (x, y) pair,
     x being the # of patients in the dispo_df,
