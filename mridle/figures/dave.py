@@ -8,40 +8,7 @@ import random
 import sqlite3
 import mridle
 from datatc import DataManager
-
-
-COLOR_SCHEME = {
-    'orange': '#EC9139',
-    'teal': '#54B89C',
-    'purple': '#9329A0',
-    'dark blue': '#3C50AF',
-    'light blue': '#4CA8EF',
-    'pink': '#D8538C',
-    'yellow': '#EAC559',
-    'red': '#CF2D20',
-    'light red': '#E7968F',
-    'green': '#6FC53B',
-    'grey': '#BCBCBC',
-    'dark purple': '#681E72',
-    'light purple': '#C184C9',
-}
-
-DEFAULT_COLOR_MAP = {
-    'show': 'blue',
-    'no-show': 'red',
-    'inpatient': 'grey',
-}
-
-DETAILED_COLOR_MAP = {
-    'show': 'blue',
-    'soft no-show': 'orange',
-    'hard no-show': 'red',
-    'inpatient': 'grey',
-}
-STROKE_MAP = {
-    #     'rescheduled': 'black',
-    'canceled': 'black',
-}
+from mridle.plotting_utilities import DEFAULT_COLOR_MAP, DETAILED_COLOR_MAP, STROKE_MAP
 
 
 def plot_example_day(df: pd.DataFrame, date, device='MR1', color_map=DETAILED_COLOR_MAP, stroke_map=STROKE_MAP,

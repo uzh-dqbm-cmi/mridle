@@ -12,6 +12,7 @@ build_slot_df():
 
 """
 
+import datetime as dt
 import pandas as pd
 import numpy as np
 from typing import Dict, List, Set
@@ -361,7 +362,7 @@ def get_status_text(status_code: str) -> str:
         return 'unknown: {}'.format(status_code)
 
 
-def identify_start_times(row: pd.DataFrame) -> pd.datetime:
+def identify_start_times(row: pd.DataFrame) -> dt.datetime:
     """
     Identify start times of  appts. Could be used like this:
       status_df['start_time'] = status_df.apply(identify_end_times, axis=1)
@@ -374,12 +375,12 @@ def identify_start_times(row: pd.DataFrame) -> pd.datetime:
     if row['NoShow']:
         return row['was_sched_for_date']
     elif row['now_status'] == 'started':
-        return row['date']
+        return row['was_sched_for_date']
     else:
         return None
 
 
-def identify_end_times(row: pd.DataFrame) -> pd.datetime:
+def identify_end_times(row: pd.DataFrame) -> dt.datetime:
     """
     Identify end times of appts. Could be used like this:
       status_df['end_time'] = status_df.apply(identify_end_times, axis=1)
@@ -394,7 +395,7 @@ def identify_end_times(row: pd.DataFrame) -> pd.datetime:
     if row['NoShow']:
         return row['was_sched_for_date'] + pd.to_timedelta(30, unit='minutes')
     elif row['now_status'] == 'examined':
-        return row['date']
+        return row['was_sched_for_date'] + pd.to_timedelta(30, unit='minutes')
     else:
         return None
 
@@ -428,7 +429,13 @@ def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
 
     """
     dispo_df = pd.DataFrame(dispo_examples)
-    dispo_df['date'] = pd.to_datetime(dispo_df['date'])
+    dispo_df['patient_id'] = dispo_df['patient_id'].astype(int)
+    dispo_df['start_time'] = pd.to_datetime(dispo_df['date'] + ' ' + dispo_df['start_time'], dayfirst=True)
+    dispo_df['date'] = pd.to_datetime(dispo_df['date'], dayfirst=True)
+    dispo_df['slot_type_detailed'] = np.where(dispo_df['type'] == 'no-show',
+                                              dispo_df['no_show_severity'] + ' no-show',
+                                              dispo_df['type']
+                                              )
 
     return dispo_df
 
@@ -468,7 +475,7 @@ def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame,
     selected_dispo_rows = dispo_data[(dispo_data['date'].dt.day == day)
                                      & (dispo_data['date'].dt.month == month)
                                      & (dispo_data['date'].dt.year == year)
-                                     & (dispo_data['type'].isin(slot_type_detailed))
+                                     & (dispo_data['slot_type_detailed'].isin(slot_type_detailed))
                                      ]
     selected_slot_df_rows = slot_df[(slot_df['start_time'].dt.day == day)
                                     & (slot_df['start_time'].dt.month == month)
