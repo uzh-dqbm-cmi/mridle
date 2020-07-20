@@ -32,20 +32,23 @@ COLOR_SCHEME = {
     'light purple': '#C184C9',
 }
 
+# determines the colors of the appointment slot boxes, when using slot_type
 DEFAULT_COLOR_MAP = {
     'show': 'blue',
     'no-show': 'red',
     'inpatient': 'grey',
 }
 
+# determines the colors of the appointment slot boxes, when using slot_type_detailed
 DETAILED_COLOR_MAP = {
     'show': 'blue',
     'soft no-show': 'orange',
     'hard no-show': 'red',
     'inpatient': 'grey',
 }
+
+# determines whether the appointment slot box is outlined, for outlining no_show_outcome == 'cancelled' appt slots
 STROKE_MAP = {
-    #     'rescheduled': 'black',
     'canceled': 'black',
 }
 
@@ -163,7 +166,7 @@ def plot_example_day_against_dispo(slot_df: pd.DataFrame, dispo_df: pd.DataFrame
 
     """
 
-    # prep dispo_df and slot_df and combine them
+    # ensure dispo_df and slot_df have matching column names so they can be concat'ed
     dispo_df_copy = dispo_df.copy()
     dispo_df_copy['source'] = 'dispo'
     dispo_df_copy['end_time'] = dispo_df_copy['start_time'] + pd.to_timedelta(30, unit='minutes')
@@ -175,7 +178,7 @@ def plot_example_day_against_dispo(slot_df: pd.DataFrame, dispo_df: pd.DataFrame
 
     slot_val_compare_df = pd.concat([dispo_df_copy, slot_df_copy])
 
-    # filter
+    # filter on date and device
     start_date = pd.to_datetime(date)
     end_date = start_date + pd.Timedelta(days=1)
     slot_val_compare_df = slot_val_compare_df[slot_val_compare_df['start_time'] >= start_date]
