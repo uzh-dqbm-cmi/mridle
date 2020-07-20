@@ -119,7 +119,7 @@ mridle.plotting_utilities.plot_validation_experiment(df_ratios)
 
 ### Data Validation
 
-To compare data from the extract to the examples collected manually from Dispo using ratios.
+#### Plot Validation experiment.
 
 This function generates a scatter bar plot, where each scatter-bar corresponds to a single year, and every point within
 that scatter-bar corresponds to a single day. Each point representing a single day is obtained by aggregating
