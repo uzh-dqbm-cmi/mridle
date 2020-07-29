@@ -454,7 +454,7 @@ def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame,
         day: day numeric value
         month: month numeric value
         year: year numeric value
-        slot_outcome: string with value ['show', 'rescheduled', 'cancelled'].
+        slot_outcome: string with value ['show', 'rescheduled', 'canceled'].
         When `show` is selected, `inpatient` appointments are also included.
 
     Returns:
@@ -462,7 +462,7 @@ def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame,
         slot_df_patids set of strings with patient IDs from extract
 
     """
-    if slot_outcome not in ['show', 'rescheduled', 'cancelled']:
+    if slot_outcome not in ['show', 'rescheduled', 'canceled']:
         print('invalid type')
         return
 
@@ -535,7 +535,7 @@ def calculate_ratios_experiment(df_experiment: pd.DataFrame, slot_outcome: str) 
     Args:
         df_experiment: dataframe that contains num_shows, num_softnoshows,
              num_hard_noshow per date and if it is from extract or dispo
-        slot_outcome: string with value ['show', 'rescheduled', 'cancelled'].
+        slot_outcome: string with value ['show', 'rescheduled', 'canceled'].
 
 
     Returns: dataframe with three columns. These are ['date','year','ratio']. The last column being the
@@ -551,7 +551,7 @@ def calculate_ratios_experiment(df_experiment: pd.DataFrame, slot_outcome: str) 
     elif slot_outcome == 'rescheduled':
         drop_col = ['dispo_show', 'dispo_cancel', 'extract_show', 'extract_cancel']
         drop_col2 = ['extract_resched', 'dispo_resched']
-    elif slot_outcome == 'cancelled':
+    elif slot_outcome == 'canceled':
         drop_col = ['dispo_resched', 'dispo_show', 'extract_resched', 'extract_show']
         drop_col2 = ['extract_cancel', 'dispo_cancel']
 
