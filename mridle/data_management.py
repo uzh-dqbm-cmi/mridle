@@ -62,7 +62,7 @@ def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
          - patient_class_adj: patient class (adjusted) ['ambulant', 'inpatient']
          - NoShow: bool, [True, False]
          - NoShow_severity: str, ['hard', 'soft']
-         - NoShow_outcome: str, ['rescheduled', 'canceled']
+         - slot_outcome: str, ['show', 'rescheduled', 'canceled']
          - slot_type: str, ['no-show', 'show', 'inpatient']
          - slot_type_detailed: str, ['hard no-show', 'soft no-show', 'show', 'inpatient']
 
@@ -76,8 +76,8 @@ def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     df['patient_class_adj'] = df['PatientClass'].apply(adjust_patient_class)
     df['NoShow'] = df.apply(find_no_shows, axis=1)
     df['NoShow_severity'] = df.apply(set_no_show_severity, axis=1)
-    df['NoShow_outcome'] = df.apply(set_no_show_outcome, axis=1)
     df['slot_type'] = df.apply(set_slot_type, axis=1)
+    df['slot_outcome'] = df.apply(set_no_show_outcome, axis=1)
     df['slot_type_detailed'] = df.apply(set_slot_type_detailed, axis=1)
     return df
 
@@ -100,7 +100,7 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
          - start_time: datetime, appt scheduled start time
          - end_time: datetime, appt scheduled end time
          - NoShow: bool, [True, False]
-         - NoShow_outcome: str, ['rescheduled', 'canceled']
+         - slot_outcome: str, ['show', 'rescheduled', 'canceled']
          - slot_type: str, ['no-show', 'show', 'inpatient']
          - slot_type_detailed: str, ['hard no-show', 'soft no-show', 'show', 'inpatient']
          - EnteringOrganisationDeviceID: str, device the appt was scheduled for
@@ -112,7 +112,7 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
         'start_time': 'min',
         'end_time': 'min',
         'NoShow': 'min',
-        'NoShow_outcome': 'min',
+        'slot_outcome': 'min',
         'slot_type': 'min',
         'slot_type_detailed': 'min',
         'EnteringOrganisationDeviceID': 'min',
@@ -325,6 +325,8 @@ def set_no_show_outcome(row: pd.DataFrame) -> str:
             return 'canceled'
         else:
             return 'rescheduled'
+    elif row['slot_type'] == 'show':
+        return 'show'
 
 
 def set_slot_type(row: pd.DataFrame) -> str:
@@ -445,7 +447,7 @@ def string_set(a_list):
 
 
 def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, day: int, month: int, year: int,
-                                slot_type_detailed: str) -> Set[str]:
+                                slot_outcome: str) -> Set[str]:
     """
     Identifies any appointment IDs that are in dispo_data or slot_df and not vice versa.
 
@@ -455,7 +457,7 @@ def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame,
         day: day numeric value
         month: month numeric value
         year: year numeric value
-        slot_type: string with value ['show', 'soft no-show', 'hard no-show'].
+        slot_outcome: string with value ['show', 'rescheduled', 'cancelled'].
         When `show` is selected, `inpatient` appointments are also included.
 
     Returns:
@@ -463,24 +465,19 @@ def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame,
         slot_df_patids set of strings with patient IDs from extract
 
     """
-    if slot_type_detailed == 'show':
-        slot_type_detailed = ['show', 'inpatient']
-    elif slot_type_detailed == 'soft no-show':
-        slot_type_detailed = ['soft no-show']
-    elif slot_type_detailed == 'hard no-show':
-        slot_type_detailed = ['hard no-show']
-    else:
+    if slot_outcome not in ['show', 'rescheduled', 'cancelled']:
         print('invalid type')
         return
+
     selected_dispo_rows = dispo_data[(dispo_data['date'].dt.day == day)
                                      & (dispo_data['date'].dt.month == month)
                                      & (dispo_data['date'].dt.year == year)
-                                     & (dispo_data['slot_type_detailed'].isin(slot_type_detailed))
+                                     & (dispo_data['slot_outcome'].isin(slot_outcome))
                                      ]
     selected_slot_df_rows = slot_df[(slot_df['start_time'].dt.day == day)
                                     & (slot_df['start_time'].dt.month == month)
                                     & (slot_df['start_time'].dt.year == year)
-                                    & (slot_df['slot_type_detailed'].isin(slot_type_detailed))
+                                    & (slot_df['slot_outcome'].isin(slot_outcome))
                                     ]
     dispo_patids = string_set(list(selected_dispo_rows['patient_id'].unique()))
     slot_df_patids = string_set(list(selected_slot_df_rows['MRNCmpdId'].unique()))
@@ -534,14 +531,14 @@ def generate_data_firstexperiment_plot(dispo_data: pd.DataFrame, slot_df: pd.Dat
     return df
 
 
-def calculate_ratios_experiment(df_experiment: pd.DataFrame, slot_type_detailed: str) -> pd.DataFrame:
+def calculate_ratios_experiment(df_experiment: pd.DataFrame, slot_outcome: str) -> pd.DataFrame:
     """
     Calculates ratios between number of show, soft no-show and hard no-show for plot
 
     Args:
         df_experiment: dataframe that contains num_shows, num_softnoshows,
              num_hard_noshow per date and if it is from extract or dispo
-        slot_type_detailed: string with value ['show', 'soft no-show', 'hard no-show', 'inpatient'].
+        slot_outcome: string with value ['show', 'rescheduled', 'cancelled'].
 
 
     Returns: dataframe with three columns. These are ['date','year','ratio']. The last column being the
@@ -551,15 +548,15 @@ def calculate_ratios_experiment(df_experiment: pd.DataFrame, slot_type_detailed:
 
     """
 
-    if slot_type_detailed == 'show':
-        drop_col = ['dispo_sns', 'dispo_hns', 'extract_sns', 'extract_hns']
+    if slot_outcome == 'show':
+        drop_col = ['dispo_resched', 'dispo_cancel', 'extract_resched', 'extract_cancel']
         drop_col2 = ['extract_show', 'dispo_show']
-    elif slot_type_detailed == 'soft no-show':
-        drop_col = ['dispo_show', 'dispo_hns', 'extract_show', 'extract_hns']
-        drop_col2 = ['extract_sns', 'dispo_sns']
-    elif slot_type_detailed == 'hard no-show':
-        drop_col = ['dispo_sns', 'dispo_show', 'extract_sns', 'extract_show']
-        drop_col2 = ['extract_hns', 'dispo_hns']
+    elif slot_outcome == 'rescheduled':
+        drop_col = ['dispo_show', 'dispo_cancel', 'extract_show', 'extract_cancel']
+        drop_col2 = ['extract_resched', 'dispo_resched']
+    elif slot_outcome == 'cancelled':
+        drop_col = ['dispo_resched', 'dispo_show', 'extract_resched', 'extract_show']
+        drop_col2 = ['extract_cancel', 'dispo_cancel']
 
     df_ratios = df_experiment.copy()
     df_ratios = df_ratios.drop(drop_col, axis=1)
