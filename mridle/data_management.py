@@ -469,12 +469,12 @@ def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame,
     selected_dispo_rows = dispo_data[(dispo_data['date'].dt.day == day)
                                      & (dispo_data['date'].dt.month == month)
                                      & (dispo_data['date'].dt.year == year)
-                                     & (dispo_data['slot_outcome'].isin(slot_outcome))
+                                     & (dispo_data['slot_outcome'] == slot_outcome)
                                      ]
     selected_slot_df_rows = slot_df[(slot_df['start_time'].dt.day == day)
                                     & (slot_df['start_time'].dt.month == month)
                                     & (slot_df['start_time'].dt.year == year)
-                                    & (slot_df['slot_outcome'].isin(slot_outcome))
+                                    & (slot_df['slot_outcome'] == slot_outcome)
                                     ]
     dispo_patids = string_set(list(selected_dispo_rows['patient_id'].unique()))
     slot_df_patids = string_set(list(selected_slot_df_rows['MRNCmpdId'].unique()))
