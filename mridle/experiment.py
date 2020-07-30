@@ -4,6 +4,7 @@ from sklearn.feature_selection import RFECV
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import f1_score
 from typing import Any, Dict, List, Tuple, Callable
+from sklearn.preprocessing import StandardScaler
 
 
 class ModelRun:
@@ -138,7 +139,13 @@ class ModelRun:
         Returns:
             Dict of encoders.
         """
-        return {}
+        autoscaler = StandardScaler()
+        features = ['historic_no_show_cnt', 'no_show_before']
+        train_set[features] = autoscaler.fit_transform(train_set[features])
+
+        return {
+            'autoscaler': autoscaler
+        }
 
     @classmethod
     def build_x_features(cls, data_set: Any, encoders: Dict) -> pd.DataFrame:
@@ -383,4 +390,4 @@ class Predictor:
         """
         data_processed = self.preprocess_fun(data_point)
         x, feature_cols = self.transform_func(data_processed, self.encoders)
-        return self.model.predict(x)
+        return self.model.predict(x), self.model.predict_proba(x)
