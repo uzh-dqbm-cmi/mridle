@@ -499,14 +499,12 @@ def generate_data_firstexperiment_plot(dispo_data: pd.DataFrame, slot_df: pd.Dat
         dispo_data: Dataframe with appointment data
         slot_df: Dataframe with appointment data from extract
 
-    Returns: dataframe that contains, date, year, num_shows, num_softnoshows,
-             num_hard_noshow , 'extract/experiment'
+    Returns: dataframe that contains, date, year, num_shows, num_rescheduled, num_canceled , 'extract/experiment'
 
     '''
 
-    # SNS stands for 'soft no-show' and HNS stands for 'hard no-show'
-    df = pd.DataFrame(columns=['date', 'year', 'dispo_show', 'dispo_sns', 'dispo_hns',
-                               'extract_show', 'extract_sns', 'extract_hns'])
+    df = pd.DataFrame(columns=['date', 'year', 'dispo_show', 'dispo_rescheduled', 'dispo_canceled',
+                               'extract_show', 'extract_rescheduled', 'extract_canceled'])
     for date_elem in dispo_data.date.dt.date.unique():
         day, month, year = date_elem.day, date_elem.month, date_elem.year
         # Identify how many 'shows' in dispo_data and extract
@@ -515,25 +513,31 @@ def generate_data_firstexperiment_plot(dispo_data: pd.DataFrame, slot_df: pd.Dat
         num_extract_show = len(slot_df_patids)
         # Identify how many 'soft no-show' in dispo_data and extract
         dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year,
-                                                                   'soft no-show')
-        num_dispo_sns = len(dispo_patids)
-        num_extract_sns = len(slot_df_patids)
+                                                                   'rescheduled')
+        num_dispo_rescheduled = len(dispo_patids)
+        num_extract_rescheduled = len(slot_df_patids)
         # Identify how many 'hard no-show' in dispo_data and extract
         dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year,
-                                                                   'hard no-show')
-        num_dispo_hns = len(dispo_patids)
-        num_extract_hns = len(slot_df_patids)
+                                                                   'canceled')
+        num_dispo_canceled = len(dispo_patids)
+        num_extract_canceled = len(slot_df_patids)
 
-        df = df.append({'date': date_elem, 'year': date_elem.year, 'dispo_show': num_dispo_show,
-                        'dispo_sns': num_dispo_sns, 'dispo_hns': num_dispo_hns, 'extract_show': num_extract_show,
-                        'extract_sns': num_extract_sns, 'extract_hns': num_extract_hns}, ignore_index=True)
+        df = df.append({'date': date_elem,
+                        'year': date_elem.year,
+                        'dispo_show': num_dispo_show,
+                        'dispo_rescheduled': num_dispo_rescheduled,
+                        'dispo_canceled': num_dispo_canceled,
+                        'extract_show': num_extract_show,
+                        'extract_rescheduled': num_extract_rescheduled,
+                        'extract_canceled': num_extract_canceled
+                        }, ignore_index=True)
 
     return df
 
 
 def calculate_ratios_experiment(df_experiment: pd.DataFrame, slot_outcome: str) -> pd.DataFrame:
     """
-    Calculates ratios between number of show, soft no-show and hard no-show for plot
+    Calculates ratios between number of show, rescheduled and canceled for plot
 
     Args:
         df_experiment: dataframe that contains num_shows, num_softnoshows,
@@ -549,14 +553,14 @@ def calculate_ratios_experiment(df_experiment: pd.DataFrame, slot_outcome: str) 
     """
 
     if slot_outcome == 'show':
-        drop_col = ['dispo_resched', 'dispo_cancel', 'extract_resched', 'extract_cancel']
+        drop_col = ['dispo_rescheduled', 'dispo_canceled', 'extract_rescheduled', 'extract_canceled']
         drop_col2 = ['extract_show', 'dispo_show']
     elif slot_outcome == 'rescheduled':
-        drop_col = ['dispo_show', 'dispo_cancel', 'extract_show', 'extract_cancel']
-        drop_col2 = ['extract_resched', 'dispo_resched']
+        drop_col = ['dispo_show', 'dispo_canceled', 'extract_show', 'extract_canceled']
+        drop_col2 = ['extract_rescheduled', 'dispo_rescheduled']
     elif slot_outcome == 'canceled':
-        drop_col = ['dispo_resched', 'dispo_show', 'extract_resched', 'extract_show']
-        drop_col2 = ['extract_cancel', 'dispo_cancel']
+        drop_col = ['dispo_rescheduled', 'dispo_show', 'extract_rescheduled', 'extract_show']
+        drop_col2 = ['extract_canceled', 'dispo_canceled']
 
     df_ratios = df_experiment.copy()
     df_ratios = df_ratios.drop(drop_col, axis=1)
