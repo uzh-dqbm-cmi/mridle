@@ -48,7 +48,13 @@ DETAILED_COLOR_MAP = {
     'inpatient': 'grey',
 }
 
-# determines whether the appointment slot box is outlined, for outlining no_show_outcome == 'cancelled' appt slots
+OUTCOME_COLOR_MAP = {
+    'show': 'blue',
+    'rescheduled': 'orange',
+    'canceled': 'red',
+}
+
+# determines whether the appointment slot box is outlined, for outlining no_show_outcome == 'canceled' appt slots
 STROKE_MAP = {
     'canceled': 'black',
 }
@@ -504,7 +510,7 @@ def plot_validation_experiment(df_ratio: pd.DataFrame) -> alt.Chart:
     return stripplot
 
 
-def plot_dispo_extract_slot_diffs(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, slot_type_detailed: str):
+def plot_dispo_extract_slot_diffs(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, slot_outcome: str):
     """
     Generates a scatter plot where evey point is represented by the (x, y) pair,
     x being the # of patients in the dispo_df that are not in the extract and
@@ -521,7 +527,7 @@ def plot_dispo_extract_slot_diffs(dispo_data: pd.DataFrame, slot_df: pd.DataFram
         day, month, year = date_elem.day, date_elem.month, date_elem.year
         # Identify how many appointments of a given 'type' in dispo_data and extract
         dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year,
-                                                                   slot_type_detailed)
+                                                                   slot_outcome)
 
         in_dispo_not_slot_df = len(dispo_patids.difference(slot_df_patids))
         in_slot_df_not_dispo = len(slot_df_patids.difference(dispo_patids))
@@ -536,8 +542,8 @@ def plot_dispo_extract_slot_diffs(dispo_data: pd.DataFrame, slot_df: pd.DataFram
     return plot
 
 
-def plot_scatter_bar_jaccard_per_type(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, slot_type_detailed: str,
-                                      color_map: Dict = DETAILED_COLOR_MAP, highlight: Any = None):
+def plot_scatter_bar_jaccard_per_type(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, slot_outcome: str,
+                                      color_map: Dict = OUTCOME_COLOR_MAP, highlight: Any = None):
     """
     Calculates the Jaccard Index per day, and plots the daily Jaccard values,
     split into subplots for each year.
@@ -561,11 +567,11 @@ def plot_scatter_bar_jaccard_per_type(dispo_data: pd.DataFrame, slot_df: pd.Data
         day, month, year = date_elem.day, date_elem.month, date_elem.year
         # Identify appointments for a given 'type' in dispo_data and extract
         dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year,
-                                                                   slot_type_detailed)
+                                                                   slot_outcome)
 
         jaccard = jaccard_index(dispo_patids, slot_df_patids)
 
-        df = df.append({'year': date_elem.year, 'jaccard': jaccard, 'slot_type': slot_type_detailed}, ignore_index=True)
+        df = df.append({'year': date_elem.year, 'jaccard': jaccard, 'slot_type': slot_outcome}, ignore_index=True)
 
     stripplot = alt.Chart(df, width=40).mark_circle(size=50).encode(
         x=alt.X(
@@ -594,18 +600,17 @@ def plot_scatter_bar_jaccard_per_type(dispo_data: pd.DataFrame, slot_df: pd.Data
     return stripplot
 
 
-def plot_scatter_dispo_extract_slot_cnt_for_type(dispo_data: pd.DataFrame, slot_df: pd.DataFrame,
-                                                 slot_type_detailed: str):
+def plot_scatter_dispo_extract_slot_cnt_for_type(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, slot_outcome: str):
     """
     Generates a scatter plot where every point is represented by the (x, y) pair,
     x being the # of patients in the dispo_df,
     y being the # of patients in the extract_df,
-    all of these for a given slot_type_detailed
+    all of these for a given slot_outcome
 
     Args:
         dispo_data: dataframe with appointment data from the dispo nurse
         slot_df: dataframe with appointment data from extract
-        slot_type_detailed: type of appointment
+        slot_outcome: outcome of appointment slot
 
     Returns: plot
     """
@@ -625,7 +630,7 @@ def plot_scatter_dispo_extract_slot_cnt_for_type(dispo_data: pd.DataFrame, slot_
         day, month, year = date_elem.day, date_elem.month, date_elem.year
         # Identify how many 'shows' in dispo_data and extract
         dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year,
-                                                                   slot_type_detailed)
+                                                                   slot_outcome)
 
         df = df.append({'year': date_elem.year, 'appointments_in_dispo': len(dispo_patids),
                         'appointments_in_extract': len(slot_df_patids)}, ignore_index=True)
@@ -643,7 +648,7 @@ def plot_scatter_dispo_extract_slot_cnt(dispo_data: pd.DataFrame, slot_df: pd.Da
     Generates a scatter plot where every point is represented by the (x, y) pair,
     x being the # of patients in the dispo_df,
     y being the # of patients in the extract_df,
-    all of these for a given slot_type_detailed
+    all of these for a given slot_outcome
 
     Args:
         dispo_data: dataframe with appointment data from the dispo nurse
@@ -662,27 +667,27 @@ def plot_scatter_dispo_extract_slot_cnt(dispo_data: pd.DataFrame, slot_df: pd.Da
         y='y',
     )
 
-    df = pd.DataFrame(columns=['appointments_in_dispo', 'appointments_in_extract', 'slot_type_detailed'])
+    df = pd.DataFrame(columns=['appointments_in_dispo', 'appointments_in_extract', 'slot_outcome'])
     for date_elem in dispo_data.date.dt.date.unique():
         day, month, year = date_elem.day, date_elem.month, date_elem.year
         # 'show'
         dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year, 'show')
         df = df.append({'appointments_in_dispo': len(dispo_patids), 'appointments_in_extract': len(slot_df_patids),
-                        'slot_type_detailed': 'show'}, ignore_index=True)
-        # 'soft no-show'
+                        'slot_outcome': 'show'}, ignore_index=True)
+        # 'rescheduled'
         dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year,
-                                                                   'soft no-show')
+                                                                   'rescheduled')
         df = df.append({'appointments_in_dispo': len(dispo_patids), 'appointments_in_extract': len(slot_df_patids),
-                        'slot_type_detailed': 'soft no-show'}, ignore_index=True)
-        # 'hard no-show'
+                        'slot_outcome': 'rescheduled'}, ignore_index=True)
+        # 'canceled'
         dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year,
-                                                                   'hard no-show')
+                                                                   'canceled')
         df = df.append({'appointments_in_dispo': len(dispo_patids), 'appointments_in_extract': len(slot_df_patids),
-                        'slot_type_detailed': 'hard no-show'}, ignore_index=True)
+                        'slot_outcome': 'canceled'}, ignore_index=True)
 
     plot_slot_cnt = alt.Chart(df).mark_circle(size=60).encode(
         alt.X('appointments_in_dispo', scale=alt.Scale(domain=(-1, 40), clamp=False)),
         alt.Y('appointments_in_extract', scale=alt.Scale(domain=(-1, 40), clamp=False)),
-        color='slot_type_detailed').interactive()
+        color='slot_outcome').interactive()
 
     return plot_diagonal + plot_slot_cnt
