@@ -77,7 +77,7 @@ def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     df['NoShow'] = df.apply(find_no_shows, axis=1)
     df['NoShow_severity'] = df.apply(set_no_show_severity, axis=1)
     df['slot_type'] = df.apply(set_slot_type, axis=1)
-    df['slot_outcome'] = df.apply(set_no_show_outcome, axis=1)
+    df['slot_outcome'] = df.apply(set_slot_outcome, axis=1)
     df['slot_type_detailed'] = df.apply(set_slot_type_detailed, axis=1)
     return df
 
@@ -319,13 +319,13 @@ def set_no_show_severity(row: pd.DataFrame) -> str:
             return 'soft'
 
 
-def set_no_show_outcome(row: pd.DataFrame) -> str:
+def set_slot_outcome(row: pd.DataFrame) -> str:
     if row['NoShow']:
         if row['now_status'] == 'canceled':
             return 'canceled'
         else:
             return 'rescheduled'
-    elif row['slot_type'] == 'show':
+    elif row['slot_type'] == 'show' or row['slot_type'] == 'inpatient':
         return 'show'
 
 
