@@ -643,7 +643,7 @@ def plot_scatter_dispo_extract_slot_cnt_for_type(dispo_data: pd.DataFrame, slot_
     return plot_diagonal + plot_slot_cnt
 
 
-def plot_scatter_dispo_extract_slot_cnt(dispo_data: pd.DataFrame, slot_df: pd.DataFrame):
+def plot_scatter_dispo_extract_slot_cnt(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, color_map=OUTCOME_COLOR_MAP):
     """
     Generates a scatter plot where every point is represented by the (x, y) pair,
     x being the # of patients in the dispo_df,
@@ -685,9 +685,12 @@ def plot_scatter_dispo_extract_slot_cnt(dispo_data: pd.DataFrame, slot_df: pd.Da
         df = df.append({'appointments_in_dispo': len(dispo_patids), 'appointments_in_extract': len(slot_df_patids),
                         'slot_outcome': 'canceled'}, ignore_index=True)
 
+    plot_color_map = deepcopy(color_map)
+    color_scale = alt.Scale(domain=list(plot_color_map.keys()), range=list(plot_color_map.values()))
+
     plot_slot_cnt = alt.Chart(df).mark_circle(size=60).encode(
         alt.X('appointments_in_dispo', scale=alt.Scale(domain=(-1, 40), clamp=False)),
         alt.Y('appointments_in_extract', scale=alt.Scale(domain=(-1, 40), clamp=False)),
-        color='slot_outcome').interactive()
+        color=alt.Color('slot_outcome', scale=color_scale)).interactive()
 
     return plot_diagonal + plot_slot_cnt
