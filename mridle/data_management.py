@@ -444,7 +444,7 @@ def string_set(a_list):
 
 
 def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, day: int, month: int, year: int,
-                                slot_outcome: str) -> Set[str]:
+                                slot_outcome: str, verbose: bool = False) -> Set[str]:
     """
     Identifies any appointment IDs that are in dispo_data or slot_df and not vice versa.
 
@@ -455,7 +455,8 @@ def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame,
         month: month numeric value
         year: year numeric value
         slot_outcome: string with value ['show', 'rescheduled', 'canceled'].
-        When `show` is selected, `inpatient` appointments are also included.
+            When `show` is selected, `inpatient` appointments are also included.
+        verbose: whether to make prints during the comparison
 
     Returns:
         dispo_patids: set of strings with patient IDs from dispo
@@ -478,12 +479,14 @@ def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame,
                                     ]
     dispo_patids = string_set(list(selected_dispo_rows['patient_id'].unique()))
     slot_df_patids = string_set(list(selected_slot_df_rows['MRNCmpdId'].unique()))
-    print('{} Dispo Pat IDs: \n{}'.format(len(dispo_patids), dispo_patids))
-    print('{} Slot_df Pat IDs: \n{}'.format(len(slot_df_patids), slot_df_patids))
 
-    print()
-    print('In Dispo but not in Slot_df: {}'.format(dispo_patids.difference(slot_df_patids)))
-    print('In Slot_df but not in Dispo: {}'.format(slot_df_patids.difference(dispo_patids)))
+    if verbose:
+        print('{} Dispo Pat IDs: \n{}'.format(len(dispo_patids), dispo_patids))
+        print('{} Slot_df Pat IDs: \n{}'.format(len(slot_df_patids), slot_df_patids))
+        print()
+        print('In Dispo but not in Slot_df: {}'.format(dispo_patids.difference(slot_df_patids)))
+        print('In Slot_df but not in Dispo: {}'.format(slot_df_patids.difference(dispo_patids)))
+
     return dispo_patids, slot_df_patids
 
 
