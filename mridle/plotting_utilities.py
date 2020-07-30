@@ -8,6 +8,7 @@ import altair as alt
 import seaborn as sns
 from copy import deepcopy
 from typing import Any, Dict
+from mridle.data_management import validate_against_dispo_data, jaccard_index
 
 
 # ==================================================================
@@ -501,3 +502,187 @@ def plot_validation_experiment(df_ratio: pd.DataFrame) -> alt.Chart:
     )
 
     return stripplot
+
+
+def plot_dispo_extract_slot_diffs(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, slot_type_detailed: str):
+    """
+    Generates a scatter plot where evey point is represented by the (x, y) pair,
+    x being the # of patients in the dispo_df that are not in the extract and
+    y being the # of patients in the extract that are not in the dispo_df.
+
+    Args:
+        dispo_data: Dataframe with appointment data.
+        slot_df: Dataframe with appointment data from extract.
+
+    Returns: scatter plot explained above.
+    """
+    df = pd.DataFrame(columns=['year', 'dispo_not_extract', 'extract_not_dispo'])
+    for date_elem in dispo_data.date.dt.date.unique():
+        day, month, year = date_elem.day, date_elem.month, date_elem.year
+        # Identify how many appointments of a given 'type' in dispo_data and extract
+        dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year,
+                                                                   slot_type_detailed)
+
+        in_dispo_not_slot_df = len(dispo_patids.difference(slot_df_patids))
+        in_slot_df_not_dispo = len(slot_df_patids.difference(dispo_patids))
+        df = df.append({'year': date_elem.year, 'dispo_not_extract': in_dispo_not_slot_df,
+                        'extract_not_dispo': in_slot_df_not_dispo}, ignore_index=True)
+
+    plot = alt.Chart(df).mark_point(size=60).encode(
+        alt.X('dispo_not_extract', scale=alt.Scale(domain=(-1, 10), clamp=False)),
+        alt.Y('extract_not_dispo', scale=alt.Scale(domain=(-1, 10), clamp=False)),
+        color='year:O').interactive()
+
+    return plot
+
+
+def plot_scatter_bar_jaccard_per_type(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, slot_type_detailed: str,
+                                      color_map: Dict = DETAILED_COLOR_MAP, highlight: Any = None):
+    """
+    Calculates the Jaccard Index per day, and plots the daily Jaccard values,
+    split into subplots for each year.
+
+    Args:
+        color_map: the colors to use for eah appointment type.
+        dispo_data: Dataframe with appointment data
+        slot_df: Dataframe with appointment data from extract
+
+    Returns: Scatter bar plot with each point representing the Jaccard index per day assessed.
+    """
+    # create color scale from color_map, modifying it based on highlight if appropriate
+    plot_color_map = deepcopy(color_map)
+    if highlight is not None:
+        plot_color_map = update_color_map_with_highlight(highlight, plot_color_map)
+
+    color_scale = alt.Scale(domain=list(plot_color_map.keys()), range=list(plot_color_map.values()))
+
+    df = pd.DataFrame(columns=['year', 'jaccard', 'slot_type'])
+    for date_elem in dispo_data.date.dt.date.unique():
+        day, month, year = date_elem.day, date_elem.month, date_elem.year
+        # Identify appointments for a given 'type' in dispo_data and extract
+        dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year,
+                                                                   slot_type_detailed)
+
+        jaccard = jaccard_index(dispo_patids, slot_df_patids)
+
+        df = df.append({'year': date_elem.year, 'jaccard': jaccard, 'slot_type': slot_type_detailed}, ignore_index=True)
+
+    stripplot = alt.Chart(df, width=40).mark_circle(size=50).encode(
+        x=alt.X(
+            'jitter:Q',
+            title=None,
+            axis=alt.Axis(values=[0], ticks=True, grid=False, labels=False),
+            scale=alt.Scale(),
+        ),
+        y=alt.Y('jaccard:Q'),
+        color=alt.Color('slot_type:N', scale=color_scale),
+        column=alt.Column(
+            'year:N',
+            header=alt.Header(
+                labelAngle=-90,
+                titleOrient='top',
+                labelOrient='bottom',
+                labelAlign='right',
+                labelPadding=3,
+            ),
+        ),
+    ).transform_calculate(
+        # Generate Gaussian jitter with a Box-Muller transform
+        jitter='sqrt(-2*log(random()))*cos(2*PI*random())'
+    ).configure_facet(spacing=0).configure_view(stroke=None)
+
+    return stripplot
+
+
+def plot_scatter_dispo_extract_slot_cnt_for_type(dispo_data: pd.DataFrame, slot_df: pd.DataFrame,
+                                                 slot_type_detailed: str):
+    """
+    Generates a scatter plot where every point is represented by the (x, y) pair,
+    x being the # of patients in the dispo_df,
+    y being the # of patients in the extract_df,
+    all of these for a given slot_type_detailed
+
+    Args:
+        dispo_data: dataframe with appointment data from the dispo nurse
+        slot_df: dataframe with appointment data from extract
+        slot_type_detailed: type of appointment
+
+    Returns: plot
+    """
+
+    x = np.arange(-10, 50, 0.5)
+    source = pd.DataFrame({
+        'x': x,
+        'y': x})
+
+    plot_diagonal = alt.Chart(source).mark_circle(size=10).encode(
+        x='x',
+        y='y',
+    )
+
+    df = pd.DataFrame(columns=['year', 'appointments_in_dispo', 'appointments_in_extract'])
+    for date_elem in dispo_data.date.dt.date.unique():
+        day, month, year = date_elem.day, date_elem.month, date_elem.year
+        # Identify how many 'shows' in dispo_data and extract
+        dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year,
+                                                                   slot_type_detailed)
+
+        df = df.append({'year': date_elem.year, 'appointments_in_dispo': len(dispo_patids),
+                        'appointments_in_extract': len(slot_df_patids)}, ignore_index=True)
+
+    plot_slot_cnt = alt.Chart(df).mark_point(size=60).encode(
+        alt.X('appointments_in_dispo', scale=alt.Scale(domain=(-1, 40), clamp=False)),
+        alt.Y('appointments_in_extract', scale=alt.Scale(domain=(-1, 40), clamp=False)),
+        color='year:O').interactive()
+
+    return plot_diagonal + plot_slot_cnt
+
+
+def plot_scatter_dispo_extract_slot_cnt(dispo_data: pd.DataFrame, slot_df: pd.DataFrame):
+    """
+    Generates a scatter plot where every point is represented by the (x, y) pair,
+    x being the # of patients in the dispo_df,
+    y being the # of patients in the extract_df,
+    all of these for a given slot_type_detailed
+
+    Args:
+        dispo_data: dataframe with appointment data from the dispo nurse
+        slot_df: dataframe with appointment data from extract
+
+    Returns: plot
+    """
+
+    x = np.arange(-10, 50, 0.5)
+    source = pd.DataFrame({
+        'x': x,
+        'y': x})
+
+    plot_diagonal = alt.Chart(source).mark_circle(size=10).encode(
+        x='x',
+        y='y',
+    )
+
+    df = pd.DataFrame(columns=['appointments_in_dispo', 'appointments_in_extract', 'slot_type_detailed'])
+    for date_elem in dispo_data.date.dt.date.unique():
+        day, month, year = date_elem.day, date_elem.month, date_elem.year
+        # 'show'
+        dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year, 'show')
+        df = df.append({'appointments_in_dispo': len(dispo_patids), 'appointments_in_extract': len(slot_df_patids),
+                        'slot_type_detailed': 'show'}, ignore_index=True)
+        # 'soft no-show'
+        dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year,
+                                                                   'soft no-show')
+        df = df.append({'appointments_in_dispo': len(dispo_patids), 'appointments_in_extract': len(slot_df_patids),
+                        'slot_type_detailed': 'soft no-show'}, ignore_index=True)
+        # 'hard no-show'
+        dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year,
+                                                                   'hard no-show')
+        df = df.append({'appointments_in_dispo': len(dispo_patids), 'appointments_in_extract': len(slot_df_patids),
+                        'slot_type_detailed': 'hard no-show'}, ignore_index=True)
+
+    plot_slot_cnt = alt.Chart(df).mark_circle(size=60).encode(
+        alt.X('appointments_in_dispo', scale=alt.Scale(domain=(-1, 40), clamp=False)),
+        alt.Y('appointments_in_extract', scale=alt.Scale(domain=(-1, 40), clamp=False)),
+        color='slot_type_detailed').interactive()
+
+    return plot_diagonal + plot_slot_cnt

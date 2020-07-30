@@ -619,3 +619,20 @@ def split_df_to_train_validate_test(df_input: pd.DataFrame, train_percent=0.7, v
     test = df_output.iloc[perm[validate_end:]]
 
     return train, validate, test
+
+
+def jaccard_index(dispo_set: Set, extract_set: Set) -> float:
+    """
+    Calculates the Jaccard Index for two given sets
+
+    Args:
+        dispo_set: set of ids identified in the dispo dataset for a given type
+        extract_set: set of ids identified in the extract dataset for a given type
+
+    Returns: score between 0.0 and 1.0, which is the Jaccard score.
+    """
+    score = 1.0
+    if dispo_set or extract_set:
+        score = (float(len(dispo_set.intersection(extract_set))) / len(dispo_set.union(extract_set)))
+
+    return score
