@@ -299,8 +299,8 @@ def format_patient_id_col(df: pd.DataFrame) -> pd.DataFrame:
 
 def add_final_scheduled_date(df: pd.DataFrame) -> pd.DataFrame:
     df.sort_values('date', inplace=True)
-    final_scheduled_date_per_fon = df.groupby('FillerOrderNo').agg({'was_sched_for_date': 'last'})
-    final_scheduled_date_per_fon.columns = ['final_was_sched_for_date']
+    final_scheduled_date_per_fon = df.groupby('FillerOrderNo').agg({'now_sched_for_date': 'last'})
+    final_scheduled_date_per_fon.columns = ['final_now_sched_for_date']
     df = pd.merge(df, final_scheduled_date_per_fon, left_on='FillerOrderNo', right_index=True)
     return df
 
@@ -332,7 +332,7 @@ def set_slot_outcome(row: pd.DataFrame) -> str:
     if row['NoShow']:
         if row['now_status'] == 'canceled':
             return 'canceled'
-        elif row['final_was_sched_for_date'] == row['was_sched_for_date']:
+        elif row['final_now_sched_for_date'] == row['was_sched_for_date']:
             return 'canceled'
         else:
             return 'rescheduled'
