@@ -636,3 +636,46 @@ def jaccard_index(dispo_set: Set, extract_set: Set) -> float:
         score = (float(len(dispo_set.intersection(extract_set))) / len(dispo_set.union(extract_set)))
 
     return score
+
+
+def print_validation_summary_metrics(dispo_df, slot_df):
+    """
+    Print total slot counts from slot_df and dispo_df, and their average Jaccard index per day. Metrics are printed for
+     separately show, rescheduled, and canceled slots.
+    Args:
+        dispo_df: result of build_dispo_df()
+        slot_df: result fo build_slot_df()
+
+    Returns: Dataframe with metrics
+
+    """
+    validation_dates = list(dispo_df.date.dt.date.unique())
+    slot_patids = {}
+
+    for outcome in ['show', 'rescheduled', 'canceled']:
+        slot_patids[outcome] = {}
+
+        total_slot_df_patids = []
+        total_dispo_patids = []
+        jaccard_indices = []
+        for d in validation_dates:
+            day, month, year = d.day, d.month, d.year
+            dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_df, slot_df, day, month, year, outcome,
+                                                                       verbose=False)
+            total_slot_df_patids.extend(list(slot_df_patids))
+            total_dispo_patids.extend(list(dispo_patids))
+            jaccard_indices.append(jaccard_index(slot_df_patids, dispo_patids))
+
+        slot_patids[outcome]['extract'] = total_slot_df_patids
+        slot_patids[outcome]['dispo'] = total_dispo_patids
+        slot_patids[outcome]['jaccard'] = jaccard_indices
+
+    slot_cnts = {}
+    for outcome in slot_patids:
+        slot_cnts[outcome] = {}
+        for source in ['extract', 'dispo']:
+            slot_cnts[outcome][source] = len(slot_patids[outcome][source])
+            slot_cnts[outcome]['jaccard'] = sum(slot_patids[outcome]['jaccard']) / len(slot_patids[outcome]['jaccard'])
+
+    return pd.DataFrame(slot_cnts).T[['dispo', 'extract', 'jaccard']].style.format(
+        {'dispo': '{:.0f}', 'extract': '{:.0f}', 'jaccard': '{:.2f}'})
