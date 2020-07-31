@@ -300,7 +300,7 @@ def format_patient_id_col(df: pd.DataFrame) -> pd.DataFrame:
 def add_final_scheduled_date(df: pd.DataFrame) -> pd.DataFrame:
     df.sort_values('date', inplace=True)
     final_scheduled_date_per_fon = df.groupby('FillerOrderNo').agg({'was_sched_for_date': 'last'})
-    final_scheduled_date_per_fon.columns = ['final_sched_for_date']
+    final_scheduled_date_per_fon.columns = ['final_was_sched_for_date']
     df = pd.merge(df, final_scheduled_date_per_fon, left_on='FillerOrderNo', right_index=True)
     return df
 
