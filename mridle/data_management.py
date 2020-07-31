@@ -73,6 +73,7 @@ def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     df = exclude_irrelevant_service_names(df, SERVICE_NAMES_TO_EXCLUDE)
     df = add_custom_status_change_cols(df)
     df = format_patient_id_col(df)
+    df = add_final_scheduled_date(df)
     df['patient_class_adj'] = df['PatientClass'].apply(adjust_patient_class)
     df['NoShow'] = df.apply(find_no_shows, axis=1)
     df['NoShow_severity'] = df.apply(set_no_show_severity, axis=1)
@@ -296,6 +297,14 @@ def format_patient_id_col(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def add_final_scheduled_date(df: pd.DataFrame) -> pd.DataFrame:
+    df.sort_values('date', inplace=True)
+    final_scheduled_date_per_fon = df.groupby('FillerOrderNo').agg({'was_sched_for_date': 'last'})
+    final_scheduled_date_per_fon.columns = ['final_sched_for_date']
+    df = pd.merge(df, final_scheduled_date_per_fon, left_on='FillerOrderNo', right_index=True)
+    return df
+
+
 def adjust_patient_class(original_patient_class: str) -> str:
     default_patient_class = 'ambulant'
     patient_class_map = {
@@ -322,6 +331,8 @@ def set_no_show_severity(row: pd.DataFrame) -> str:
 def set_slot_outcome(row: pd.DataFrame) -> str:
     if row['NoShow']:
         if row['now_status'] == 'canceled':
+            return 'canceled'
+        elif row['final_was_sched_for_date'] == row['was_sched_for_date']:
             return 'canceled'
         else:
             return 'rescheduled'
