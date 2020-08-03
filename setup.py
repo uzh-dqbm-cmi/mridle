@@ -12,7 +12,7 @@ setup(name='mridle',
             'flake8',
             'matplotlib>=3.1.0',
             'numpy>=1.15.0',
-            'pandas==0.24.1',
+            'pandas>=1.0.0',
             'pgeocode',
             'scikit-learn',
             'seaborn'
