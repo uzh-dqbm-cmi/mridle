@@ -149,7 +149,7 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
     if not include_id_cols:
         slot_df.drop('FillerOrderNo', axis=1, inplace=True)
 
-    return slot_df
+    return slot_df.sort_values('start_time').reset_index(drop=True)
 
 
 def find_no_shows(row: pd.DataFrame) -> bool:
