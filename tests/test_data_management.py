@@ -180,6 +180,68 @@ class TestBuildSlotDF(unittest.TestCase):
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
+    def test_canceled_soft_no_show(self):
+        raw_df = pd.DataFrame.from_records([
+            # date,    now_status,           now_sched_for_date
+            (day(0), code['scheduled'], day(7)),
+            (day(6), code['canceled'], day(7)),
+        ],
+            columns=[date_col, now_status_col, now_sched_for_date_col]
+        )
+        raw_df['PatientClass'] = 'ambulant'
+
+        expected_slot_df = pd.DataFrame([
+            {
+                'start_time': day(7),
+                'end_time': day(7) + pd.Timedelta(minutes=30),
+                'NoShow': True,
+                'slot_outcome': 'canceled',
+                'slot_type': 'no-show',
+                'slot_type_detailed': 'soft no-show',
+                'time_slot_status': True,
+                'duplicate_appt': 1,
+            }
+        ])
+
+        raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
+        status_df = build_status_df(raw_df)
+        slot_df = build_slot_df(status_df, include_id_cols=True)
+
+        pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
+
+    def test_canceled_hard_no_show_not_actually_canceled_status(self):
+        raw_df = pd.DataFrame.from_records([
+            # date,                             now_status,           now_sched_for_date
+            (day(0),                            code['scheduled'], day(7)),
+            (day(6),                            code['registered'], day(7)),
+            (day(7) + pd.Timedelta(minutes=10), code['scheduled'], day(7)),
+        ],
+            columns=[date_col, now_status_col, now_sched_for_date_col]
+        )
+        raw_df['PatientClass'] = 'ambulant'
+
+        expected_slot_df = pd.DataFrame([
+            {
+                'start_time': day(7),
+                'end_time': day(7) + pd.Timedelta(minutes=30),
+                'NoShow': True,
+                'slot_outcome': 'canceled',
+                'slot_type': 'no-show',
+                'slot_type_detailed': 'hard no-show',
+                'time_slot_status': True,
+                'duplicate_appt': 1,
+            }
+        ])
+
+        raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
+        status_df = build_status_df(raw_df)
+        slot_df = build_slot_df(status_df, include_id_cols=True)
+
+        pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
+
+    def test_duplicate_appt_show(self):
+        return
+
     # def test_not_a_slot(self):
     #     return True
 
