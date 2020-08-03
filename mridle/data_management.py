@@ -110,6 +110,7 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
     """
 
     default_agg_dict = {
+        'MRNCmpdId': 'min',
         'start_time': 'min',
         'end_time': 'min',
         'NoShow': 'min',
@@ -121,9 +122,6 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
     }
     if agg_dict is None:
         agg_dict = default_agg_dict
-
-        if include_id_cols and 'MRNCmpdId' in input_status_df.columns:
-            agg_dict['MRNCmpdId'] = 'min'
 
     status_df = input_status_df.copy()
     status_df = status_df.sort_values(['FillerOrderNo', 'date'])
@@ -138,10 +136,10 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
 
     # there may be multiple no-show appts per FillerOrderNo
     no_show_slot_type_events = status_df[status_df['NoShow']].copy()
-    no_show_slot_df = no_show_slot_type_events.groupby(['FillerOrderNo', 'was_sched_for_date']).agg(
-        agg_dict).reset_index()
-    # this col may not exist, if there are no no-shows, because the groupby will be empty
-    if 'was_sched_for_date' in no_show_slot_df.columns:
+    no_show_slot_df = no_show_slot_type_events.groupby(['FillerOrderNo', 'was_sched_for_date']).agg(agg_dict)
+    if len(no_show_slot_df) > 0:
+        # if there are no no-shows, the index column will be 'index', not ['FillerOrderNo', 'was_sched_for_date']
+        no_show_slot_df.reset_index(inplace=True)
         no_show_slot_df.drop('was_sched_for_date', axis=1, inplace=True)
 
     slot_df = pd.concat([show_slot_df, no_show_slot_df], sort=False)
@@ -153,7 +151,8 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
         time_slot_status=pd.NamedAgg(column='NoShow', aggfunc='min'),
         duplicate_appt=pd.NamedAgg(column='NoShow', aggfunc='count')
     )
-    slot_df = pd.merge(slot_df, unique_patient_time_slots, left_on=['MRNCmpdId', 'start_time'], right_index=True)
+    slot_df = pd.merge(slot_df, unique_patient_time_slots.reset_index(), on=['MRNCmpdId', 'start_time'])
+
     slot_df['NoShow'] = np.where(~slot_df['time_slot_status'], False, slot_df['NoShow'])
     # then also reset no_show_severity and slot_outcome
     slot_df['slot_type'] = np.where(~slot_df['NoShow'], 'show', slot_df['slot_type'])
@@ -162,6 +161,7 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
 
     if not include_id_cols:
         slot_df.drop('FillerOrderNo', axis=1, inplace=True)
+        slot_df.drop('MRNCmpdId', axis=1, inplace=True)
 
     return slot_df.sort_values('start_time').reset_index(drop=True)
 

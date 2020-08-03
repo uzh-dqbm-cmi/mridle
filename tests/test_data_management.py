@@ -21,26 +21,29 @@ class TestBuildSlotDF(unittest.TestCase):
     @staticmethod
     def _fill_out_static_columns(raw_df, slot_df):
         raw_df['FillerOrderNo'] = 0
-        # raw_df['MRNCmpdId'] = '0'
+        raw_df['MRNCmpdId'] = '0'
         raw_df['EnteringOrganisationDeviceID'] = 'MR1'
         raw_df['UniversalServiceName'] = 'MR'
         raw_df['OrderStatus'] = raw_df[now_status_col].tail(1).iloc[0]
 
         if slot_df is not None:
             slot_df['FillerOrderNo'] = 0
-            # slot_df['MRNCmpdId'] = '0'
+            slot_df['MRNCmpdId'] = '0'
             slot_df['EnteringOrganisationDeviceID'] = 'MR1'
             slot_df['UniversalServiceName'] = 'MR'
 
             slot_df_col_order = ['FillerOrderNo',
+                                 'MRNCmpdId',
                                  'start_time',
                                  'end_time',
                                  'NoShow',
-                                 'NoShow_outcome',
+                                 'slot_outcome',
                                  'slot_type',
                                  'slot_type_detailed',
                                  'EnteringOrganisationDeviceID',
                                  'UniversalServiceName',
+                                 'time_slot_status',
+                                 'duplicate_appt',
                                  ]
             slot_df = slot_df[slot_df_col_order]
 
@@ -62,15 +65,17 @@ class TestBuildSlotDF(unittest.TestCase):
                 'start_time': day(4),
                 'end_time': day(4) + pd.Timedelta(minutes=30),
                 'NoShow': False,
-                'NoShow_outcome': np.NaN,
+                'slot_outcome': 'show',
                 'slot_type': 'show',
                 'slot_type_detailed': 'show',
+                'time_slot_status': False,
+                'duplicate_appt': 1,
             }
         ])
 
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
         status_df = build_status_df(raw_df)
-        slot_df = build_slot_df(status_df)
+        slot_df = build_slot_df(status_df, include_id_cols=True)
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
@@ -91,15 +96,6 @@ class TestBuildSlotDF(unittest.TestCase):
 
         self.assertEqual(slot_df.shape[0], 0)
 
-    def test_MRNCmpdId_included(self):
-        return True
-
-    def test_not_include_id_cols(self):
-        return True
-
-    def test_time_of_examined_not_equals_scheduled_plus_30(self):
-        return True
-
     def test_soft_noshow(self):
         raw_df = pd.DataFrame.from_records([
             # date,    now_status,           now_sched_for_date
@@ -118,23 +114,27 @@ class TestBuildSlotDF(unittest.TestCase):
                 'start_time': day(7),
                 'end_time': day(7) + pd.Timedelta(minutes=30),
                 'NoShow': True,
-                'NoShow_outcome': 'rescheduled',
+                'slot_outcome': 'rescheduled',
                 'slot_type': 'no-show',
                 'slot_type_detailed': 'soft no-show',
+                'time_slot_status': True,
+                'duplicate_appt': 1,
             },
             {
                 'start_time': day(14),
                 'end_time': day(14) + pd.Timedelta(minutes=30),
                 'NoShow': False,
-                'NoShow_outcome': np.NaN,
+                'slot_outcome': 'show',
                 'slot_type': 'show',
                 'slot_type_detailed': 'show',
+                'time_slot_status': False,
+                'duplicate_appt': 1,
             }
         ])
 
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
         status_df = build_status_df(raw_df)
-        slot_df = build_slot_df(status_df)
+        slot_df = build_slot_df(status_df, include_id_cols=True)
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
@@ -156,26 +156,38 @@ class TestBuildSlotDF(unittest.TestCase):
                 'start_time': day(7),
                 'end_time': day(7) + pd.Timedelta(minutes=30),
                 'NoShow': True,
-                'NoShow_outcome': 'rescheduled',
+                'slot_outcome': 'rescheduled',
                 'slot_type': 'no-show',
                 'slot_type_detailed': 'hard no-show',
+                'time_slot_status': True,
+                'duplicate_appt': 1,
             },
             {
                 'start_time': day(14),
                 'end_time': day(14) + pd.Timedelta(minutes=30),
                 'NoShow': False,
-                'NoShow_outcome': np.NaN,
+                'slot_outcome': 'show',
                 'slot_type': 'show',
                 'slot_type_detailed': 'show',
+                'time_slot_status': False,
+                'duplicate_appt': 1,
             }
         ])
 
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
         status_df = build_status_df(raw_df)
-        slot_df = build_slot_df(status_df)
+        slot_df = build_slot_df(status_df, include_id_cols=True)
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
-    def test_not_a_slot(self):
-        return True
+    # def test_not_a_slot(self):
+    #     return True
 
+    # def test_MRNCmpdId_included(self):
+    #     return True
+
+    # def test_not_include_id_cols(self):
+    #     return True
+
+    # def test_time_of_examined_not_equals_scheduled_plus_30(self):
+    #     return True
