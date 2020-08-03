@@ -147,7 +147,9 @@ def plot_appt_types_by_day_of_week(df: pd.DataFrame, start_date, end_date, color
     )
 
 
-def plot_dave_b(slot_w_dicom_df, example_date, start_date, end_date, anonymize=True):
+def plot_dave_b(slot_df, dicom_times_df, example_date, start_date, end_date, anonymize=True):
+    slot_w_dicom_df = mridle.data_management.integrate_dicom_data(slot_df, dicom_times_df)
+
     if example_date is None:
         # choose a random date
         random_row = slot_w_dicom_df[(~slot_w_dicom_df['start_time'].isna())
@@ -157,8 +159,8 @@ def plot_dave_b(slot_w_dicom_df, example_date, start_date, end_date, anonymize=T
         example_date = random_row['start_time'].dt.floor('d').iloc[0]
 
     example_day = plot_example_day(slot_w_dicom_df, example_date, anonymize=anonymize)
-    daily_over_time = plot_appt_types_over_time(slot_w_dicom_df, start_date, end_date)
-    day_of_week = plot_appt_types_by_day_of_week(slot_w_dicom_df, start_date, end_date)
+    daily_over_time = plot_appt_types_over_time(slot_df, start_date, end_date)
+    day_of_week = plot_appt_types_by_day_of_week(slot_df, start_date, end_date)
     return (example_day & (daily_over_time | day_of_week)).configure_mark(opacity=0.75)
 
 
@@ -181,9 +183,8 @@ def main():
     c = sqlite3.connect(dicom_db_path)
     dicom_times_df = pd.read_sql_query(query_text, c)
     dicom_times_df = mridle.data_management.format_dicom_times_df(dicom_times_df)
-    slot_w_dicom_df = mridle.data_management.integrate_dicom_data(slot_df, dicom_times_df)
 
-    chart = plot_dave_b(slot_w_dicom_df, example_date=args.example_date, start_date=args.start_date,
+    chart = plot_dave_b(slot_df, dicom_times_df, example_date=args.example_date, start_date=args.start_date,
                         end_date=args.end_date, anonymize=True)
     altair_saver.save(chart, os.path.join(args.output_dir, 'dave_b_1.png'))
 
