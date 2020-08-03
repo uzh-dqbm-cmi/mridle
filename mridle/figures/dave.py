@@ -21,7 +21,7 @@ def plot_example_day(df: pd.DataFrame, date, device='MR1', color_map=DETAILED_CO
         device: the device to plot
         date: date to plot
         color_map: the colors to use for each appointment type.
-        stroke_map: the colors to use for each NoShow_outcome type.
+        stroke_map: the colors to use for each slot_outcome type.
         anonymize: whether to anonymize the data by shifting it by a random amount.
         height_factor: multiplier for how tall to make the plot based on the number of days plotted
 
@@ -60,7 +60,7 @@ def plot_example_day(df: pd.DataFrame, date, device='MR1', color_map=DETAILED_CO
         x=alt.X('hoursminutes(start_time):T', title='Time'),
         x2=alt.X2('hoursminutes(end_time):T'),
         color=alt.Color('slot_type_detailed:N', scale=color_scale, legend=alt.Legend(title='Slot Type (detailed)')),
-        stroke=alt.Stroke('NoShow_outcome', scale=stroke_scale, legend=alt.Legend(title='Canceled Appts')),
+        stroke=alt.Stroke('slot_outcome', scale=stroke_scale, legend=alt.Legend(title='Canceled Appts')),
         tooltip='FillerOrderNo',
     ).properties(
         width=800,
