@@ -144,6 +144,19 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
 
     slot_df = pd.concat([show_slot_df, no_show_slot_df], sort=False)
 
+    # filter out duplicate appointments for the same patient & time slot (weird dispo behavior)
+    # build a dataset of all unique patient - time slot entries, searching for shows (NoShow == False)
+    unique_patient_time_slots = slot_df.groupby(['MRNCmpdId', 'start_time']).agg(
+        time_slot_status=pd.NamedAgg(column='NoShow', aggfunc='min'),
+        duplicate_appt=pd.NamedAgg(column='NoShow', aggfunc='count')
+    )
+    slot_df = pd.merge(slot_df, unique_patient_time_slots, left_on=['MRNCmpdId', 'start_time'], right_index=True)
+    slot_df['NoShow'] = np.where(~slot_df['time_slot_status'], False, slot_df['NoShow'])
+    # then also reset no_show_severity and slot_outcome
+    slot_df['slot_type'] = np.where(~slot_df['NoShow'], 'show', slot_df['slot_type'])
+    slot_df['slot_type_detailed'] = np.where(~slot_df['NoShow'], 'show', slot_df['slot_type_detailed'])
+    slot_df['slot_outcome'] = np.where(~slot_df['NoShow'], 'show', slot_df['slot_outcome'])
+
     if not include_id_cols:
         slot_df.drop('FillerOrderNo', axis=1, inplace=True)
 
