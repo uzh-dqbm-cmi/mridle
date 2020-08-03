@@ -140,9 +140,12 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
     no_show_slot_type_events = status_df[status_df['NoShow']].copy()
     no_show_slot_df = no_show_slot_type_events.groupby(['FillerOrderNo', 'was_sched_for_date']).agg(
         agg_dict).reset_index()
-    no_show_slot_df.drop('was_sched_for_date', axis=1, inplace=True)
+    # this col may not exist, if there are no no-shows, because the groupby will be empty
+    if 'was_sched_for_date' in no_show_slot_df.columns:
+        no_show_slot_df.drop('was_sched_for_date', axis=1, inplace=True)
 
     slot_df = pd.concat([show_slot_df, no_show_slot_df], sort=False)
+    slot_df['FillerOrderNo'] = slot_df['FillerOrderNo'].astype(int)
 
     # filter out duplicate appointments for the same patient & time slot (weird dispo behavior)
     # build a dataset of all unique patient - time slot entries, searching for shows (NoShow == False)
@@ -160,7 +163,7 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
     if not include_id_cols:
         slot_df.drop('FillerOrderNo', axis=1, inplace=True)
 
-    return slot_df
+    return slot_df.sort_values('start_time').reset_index(drop=True)
 
 
 def find_no_shows(row: pd.DataFrame) -> bool:
@@ -469,6 +472,7 @@ def string_set(a_list):
 
 def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, day: int, month: int, year: int,
                                 slot_outcome: str, verbose: bool = False) -> Set[str]:
+
     """
     Identifies any appointment IDs that are in dispo_data or slot_df and not vice versa.
 
