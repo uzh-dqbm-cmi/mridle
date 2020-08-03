@@ -111,6 +111,7 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
 
     default_agg_dict = {
         'MRNCmpdId': 'min',
+        'patient_class_adj': 'min',
         'start_time': 'min',
         'end_time': 'min',
         'NoShow': 'min',
@@ -155,9 +156,22 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
 
     slot_df['NoShow'] = np.where(~slot_df['time_slot_status'], False, slot_df['NoShow'])
     # then also reset no_show_severity and slot_outcome
-    slot_df['slot_type'] = np.where(~slot_df['NoShow'], 'show', slot_df['slot_type'])
-    slot_df['slot_type_detailed'] = np.where(~slot_df['NoShow'], 'show', slot_df['slot_type_detailed'])
-    slot_df['slot_outcome'] = np.where(~slot_df['NoShow'], 'show', slot_df['slot_outcome'])
+
+    def set_show_slot_type(patient_class_adj: str) -> str:
+        if patient_class_adj == 'ambulant':
+            return 'show'
+        elif patient_class_adj == 'inpatient':
+            return 'inpatient'
+
+    slot_df['slot_type'] = np.where(~slot_df['NoShow'],
+                                    np.where(slot_df['patient_class_adj'] == 'ambulant', 'show', 'inpatient'),
+                                    slot_df['slot_type'])
+    slot_df['slot_type_detailed'] = np.where(~slot_df['NoShow'],
+                                             np.where(slot_df['patient_class_adj'] == 'ambulant', 'show', 'inpatient'),
+                                             slot_df['slot_type_detailed'])
+    slot_df['slot_outcome'] = np.where(~slot_df['NoShow'],
+                                       np.where(slot_df['patient_class_adj'] == 'ambulant', 'show', 'inpatient'),
+                                       slot_df['slot_outcome'])
 
     if not include_id_cols:
         slot_df.drop('FillerOrderNo', axis=1, inplace=True)
