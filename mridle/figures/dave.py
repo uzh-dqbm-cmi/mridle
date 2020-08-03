@@ -147,19 +147,7 @@ def plot_appt_types_by_day_of_week(df: pd.DataFrame, start_date, end_date, color
     )
 
 
-def plot_dave_b(data_dir, example_date, start_date, end_date, anonymize=True):
-    dm = DataManager(data_dir)
-    raw_df = dm['rdsc_extracts'].latest().select('xlsx').load()
-    status_df = mridle.data_management.build_status_df(raw_df)
-    slot_df = mridle.data_management.build_slot_df(status_df)
-
-    dicom_db_path = dm['dicom_data'].latest().select('sqlite').path
-    query_text = dm['dicom_data'].latest().select('image_times.sql').load(data_interface_hint='txt')
-    c = sqlite3.connect(dicom_db_path)
-    dicom_times_df = pd.read_sql_query(query_text, c)
-    dicom_times_df = mridle.data_management.format_dicom_times_df(dicom_times_df)
-    slot_w_dicom_df = mridle.data_management.integrate_dicom_data(slot_df, dicom_times_df)
-
+def plot_dave_b(slot_w_dicom_df, example_date, start_date, end_date, anonymize=True):
     if example_date is None:
         # choose a random date
         random_row = slot_w_dicom_df[(~slot_w_dicom_df['start_time'].isna())
@@ -168,9 +156,9 @@ def plot_dave_b(data_dir, example_date, start_date, end_date, anonymize=True):
                                      ].sample(1)
         example_date = random_row['start_time'].dt.floor('d').iloc[0]
 
-    example_day = plot_example_day(slot_df, example_date, anonymize=anonymize)
-    daily_over_time = plot_appt_types_over_time(slot_df, start_date, end_date)
-    day_of_week = plot_appt_types_by_day_of_week(slot_df, start_date, end_date)
+    example_day = plot_example_day(slot_w_dicom_df, example_date, anonymize=anonymize)
+    daily_over_time = plot_appt_types_over_time(slot_w_dicom_df, start_date, end_date)
+    day_of_week = plot_appt_types_by_day_of_week(slot_w_dicom_df, start_date, end_date)
     return (example_day & (daily_over_time | day_of_week)).configure_mark(opacity=0.75)
 
 
@@ -183,7 +171,19 @@ def main():
     parser.add_argument('--end_date', default='05/01/2019', help='The end date for the summary subplots')
     args = parser.parse_args()
 
-    chart = plot_dave_b(args.data_dir, example_date=args.example_date, start_date=args.start_date,
+    dm = DataManager(args.data_dir)
+    raw_df = dm['rdsc_extracts'].latest().select('xlsx').load()
+    status_df = mridle.data_management.build_status_df(raw_df)
+    slot_df = mridle.data_management.build_slot_df(status_df)
+
+    dicom_db_path = dm['dicom_data'].latest().select('sqlite').path
+    query_text = dm['dicom_data'].latest().select('image_times.sql').load()
+    c = sqlite3.connect(dicom_db_path)
+    dicom_times_df = pd.read_sql_query(query_text, c)
+    dicom_times_df = mridle.data_management.format_dicom_times_df(dicom_times_df)
+    slot_w_dicom_df = mridle.data_management.integrate_dicom_data(slot_df, dicom_times_df)
+
+    chart = plot_dave_b(slot_w_dicom_df, example_date=args.example_date, start_date=args.start_date,
                         end_date=args.end_date, anonymize=True)
     altair_saver.save(chart, os.path.join(args.output_dir, 'dave_b_1.png'))
 
