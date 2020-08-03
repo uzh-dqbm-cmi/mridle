@@ -169,9 +169,7 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
     slot_df['slot_type_detailed'] = np.where(~slot_df['NoShow'],
                                              np.where(slot_df['patient_class_adj'] == 'ambulant', 'show', 'inpatient'),
                                              slot_df['slot_type_detailed'])
-    slot_df['slot_outcome'] = np.where(~slot_df['NoShow'],
-                                       np.where(slot_df['patient_class_adj'] == 'ambulant', 'show', 'inpatient'),
-                                       slot_df['slot_outcome'])
+    slot_df['slot_outcome'] = np.where(~slot_df['NoShow'], 'show', slot_df['slot_outcome'])
 
     if not include_id_cols:
         slot_df.drop('FillerOrderNo', axis=1, inplace=True)
