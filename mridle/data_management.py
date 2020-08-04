@@ -147,29 +147,7 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
     slot_df['FillerOrderNo'] = slot_df['FillerOrderNo'].astype(int)
 
     # filter out duplicate appointments for the same patient & time slot (weird dispo behavior)
-    # build a dataset of all unique patient - time slot entries, searching for shows (NoShow == False)
-    unique_patient_time_slots = slot_df.groupby(['MRNCmpdId', 'start_time']).agg(
-        time_slot_status=pd.NamedAgg(column='NoShow', aggfunc='min'),
-        duplicate_appt=pd.NamedAgg(column='NoShow', aggfunc='count')
-    )
-    slot_df = pd.merge(slot_df, unique_patient_time_slots.reset_index(), on=['MRNCmpdId', 'start_time'])
-
-    slot_df['NoShow'] = np.where(~slot_df['time_slot_status'], False, slot_df['NoShow'])
-    # then also reset no_show_severity and slot_outcome
-
-    def set_show_slot_type(patient_class_adj: str) -> str:
-        if patient_class_adj == 'ambulant':
-            return 'show'
-        elif patient_class_adj == 'inpatient':
-            return 'inpatient'
-
-    slot_df['slot_type'] = np.where(~slot_df['NoShow'],
-                                    np.where(slot_df['patient_class_adj'] == 'ambulant', 'show', 'inpatient'),
-                                    slot_df['slot_type'])
-    slot_df['slot_type_detailed'] = np.where(~slot_df['NoShow'],
-                                             np.where(slot_df['patient_class_adj'] == 'ambulant', 'show', 'inpatient'),
-                                             slot_df['slot_type_detailed'])
-    slot_df['slot_outcome'] = np.where(~slot_df['NoShow'], 'show', slot_df['slot_outcome'])
+    slot_df = filter_duplicate_patient_time_slots(slot_df)
 
     if not include_id_cols:
         slot_df.drop('FillerOrderNo', axis=1, inplace=True)
@@ -441,22 +419,27 @@ def identify_end_times(row: pd.DataFrame) -> dt.datetime:
         return None
 
 
-def add_column_details(detail_df: pd.DataFrame, slot_df: pd.DataFrame, agg_dict: Dict) -> pd.DataFrame:
+def filter_duplicate_patient_time_slots(slot_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Adds columns to slot_df, as determined by agg_dict and extracted from detail_df.
+    Filter duplicate patient-time slots. This is a scheduling behavior where two appointments are scheduled for the
+     same patient for the same time, and right before the appt, one of the two is canceled. To prevent these
+      appointments from being marked as no-shows, remove the no-show components of these duplicate appointments.
+
+      Group slot_df by patient id and appt start time, sort by NoShow so shows (if present) are on top.
+      Apply a cumcount, which marks the top entry with 0. Filter for all 0s, keeping only the single topmost entry
+       for every patient-time-slot.
 
     Args:
-        detail_df: row-per-status-change dataframe
-        slot_df: row-per-appointment-slot dataframe
-        agg_dict: dictionary defining the columns to add to slot_df and their aggregation methods.
-            To be used in df.groupby().agg()
+        slot_df:
 
-    Returns: slot_df with more columns.
+    Returns:
 
     """
-    appt_details = detail_df.groupby('FillerOrderNo').agg(agg_dict)
-    df_with_details = pd.merge(slot_df, appt_details, left_on='FillerOrderNo', right_index=True, how='left')
-    return df_with_details
+    slot_df.sort_values(['MRNCmpdId', 'start_time', 'NoShow'], inplace=True)  # shows/NoShow == False will be on top
+    slot_df['multi_slot'] = slot_df.groupby(['MRNCmpdId', 'start_time']).cumcount()
+    first_slot_only = slot_df[slot_df['multi_slot'] == 0].copy()
+    first_slot_only.drop(columns=['multi_slot'], axis=1, inplace=True)
+    return first_slot_only
 
 
 def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:

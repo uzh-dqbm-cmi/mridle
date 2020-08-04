@@ -36,6 +36,7 @@ class TestBuildSlotDF(unittest.TestCase):
 
             slot_df_col_order = ['FillerOrderNo',
                                  'MRNCmpdId',
+                                 'patient_class_adj',
                                  'start_time',
                                  'end_time',
                                  'NoShow',
@@ -44,8 +45,6 @@ class TestBuildSlotDF(unittest.TestCase):
                                  'slot_type_detailed',
                                  'EnteringOrganisationDeviceID',
                                  'UniversalServiceName',
-                                 'time_slot_status',
-                                 'duplicate_appt',
                                  ]
             slot_df = slot_df[slot_df_col_order]
 
@@ -72,6 +71,7 @@ class TestBuildSlotDF(unittest.TestCase):
                 'slot_type_detailed': 'show',
                 'time_slot_status': False,
                 'duplicate_appt': 1,
+                'patient_class_adj': 'ambulant',
             }
         ])
 
@@ -152,6 +152,7 @@ class TestBuildSlotDF(unittest.TestCase):
                 'slot_type_detailed': 'soft no-show',
                 'time_slot_status': True,
                 'duplicate_appt': 1,
+                'patient_class_adj': 'ambulant',
             },
             {
                 'start_time': day(14),
@@ -162,6 +163,7 @@ class TestBuildSlotDF(unittest.TestCase):
                 'slot_type_detailed': 'show',
                 'time_slot_status': False,
                 'duplicate_appt': 1,
+                'patient_class_adj': 'ambulant',
             }
         ])
 
@@ -194,6 +196,7 @@ class TestBuildSlotDF(unittest.TestCase):
                 'slot_type_detailed': 'hard no-show',
                 'time_slot_status': True,
                 'duplicate_appt': 1,
+                'patient_class_adj': 'ambulant',
             },
             {
                 'start_time': day(14),
@@ -204,6 +207,7 @@ class TestBuildSlotDF(unittest.TestCase):
                 'slot_type_detailed': 'show',
                 'time_slot_status': False,
                 'duplicate_appt': 1,
+                'patient_class_adj': 'ambulant',
             }
         ])
 
@@ -233,6 +237,7 @@ class TestBuildSlotDF(unittest.TestCase):
                 'slot_type_detailed': 'soft no-show',
                 'time_slot_status': True,
                 'duplicate_appt': 1,
+                'patient_class_adj': 'ambulant',
             }
         ])
 
@@ -263,6 +268,7 @@ class TestBuildSlotDF(unittest.TestCase):
                 'slot_type_detailed': 'hard no-show',
                 'time_slot_status': True,
                 'duplicate_appt': 1,
+                'patient_class_adj': 'ambulant',
             }
         ])
 
@@ -293,6 +299,7 @@ class TestBuildSlotDF(unittest.TestCase):
                 'slot_type_detailed': 'hard no-show',
                 'time_slot_status': True,
                 'duplicate_appt': 1,
+                'patient_class_adj': 'ambulant',
             }
         ])
 
@@ -302,7 +309,7 @@ class TestBuildSlotDF(unittest.TestCase):
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
-    def test_duplicate_appt_half_canceled_creates_two_shows(self):
+    def test_duplicate_appt_half_canceled_creates_one_show(self):
         raw_df = pd.DataFrame.from_records([
             # fon, date,                               now_status,            now_sched_for_date
             (1,    day(0),                             code['requested'],     day(4)),
@@ -335,18 +342,8 @@ class TestBuildSlotDF(unittest.TestCase):
                 'slot_type_detailed': 'show',
                 'time_slot_status': False,
                 'duplicate_appt': 2,
+                'patient_class_adj': 'ambulant',
             },
-            {
-                'FillerOrderNo': 2,
-                'start_time': day(4),
-                'end_time': day(4) + pd.Timedelta(minutes=30),
-                'NoShow': False,
-                'slot_outcome': 'show',
-                'slot_type': 'show',
-                'slot_type_detailed': 'show',
-                'time_slot_status': False,
-                'duplicate_appt': 2,
-            }
         ])
 
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df, create_fon=False)
@@ -355,7 +352,7 @@ class TestBuildSlotDF(unittest.TestCase):
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
-    def test_duplicate_appt_half_rescheduled_creates_two_shows(self):
+    def test_duplicate_appt_half_rescheduled_creates_one_show(self):
         raw_df = pd.DataFrame.from_records([
             # fon, date,                               now_status,            now_sched_for_date
             (1,    day(0),                             code['requested'],     day(4)),
@@ -388,18 +385,8 @@ class TestBuildSlotDF(unittest.TestCase):
                 'slot_type_detailed': 'show',
                 'time_slot_status': False,
                 'duplicate_appt': 2,
+                'patient_class_adj': 'ambulant',
             },
-            {
-                'FillerOrderNo': 2,
-                'start_time': day(4),
-                'end_time': day(4) + pd.Timedelta(minutes=30),
-                'NoShow': False,
-                'slot_outcome': 'show',
-                'slot_type': 'show',
-                'slot_type_detailed': 'show',
-                'time_slot_status': False,
-                'duplicate_appt': 2,
-            }
         ])
 
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df, create_fon=False)
@@ -408,7 +395,7 @@ class TestBuildSlotDF(unittest.TestCase):
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
-    def test_duplicate_appt_both_canceled_creates_two_no_shows(self):
+    def test_duplicate_appt_both_canceled_creates_one_no_show(self):
         raw_df = pd.DataFrame.from_records([
             # fon, date,                               now_status,            now_sched_for_date
             (1,    day(0),                             code['requested'],     day(4)),
@@ -440,18 +427,8 @@ class TestBuildSlotDF(unittest.TestCase):
                 'slot_type_detailed': 'hard no-show',
                 'time_slot_status': True,
                 'duplicate_appt': 2,
+                'patient_class_adj': 'ambulant',
             },
-            {
-                'FillerOrderNo': 2,
-                'start_time': day(4),
-                'end_time': day(4) + pd.Timedelta(minutes=30),
-                'NoShow': True,
-                'slot_outcome': 'canceled',
-                'slot_type': 'no-show',
-                'slot_type_detailed': 'hard no-show',
-                'time_slot_status': True,
-                'duplicate_appt': 2,
-            }
         ])
 
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df, create_fon=False)
@@ -481,6 +458,7 @@ class TestBuildSlotDF(unittest.TestCase):
                 'slot_type_detailed': 'show',
                 'time_slot_status': False,
                 'duplicate_appt': 1,
+                'patient_class_adj': 'ambulant',
             }
         ])
 
@@ -512,6 +490,7 @@ class TestBuildSlotDF(unittest.TestCase):
                 'slot_type_detailed': 'show',
                 'time_slot_status': False,
                 'duplicate_appt': 1,
+                'patient_class_adj': 'ambulant',
             }
         ])
 
