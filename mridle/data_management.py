@@ -62,7 +62,7 @@ def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
          - patient_class_adj: patient class (adjusted) ['ambulant', 'inpatient']
          - NoShow: bool, [True, False]
          - NoShow_severity: str, ['hard', 'soft']
-         - NoShow_outcome: str, ['rescheduled', 'canceled']
+         - slot_outcome: str, ['show', 'rescheduled', 'canceled']
          - slot_type: str, ['no-show', 'show', 'inpatient']
          - slot_type_detailed: str, ['hard no-show', 'soft no-show', 'show', 'inpatient']
 
@@ -76,8 +76,8 @@ def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     df['patient_class_adj'] = df['PatientClass'].apply(adjust_patient_class)
     df['NoShow'] = df.apply(find_no_shows, axis=1)
     df['NoShow_severity'] = df.apply(set_no_show_severity, axis=1)
-    df['NoShow_outcome'] = df.apply(set_no_show_outcome, axis=1)
     df['slot_type'] = df.apply(set_slot_type, axis=1)
+    df['slot_outcome'] = df.apply(set_slot_outcome, axis=1)
     df['slot_type_detailed'] = df.apply(set_slot_type_detailed, axis=1)
     return df
 
@@ -100,7 +100,7 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
          - start_time: datetime, appt scheduled start time
          - end_time: datetime, appt scheduled end time
          - NoShow: bool, [True, False]
-         - NoShow_outcome: str, ['rescheduled', 'canceled']
+         - slot_outcome: str, ['show', 'rescheduled', 'canceled']
          - slot_type: str, ['no-show', 'show', 'inpatient']
          - slot_type_detailed: str, ['hard no-show', 'soft no-show', 'show', 'inpatient']
          - EnteringOrganisationDeviceID: str, device the appt was scheduled for
@@ -112,7 +112,7 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
         'start_time': 'min',
         'end_time': 'min',
         'NoShow': 'min',
-        'NoShow_outcome': 'min',
+        'slot_outcome': 'min',
         'slot_type': 'min',
         'slot_type_detailed': 'min',
         'EnteringOrganisationDeviceID': 'min',
@@ -319,12 +319,25 @@ def set_no_show_severity(row: pd.DataFrame) -> str:
             return 'soft'
 
 
-def set_no_show_outcome(row: pd.DataFrame) -> str:
+def set_slot_outcome(row: pd.DataFrame) -> str:
+    """
+    Determine the outcome of the appointment slot: was it rescheduled, canceled, or did the patient show up?
+    Appointment slots that are not moved into canceled status but are never rescheduled to a new time are labeled as
+     canceled.
+
+    Args:
+        row: a row from status_df
+
+    Returns: one of ['rescheduled', 'canceled', 'show', or 'inpatient']
+
+    """
     if row['NoShow']:
         if row['now_status'] == 'canceled':
             return 'canceled'
         else:
             return 'rescheduled'
+    elif row['slot_type'] == 'show' or row['slot_type'] == 'inpatient':
+        return 'show'
 
 
 def set_slot_type(row: pd.DataFrame) -> str:
@@ -432,10 +445,7 @@ def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
     dispo_df['patient_id'] = dispo_df['patient_id'].astype(int)
     dispo_df['start_time'] = pd.to_datetime(dispo_df['date'] + ' ' + dispo_df['start_time'], dayfirst=True)
     dispo_df['date'] = pd.to_datetime(dispo_df['date'], dayfirst=True)
-    dispo_df['slot_type_detailed'] = np.where(dispo_df['type'] == 'no-show',
-                                              dispo_df['no_show_severity'] + ' no-show',
-                                              dispo_df['type']
-                                              )
+    dispo_df['slot_outcome'] = np.where(dispo_df['type'] == 'show', 'show', dispo_df['slot_outcome'])
 
     return dispo_df
 
@@ -445,7 +455,7 @@ def string_set(a_list):
 
 
 def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, day: int, month: int, year: int,
-                                slot_type_detailed: str) -> Set[str]:
+                                slot_outcome: str, verbose: bool = False) -> Set[str]:
     """
     Identifies any appointment IDs that are in dispo_data or slot_df and not vice versa.
 
@@ -455,41 +465,39 @@ def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame,
         day: day numeric value
         month: month numeric value
         year: year numeric value
-        slot_type: string with value ['show', 'soft no-show', 'hard no-show'].
-        When `show` is selected, `inpatient` appointments are also included.
+        slot_outcome: string with value ['show', 'rescheduled', 'canceled'].
+            When `show` is selected, `inpatient` appointments are also included.
+        verbose: whether to make prints during the comparison
 
     Returns:
         dispo_patids: set of strings with patient IDs from dispo
         slot_df_patids set of strings with patient IDs from extract
 
     """
-    if slot_type_detailed == 'show':
-        slot_type_detailed = ['show', 'inpatient']
-    elif slot_type_detailed == 'soft no-show':
-        slot_type_detailed = ['soft no-show']
-    elif slot_type_detailed == 'hard no-show':
-        slot_type_detailed = ['hard no-show']
-    else:
+    if slot_outcome not in ['show', 'rescheduled', 'canceled']:
         print('invalid type')
         return
+
     selected_dispo_rows = dispo_data[(dispo_data['date'].dt.day == day)
                                      & (dispo_data['date'].dt.month == month)
                                      & (dispo_data['date'].dt.year == year)
-                                     & (dispo_data['slot_type_detailed'].isin(slot_type_detailed))
+                                     & (dispo_data['slot_outcome'] == slot_outcome)
                                      ]
     selected_slot_df_rows = slot_df[(slot_df['start_time'].dt.day == day)
                                     & (slot_df['start_time'].dt.month == month)
                                     & (slot_df['start_time'].dt.year == year)
-                                    & (slot_df['slot_type_detailed'].isin(slot_type_detailed))
+                                    & (slot_df['slot_outcome'] == slot_outcome)
                                     ]
     dispo_patids = string_set(list(selected_dispo_rows['patient_id'].unique()))
     slot_df_patids = string_set(list(selected_slot_df_rows['MRNCmpdId'].unique()))
-    print('{} Dispo Pat IDs: \n{}'.format(len(dispo_patids), dispo_patids))
-    print('{} Slot_df Pat IDs: \n{}'.format(len(slot_df_patids), slot_df_patids))
 
-    print()
-    print('In Dispo but not in Slot_df: {}'.format(dispo_patids.difference(slot_df_patids)))
-    print('In Slot_df but not in Dispo: {}'.format(slot_df_patids.difference(dispo_patids)))
+    if verbose:
+        print('{} Dispo Pat IDs: \n{}'.format(len(dispo_patids), dispo_patids))
+        print('{} Slot_df Pat IDs: \n{}'.format(len(slot_df_patids), slot_df_patids))
+        print()
+        print('In Dispo but not in Slot_df: {}'.format(dispo_patids.difference(slot_df_patids)))
+        print('In Slot_df but not in Dispo: {}'.format(slot_df_patids.difference(dispo_patids)))
+
     return dispo_patids, slot_df_patids
 
 
@@ -502,14 +510,12 @@ def generate_data_firstexperiment_plot(dispo_data: pd.DataFrame, slot_df: pd.Dat
         dispo_data: Dataframe with appointment data
         slot_df: Dataframe with appointment data from extract
 
-    Returns: dataframe that contains, date, year, num_shows, num_softnoshows,
-             num_hard_noshow , 'extract/experiment'
+    Returns: dataframe that contains, date, year, num_shows, num_rescheduled, num_canceled , 'extract/experiment'
 
     '''
 
-    # SNS stands for 'soft no-show' and HNS stands for 'hard no-show'
-    df = pd.DataFrame(columns=['date', 'year', 'dispo_show', 'dispo_sns', 'dispo_hns',
-                               'extract_show', 'extract_sns', 'extract_hns'])
+    df = pd.DataFrame(columns=['date', 'year', 'dispo_show', 'dispo_rescheduled', 'dispo_canceled',
+                               'extract_show', 'extract_rescheduled', 'extract_canceled'])
     for date_elem in dispo_data.date.dt.date.unique():
         day, month, year = date_elem.day, date_elem.month, date_elem.year
         # Identify how many 'shows' in dispo_data and extract
@@ -518,30 +524,36 @@ def generate_data_firstexperiment_plot(dispo_data: pd.DataFrame, slot_df: pd.Dat
         num_extract_show = len(slot_df_patids)
         # Identify how many 'soft no-show' in dispo_data and extract
         dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year,
-                                                                   'soft no-show')
-        num_dispo_sns = len(dispo_patids)
-        num_extract_sns = len(slot_df_patids)
+                                                                   'rescheduled')
+        num_dispo_rescheduled = len(dispo_patids)
+        num_extract_rescheduled = len(slot_df_patids)
         # Identify how many 'hard no-show' in dispo_data and extract
         dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year,
-                                                                   'hard no-show')
-        num_dispo_hns = len(dispo_patids)
-        num_extract_hns = len(slot_df_patids)
+                                                                   'canceled')
+        num_dispo_canceled = len(dispo_patids)
+        num_extract_canceled = len(slot_df_patids)
 
-        df = df.append({'date': date_elem, 'year': date_elem.year, 'dispo_show': num_dispo_show,
-                        'dispo_sns': num_dispo_sns, 'dispo_hns': num_dispo_hns, 'extract_show': num_extract_show,
-                        'extract_sns': num_extract_sns, 'extract_hns': num_extract_hns}, ignore_index=True)
+        df = df.append({'date': date_elem,
+                        'year': date_elem.year,
+                        'dispo_show': num_dispo_show,
+                        'dispo_rescheduled': num_dispo_rescheduled,
+                        'dispo_canceled': num_dispo_canceled,
+                        'extract_show': num_extract_show,
+                        'extract_rescheduled': num_extract_rescheduled,
+                        'extract_canceled': num_extract_canceled
+                        }, ignore_index=True)
 
     return df
 
 
-def calculate_ratios_experiment(df_experiment: pd.DataFrame, slot_type_detailed: str) -> pd.DataFrame:
+def calculate_ratios_experiment(df_experiment: pd.DataFrame, slot_outcome: str) -> pd.DataFrame:
     """
-    Calculates ratios between number of show, soft no-show and hard no-show for plot
+    Calculates ratios between number of show, rescheduled and canceled for plot
 
     Args:
         df_experiment: dataframe that contains num_shows, num_softnoshows,
              num_hard_noshow per date and if it is from extract or dispo
-        slot_type_detailed: string with value ['show', 'soft no-show', 'hard no-show', 'inpatient'].
+        slot_outcome: string with value ['show', 'rescheduled', 'canceled'].
 
 
     Returns: dataframe with three columns. These are ['date','year','ratio']. The last column being the
@@ -551,15 +563,15 @@ def calculate_ratios_experiment(df_experiment: pd.DataFrame, slot_type_detailed:
 
     """
 
-    if slot_type_detailed == 'show':
-        drop_col = ['dispo_sns', 'dispo_hns', 'extract_sns', 'extract_hns']
+    if slot_outcome == 'show':
+        drop_col = ['dispo_rescheduled', 'dispo_canceled', 'extract_rescheduled', 'extract_canceled']
         drop_col2 = ['extract_show', 'dispo_show']
-    elif slot_type_detailed == 'soft no-show':
-        drop_col = ['dispo_show', 'dispo_hns', 'extract_show', 'extract_hns']
-        drop_col2 = ['extract_sns', 'dispo_sns']
-    elif slot_type_detailed == 'hard no-show':
-        drop_col = ['dispo_sns', 'dispo_show', 'extract_sns', 'extract_show']
-        drop_col2 = ['extract_hns', 'dispo_hns']
+    elif slot_outcome == 'rescheduled':
+        drop_col = ['dispo_show', 'dispo_canceled', 'extract_show', 'extract_canceled']
+        drop_col2 = ['extract_rescheduled', 'dispo_rescheduled']
+    elif slot_outcome == 'canceled':
+        drop_col = ['dispo_rescheduled', 'dispo_show', 'extract_rescheduled', 'extract_show']
+        drop_col2 = ['extract_canceled', 'dispo_canceled']
 
     df_ratios = df_experiment.copy()
     df_ratios = df_ratios.drop(drop_col, axis=1)
@@ -635,3 +647,46 @@ def jaccard_index(dispo_set: Set, extract_set: Set) -> float:
         score = (float(len(dispo_set.intersection(extract_set))) / len(dispo_set.union(extract_set)))
 
     return score
+
+
+def print_validation_summary_metrics(dispo_df, slot_df):
+    """
+    Print total slot counts from slot_df and dispo_df, and their average Jaccard index per day. Metrics are printed for
+     separately show, rescheduled, and canceled slots.
+    Args:
+        dispo_df: result of build_dispo_df()
+        slot_df: result fo build_slot_df()
+
+    Returns: Dataframe with metrics
+
+    """
+    validation_dates = list(dispo_df.date.dt.date.unique())
+    slot_patids = {}
+
+    for outcome in ['show', 'rescheduled', 'canceled']:
+        slot_patids[outcome] = {}
+
+        total_slot_df_patids = []
+        total_dispo_patids = []
+        jaccard_indices = []
+        for d in validation_dates:
+            day, month, year = d.day, d.month, d.year
+            dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_df, slot_df, day, month, year, outcome,
+                                                                       verbose=False)
+            total_slot_df_patids.extend(list(slot_df_patids))
+            total_dispo_patids.extend(list(dispo_patids))
+            jaccard_indices.append(jaccard_index(slot_df_patids, dispo_patids))
+
+        slot_patids[outcome]['extract'] = total_slot_df_patids
+        slot_patids[outcome]['dispo'] = total_dispo_patids
+        slot_patids[outcome]['jaccard'] = jaccard_indices
+
+    slot_cnts = {}
+    for outcome in slot_patids:
+        slot_cnts[outcome] = {}
+        for source in ['extract', 'dispo']:
+            slot_cnts[outcome][source] = len(slot_patids[outcome][source])
+            slot_cnts[outcome]['jaccard'] = sum(slot_patids[outcome]['jaccard']) / len(slot_patids[outcome]['jaccard'])
+
+    return pd.DataFrame(slot_cnts).T[['dispo', 'extract', 'jaccard']].style.format(
+        {'dispo': '{:.0f}', 'extract': '{:.0f}', 'jaccard': '{:.2f}'})

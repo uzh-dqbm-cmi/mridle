@@ -22,9 +22,37 @@ raw_df = dm['rdsc_extracts']['2020-02-04_RIS_deID_3months'].select('xlsx').load(
 
 # build row-per-status-change data set
 status_df = mridle.data_management.build_status_df(raw_df)
+# status_df contains the columns:
+# - FillerOrderNo: int, appt id
+# - MRNCmpdId: int, patient id
+# - date (MessageDtTm): datetime, the date and time of the status change
+# - was_status: str, the status the appt changed from
+# - now_status: str, the status the appt changed to
+# - was_sched_for: int, number of days ahead the appt was sched for before status change relative to `date`
+# - now_sched_for: int, number of days ahead the appt is sched for after status change relative to `date`
+# - was_sched_for_date: datetime, the date the appt was sched for before status change
+# - now_sched_for_date datetime, the date the appt is sched for after status change
+# - patient_class_adj: patient class (adjusted) ['ambulant', 'inpatient']
+# - NoShow: bool, [True, False]
+# - NoShow_severity: str, ['hard', 'soft']
+# - slot_outcome: str, ['show', 'rescheduled', 'canceled']
+# - slot_type: str, ['no-show', 'show', 'inpatient']
+# - slot_type_detailed: str, ['hard no-show', 'soft no-show', 'show', 'inpatient']
 
-# build row-per-slot (no show or completed) data set
+# build row-per-slot (no show slot or completed slot) data set
 slot_df = mridle.data_management.build_slot_df(status_df)
+# slot_df contains the columns:
+# - FillerOrderNo: int, appt id
+# - MRNCmpdId: int, patient id
+# - start_time: datetime, appt scheduled start time
+# - end_time: datetime, appt scheduled end time
+# - NoShow: bool, [True, False]
+# - slot_outcome: str, ['show', 'rescheduled', 'canceled']
+# - slot_type: str, ['no-show', 'show', 'inpatient']
+# - slot_type_detailed: str, ['hard no-show', 'soft no-show', 'show', 'inpatient']
+# - EnteringOrganisationDeviceID: str, device the appt was scheduled for
+# - UniversalServiceName: str, the kind of appointment
+
 ```
 
 
