@@ -8,10 +8,10 @@ import random
 import sqlite3
 import mridle
 from datatc import DataManager
-from mridle.plotting_utilities import DEFAULT_COLOR_MAP, DETAILED_COLOR_MAP, STROKE_MAP
+from mridle.plotting_utilities import DEFAULT_COLOR_MAP, DETAILED_COLOR_MAP, OUTCOME_STROKE_MAP
 
 
-def plot_example_day(df: pd.DataFrame, date, device='MR1', color_map=DETAILED_COLOR_MAP, stroke_map=STROKE_MAP,
+def plot_example_day(df: pd.DataFrame, date, device='MR1', color_map=DETAILED_COLOR_MAP, stroke_map=OUTCOME_STROKE_MAP,
                      anonymize=True, height_factor=20):
     """
     Plot completed, inpatient, and no-show appointments for one device for a day.

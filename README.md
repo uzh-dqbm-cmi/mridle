@@ -30,7 +30,7 @@ slot_df = mridle.data_management.build_slot_df(status_df)
 where `status_df` contains the columns:
 | column name | type | description |
 |---|---|---|
-| FillerOrderNo | int | appt id |
+| FillerOrderNo | int | appointment id |
 | MRNCmpdId | int | patient id |
 | date | datetime | the date and time of the status change |
 | was_status | str | the status the appt changed from |
@@ -49,7 +49,7 @@ where `status_df` contains the columns:
 and `slot_df` contains the columns:
 | column name | type | description |
 |---|---|---|
-|FillerOrderNo | int | appt id |
+|FillerOrderNo | int | appointment id |
 | MRNCmpdId | int | patient id |
 | start_time | datetime | appt scheduled start time |
 | end_time | datetime | appt scheduled end time |
