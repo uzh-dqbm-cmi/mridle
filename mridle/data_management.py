@@ -335,6 +335,17 @@ def set_no_show_severity(row: pd.DataFrame) -> str:
 
 
 def set_slot_outcome(row: pd.DataFrame) -> str:
+    """
+    Determine the outcome of the appointment slot: was it rescheduled, canceled, or did the patient show up?
+    Appointment slots that are not moved into canceled status but are never rescheduled to a new time are labeled as
+     canceled.
+
+    Args:
+        row: a row from status_df
+
+    Returns: one of ['rescheduled', 'canceled', 'show', or 'inpatient']
+
+    """
     if row['NoShow']:
         if row['now_status'] == 'canceled':
             return 'canceled'
