@@ -22,19 +22,23 @@ raw_df = dm['rdsc_extracts']['2020-02-04_RIS_deID_3months'].select('xlsx').load(
 
 # build row-per-status-change data set
 status_df = mridle.data_management.build_status_df(raw_df)
+
+# build row-per-slot (no show slot or completed slot) data set
+slot_df = mridle.data_management.build_slot_df(status_df)
 ```
-where status_df contains the columns:
+
+where `status_df` contains the columns:
 | column name | type | description |
 |---|---|---|
 | FillerOrderNo | int | appt id |
 | MRNCmpdId | int | patient id |
-| date (MessageDtTm) | datetime | the date and time of the status change |
+| date | datetime | the date and time of the status change |
 | was_status | str | the status the appt changed from |
 | now_status | str | the status the appt changed to |
 | was_sched_for | int | number of days ahead the appt was sched for before status change relative to `date` |
 | now_sched_for | int | number of days ahead the appt is sched for after status change relative to `date` |
 | was_sched_for_date | datetime | the date the appt was sched for before status change |
-| now_sched_for_date datetime, the date the appt is sched for after status change |
+| now_sched_for_date | datetime| the date the appt is sched for after status change |
 | patient_class_adj | patient  |lass (adjusted) ['ambulant', 'inpatient'] |
 | NoShow | bool | [True, False] |
 | NoShow_severity | str | ['hard', 'soft'] |
@@ -42,11 +46,7 @@ where status_df contains the columns:
 | slot_type | str | ['no-show', 'show', 'inpatient'] |
 | slot_type_detailed | str | ['hard no-show', 'soft no-show', 'show', 'inpatient'] |
 
-# build row-per-slot (no show slot or completed slot) data set
-```python
-slot_df = mridle.data_management.build_slot_df(status_df)
-```
-where slot_df contains the columns:
+and `slot_df` contains the columns:
 | column name | type | description |
 |---|---|---|
 |FillerOrderNo | int | appt id |
