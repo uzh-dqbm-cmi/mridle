@@ -166,10 +166,12 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
             slot_df.drop('MRNCmpdId', axis=1, inplace=True)
 
         # remove start_time field if it wasn't requested in the passed agg_dict
-        if not start_time_requested_in_output:
+        if start_time_requested_in_output:
+            slot_df.sort_values('start_time', inplace=True)
+        else:
             slot_df.drop('start_time', axis=1, inplace=True)
 
-    slot_df = slot_df.sort_values('start_time').reset_index(drop=True)
+    slot_df.reset_index(drop=True, inplace=True)
     return slot_df
 
 
