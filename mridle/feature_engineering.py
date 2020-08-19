@@ -25,7 +25,7 @@ def identify_end_times(row: pd.DataFrame) -> dt.datetime:
 
 def feature_hour_sched(status_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Append the hour_sched feature to the dataframe uisng was_sched_for_date.
+    Append the hour_sched feature to the dataframe using was_sched_for_date.
 
     Args:
         status_df: A row-per-status-change dataframe.
@@ -55,8 +55,14 @@ def identify_sched_events(row: pd.DataFrame) -> dt.datetime:
 def feature_days_scheduled_in_advance(status_df: pd.DataFrame) -> pd.DataFrame:
     """
     Append the sched_days_advanced feature to the dataframe.
-    Works by identifying status changes that represent scheduling events, and forward filling those dates so that
-      'show' and 'no-show' appt status rows contain the date of the most recent scheduling event.
+    Works by:
+        1. Identify status changes that represent scheduling events
+        2. Shift scheduling events forward 1, so that each row has the previous scheduling event.
+            For example, on a No-Show status change row, Step 1 will stamp the scheduling event that occurs as a result
+             of a no-show going from scheduled status -> scheduled status. To calculate the scheduled date of the
+              no-show appt slot, we need the previous scheduling event.
+        3. Fill forward so the scheduling event dates so that 'show' and 'no-show' appt status rows contain the date of
+         the most recent (but previous) scheduling event.
 
     Args:
         status_df: A row-per-status-change dataframe.
@@ -64,7 +70,7 @@ def feature_days_scheduled_in_advance(status_df: pd.DataFrame) -> pd.DataFrame:
     Returns: A row-per-status-change dataframe with additional column 'sched_days_advanced'.
     """
     status_df['sched_days_advanced'] = status_df.apply(identify_sched_events, axis=1)
-    status_df['sched_days_advanced'] = status_df.groupby('FillerOrderNo')['sched_days_advanced'].fillna(
+    status_df['sched_days_advanced'] = status_df.groupby('FillerOrderNo')['sched_days_advanced'].shift(1).fillna(
         method='ffill')
     return status_df
 
@@ -205,7 +211,7 @@ def build_harvey_et_al_features_set(status_df: pd.DataFrame, include_id_cols=Fal
         - no_show_before: The number of no shows the patient has had up to the date of the appt
     Args:
         status_df:
-        drop_id_col:
+        include_id_cols: Whether to remove the id columns
 
     Returns:
 
