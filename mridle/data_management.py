@@ -110,7 +110,6 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
     """
 
     default_agg_dict = {
-        'MRNCmpdId': 'min',
         'patient_class_adj': 'min',
         'start_time': 'min',
         'end_time': 'min',
@@ -133,11 +132,12 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
 
     # there should be one show appt per FillerOrderNo
     show_slot_type_events = status_df[status_df['slot_type'].isin(['show', 'inpatient'])].copy()
-    show_slot_df = show_slot_type_events.groupby(['FillerOrderNo']).agg(agg_dict).reset_index()
+    show_slot_df = show_slot_type_events.groupby(['FillerOrderNo', 'MRNCmpdId']).agg(agg_dict).reset_index()
 
     # there may be multiple no-show appts per FillerOrderNo
     no_show_slot_type_events = status_df[status_df['NoShow']].copy()
-    no_show_slot_df = no_show_slot_type_events.groupby(['FillerOrderNo', 'was_sched_for_date']).agg(agg_dict)
+    no_show_groupby_cols = ['FillerOrderNo', 'MRNCmpdId', 'was_sched_for_date']
+    no_show_slot_df = no_show_slot_type_events.groupby(no_show_groupby_cols).agg(agg_dict)
     if len(no_show_slot_df) > 0:
         # if there are no no-shows, the index column will be 'index', not ['FillerOrderNo', 'was_sched_for_date']
         no_show_slot_df.reset_index(inplace=True)
