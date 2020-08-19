@@ -157,7 +157,12 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
             slot_df.drop('FillerOrderNo', axis=1, inplace=True)
             slot_df.drop('MRNCmpdId', axis=1, inplace=True)
 
-    return slot_df.sort_values('start_time').reset_index(drop=True)
+        slot_df.reset_index(drop=True, inplace=True)
+
+        if 'start_time' in slot_df.columns:
+            slot_df.sort_values('start_time', inplace=True)
+
+    return slot_df
 
 
 def find_no_shows(row: pd.DataFrame) -> bool:
