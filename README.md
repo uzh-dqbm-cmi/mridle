@@ -238,6 +238,37 @@ sdt.view_code()
 
 ```
 
+## Modeling
+```python
+from datatc import DataManager
+from mridle.experiment import ModelRun, PartitionedExperiment
+from mridle.experiments.harvey import HarveyModel
+from sklearn.ensemble import RandomForestClassifier
+
+# load the latest feature set
+dm = DataManager('mridle')
+sdt = dm['feature_sets'].latest().load()
+
+# specify parameters of the model
+name='your human readable experiment name here'
+label_key = 'noshow'
+model = RandomForestClassifier()
+hyperparams = {'n_estimators': [10, 100, 500]}
+n_partitions = 5
+
+# PartitionedExperiment runs your modeling experiemnt <n_partition> times, on separate test set partitions.
+# By default, the partitions are stratified by label. 
+exp = PartitionedExperiment(name=name, data_set=sdt.data, label_key=label_key, preprocessing_func=sdt.func,
+                            model_run_class=HarveyModel, model=model, hyperparams=hyperparams,
+                            n_partitions=n_partitions, verbose=True)
+results = exp.run()
+print(results)
+print("Evaluation")
+print(exp.show_evaluation())
+print("Feature Importances")
+print(exp.show_feature_importances())
+```
+
 ## Tests
 `mridle` contains a test suite for validating the no-show identification algorithm.
 Run the tests by navigating to the `mridle` directory and running `pytest`.
