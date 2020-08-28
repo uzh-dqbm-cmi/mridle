@@ -389,6 +389,12 @@ class Predictor:
 
 
 class PartitionedExperiment:
+    """
+    Run a ModelRun experiment multiple times on different partitions of the data.
+    Partitions the data_set into <n_partition> sets (by default, stratifies by label), and runs the ModelRun on each
+     partition. Summarizes metric results across partitions via `show_evaluation()`and feature_importances via
+     `show_feature_importances()`.
+    """
 
     def __init__(self, name: str, data_set: Any, label_key: str, preprocessing_func: Callable,
                  model_run_class: ModelRun, model, hyperparams: Dict, n_partitions: int = 5,
@@ -441,15 +447,15 @@ class PartitionedExperiment:
             print("Partition Stats for {}".format(self.name))
             self.report_partition_stats(self.partition_ids, data_set, label_key)
 
-    def run(self, num_partitions_to_run=None, run_hyperparam_search=True):
+    def run(self, num_partitions_to_run=None, run_hyperparam_search=True) -> List[Dict[str, Any]]:
         """
-        Run the experiment.
+        Run the experiment on all partitions.
 
         Args:
             num_partitions_to_run: select a subset of partitions to run, for faster testing.
             run_hyperparam_search: argument to turn off hyperparam search, for faster testing.
 
-        Returns:
+        Returns: List of experiment results (dicts from ModelRun.evaluation) for each of the partitions.
 
         """
         partitions_to_run = list(self.partition_ids.keys())
@@ -552,7 +558,8 @@ class PartitionedExperiment:
                     print("{} Set: {:.0%} {}".format(data_subset_name, pct_label_i, label_i))
 
     @classmethod
-    def summarize_runs(cls, run_results: Dict):
+    def summarize_runs(cls, run_results: Dict) -> List[Dict[str, Any]]:
+        """Compile the ModelRun.evaluation dictionaries from all partitions into a list."""
         return [run_results[mr].evaluation for mr in run_results]
 
     def show_feature_importances(self):

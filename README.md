@@ -267,6 +267,9 @@ print("Evaluation")
 print(exp.show_evaluation())
 print("Feature Importances")
 print(exp.show_feature_importances())
+
+# you can inspect each of the ModelRun objects
+mr_0 = exp.model_runs['Partition 0']
 ```
 
 ## Tests
