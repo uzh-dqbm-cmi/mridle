@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import random
 from sklearn.base import clone
 from sklearn.feature_selection import RFECV
 from sklearn.model_selection import RandomizedSearchCV
@@ -437,9 +436,9 @@ class PartitionedExperiment:
         self.n_partitions = n_partitions
 
         if stratify_by_label:
-            self.partitions_by_ids = self.partition_data_stratified(data_set[label_key], self.n_partitions)
+            self.partition_ids = self.partition_data_stratified(data_set[label_key], self.n_partitions)
         else:
-            self.partitions_by_ids = self.partition_data_randomly(self.n_partitions)
+            self.partition_ids = self.partition_data_randomly(self.n_partitions)
 
         self.model_runs = {}
         self.all_run_results = []
@@ -447,7 +446,7 @@ class PartitionedExperiment:
 
         if verbose:
             print("Partition Stats for {}".format(self.name))
-            self.report_partition_stats(self.partitions_by_ids, data_set, label_key)
+            self.report_partition_stats(self.partition_ids, data_set, label_key)
 
     def run(self, num_partitions_to_run=None, run_hyperparam_search=True):
         """
@@ -460,17 +459,17 @@ class PartitionedExperiment:
         Returns:
 
         """
-        partitions_to_run = list(self.partitions_by_ids.keys())
+        partitions_to_run = list(self.partition_ids.keys())
         if num_partitions_to_run is not None:
             partitions_to_run = partitions_to_run[:num_partitions_to_run]
             print("Running only partitions {}".format(", ".join(partitions_to_run)))
 
-        for partition_name in self.partitions_by_ids:
+        for partition_name in self.partition_ids:
             if partition_name in partitions_to_run:
                 print("Running partition {}...".format(partition_name))
                 model_run = self.run_experiment_on_one_partition(data_set=self.data_set,
                                                                  label_key=self.label_key,
-                                                                 partition_ids=self.partitions_by_ids[partition_name],
+                                                                 partition_ids=self.partition_ids[partition_name],
                                                                  preprocessing_func=self.preprocessing_func,
                                                                  model_run_class=self.model_run_class,
                                                                  model=self.model,
@@ -497,16 +496,14 @@ class PartitionedExperiment:
         return mr
 
     @classmethod
-    def partition_data_randomly(cls, doc_list: List[int], n: int) -> Dict[str, List[int]]:
-        """Randomly shuffle and split the doc_list into n roughly equal lists."""
-        random.shuffle(doc_list)
-        return {'Partition {}'.format(i): doc_list[i::n] for i in range(n)}
+    def partition_data_randomly(cls, data_set: pd.DataFrame, n_partitions: int) -> Dict[str, List[int]]:
+        """Randomly shuffle and split the data set into n roughly equal partitions."""
+        raise NotImplementedError
 
     @classmethod
-    def partition_data_stratified(cls, label_list: List[int], n: int) -> \
-            Dict[str, List[int]]:
+    def partition_data_stratified(cls, label_list: List[int], n_partitions: int) -> Dict[str, List[int]]:
         """Randomly shuffle and split the doc_list into n roughly equal lists, stratified by label."""
-        skf = StratifiedKFold(n_splits=n, random_state=42, shuffle=True)
+        skf = StratifiedKFold(n_splits=n_partitions, random_state=42, shuffle=True)
         x = np.zeros(len(label_list))  # split takes a X argument for backwards compatibility and is not used
         partition_indexes = [test_index for train_index, test_index in skf.split(x, label_list)]
         partitions = {}
@@ -515,45 +512,53 @@ class PartitionedExperiment:
         return partitions
 
     @classmethod
-    def materialize_partition(cls, partition_ids: List[int], data_dict: Dict) -> Tuple[List[Dict], List[Dict]]:
-        """Create training and testing dataset based on the partition, which indicated the ids for the test set."""
+    def materialize_partition(cls, partition_ids: List[int], data_set: pd.DataFrame)\
+            -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Create training and testing dataset based on the partition, which indicate the ids for the test set.
 
-        train_set = [data_dict[d] for d in data_dict if data_dict[d]['entity_id'] not in partition_ids]
-        test_set = [data_dict[d] for d in data_dict if data_dict[d]['entity_id'] in partition_ids]
+        Args:
+            partition_ids: Dictionary, where the values contain the indices of each partition's test set.
+            data_set: The full data set.
 
+        Returns: Train set and Test set.
+        """
+
+        train_set = data_set[~partition_ids]
+        test_set = data_set[partition_ids]
         return train_set, test_set
 
     @classmethod
-    def report_partition_stats(cls, partitions_by_ids: Dict[str, List[int]], data_set: Any, label_key=str):
+    def report_partition_stats(cls, partition_ids: Dict[str, List[int]], data_set: Any, label_key=str):
         """
-        Print the number of data points in each partition's train and test set.
-        Also print class balance if there are 2 label classes.
+        Print the size and class balance of each partition's train and test set.
 
         Args:
-            partitions_by_ids:
-            data_set:
-            label_key:
+            partition_ids: Partitions.
+            data_set: The full data set.
+            label_key: The column name in data_set that is the label.
 
-        Returns:
-
+        Returns: None, just prints.
         """
-        for partition_name in partitions_by_ids:
-            partition_ids = partitions_by_ids[partition_name]
-            labels_train = data_set[partition_ids][label_key]
-            labels_test = data_set[~partition_ids][label_key]
+        for partition_name in partition_ids:
+            partition_ids = partition_ids[partition_name]
+            train_set, test_set = cls.materialize_partition(partition_ids, data_set)
+            labels_train = train_set[label_key]
+            labels_test = test_set[label_key]
 
             print('\n-Partition {}-'.format(partition_name))
             print("Train: {:,.0f} data points".format(labels_train.shape[0]))
             print("Test: {:,.0f} data points".format(labels_test.shape[0]))
 
             label_options = data_set[label_key].nunique()
-            if len(label_options) == 2:
+            for label_i in label_options:
                 for data_subset_name, data_subset in {'Train': labels_train, 'Test': labels_test}:
-                    data_label_pos = data_subset[data_subset[0] == label_options[0]].shape[0] / data_subset.shape[0]
-                    data_label_neg = 1 - data_label_pos
-                    print("{} Set: {:.0%} {label_0} - {:.0%} {label_1}".format(data_subset_name, data_label_pos,
-                                                                               data_label_neg, label_0=label_options[0],
-                                                                               label_1=label_options[1]))
+                    pct_label_i = data_subset[data_subset[0] == label_i].shape[0] / data_subset.shape[0]
+                    print("{} Set: {:.0%} {}".format(data_subset_name, pct_label_i, label_i))
+
+    @classmethod
+    def summarize_runs(cls, run_results: Dict):
+        return [run_results[mr].evaluation for mr in run_results]
 
     def show_feature_importances(self):
         """
