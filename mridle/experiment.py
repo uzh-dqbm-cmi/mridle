@@ -5,7 +5,6 @@ from sklearn.feature_selection import RFECV
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import f1_score
 from typing import Any, Dict, List, Tuple, Callable
-from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold
 
 
@@ -141,13 +140,7 @@ class ModelRun:
         Returns:
             Dict of encoders.
         """
-        autoscaler = StandardScaler()
-        features = ['historic_no_show_cnt', 'no_show_before']
-        train_set[features] = autoscaler.fit_transform(train_set[features])
-
-        return {
-            'autoscaler': autoscaler
-        }
+        return {}
 
     @classmethod
     def build_x_features(cls, data_set: Any, encoders: Dict) -> pd.DataFrame:
@@ -501,18 +494,19 @@ class PartitionedExperiment:
         raise NotImplementedError
 
     @classmethod
-    def partition_data_stratified(cls, label_list: List[int], n_partitions: int) -> Dict[str, List[int]]:
+    def partition_data_stratified(cls, label_list: List[int], n_partitions: int) -> \
+            Dict[str, Tuple[List[int], List[int]]]:
         """Randomly shuffle and split the doc_list into n roughly equal lists, stratified by label."""
         skf = StratifiedKFold(n_splits=n_partitions, random_state=42, shuffle=True)
         x = np.zeros(len(label_list))  # split takes a X argument for backwards compatibility and is not used
-        partition_indexes = [test_index for train_index, test_index in skf.split(x, label_list)]
+        partition_indexes = skf.split(x, label_list)
         partitions = {}
         for p_id, p in enumerate(partition_indexes):
-            partitions['Partition {}'.format(p_id)] = partition_indexes
+            partitions['Partition {}'.format(p_id)] = p
         return partitions
 
     @classmethod
-    def materialize_partition(cls, partition_ids: List[int], data_set: pd.DataFrame)\
+    def materialize_partition(cls, partition_ids: Tuple[List[int], List[int]], data_set: pd.DataFrame)\
             -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Create training and testing dataset based on the partition, which indicate the ids for the test set.
@@ -523,13 +517,14 @@ class PartitionedExperiment:
 
         Returns: Train set and Test set.
         """
-
-        train_set = data_set[~partition_ids]
-        test_set = data_set[partition_ids]
+        train_partition_ids, test_partition_ids = partition_ids
+        train_set = data_set.iloc[train_partition_ids]
+        test_set = data_set.iloc[test_partition_ids]
         return train_set, test_set
 
     @classmethod
-    def report_partition_stats(cls, partition_ids: Dict[str, List[int]], data_set: Any, label_key=str):
+    def report_partition_stats(cls, partition_ids: Dict[str, Tuple[List[int], List[int]]], data_set: Any,
+                               label_key=str):
         """
         Print the size and class balance of each partition's train and test set.
 
@@ -541,19 +536,19 @@ class PartitionedExperiment:
         Returns: None, just prints.
         """
         for partition_name in partition_ids:
-            partition_ids = partition_ids[partition_name]
-            train_set, test_set = cls.materialize_partition(partition_ids, data_set)
-            labels_train = train_set[label_key]
-            labels_test = test_set[label_key]
+            p_ids = partition_ids[partition_name]
+            train_set, test_set = cls.materialize_partition(p_ids, data_set)
 
             print('\n-Partition {}-'.format(partition_name))
-            print("Train: {:,.0f} data points".format(labels_train.shape[0]))
-            print("Test: {:,.0f} data points".format(labels_test.shape[0]))
+            print("Train: {:,.0f} data points".format(len(train_set)))
+            print("Test: {:,.0f} data points".format(len(test_set)))
 
-            label_options = data_set[label_key].nunique()
+            label_options = data_set[label_key].unique()
             for label_i in label_options:
-                for data_subset_name, data_subset in {'Train': labels_train, 'Test': labels_test}:
-                    pct_label_i = data_subset[data_subset[0] == label_i].shape[0] / data_subset.shape[0]
+                data_set_dict = {'Train': train_set, 'Test': test_set}
+                for data_subset_name in data_set_dict:
+                    data_subset = data_set_dict[data_subset_name]
+                    pct_label_i = data_subset[data_subset[label_key] == label_i].shape[0] / data_subset.shape[0]
                     print("{} Set: {:.0%} {}".format(data_subset_name, pct_label_i, label_i))
 
     @classmethod
