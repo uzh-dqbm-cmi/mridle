@@ -39,7 +39,7 @@ where `status_df` contains the columns:
 | now_sched_for | int | number of days ahead the appt is sched for after status change relative to `date` |
 | was_sched_for_date | datetime | the date the appt was sched for before status change |
 | now_sched_for_date | datetime| the date the appt is sched for after status change |
-| patient_class_adj | patient  |lass (adjusted) ['ambulant', 'inpatient'] |
+| patient_class_adj | str | patient  class (adjusted) ['ambulant', 'inpatient'] |
 | NoShow | bool | [True, False] |
 | NoShow_severity | str | ['hard', 'soft'] |
 | slot_outcome | str | ['show', 'rescheduled', 'canceled'] |
