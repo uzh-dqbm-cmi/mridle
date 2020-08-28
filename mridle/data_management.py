@@ -73,6 +73,7 @@ def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     df = exclude_irrelevant_service_names(df, SERVICE_NAMES_TO_EXCLUDE)
     df = add_custom_status_change_cols(df)
     df = format_patient_id_col(df)
+    df = add_final_scheduled_date(df)
     df['patient_class_adj'] = df['PatientClass'].apply(adjust_patient_class)
     df['NoShow'] = df.apply(find_no_shows, axis=1)
     df['NoShow_severity'] = df.apply(set_no_show_severity, axis=1)
@@ -109,6 +110,8 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
     """
 
     default_agg_dict = {
+        'MRNCmpdId': 'min',
+        'patient_class_adj': 'min',
         'start_time': 'min',
         'end_time': 'min',
         'NoShow': 'min',
@@ -120,9 +123,6 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
     }
     if agg_dict is None:
         agg_dict = default_agg_dict
-
-        if include_id_cols and 'MRNCmpdId' in input_status_df.columns:
-            agg_dict['MRNCmpdId'] = 'min'
 
     status_df = input_status_df.copy()
     status_df = status_df.sort_values(['FillerOrderNo', 'date'])
@@ -137,16 +137,23 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
 
     # there may be multiple no-show appts per FillerOrderNo
     no_show_slot_type_events = status_df[status_df['NoShow']].copy()
-    no_show_slot_df = no_show_slot_type_events.groupby(['FillerOrderNo', 'was_sched_for_date']).agg(
-        agg_dict).reset_index()
-    no_show_slot_df.drop('was_sched_for_date', axis=1, inplace=True)
+    no_show_slot_df = no_show_slot_type_events.groupby(['FillerOrderNo', 'was_sched_for_date']).agg(agg_dict)
+    if len(no_show_slot_df) > 0:
+        # if there are no no-shows, the index column will be 'index', not ['FillerOrderNo', 'was_sched_for_date']
+        no_show_slot_df.reset_index(inplace=True)
+        no_show_slot_df.drop('was_sched_for_date', axis=1, inplace=True)
 
     slot_df = pd.concat([show_slot_df, no_show_slot_df], sort=False)
+    slot_df['FillerOrderNo'] = slot_df['FillerOrderNo'].astype(int)
+
+    # filter out duplicate appointments for the same patient & time slot (weird dispo behavior)
+    slot_df = filter_duplicate_patient_time_slots(slot_df)
 
     if not include_id_cols:
         slot_df.drop('FillerOrderNo', axis=1, inplace=True)
+        slot_df.drop('MRNCmpdId', axis=1, inplace=True)
 
-    return slot_df
+    return slot_df.sort_values('start_time').reset_index(drop=True)
 
 
 def find_no_shows(row: pd.DataFrame) -> bool:
@@ -296,6 +303,22 @@ def format_patient_id_col(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def add_final_scheduled_date(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Add "final_now_sched_for_date" column to df, which is the last now_sched_for_date value for each FillerOrderNo.
+    Args:
+        df: status_df
+
+    Returns: status_df with additional final_now_sched_for_date column
+
+    """
+    df.sort_values('date', inplace=True)
+    final_scheduled_date_per_fon = df.groupby('FillerOrderNo').agg({'now_sched_for_date': 'last'})
+    final_scheduled_date_per_fon.columns = ['final_now_sched_for_date']
+    df = pd.merge(df, final_scheduled_date_per_fon, left_on='FillerOrderNo', right_index=True)
+    return df
+
+
 def adjust_patient_class(original_patient_class: str) -> str:
     default_patient_class = 'ambulant'
     patient_class_map = {
@@ -333,6 +356,8 @@ def set_slot_outcome(row: pd.DataFrame) -> str:
     """
     if row['NoShow']:
         if row['now_status'] == 'canceled':
+            return 'canceled'
+        elif row['final_now_sched_for_date'] == row['was_sched_for_date']:
             return 'canceled'
         else:
             return 'rescheduled'
@@ -413,22 +438,27 @@ def identify_end_times(row: pd.DataFrame) -> dt.datetime:
         return None
 
 
-def add_column_details(detail_df: pd.DataFrame, slot_df: pd.DataFrame, agg_dict: Dict) -> pd.DataFrame:
+def filter_duplicate_patient_time_slots(slot_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Adds columns to slot_df, as determined by agg_dict and extracted from detail_df.
+    Filter duplicate patient-time slots. This is a scheduling behavior where two appointments are scheduled for the
+     same patient for the same time, and right before the appt, one of the two is canceled. To prevent these
+      appointments from being marked as no-shows, remove the no-show components of these duplicate appointments.
+
+      Group slot_df by patient id and appt start time, sort by NoShow so shows (if present) are on top.
+      Apply a cumcount, which marks the top entry with 0. Filter for all 0s, keeping only the single topmost entry
+       for every patient-time-slot.
 
     Args:
-        detail_df: row-per-status-change dataframe
-        slot_df: row-per-appointment-slot dataframe
-        agg_dict: dictionary defining the columns to add to slot_df and their aggregation methods.
-            To be used in df.groupby().agg()
+        slot_df: slot_df, as generated by build_slot_df
 
-    Returns: slot_df with more columns.
+    Returns: A subset of slot_df, where there is only one appointment per patient-time slot.
 
     """
-    appt_details = detail_df.groupby('FillerOrderNo').agg(agg_dict)
-    df_with_details = pd.merge(slot_df, appt_details, left_on='FillerOrderNo', right_index=True, how='left')
-    return df_with_details
+    slot_df.sort_values(['MRNCmpdId', 'start_time', 'NoShow'], inplace=True)  # shows/NoShow == False will be on top
+    slot_df['multi_slot'] = slot_df.groupby(['MRNCmpdId', 'start_time']).cumcount()
+    first_slot_only = slot_df[slot_df['multi_slot'] == 0].copy()
+    first_slot_only.drop(columns=['multi_slot'], axis=1, inplace=True)
+    return first_slot_only
 
 
 def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
@@ -456,6 +486,7 @@ def string_set(a_list):
 
 def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, day: int, month: int, year: int,
                                 slot_outcome: str, verbose: bool = False) -> Set[str]:
+
     """
     Identifies any appointment IDs that are in dispo_data or slot_df and not vice versa.
 

@@ -55,8 +55,12 @@ OUTCOME_COLOR_MAP = {
 }
 
 # determines whether the appointment slot box is outlined, for outlining no_show_outcome == 'canceled' appt slots
-STROKE_MAP = {
+OUTCOME_STROKE_MAP = {
     'canceled': 'black',
+}
+
+NO_SHOW_TYPE_STROKE_MAP = {
+    'hard no-show': 'black',
 }
 
 
@@ -155,7 +159,7 @@ def update_color_map_with_highlight(highlight: Any, color_map: Dict, color_schem
 
 
 def plot_example_day_against_dispo(slot_df: pd.DataFrame, dispo_df: pd.DataFrame, date, device='MR1',
-                                   color_map=DETAILED_COLOR_MAP, stroke_map=STROKE_MAP, anonymize=True,
+                                   color_map=OUTCOME_COLOR_MAP, stroke_map=NO_SHOW_TYPE_STROKE_MAP, anonymize=True,
                                    height_factor=20):
     """
     Plot completed, inpatient, and no-show appointments for one device for a day.
@@ -165,7 +169,7 @@ def plot_example_day_against_dispo(slot_df: pd.DataFrame, dispo_df: pd.DataFrame
         device: the device to plot
         date: date to plot
         color_map: the colors to use for each appointment type.
-        stroke_map: the colors to use for each NoShow_outcome type.
+        stroke_map: the colors to use for each slot_outcome type.
         anonymize: whether to anonymize the data by shifting it by a random amount.
         height_factor: multiplier for how tall to make the plot based on the number of days plotted
 
@@ -216,8 +220,8 @@ def plot_example_day_against_dispo(slot_df: pd.DataFrame, dispo_df: pd.DataFrame
         y=alt.Y('source:N', title='Source'),
         x=alt.X('hoursminutes(start_time):T', title='Time'),
         x2=alt.X2('hoursminutes(end_time):T'),
-        color=alt.Color('slot_type_detailed:N', scale=color_scale, legend=alt.Legend(title='Slot Type (detailed)')),
-        stroke=alt.Stroke('NoShow_outcome', scale=stroke_scale, legend=alt.Legend(title='Canceled Appts')),
+        color=alt.Color('slot_outcome:N', scale=color_scale, legend=alt.Legend(title='Slot Outcome')),
+        stroke=alt.Stroke('slot_type_detailed', scale=stroke_scale, legend=alt.Legend(title='No Show Type')),
         tooltip='patient_id',
     ).configure_mark(
         opacity=0.5,
