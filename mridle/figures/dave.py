@@ -147,7 +147,25 @@ def plot_appt_types_by_day_of_week(df: pd.DataFrame, start_date, end_date, color
     )
 
 
-def plot_dave_b(slot_df, dicom_times_df, example_date, start_date, end_date, anonymize=True):
+def plot_dave_b(slot_df: pd.DataFrame, dicom_times_df: pd.DataFrame, example_date: str, start_date: str, end_date: str,
+                anonymize: bool = True) -> alt.Chart:
+    """
+    Create the Dave B figure, which consists of three subplots:
+    - an example day (uses slot_w_dicom_df to show actual times, rather than scheduled)
+    - aggregate counts of appointments over time
+    - patterns in slot frequencies by day of week
+
+    Args:
+        slot_df: slot_df
+        dicom_times_df: Start and end times of appointment slots as determined by the dicom images.
+        example_date: date to represent in the example day subplot. If none, a random date between start_date and
+         end_date is chosen.
+        start_date: start date for the 2 aggregate plots
+        end_date: end date for the 2 aggregate plots
+        anonymize: Whether to anonymize the example_day subplot
+
+    Returns: altair plot
+    """
     slot_w_dicom_df = mridle.data_management.integrate_dicom_data(slot_df, dicom_times_df)
 
     if example_date is None:
