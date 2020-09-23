@@ -15,6 +15,7 @@ build_slot_df():
 import datetime as dt
 import pandas as pd
 import numpy as np
+import re
 from typing import Dict, List, Set
 
 
@@ -261,8 +262,26 @@ def convert_DtTm_cols(df: pd.DataFrame, known_datetime_cols: List[str] = None) -
     time_cols = [col for col in df.columns if 'DtTm' in col]
     time_cols.extend([col for col in known_datetime_cols if col in df.columns])
     for col in time_cols:
-        df[col] = pd.to_datetime(df[col])
+        try:
+            df[col] = pd.to_datetime(df[col])
+        except pd.errors.OutOfBoundsDatetime:
+            df[col] = df[col].apply(fix_out_of_bounds_str_datetime)
+            df[col] = pd.to_datetime(df[col])
     return df
+
+
+def fix_out_of_bounds_str_datetime(val: str) -> str:
+    if pd.isna(val):
+        return np.nan
+    match = re.match(r'.*([1-3][0-9]{3})', val)
+    if match is None:
+        return val
+    year = match.group(1)
+    if int(year) > 2100:
+        val = val.replace(year, '2100')
+        return val
+    else:
+        return val
 
 
 def restrict_to_relevant_machines(df: pd.DataFrame, machines: List[str]) -> pd.DataFrame:
