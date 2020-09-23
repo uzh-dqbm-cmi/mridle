@@ -119,8 +119,8 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
         'slot_outcome': 'min',
         'slot_type': 'min',
         'slot_type_detailed': 'min',
-        'EnteringOrganisationDeviceID': 'min',
-        'UniversalServiceName': 'min',
+        'EnteringOrganisationDeviceID': 'last',
+        'UniversalServiceName': 'last',
     }
     if agg_dict is None:
         agg_dict = default_agg_dict
