@@ -57,8 +57,8 @@ def plot_example_day(df: pd.DataFrame, date, device='MR1', color_map=DETAILED_CO
 
     return alt.Chart(df_filtered).mark_bar(strokeWidth=3).encode(
         y=alt.Y('slot_type:N', title='Slot Type'),
-        x=alt.X('hoursminutes(start_time):T', title='Time'),
-        x2=alt.X2('hoursminutes(end_time):T'),
+        x=alt.X('yearmonthdatehoursminutes(start_time):T', title='Time'),
+        x2=alt.X2('yearmonthdatehoursminutes(end_time):T'),
         color=alt.Color('slot_type_detailed:N', scale=color_scale, legend=alt.Legend(title='Slot Type (detailed)')),
         stroke=alt.Stroke('slot_outcome', scale=stroke_scale, legend=alt.Legend(title='Canceled Appts')),
         tooltip='FillerOrderNo',
