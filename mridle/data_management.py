@@ -3,12 +3,15 @@ All processing functions for the data transformation pipeline.
 
 ### Major Data Processing Steps ###
 
+pre_raw_df_for_parquet():
+ - sets column data types so that df is compatible for parquet
+
 build_status_df():
  - reads raw file from filesystem and adds custom columns.
  - This data is in the format one-row-per-appt-status-change
 
 build_slot_df():
- - returns data in the form one-row-per-appointment-slot (now show or completed appointment)
+ - returns data in the form one-row-per-appointment-slot (no show or completed appointment)
 
 """
 
@@ -107,7 +110,7 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
          - slot_type_detailed: str, ['hard no-show', 'soft no-show', 'show', 'inpatient']
          - EnteringOrganisationDeviceID: str, device the appt was scheduled for
          - UniversalServiceName: str, the kind of appointment
-         - MRNCmpdId (if available): int, patient id
+         - MRNCmpdId (if available): str, patient id
     """
 
     default_agg_dict = {
@@ -242,6 +245,73 @@ def integrate_dicom_data(slot_df: pd.DataFrame, dicom_times_df: pd.DataFrame) ->
 # ========================================================================================
 # === HELPER FUNCTIONS ===================================================================
 # ========================================================================================
+
+def prep_raw_df_for_parquet(raw_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Convert all dataframe columns to the appropriate data type. By default, the raw data is read in as mostly mixed-type
+     'object' type columns, which Parquet does not accept. Most of these columns should instead be type 'category'
+      (which also makes for a significantly lower memory footprint) or 'string'.
+
+    Args:
+        raw_df: raw data frame with many 'object' type columns.
+
+    Returns: Dataframe with only int, datetime, category, and string data types.
+    """
+    date_cols = [
+        'DateOfBirth',
+    ]
+    drop_cols = [
+        'PlacerOrderNo',
+    ]
+    category_cols = [
+        'History_OrderStatus',
+        'OrderStatus',
+        'PatientClass',
+        'SAP FallArt',
+        'Klasse',
+        'InstituteID',
+        'InstituteDivisionID',
+        'EnteringOrganisationDeviceID',
+        'UniversalServiceId',
+        'UniversalServiceName',
+        'DangerCode',
+        'Sex',
+        'Beruf',
+        'Staatsangehoerigkeit',
+        'WohnadrOrt',
+        'WohnadrPLZ',
+        'City',
+        'Zip',
+        'Zivilstand',
+        'Sprache',
+        'MRNCmpdId',
+        'StationName',
+        'StationTelefon',
+        'ApprovalStatusCode',
+        'PerformProcedureID',
+        'PerformProcedureName',
+        'SourceFeedName',
+    ]
+
+    string_cols = [
+        'ReasonForStudy',
+    ]
+
+    df = convert_DtTm_cols(raw_df, date_cols).copy()
+
+    for col in drop_cols:
+        if col in df.columns:
+            df.drop(col, axis=1, inplace=True)
+
+    for col in category_cols:
+        df[col] = df[col].astype(str)
+        df[col] = df[col].astype('category')
+
+    for col in string_cols:
+        df[col] = df[col].astype(str)
+
+    return df
+
 
 def convert_DtTm_cols(df: pd.DataFrame, known_datetime_cols: List[str] = None) -> pd.DataFrame:
     """

@@ -18,7 +18,7 @@ from mridle.data_management import SHOW_COLS
 
 
 dm = DataManager('mridle')
-raw_df = dm['rdsc_extracts']['2020-02-04_RIS_deID_3months'].select('xlsx').load()
+raw_df = dm['rdsc_extracts']['five_years'].select('parquet').load()
 
 # build row-per-status-change data set
 status_df = mridle.data_management.build_status_df(raw_df)
@@ -31,34 +31,34 @@ where `status_df` contains the columns:
 | column name | type | description |
 |---|---|---|
 | FillerOrderNo | int | appointment id |
-| MRNCmpdId | int | patient id |
+| MRNCmpdId | object | patient id |
 | date | datetime | the date and time of the status change |
-| was_status | str | the status the appt changed from |
-| now_status | str | the status the appt changed to |
-| was_sched_for | int | number of days ahead the appt was sched for before status change relative to `date` |
+| was_status | category | the status the appt changed from |
+| now_status | category | the status the appt changed to |
+| was_sched_for | float | number of days ahead the appt was sched for before status change relative to `date` |
 | now_sched_for | int | number of days ahead the appt is sched for after status change relative to `date` |
 | was_sched_for_date | datetime | the date the appt was sched for before status change |
 | now_sched_for_date | datetime| the date the appt is sched for after status change |
-| patient_class_adj | patient  |lass (adjusted) ['ambulant', 'inpatient'] |
+| patient_class_adj | object | patient class (adjusted) ['ambulant', 'inpatient'] |
 | NoShow | bool | [True, False] |
-| NoShow_severity | str | ['hard', 'soft'] |
-| slot_outcome | str | ['show', 'rescheduled', 'canceled'] |
-| slot_type | str | ['no-show', 'show', 'inpatient'] |
-| slot_type_detailed | str | ['hard no-show', 'soft no-show', 'show', 'inpatient'] |
+| NoShow_severity | object | ['hard', 'soft'] |
+| slot_outcome | object | ['show', 'rescheduled', 'canceled'] |
+| slot_type | object | ['no-show', 'show', 'inpatient'] |
+| slot_type_detailed | object | ['hard no-show', 'soft no-show', 'show', 'inpatient'] |
 
 and `slot_df` contains the columns:
 | column name | type | description |
 |---|---|---|
 |FillerOrderNo | int | appointment id |
-| MRNCmpdId | int | patient id |
+| MRNCmpdId | object | patient id |
 | start_time | datetime | appt scheduled start time |
 | end_time | datetime | appt scheduled end time |
 | NoShow | bool | [True, False] |
-| slot_outcome | str | ['show', 'rescheduled', 'canceled'] |
-| slot_type | str | ['no-show', 'show', 'inpatient'] |
-| slot_type_detailed | str | ['hard no-show', 'soft no-show', 'show', 'inpatient'] |
-| EnteringOrganisationDeviceID | str | device the appt was scheduled for |
-| UniversalServiceName | str | the kind of appointment |
+| slot_outcome | object | ['show', 'rescheduled', 'canceled'] |
+| slot_type | object | ['no-show', 'show', 'inpatient'] |
+| slot_type_detailed | object | ['hard no-show', 'soft no-show', 'show', 'inpatient'] |
+| EnteringOrganisationDeviceID | object | device the appt was scheduled for |
+| UniversalServiceName | object | the kind of appointment |
 
 
 ### Integrate DICOM Data
