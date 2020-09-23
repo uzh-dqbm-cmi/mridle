@@ -3,9 +3,6 @@ All processing functions for the data transformation pipeline.
 
 ### Major Data Processing Steps ###
 
-pre_raw_df_for_parquet():
- - sets column data types so that df is compatible for parquet
-
 build_status_df():
  - reads raw file from filesystem and adds custom columns.
  - This data is in the format one-row-per-appt-status-change
