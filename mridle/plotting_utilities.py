@@ -232,13 +232,15 @@ def plot_example_day_against_dispo(slot_df: pd.DataFrame, dispo_df: pd.DataFrame
     )
 
 
-def plot_appt_len(slot_w_dicom_df: pd.DataFrame) -> alt.Chart:
+def plot_appt_len(slot_w_dicom_df: pd.DataFrame, exclude_herz: bool = False) -> alt.Chart:
     """
     Plot appointment length per appointment type. Appointment length is determined by DICOM start and end times, and
      appointment type by UniversalServiceName.
 
     Args:
         slot_w_dicom_df: result of `mridle.data_management.integrate_dicom_data(slot_df, dicom_times_df)`
+        exclude_herz: Whether to exclude MR Herz from the plot (it's much bigger than the rest and makes the plot hard
+          to read).
 
     """
     dicom_slot_df = slot_w_dicom_df[~slot_w_dicom_df['image_start'].isna()].copy()
@@ -247,9 +249,12 @@ def plot_appt_len(slot_w_dicom_df: pd.DataFrame) -> alt.Chart:
     plot_df = dicom_slot_df[['UniversalServiceName', 'appt_len_float']]
     plot_df = plot_df[plot_df['appt_len_float'] < 1000]
 
+    if exclude_herz:
+        plot_df = plot_df[plot_df['UniversalServiceName'] != 'MR Herz']
+
     appt_types = plot_df.groupby('UniversalServiceName').agg({'appt_len_float': 'mean'}).sort_values('appt_len_float',
                                                                                                      ascending=False)
-    return alt.Chart(plot_df[plot_df['UniversalServiceName'] != 'MR Herz']).mark_boxplot().encode(
+    return alt.Chart(plot_df).mark_boxplot().encode(
         x=alt.X('UniversalServiceName', sort=list(appt_types.index)),
         y='appt_len_float:Q',
     )
