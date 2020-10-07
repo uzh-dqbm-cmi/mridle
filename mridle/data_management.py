@@ -549,10 +549,10 @@ def filter_duplicate_patient_time_slots(slot_df: pd.DataFrame) -> pd.DataFrame:
 
 def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
     """
-    Convert dispo file to dataframe and converts date column to pd.datetime format.
+    Convert raw dispo data to dataframe and format the data types, namely dates and times.
 
     Args:
-        dispo_examples: List of dictionaries containing appointment information
+        dispo_examples: List of dictionaries containing appointment information collected at the Dispo.
 
     Returns: Dataframe with datetime type conversions
 
@@ -561,7 +561,10 @@ def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
     dispo_df['patient_id'] = dispo_df['patient_id'].astype(int)
     dispo_df['start_time'] = pd.to_datetime(dispo_df['date'] + ' ' + dispo_df['start_time'], dayfirst=True)
     dispo_df['date'] = pd.to_datetime(dispo_df['date'], dayfirst=True)
-    dispo_df['slot_outcome'] = np.where(dispo_df['type'] == 'show', 'show', dispo_df['slot_outcome'])
+    if 'date_recorded' in dispo_df.columns:
+        dispo_df['date_recorded'] = pd.to_datetime(dispo_df['date_recorded'], dayfirst=True)
+    if 'slot_outcome' in dispo_df.columns:
+        dispo_df['slot_outcome'] = np.where(dispo_df['type'] == 'show', 'show', dispo_df['slot_outcome'])
 
     return dispo_df
 
