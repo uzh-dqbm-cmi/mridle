@@ -16,7 +16,7 @@ import datetime as dt
 import pandas as pd
 import numpy as np
 import re
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Union
 
 
 STATUS_MAP = {
@@ -567,6 +567,47 @@ def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
         dispo_df['slot_outcome'] = np.where(dispo_df['type'] == 'show', 'show', dispo_df['slot_outcome'])
 
     return dispo_df
+
+
+def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Identify no show events from the data collected in Dispo Experiment 2.
+
+    Args:
+        dispo_e2_df: result of `build_dispo_df` on the dispo data collected for experiment 2.
+
+    Returns: pd.DataFrame with one row per slot, with a `NoShow` bool column.
+
+    """
+    # calculate business days between date and recorded date
+    # (np function requires datetime type)
+    dispo_e2_df['date_dt'] = dispo_e2_df['date'].dt.date
+    dispo_e2_df['date_recorded_dt'] = dispo_e2_df['date_recorded'].dt.date
+    dispo_e2_df['diff'] = dispo_e2_df.apply(lambda x: np.busday_count(x['date_dt'], x['date_recorded_dt']), axis=1)
+    dispo_e2_df.drop(columns=['date_dt', 'date_recorded_dt'], inplace=True)
+
+    before = dispo_e2_df[dispo_e2_df['diff'] == -3]
+    after = dispo_e2_df[dispo_e2_df['diff'] == 1]
+
+    one_day = pd.merge(before, after, how='outer', on=['patient_id', 'date', 'start_time'],
+                       suffixes=('_before', '_after')
+                       ).sort_values(['start_time'])
+
+    def determine_no_show(type_before, type_after) -> Union[bool, None]:
+        if type_before == 'ter' and type_after == 'bef':
+            return False  # show
+        elif pd.isna(type_before) and type_after == 'bef':
+            return False  # inpatient
+        elif type_before == 'ter' and pd.isna(type_after):
+            return True
+        elif type_before == 'ter' and type_after == 'ter':
+            return True
+        else:
+            return None
+
+    one_day['NoShow'] = one_day.apply(lambda x: determine_no_show(x['type_before'], x['type_after']), axis=1)
+
+    return one_day
 
 
 def string_set(a_list):
