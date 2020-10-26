@@ -8,7 +8,7 @@ build_status_df():
  - This data is in the format one-row-per-appt-status-change
 
 build_slot_df():
- - returns data in the form one-row-per-appointment-slot (no show or completed appointment)
+ - returns data in the form one-row-per-appointment-slot (a slot is a no show or completed appointment)
 
 """
 
@@ -338,6 +338,8 @@ def convert_DtTm_cols(df: pd.DataFrame, known_datetime_cols: List[str] = None) -
 
 
 def fix_out_of_bounds_str_datetime(val: str) -> str:
+    """For string dates that have a year beyond 2100, replace the year with 2100.
+    This is necessary because str -> datetime conversion fails for years beyond 2100."""
     if pd.isna(val):
         return np.nan
     match = re.match(r'.*([1-3][0-9]{3})', val)
@@ -352,6 +354,8 @@ def fix_out_of_bounds_str_datetime(val: str) -> str:
 
 
 def restrict_to_relevant_machines(df: pd.DataFrame, machines: List[str]) -> pd.DataFrame:
+    """Select a subset of input `df` where the `EnteringOrganisationDeviceID` column contains one of the values in
+     input `machines`."""
     df_machine_subset = df[df['EnteringOrganisationDeviceID'].isin(machines)].copy()
     return df_machine_subset
 
