@@ -576,7 +576,7 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
     Args:
         dispo_e2_df: result of `build_dispo_df` on the dispo data collected for experiment 2.
 
-    Returns: pd.DataFrame with one row per slot, with a `NoShow` bool column.
+    Returns: pd.DataFrame with one row per slot, with a `NoShow` bool column and slot_outcome column.
 
     """
     # calculate business days between date and recorded date
@@ -606,6 +606,16 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
             return None
 
     one_day['NoShow'] = one_day.apply(lambda x: determine_no_show(x['type_before'], x['type_after']), axis=1)
+
+    def determine_rescheduled_no_show(type_before, type_after) -> Union[str, None]:
+        # TODO: How to identify cancelled? Is it important?
+        if type_before == 'ter' and pd.isna(type_after):
+            return 'rescheduled'
+        else:
+            return 'show'
+
+    one_day['slot_outcome'] = one_day.apply(lambda x: determine_rescheduled_no_show(x['type_before'], x['type_after']),
+                                            axis=1)
 
     return one_day
 
