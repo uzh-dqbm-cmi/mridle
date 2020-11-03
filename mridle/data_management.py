@@ -586,10 +586,16 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
     dispo_e2_df['diff'] = dispo_e2_df.apply(lambda x: np.busday_count(x['date_dt'], x['date_recorded_dt']), axis=1)
     dispo_e2_df.drop(columns=['date_dt', 'date_recorded_dt'], inplace=True)
 
-    before = dispo_e2_df[dispo_e2_df['diff'] == -3]
+    # find the first time a slot was recorded (may not be present 3 days in advance, but later than that)
+    before = dispo_e2_df[dispo_e2_df['diff'] < 0]
+    before_pick_first = before.sort_values(['patient_id', 'date_recorded'])
+    before_pick_first['rank'] = before_pick_first.groupby('patient_id').cumcount()
+    before_first = before_pick_first[before_pick_first['rank'] == 0].copy()
+    before_first.drop('rank', axis=1, inplace=True)
+
     after = dispo_e2_df[dispo_e2_df['diff'] == 1]
 
-    one_day = pd.merge(before, after, how='outer', on=['patient_id', 'date', 'start_time'],
+    one_day = pd.merge(before_first, after, how='outer', on=['patient_id', 'date', 'start_time'],
                        suffixes=('_before', '_after')
                        ).sort_values(['start_time'])
 
@@ -690,7 +696,7 @@ def generate_data_firstexperiment_plot(dispo_data: pd.DataFrame, slot_df: pd.Dat
     for date_elem in dispo_data.date.dt.date.unique():
         day, month, year = date_elem.day, date_elem.month, date_elem.year
         # Identify how many 'shows' in dispo_data and extract
-        dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year, 'show')
+        dispo_patids, slot_df_patids = (dispo_data, slot_df, day, month, year, 'show')
         num_dispo_show = len(dispo_patids)
         num_extract_show = len(slot_df_patids)
         # Identify how many 'soft no-show' in dispo_data and extract
