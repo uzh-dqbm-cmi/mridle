@@ -600,14 +600,15 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
                        ).sort_values(['start_time'])
 
     def determine_no_show(type_before, type_after) -> Union[bool, None]:
-        if type_before == 'ter' and type_after == 'bef':
-            return False  # show
+        if type_before in ['ter', 'anm']:
+            if type_after == 'bef':
+                return False  # show
+            elif pd.isna(type_after):
+                return True
+            elif type_after == 'ter':
+                return True  # wait what is this case?!
         elif pd.isna(type_before) and type_after == 'bef':
             return False  # inpatient
-        elif type_before == 'ter' and pd.isna(type_after):
-            return True
-        elif type_before == 'ter' and type_after == 'ter':
-            return True
         else:
             return None
 
@@ -615,7 +616,7 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
 
     def determine_rescheduled_no_show(type_before, type_after) -> Union[str, None]:
         # TODO: How to identify cancelled? Is it important?
-        if type_before == 'ter' and pd.isna(type_after):
+        if type_before in ['ter', 'anm'] and pd.isna(type_after):
             return 'rescheduled'
         else:
             return 'show'
