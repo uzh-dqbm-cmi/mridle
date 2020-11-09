@@ -8,13 +8,14 @@ build_status_df():
  - This data is in the format one-row-per-appt-status-change
 
 build_slot_df():
- - returns data in the form one-row-per-appointment-slot (now show or completed appointment)
+ - returns data in the form one-row-per-appointment-slot (a slot is a no show or completed appointment)
 
 """
 
 import datetime as dt
 import pandas as pd
 import numpy as np
+import re
 from typing import Dict, List, Set
 
 
@@ -106,7 +107,7 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
          - slot_type_detailed: str, ['hard no-show', 'soft no-show', 'show', 'inpatient']
          - EnteringOrganisationDeviceID: str, device the appt was scheduled for
          - UniversalServiceName: str, the kind of appointment
-         - MRNCmpdId (if available): int, patient id
+         - MRNCmpdId (if available): str, patient id
     """
 
     default_agg_dict = {
@@ -117,8 +118,8 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
         'slot_outcome': 'min',
         'slot_type': 'min',
         'slot_type_detailed': 'min',
-        'EnteringOrganisationDeviceID': 'min',
-        'UniversalServiceName': 'min',
+        'EnteringOrganisationDeviceID': 'last',
+        'UniversalServiceName': 'last',
     }
     if agg_dict is None:
         agg_dict = default_agg_dict
@@ -261,6 +262,73 @@ def integrate_dicom_data(slot_df: pd.DataFrame, dicom_times_df: pd.DataFrame) ->
 # === HELPER FUNCTIONS ===================================================================
 # ========================================================================================
 
+def prep_raw_df_for_parquet(raw_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Convert all dataframe columns to the appropriate data type. By default, the raw data is read in as mostly mixed-type
+     'object' type columns, which Parquet does not accept. Most of these columns should instead be type 'category'
+      (which also makes for a significantly lower memory footprint) or 'string'.
+
+    Args:
+        raw_df: raw data frame with many 'object' type columns.
+
+    Returns: Dataframe with only int, datetime, category, and string data types.
+    """
+    date_cols = [
+        'DateOfBirth',
+    ]
+    drop_cols = [
+        'PlacerOrderNo',
+    ]
+    category_cols = [
+        'History_OrderStatus',
+        'OrderStatus',
+        'PatientClass',
+        'SAP FallArt',
+        'Klasse',
+        'InstituteID',
+        'InstituteDivisionID',
+        'EnteringOrganisationDeviceID',
+        'UniversalServiceId',
+        'UniversalServiceName',
+        'DangerCode',
+        'Sex',
+        'Beruf',
+        'Staatsangehoerigkeit',
+        'WohnadrOrt',
+        'WohnadrPLZ',
+        'City',
+        'Zip',
+        'Zivilstand',
+        'Sprache',
+        'MRNCmpdId',
+        'StationName',
+        'StationTelefon',
+        'ApprovalStatusCode',
+        'PerformProcedureID',
+        'PerformProcedureName',
+        'SourceFeedName',
+    ]
+
+    string_cols = [
+        'ReasonForStudy',
+    ]
+
+    df = convert_DtTm_cols(raw_df, date_cols).copy()
+
+    for col in drop_cols:
+        if col in df.columns:
+            df.drop(col, axis=1, inplace=True)
+
+    for col in category_cols:
+        df[col] = df[col].astype(str)
+        df[col] = df[col].astype('category')
+
+    for col in string_cols:
+        df[col] = df[col].astype(str)
+
+    return df
+
+
 def convert_DtTm_cols(df: pd.DataFrame, known_datetime_cols: List[str] = None) -> pd.DataFrame:
     """
     Convert columns to pd.datetime format. Automatically converts columns with DtTm in the name, as well as columns
@@ -280,11 +348,33 @@ def convert_DtTm_cols(df: pd.DataFrame, known_datetime_cols: List[str] = None) -
     time_cols = [col for col in df.columns if 'DtTm' in col]
     time_cols.extend([col for col in known_datetime_cols if col in df.columns])
     for col in time_cols:
-        df[col] = pd.to_datetime(df[col])
+        try:
+            df[col] = pd.to_datetime(df[col])
+        except pd.errors.OutOfBoundsDatetime:
+            df[col] = df[col].apply(fix_out_of_bounds_str_datetime)
+            df[col] = pd.to_datetime(df[col])
     return df
 
 
+def fix_out_of_bounds_str_datetime(val: str) -> str:
+    """For string dates that have a year beyond 2100, replace the year with 2100.
+    This is necessary because str -> datetime conversion fails for years beyond 2100."""
+    if pd.isna(val):
+        return np.nan
+    match = re.match(r'.*([1-3][0-9]{3})', val)
+    if match is None:
+        return val
+    year = match.group(1)
+    if int(year) > 2100:
+        val = val.replace(year, '2100')
+        return val
+    else:
+        return val
+
+
 def restrict_to_relevant_machines(df: pd.DataFrame, machines: List[str]) -> pd.DataFrame:
+    """Select a subset of input `df` where the `EnteringOrganisationDeviceID` column contains one of the values in
+     input `machines`."""
     df_machine_subset = df[df['EnteringOrganisationDeviceID'].isin(machines)].copy()
     return df_machine_subset
 
