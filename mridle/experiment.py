@@ -1,10 +1,11 @@
 import pandas as pd
+import numpy as np
 from sklearn.base import clone
 from sklearn.feature_selection import RFECV
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import f1_score
 from typing import Any, Dict, List, Tuple, Callable
-from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import StratifiedKFold
 
 
 class ModelRun:
@@ -139,13 +140,7 @@ class ModelRun:
         Returns:
             Dict of encoders.
         """
-        autoscaler = StandardScaler()
-        features = ['historic_no_show_cnt', 'no_show_before']
-        train_set[features] = autoscaler.fit_transform(train_set[features])
-
-        return {
-            'autoscaler': autoscaler
-        }
+        return {}
 
     @classmethod
     def build_x_features(cls, data_set: Any, encoders: Dict) -> pd.DataFrame:
@@ -391,3 +386,243 @@ class Predictor:
         data_processed = self.preprocess_fun(data_point)
         x, feature_cols = self.transform_func(data_processed, self.encoders)
         return self.model.predict(x), self.model.predict_proba(x)
+
+
+class PartitionedExperiment:
+    """
+    Run a ModelRun experiment multiple times on different partitions of the data.
+    Partitions the data_set into <n_partition> sets (by default, stratifies by label), and runs the ModelRun on each
+     partition. Summarizes metric results across partitions via `show_evaluation()`and feature_importances via
+     `show_feature_importances()`.
+    """
+
+    def __init__(self, name: str, data_set: Any, label_key: str, preprocessing_func: Callable,
+                 model_run_class: ModelRun, model, hyperparams: Dict, n_partitions: int = 5,
+                 stratify_by_label: bool = True, feature_subset=None, reduce_features=False, verbose=False):
+        """
+
+        Args:
+            name: Name for identification of the Experiment.
+            data_set: Data to run the model on.
+            label_key: the key to use to calculate the label.
+            preprocessing_func: the function that was used to preprocess `data_set`.
+                Passed through to ModelRun in order to be able to generate Predictor objects.
+            model_run_class: An implemented subclass of ModelRun.
+            model: A model with a fit() method.
+            hyperparams: Dictionary of hyperparamters to search for the best model.
+            n_partitions: Number of partitions to split the data on and run the experiment on.
+            stratify_by_label: Whether to stratify the partitions by label (default), otherwise partition randomly.
+            feature_subset: Subset of features to use. If not used, None is passed.
+            reduce_features: Whether to use recursive feature elimination to reduce features.
+            verbose: Whether to display verbose messages.
+        """
+
+        if n_partitions < 2:
+            raise ValueError("n_partitions must be greater than 1. Got {}.".format(n_partitions))
+
+        self.name = name
+        self.data_set = data_set
+        self.label_key = label_key
+        self.preprocessing_func = preprocessing_func
+        self.verbose = verbose
+        self.model_run_class = model_run_class
+        self.model = model
+        self.hyperparams = hyperparams
+        self.stratify_by_label = stratify_by_label
+        self.feature_subset = feature_subset
+        self.reduce_features = reduce_features
+
+        self.n_partitions = n_partitions
+
+        if stratify_by_label:
+            self.partition_ids = self.partition_data_stratified(data_set[label_key], self.n_partitions)
+        else:
+            self.partition_ids = self.partition_data_randomly(self.n_partitions)
+
+        self.model_runs = {}
+        self.all_run_results = []
+        self.experiment_results = []
+
+        if verbose:
+            print("Partition Stats for {}".format(self.name))
+            self.report_partition_stats(self.partition_ids, data_set, label_key)
+
+    def run(self, num_partitions_to_run=None, run_hyperparam_search=True) -> List[Dict[str, Any]]:
+        """
+        Run the experiment on all partitions.
+
+        Args:
+            num_partitions_to_run: select a subset of partitions to run, for faster testing.
+            run_hyperparam_search: argument to turn off hyperparam search, for faster testing.
+
+        Returns: List of experiment results (dicts from ModelRun.evaluation) for each of the partitions.
+
+        """
+        partitions_to_run = list(self.partition_ids.keys())
+        if num_partitions_to_run is not None:
+            partitions_to_run = partitions_to_run[:num_partitions_to_run]
+            print("Running only partitions {}".format(", ".join(partitions_to_run)))
+
+        for partition_name in self.partition_ids:
+            if partition_name in partitions_to_run:
+                print("Running partition {}...".format(partition_name))
+                model_run = self.run_experiment_on_one_partition(data_set=self.data_set,
+                                                                 label_key=self.label_key,
+                                                                 partition_ids=self.partition_ids[partition_name],
+                                                                 preprocessing_func=self.preprocessing_func,
+                                                                 model_run_class=self.model_run_class,
+                                                                 model=self.model,
+                                                                 hyperparams=self.hyperparams,
+                                                                 run_hyperparam_search=run_hyperparam_search,
+                                                                 feature_subset=self.feature_subset,
+                                                                 reduce_features=self.reduce_features)
+                self.model_runs[partition_name] = model_run
+
+        print("Compiling results")
+        self.experiment_results = self.summarize_runs(self.model_runs)
+        return self.experiment_results
+
+    @classmethod
+    def run_experiment_on_one_partition(cls, data_set: Dict, label_key: str, partition_ids: List[int],
+                                        preprocessing_func: Callable, model_run_class: ModelRun, model,
+                                        hyperparams: Dict, run_hyperparam_search: bool, feature_subset: List[str],
+                                        reduce_features: bool):
+        train_set, test_set = cls.materialize_partition(partition_ids, data_set)
+        mr = model_run_class(train_set=train_set, test_set=test_set, label_key=label_key, model=model,
+                             preprocessing_func=preprocessing_func, hyperparams=hyperparams,
+                             feature_subset=feature_subset, reduce_features=reduce_features)
+        mr.run(run_hyperparam_search=run_hyperparam_search)
+        return mr
+
+    @classmethod
+    def partition_data_randomly(cls, data_set: pd.DataFrame, n_partitions: int) -> Dict[str, List[int]]:
+        """Randomly shuffle and split the data set into n roughly equal partitions."""
+        raise NotImplementedError
+
+    @classmethod
+    def partition_data_stratified(cls, label_list: List[int], n_partitions: int) -> \
+            Dict[str, Tuple[List[int], List[int]]]:
+        """Randomly shuffle and split the doc_list into n roughly equal lists, stratified by label."""
+        skf = StratifiedKFold(n_splits=n_partitions, random_state=42, shuffle=True)
+        x = np.zeros(len(label_list))  # split takes a X argument for backwards compatibility and is not used
+        partition_indexes = skf.split(x, label_list)
+        partitions = {}
+        for p_id, p in enumerate(partition_indexes):
+            partitions['Partition {}'.format(p_id)] = p
+        return partitions
+
+    @classmethod
+    def materialize_partition(cls, partition_ids: Tuple[List[int], List[int]], data_set: pd.DataFrame)\
+            -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Create training and testing dataset based on the partition, which indicate the ids for the test set.
+
+        Args:
+            partition_ids: Dictionary, where the values contain the indices of each partition's test set.
+            data_set: The full data set.
+
+        Returns: Train set and Test set.
+        """
+        train_partition_ids, test_partition_ids = partition_ids
+        train_set = data_set.iloc[train_partition_ids]
+        test_set = data_set.iloc[test_partition_ids]
+        return train_set, test_set
+
+    @classmethod
+    def report_partition_stats(cls, partition_ids: Dict[str, Tuple[List[int], List[int]]], data_set: Any,
+                               label_key=str):
+        """
+        Print the size and class balance of each partition's train and test set.
+
+        Args:
+            partition_ids: Partitions.
+            data_set: The full data set.
+            label_key: The column name in data_set that is the label.
+
+        Returns: None, just prints.
+        """
+        for partition_name in partition_ids:
+            p_ids = partition_ids[partition_name]
+            train_set, test_set = cls.materialize_partition(p_ids, data_set)
+
+            print('\n-Partition {}-'.format(partition_name))
+            print("Train: {:,.0f} data points".format(len(train_set)))
+            print("Test: {:,.0f} data points".format(len(test_set)))
+
+            label_options = data_set[label_key].unique()
+            for label_i in label_options:
+                data_set_dict = {'Train': train_set, 'Test': test_set}
+                for data_subset_name in data_set_dict:
+                    data_subset = data_set_dict[data_subset_name]
+                    pct_label_i = data_subset[data_subset[label_key] == label_i].shape[0] / data_subset.shape[0]
+                    print("{} Set: {:.0%} {}".format(data_subset_name, pct_label_i, label_i))
+
+    @classmethod
+    def summarize_runs(cls, run_results: Dict) -> List[Dict[str, Any]]:
+        """Compile the ModelRun.evaluation dictionaries from all partitions into a list."""
+        return [run_results[mr].evaluation for mr in run_results]
+
+    def show_feature_importances(self):
+        """
+        Build a table of feature importances for each partition.
+
+        Returns: Dataframe with features as rows partitions as columns. Dataframe is sorted by highest median feature
+         importance.
+        """
+        all_feature_importances = pd.DataFrame()
+        for partition_id in self.model_runs:
+            partition_feature_importances = self.model_runs[partition_id].get_feature_importances()
+
+            # if the model has no feature importances, just exit now
+            if partition_feature_importances.shape[0] == 0:
+                return pd.DataFrame()
+
+            partition_feature_importances.columns = [partition_id]
+            all_feature_importances = pd.merge(all_feature_importances, partition_feature_importances, how='outer',
+                                               left_index=True, right_index=True)
+        all_feature_importances['median'] = all_feature_importances.median(axis=1)
+        return all_feature_importances.sort_values('median', ascending=False)
+
+    def get_hyperparams(self) -> pd.DataFrame:
+        """
+        Combines all hyperparamters from each of the partitions.
+
+        Returns: pd.DataFrame of all hyperparameters and their values.
+        """
+        all_hyperparams = pd.DataFrame()
+        for partition_id in self.model_runs:
+            partition_hyperparams = self.model_runs[partition_id].get_hyperparams(partition_id)
+            all_hyperparams = pd.concat([all_hyperparams, partition_hyperparams])
+        return all_hyperparams
+
+    def show_evaluation(self, metric: str = 'accuracy') -> pd.DataFrame:
+        """
+        Summarize the evaluation metric of choice across all partitions. Metric must be pre-calculated by ModelRun by
+         ModelRun.evaluate_model().
+        Args:
+            metric: Metric to summarize from ModelRun.evaluation dataframe.
+
+        Returns: Summary of the metric across all partitions, inlcuding mean, median, and stddev.
+        """
+        all_accuracy = {}
+        for partition_id in self.model_runs:
+            all_accuracy[partition_id] = self.model_runs[partition_id].evaluation[metric]
+        all_accuracy_df = pd.DataFrame(all_accuracy, index=[self.name])
+        median = all_accuracy_df.median(axis=1)
+        mean = all_accuracy_df.mean(axis=1)
+        stddev = all_accuracy_df.std(axis=1)
+        all_accuracy_df['mean'] = mean
+        all_accuracy_df['median'] = median
+        all_accuracy_df['stddev'] = stddev
+        return all_accuracy_df.sort_values('median', ascending=False)
+
+    def generate_predictor(self, partition: int = 0) -> Predictor:
+        """
+        Return a Predictor from the trained model of a specific partition.
+
+        Args:
+            partition: The partition id of the model to return. Defaults to 0.
+
+        Returns: a Predictor.
+        """
+        return self.model_runs[partition].generate_predictor()
