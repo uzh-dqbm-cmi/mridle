@@ -586,8 +586,6 @@ def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
     dispo_df['date'] = pd.to_datetime(dispo_df['date'], dayfirst=True)
     if 'date_recorded' in dispo_df.columns:
         dispo_df['date_recorded'] = pd.to_datetime(dispo_df['date_recorded'], dayfirst=True)
-    if 'slot_outcome' in dispo_df.columns:
-        dispo_df['slot_outcome'] = np.where(dispo_df['type'] == 'show', 'show', dispo_df['slot_outcome'])
 
     return dispo_df
 
@@ -599,24 +597,26 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
     Args:
         dispo_e2_df: result of `build_dispo_df` on the dispo data collected for experiment 2.
 
-    Returns: pd.DataFrame with one row per slot, with a `NoShow` bool column and slot_outcome column.
+    Returns: pd.DataFrame with one row per slot and 2 new columns: `NoShow` bool column and `slot_outcome` str column.
 
     """
     # calculate business days between date and recorded date
     # (np function requires datetime type)
     dispo_e2_df['date_dt'] = dispo_e2_df['date'].dt.date
     dispo_e2_df['date_recorded_dt'] = dispo_e2_df['date_recorded'].dt.date
-    dispo_e2_df['diff'] = dispo_e2_df.apply(lambda x: np.busday_count(x['date_dt'], x['date_recorded_dt']), axis=1)
+    dispo_e2_df['date_diff'] = dispo_e2_df.apply(lambda x: np.busday_count(x['date_dt'], x['date_recorded_dt']), axis=1)
     dispo_e2_df.drop(columns=['date_dt', 'date_recorded_dt'], inplace=True)
 
-    # find the first time a slot was recorded (may not be present 3 days in advance, but later than that)
-    before = dispo_e2_df[dispo_e2_df['diff'] < 0]
+    # Find the first time a slot was recorded. Select all instances where the slot was recorded in advance of the appt,
+    # and then pick the first occurance by applying a cumcount and selecting the 0th row.
+    before = dispo_e2_df[dispo_e2_df['date_diff'] < 0]
     before_pick_first = before.sort_values(['patient_id', 'date_recorded'])
     before_pick_first['rank'] = before_pick_first.groupby('patient_id').cumcount()
     before_first = before_pick_first[before_pick_first['rank'] == 0].copy()
     before_first.drop('rank', axis=1, inplace=True)
 
-    after = dispo_e2_df[dispo_e2_df['diff'] == 1]
+    # Select the rows where the slot was observed 1 business day after the slot date.
+    after = dispo_e2_df[dispo_e2_df['date_diff'] == 1]
 
     one_day = pd.merge(before_first, after, how='outer', on=['patient_id', 'date', 'start_time'],
                        suffixes=('_before', '_after')
