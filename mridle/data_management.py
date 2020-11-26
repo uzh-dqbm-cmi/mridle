@@ -8,7 +8,7 @@ build_status_df():
  - This data is in the format one-row-per-appt-status-change
 
 build_slot_df():
- - returns data in the form one-row-per-appointment-slot (no show or completed appointment)
+ - returns data in the form one-row-per-appointment-slot (a slot is a no show or completed appointment)
 
 """
 
@@ -111,7 +111,6 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
     """
 
     default_agg_dict = {
-        'MRNCmpdId': 'min',
         'patient_class_adj': 'min',
         'start_time': 'min',
         'end_time': 'min',
@@ -125,6 +124,14 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
     if agg_dict is None:
         agg_dict = default_agg_dict
 
+    # start_time field is required for de-duping appts.
+    # Add to agg_dict if it's not passed, but then remember to remove it later.
+    if 'start_time' in agg_dict:
+        start_time_requested_in_output = True
+    else:
+        start_time_requested_in_output = False
+        agg_dict['start_time'] = 'min'
+
     status_df = input_status_df.copy()
     status_df = status_df.sort_values(['FillerOrderNo', 'date'])
 
@@ -134,27 +141,39 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
 
     # there should be one show appt per FillerOrderNo
     show_slot_type_events = status_df[status_df['slot_type'].isin(['show', 'inpatient'])].copy()
-    show_slot_df = show_slot_type_events.groupby(['FillerOrderNo']).agg(agg_dict).reset_index()
+    show_slot_df = show_slot_type_events.groupby(['FillerOrderNo', 'MRNCmpdId']).agg(agg_dict)
+    if len(show_slot_df) > 0:
+        # if there are no shows, the index column will be 'index', and reset_index will create an extra index col
+        show_slot_df.reset_index(inplace=True)
 
     # there may be multiple no-show appts per FillerOrderNo
     no_show_slot_type_events = status_df[status_df['NoShow']].copy()
-    no_show_slot_df = no_show_slot_type_events.groupby(['FillerOrderNo', 'was_sched_for_date']).agg(agg_dict)
+    no_show_groupby_cols = ['FillerOrderNo', 'MRNCmpdId', 'was_sched_for_date']
+    no_show_slot_df = no_show_slot_type_events.groupby(no_show_groupby_cols).agg(agg_dict)
     if len(no_show_slot_df) > 0:
-        # if there are no no-shows, the index column will be 'index', not ['FillerOrderNo', 'was_sched_for_date']
+        # if there are no no-shows, the index column will be 'index', and reset_index will create an extra index col
         no_show_slot_df.reset_index(inplace=True)
         no_show_slot_df.drop('was_sched_for_date', axis=1, inplace=True)
 
     slot_df = pd.concat([show_slot_df, no_show_slot_df], sort=False)
-    slot_df['FillerOrderNo'] = slot_df['FillerOrderNo'].astype(int)
+    if len(slot_df) > 0:
+        slot_df['FillerOrderNo'] = slot_df['FillerOrderNo'].astype(int)
 
-    # filter out duplicate appointments for the same patient & time slot (weird dispo behavior)
-    slot_df = filter_duplicate_patient_time_slots(slot_df)
+        # filter out duplicate appointments for the same patient & time slot (weird dispo behavior)
+        slot_df = filter_duplicate_patient_time_slots(slot_df)
 
-    if not include_id_cols:
-        slot_df.drop('FillerOrderNo', axis=1, inplace=True)
-        slot_df.drop('MRNCmpdId', axis=1, inplace=True)
+        if not include_id_cols:
+            slot_df.drop('FillerOrderNo', axis=1, inplace=True)
+            slot_df.drop('MRNCmpdId', axis=1, inplace=True)
 
-    return slot_df.sort_values('start_time').reset_index(drop=True)
+        # remove start_time field if it wasn't requested in the passed agg_dict
+        if start_time_requested_in_output:
+            slot_df.sort_values('start_time', inplace=True)
+        else:
+            slot_df.drop('start_time', axis=1, inplace=True)
+
+    slot_df.reset_index(drop=True, inplace=True)
+    return slot_df
 
 
 def find_no_shows(row: pd.DataFrame) -> bool:
@@ -338,6 +357,8 @@ def convert_DtTm_cols(df: pd.DataFrame, known_datetime_cols: List[str] = None) -
 
 
 def fix_out_of_bounds_str_datetime(val: str) -> str:
+    """For string dates that have a year beyond 2100, replace the year with 2100.
+    This is necessary because str -> datetime conversion fails for years beyond 2100."""
     if pd.isna(val):
         return np.nan
     match = re.match(r'.*([1-3][0-9]{3})', val)
@@ -352,6 +373,8 @@ def fix_out_of_bounds_str_datetime(val: str) -> str:
 
 
 def restrict_to_relevant_machines(df: pd.DataFrame, machines: List[str]) -> pd.DataFrame:
+    """Select a subset of input `df` where the `EnteringOrganisationDeviceID` column contains one of the values in
+     input `machines`."""
     df_machine_subset = df[df['EnteringOrganisationDeviceID'].isin(machines)].copy()
     return df_machine_subset
 
