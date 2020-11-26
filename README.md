@@ -217,6 +217,21 @@ slot_type_detailed = 'hard no-show'
 plot_scatter_dispo_extract_slot_cnt_for_type(dispo_df, slot_df, slot_type_detailed)
 ```
 
+#### Data Validation Experiment 2: Rescheduled NoShows
+```python
+exp_2 = dm['dispo_data'].select('2').load()
+dispo_e2_df = mridle.data_management.build_dispo_df(exp_2)
+dispo_e2_df = mridle.data_management.find_no_shows_from_dispo_exp_two(dispo_e2_df)
+
+# build rdsc dataframe to compare to
+rdsc_exp_2_df = dm['rdsc_extracts'].select('exp_2').select('parquet').load()
+rdsc_exp_2_status_df = mridle.data_management.build_status_df(rdsc_exp_2_df)
+rdsc_exp_2_slot_df = mridle.data_management.build_slot_df(rdsc_exp_2_status_df)
+
+# plot daily Jaccard scores
+mridle.plotting_utilities.plot_scatter_bar_jaccard_per_type(dispo_e2_df, rdsc_exp_2_slot_df, 'rescheduled')
+```
+
 ## Constructing Model Feature Sets
 Feature sets are constructed from `status_df`, using functionality from `mridle.feature_engineering`.
 

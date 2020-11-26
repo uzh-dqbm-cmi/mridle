@@ -622,7 +622,7 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
                        suffixes=('_before', '_after')
                        ).sort_values(['start_time'])
 
-    def determine_no_show(type_before, type_after) -> Union[bool, None]:
+    def determine_dispo_no_show(type_before, type_after) -> Union[bool, None]:
         if type_before in ['ter', 'anm']:
             if type_after == 'bef':
                 return False  # show
@@ -635,16 +635,17 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
         else:
             return None
 
-    one_day['NoShow'] = one_day.apply(lambda x: determine_no_show(x['type_before'], x['type_after']), axis=1)
+    one_day['NoShow'] = one_day.apply(lambda x: determine_dispo_no_show(x['type_before'], x['type_after']), axis=1)
 
-    def determine_rescheduled_no_show(type_before, type_after) -> Union[str, None]:
-        # TODO: How to identify cancelled? Is it important?
+    def determine_dispo_rescheduled_no_show(type_before, type_after) -> Union[str, None]:
+        # TODO: How to identify canceled? Is it important?
         if type_before in ['ter', 'anm'] and pd.isna(type_after):
             return 'rescheduled'
         else:
             return 'show'
 
-    one_day['slot_outcome'] = one_day.apply(lambda x: determine_rescheduled_no_show(x['type_before'], x['type_after']),
+    one_day['slot_outcome'] = one_day.apply(lambda x:
+                                            determine_dispo_rescheduled_no_show(x['type_before'], x['type_after']),
                                             axis=1)
 
     return one_day
@@ -720,7 +721,7 @@ def generate_data_firstexperiment_plot(dispo_data: pd.DataFrame, slot_df: pd.Dat
     for date_elem in dispo_data.date.dt.date.unique():
         day, month, year = date_elem.day, date_elem.month, date_elem.year
         # Identify how many 'shows' in dispo_data and extract
-        dispo_patids, slot_df_patids = (dispo_data, slot_df, day, month, year, 'show')
+        dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year, 'show')
         num_dispo_show = len(dispo_patids)
         num_extract_show = len(slot_df_patids)
         # Identify how many 'soft no-show' in dispo_data and extract
