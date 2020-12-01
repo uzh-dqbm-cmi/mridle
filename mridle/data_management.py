@@ -262,6 +262,21 @@ def integrate_dicom_data(slot_df: pd.DataFrame, dicom_times_df: pd.DataFrame) ->
 # === HELPER FUNCTIONS ===================================================================
 # ========================================================================================
 
+def is_number(x):
+    try:
+        float(x)
+        return True
+    except ValueError:
+        return False
+
+
+def nan_non_numbers(x):
+    if is_number(x):
+        return x
+    else:
+        return np.nan
+
+
 def prep_raw_df_for_parquet(raw_df: pd.DataFrame) -> pd.DataFrame:
     """
     Convert all dataframe columns to the appropriate data type. By default, the raw data is read in as mostly mixed-type
@@ -279,7 +294,7 @@ def prep_raw_df_for_parquet(raw_df: pd.DataFrame) -> pd.DataFrame:
     drop_cols = [
         'PlacerOrderNo',
     ]
-    category_cols = [
+    str_category_cols = [
         'History_OrderStatus',
         'OrderStatus',
         'PatientClass',
@@ -297,7 +312,6 @@ def prep_raw_df_for_parquet(raw_df: pd.DataFrame) -> pd.DataFrame:
         'WohnadrOrt',
         'WohnadrPLZ',
         'City',
-        'Zip',
         'Zivilstand',
         'Sprache',
         'MRNCmpdId',
@@ -307,6 +321,10 @@ def prep_raw_df_for_parquet(raw_df: pd.DataFrame) -> pd.DataFrame:
         'PerformProcedureID',
         'PerformProcedureName',
         'SourceFeedName',
+    ]
+    number_category_cols = [
+        'Zip',
+
     ]
 
     string_cols = [
@@ -319,8 +337,12 @@ def prep_raw_df_for_parquet(raw_df: pd.DataFrame) -> pd.DataFrame:
         if col in df.columns:
             df.drop(col, axis=1, inplace=True)
 
-    for col in category_cols:
-        df[col] = df[col].astype(str)
+    for col in str_category_cols:
+        # df[col] = df[col].astype(str)
+        df[col] = df[col].astype('category')
+
+    for col in number_category_cols:
+        df[col] = df[col].apply(nan_non_numbers)
         df[col] = df[col].astype('category')
 
     for col in string_cols:
