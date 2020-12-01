@@ -703,6 +703,48 @@ def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame,
     return dispo_patids, slot_df_patids
 
 
+def validation_exp_confusion_matrix(dispo_df: pd.DataFrame, slot_df: pd.DataFrame, columns: List[str] = None
+                                    ) -> pd.DataFrame:
+    """
+    Build a confusion matrix for each appointment found in dispo_df and how it is represented in slot_df.
+
+    Args:
+        dispo_df: result of `build_dispo_df`
+        slot_df: result of `build_slot_df`
+        columns: columns to keep in the confusion matrix (for exp 1, `['show', 'canceled']`,
+         for exp 2, `['rescheduled', 'show']`)
+
+    Returns: Confusion matrix data frame
+
+    """
+    d = dispo_df[['patient_id', 'start_time', 'slot_outcome']].copy()
+    d['patient_id'] = d['patient_id'].astype(str)
+
+    # filter slot_df to only the dates in dispo_df
+    dispo_dates = dispo_df['date'].dt.date.unique()
+    r = slot_df[slot_df['start_time'].dt.date.isin(dispo_dates)][
+        ['FillerOrderNo', 'MRNCmpdId', 'start_time', 'slot_outcome']]
+
+    result = pd.merge(d, r, left_on=['patient_id', 'start_time'], right_on=['MRNCmpdId', 'start_time'], how='outer',
+                      suffixes=('_dispo', '_rdsc'))
+
+    # create one patient id column that combines the dispo patient_id and slot_df patient_id
+    result['id_or'] = np.where(~result['patient_id'].isna(), result['patient_id'], result['MRNCmpdId'])
+    result['slot_outcome_dispo'].fillna('not present', inplace=True)
+    result['slot_outcome_rdsc'].fillna('missing', inplace=True)
+
+    error_pivot = pd.pivot_table(result, index='slot_outcome_dispo', columns=['slot_outcome_rdsc'], values='id_or',
+                                 aggfunc='count')
+
+    dispo_cols = columns.copy()
+    rdsc_cols = columns.copy()
+    if 'not present' in error_pivot.index:
+        dispo_cols.extend(['not present'])
+    if 'missing' in error_pivot.columns:
+        rdsc_cols.extend(['missing'])
+    return error_pivot.reindex(dispo_cols)[rdsc_cols]
+
+
 def generate_data_firstexperiment_plot(dispo_data: pd.DataFrame, slot_df: pd.DataFrame) -> pd.DataFrame:
     '''
     Iterates over unique dates in dispo_data (software data) and slot_df (extract)
@@ -849,6 +891,27 @@ def jaccard_index(dispo_set: Set, extract_set: Set) -> float:
         score = (float(len(dispo_set.intersection(extract_set))) / len(dispo_set.union(extract_set)))
 
     return score
+
+
+def jaccard_for_outcome(dispo_df: pd.DataFrame, slot_df: pd.DataFrame, slot_outcome: str) -> float:
+    """
+    Calcualte the Jaccard score for a slotoutcome represented in both dispo_df and slot_df
+
+    Args:
+        dispo_df: result of `build_dispo_df`
+        slot_df: result of `build_slot_df`
+        slot_outcome:result of `set_slot_outcome`
+
+    Returns: Jaccard score
+    """
+    dispo_dates = dispo_df['date'].dt.date.unique()
+    slot_only_dates_df = slot_df[slot_df['start_time'].dt.date.isin(dispo_dates)]
+
+    dispo_outcome_ids = dispo_df[dispo_df['slot_outcome'] == slot_outcome]['patient_id'].astype(str).sort_values()
+    rdsc_outcome_ids = slot_only_dates_df[slot_only_dates_df['slot_outcome'] == slot_outcome]['MRNCmpdId'].astype(
+        str).sort_values()
+
+    return jaccard_index(set(dispo_outcome_ids), set(rdsc_outcome_ids))
 
 
 def print_validation_summary_metrics(dispo_df, slot_df):
