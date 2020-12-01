@@ -224,7 +224,7 @@ dispo_e2_df = mridle.data_management.build_dispo_df(exp_2)
 dispo_e2_df = mridle.data_management.find_no_shows_from_dispo_exp_two(dispo_e2_df)
 
 # build rdsc dataframe to compare to
-rdsc_exp_2_df = dm['rdsc_extracts'].select('exp_2').select('parquet').load()
+rdsc_exp_2_df = dm['rdsc_extracts'].select('exp_2').select('RIS_2020_week40_fix_column_headers.csv').load()
 rdsc_exp_2_status_df = mridle.data_management.build_status_df(rdsc_exp_2_df)
 rdsc_exp_2_slot_df = mridle.data_management.build_slot_df(rdsc_exp_2_status_df)
 
