@@ -293,6 +293,7 @@ def prep_raw_df_for_parquet(raw_df: pd.DataFrame) -> pd.DataFrame:
     ]
     drop_cols = [
         'PlacerOrderNo',
+        'StationTelefon',
     ]
     str_category_cols = [
         'History_OrderStatus',
@@ -316,7 +317,6 @@ def prep_raw_df_for_parquet(raw_df: pd.DataFrame) -> pd.DataFrame:
         'Sprache',
         'MRNCmpdId',
         'StationName',
-        'StationTelefon',
         'ApprovalStatusCode',
         'PerformProcedureID',
         'PerformProcedureName',
