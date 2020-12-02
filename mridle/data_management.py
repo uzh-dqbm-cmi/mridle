@@ -644,7 +644,13 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
                        suffixes=('_before', '_after')
                        ).sort_values(['start_time'])
 
-    def determine_dispo_no_show(type_before, type_after) -> Union[bool, None]:
+    # swap 'types' to full word statuses recognized by find_no_shows
+    # infer patient_class_adj
+    # rename columns
+    # ['date', 'was_sched_for_date', 'was_status', 'now_status', 'patient_class_adj]
+    def determine_dispo_no_show(type_before, type_after, start_time) -> Union[bool, None]:
+        if start_time.hour == 0:
+            return False  # ambulant
         if type_before in ['ter', 'anm']:
             if type_after == 'bef':
                 return False  # show
@@ -657,12 +663,14 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
         else:
             return None
 
-    one_day['NoShow'] = one_day.apply(lambda x: determine_dispo_no_show(x['type_before'], x['type_after']), axis=1)
+    one_day['NoShow'] = one_day.apply(lambda x: determine_dispo_no_show(x['type_before'], x['type_after'],
+                                                                        x['start_time']), axis=1)
 
     def determine_dispo_rescheduled_no_show(type_before, type_after) -> Union[str, None]:
-        # TODO: How to identify canceled? Is it important?
         if type_before in ['ter', 'anm'] and pd.isna(type_after):
             return 'rescheduled'
+        elif type_before in ['ter', 'anm'] and type_after == 'schr':
+            return 'canceled'
         else:
             return 'show'
 
