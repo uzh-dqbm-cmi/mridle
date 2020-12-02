@@ -678,7 +678,7 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
             return 'show'
 
     one_day['slot_outcome'] = one_day.apply(lambda x:
-                                            determine_dispo_rescheduled_no_show(x['NpShow'], x['type_before'],
+                                            determine_dispo_rescheduled_no_show(x['NoShow'], x['type_before'],
                                                                                 x['type_after']), axis=1)
 
     return one_day
