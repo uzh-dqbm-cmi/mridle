@@ -652,12 +652,14 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
         if start_time.hour == 0:
             return False  # ambulant
         if type_before in ['ter', 'anm']:
-            if type_after == 'bef':
+            if type_after in ['bef', 'unt']:
                 return False  # show
             elif pd.isna(type_after):
-                return True
+                return True  # rescheduled no show
             elif type_after == 'ter':
-                return True  # wait what is this case?!
+                return True  # "to be rescheduled"?
+            elif type_after == 'schr':
+                return True  # canceled no show
         elif pd.isna(type_before) and type_after == 'bef':
             return False  # inpatient
         else:
@@ -668,7 +670,7 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
 
     def determine_dispo_rescheduled_no_show(no_show, type_before, type_after) -> Union[str, None]:
         if no_show:
-            if type_before in ['ter', 'anm'] and pd.isna(type_after):
+            if type_before in ['ter', 'anm'] and (pd.isna(type_after) or type_after == 'ter'):
                 return 'rescheduled'
             elif type_before in ['ter', 'anm'] and type_after == 'schr':
                 return 'canceled'
