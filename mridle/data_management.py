@@ -650,7 +650,7 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
     # ['date', 'was_sched_for_date', 'was_status', 'now_status', 'patient_class_adj]
     def determine_dispo_no_show(type_before, type_after, start_time) -> Union[bool, None]:
         if start_time.hour == 0:
-            return False  # ambulant
+            return False  # inpatient
         if type_before in ['ter', 'anm']:
             if type_after in ['bef', 'unt', 'schr']:
                 return False  # show
@@ -666,7 +666,7 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
     one_day['NoShow'] = one_day.apply(lambda x: determine_dispo_no_show(x['type_before'], x['type_after'],
                                                                         x['start_time']), axis=1)
 
-    def determine_dispo_rescheduled_no_show(no_show, type_before, type_after) -> Union[str, None]:
+    def determine_dispo_rescheduled_no_show(no_show, type_before, type_after, start_time) -> Union[str, None]:
         if no_show:
             if type_before in ['ter', 'anm'] and (pd.isna(type_after)):
                 return 'rescheduled'
@@ -674,12 +674,15 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
                 return 'canceled'
             else:
                 return None
+        elif start_time.hour == 0:
+            return None  # inpatient
         else:
             return 'show'
 
     one_day['slot_outcome'] = one_day.apply(lambda x:
                                             determine_dispo_rescheduled_no_show(x['NoShow'], x['type_before'],
-                                                                                x['type_after']), axis=1)
+                                                                                x['type_after'], x['start_time']
+                                                                                ), axis=1)
 
     return one_day
 
