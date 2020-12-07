@@ -592,6 +592,28 @@ def filter_duplicate_patient_time_slots(slot_df: pd.DataFrame) -> pd.DataFrame:
     return first_slot_only
 
 
+def build_dispo_e1_d1(dispo_examples: List[Dict]) -> pd.DataFrame:
+    dispo_slot_df = build_dispo_df(dispo_examples)
+
+    # use same de-duping function, create columns as necessary
+    dispo_slot_df['MRNCmpdId'] = dispo_slot_df['patient_id']
+    dispo_slot_df['NoShow'] = np.where(dispo_slot_df['slot_outcome'] == 'show', False, True)
+    deduped_dispo_slot_df = filter_duplicate_patient_time_slots(dispo_slot_df)
+    deduped_dispo_slot_df.drop(['MRNCmpdId'], axis=1, inplace=True)
+    return deduped_dispo_slot_df
+
+
+def build_dispo_e2_df(dispo_examples: List[Dict]) -> pd.DataFrame:
+    dispo_df = build_dispo_df(dispo_examples)
+    dispo_slot_df = find_no_shows_from_dispo_exp_two(dispo_df)
+
+    # use same de-duping function, create columns as necessary
+    dispo_slot_df['MRNCmpdId'] = dispo_slot_df['patient_id']
+    deduped_dispo_slot_df = filter_duplicate_patient_time_slots(dispo_slot_df)
+    deduped_dispo_slot_df.drop(['MRNCmpdId'], axis=1, inplace=True)
+    return deduped_dispo_slot_df
+
+
 def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
     """
     Convert raw dispo data to dataframe and format the data types, namely dates and times.
