@@ -644,10 +644,6 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
                        suffixes=('_before', '_after')
                        ).sort_values(['start_time'])
 
-    # swap 'types' to full word statuses recognized by find_no_shows
-    # infer patient_class_adj
-    # rename columns
-    # ['date', 'was_sched_for_date', 'was_status', 'now_status', 'patient_class_adj]
     def determine_dispo_no_show(type_before, type_after, start_time) -> Union[bool, None]:
         if start_time.hour == 0:
             return False  # inpatient
