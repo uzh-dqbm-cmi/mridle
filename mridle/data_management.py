@@ -592,7 +592,7 @@ def filter_duplicate_patient_time_slots(slot_df: pd.DataFrame) -> pd.DataFrame:
     return first_slot_only
 
 
-def build_dispo_e1_d1(dispo_examples: List[Dict]) -> pd.DataFrame:
+def build_dispo_e1_df(dispo_examples: List[Dict]) -> pd.DataFrame:
     dispo_slot_df = build_dispo_df(dispo_examples)
 
     # use same de-duping function, create columns as necessary
