@@ -111,13 +111,13 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
     """
 
     default_agg_dict = {
-        'patient_class_adj': 'min',
-        'start_time': 'min',
-        'end_time': 'min',
+        'patient_class_adj': 'last',
+        'start_time': 'last',
+        'end_time': 'last',
         'NoShow': 'min',
-        'slot_outcome': 'min',
-        'slot_type': 'min',
-        'slot_type_detailed': 'min',
+        'slot_outcome': 'last',
+        'slot_type': 'last',
+        'slot_type_detailed': 'last',
         'EnteringOrganisationDeviceID': 'last',
         'UniversalServiceName': 'last',
     }
