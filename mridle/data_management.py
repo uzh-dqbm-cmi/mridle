@@ -608,8 +608,8 @@ def build_dispo_e1_df(dispo_examples: List[Dict]) -> pd.DataFrame:
 
     # Ignore midnight appts with `slot_outcome == cancel` because these are not valid slots.
     # They are neither a `show` nor a `no show` (bc inpatient)
-    dispo_slot_df['slot_outcome'] = np.where(dispo_slot_df['start_time'].dt.hour == 0 &
-                                             dispo_slot_df['slot_outcome'] == 'canceled',
+    dispo_slot_df['slot_outcome'] = np.where((dispo_slot_df['start_time'].dt.hour == 0) &
+                                             (dispo_slot_df['slot_outcome'] == 'canceled'),
                                              '',
                                              dispo_slot_df['slot_outcome'])
 
