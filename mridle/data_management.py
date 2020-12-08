@@ -680,23 +680,24 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
     dispo_e2_df['date_diff'] = dispo_e2_df.apply(lambda x: np.busday_count(x['date_dt'], x['date_recorded_dt']), axis=1)
     dispo_e2_df.drop(columns=['date_dt', 'date_recorded_dt'], inplace=True)
 
-    # Find the first time a slot was recorded. Select all instances where the slot was recorded in advance of the appt,
-    # and then pick the first occurance by applying a cumcount and selecting the 0th row.
+    # Find the last time a slot was recorded before its start_time. Select all instances where the slot was recorded in
+    # advance of the appt, and then pick the last occurance by applying a cumcount to the descending ordered list and
+    # selecting the 0th row.
     before = dispo_e2_df[dispo_e2_df['date_diff'] < 0]
-    before_pick_first = before.sort_values(['patient_id', 'date_recorded'])
-    before_pick_first['rank'] = before_pick_first.groupby('patient_id').cumcount()
-    before_first = before_pick_first[before_pick_first['rank'] == 0].copy()
-    before_first.drop('rank', axis=1, inplace=True)
+    before_pick_last = before.sort_values(['patient_id', 'date_recorded'], ascending=False)
+    before_pick_last['rank'] = before_pick_last.groupby('patient_id').cumcount()
+    before_last = before_pick_last[before_pick_last['rank'] == 0].copy()
+    before_last.drop('rank', axis=1, inplace=True)
 
     # Select the rows where the slot was observed 1 business day after the slot date.
     after = dispo_e2_df[dispo_e2_df['date_diff'] == 1]
 
-    one_day = pd.merge(before_first, after, how='outer', on=['patient_id', 'date', 'start_time'],
+    one_day = pd.merge(before_last, after, how='outer', on=['patient_id', 'date', 'start_time'],
                        suffixes=('_before', '_after')
                        ).sort_values(['start_time'])
 
-    def determine_dispo_no_show(last_status_before: str, first_status_after: str, start_time: pd.Timestamp
-                                ) -> Union[bool, None]:
+    def determine_dispo_no_show(last_status_before: str, first_status_after: str, last_status_date_diff: int,
+                                start_time: pd.Timestamp) -> Union[bool, None]:
         """
         Determine whether a sequence of dispo data points collected in Validation Experiment 2 represents a no-show,
         based on the appointment's status before and after the appointment date, and the start time of the appointment.
@@ -706,6 +707,7 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
              appointment date.
             first_status_after: The appointment status as of the first time the appointment was seen after the
              appointment date. If the appointment was rescheduled, then this will be None.
+            last_status_date_diff: Number of days before the appt start date that the appt was seen.
             start_time: The time the appointment is scheduled to start at. If the start_time is midnight, the
              appointment is assumed to be an inpatient appointment, and automatically marked as False - not a no show.
 
@@ -714,20 +716,23 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
         """
         if start_time.hour == 0:
             return False  # inpatient
-        if last_status_before in ['ter', 'anm']:
-            if first_status_after in ['bef', 'unt', 'schr']:
-                return False  # show
-            elif pd.isna(first_status_after):
-                return True  # rescheduled no show
-            elif first_status_after == 'ter':
-                return True  # "to be rescheduled"?
+        # only allow no-shows if the appt was recorded <=2 days in advance
+        # i.e. exclude appts that were noted >2 days in advnce but then moved before the 2 day window
+        if last_status_date_diff <= 2:
+            if last_status_before in ['ter', 'anm']:
+                if first_status_after in ['bef', 'unt', 'schr']:
+                    return False  # show
+                elif pd.isna(first_status_after):
+                    return True  # rescheduled no show
+                elif first_status_after == 'ter':
+                    return True  # "to be rescheduled"?
         elif pd.isna(last_status_before) and first_status_after == 'bef':
             return False  # inpatient
         else:
             return None
 
     one_day['NoShow'] = one_day.apply(lambda x: determine_dispo_no_show(x['type_before'], x['type_after'],
-                                                                        x['start_time']), axis=1)
+                                                                        x['diff_before'], x['start_time']), axis=1)
 
     def determine_dispo_slot_outcome(no_show: bool, last_status_before: str, first_status_after: str,
                                      start_time: pd.Timestamp) -> Union[str, None]:
