@@ -735,7 +735,7 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
                                                                         x['date_diff_before'], x['start_time']), axis=1)
 
     def determine_dispo_slot_outcome(no_show: bool, last_status_before: str, first_status_after: str,
-                                     start_time: pd.Timestamp) -> Union[str, None]:
+                                     last_status_date_diff: int, start_time: pd.Timestamp) -> Union[str, None]:
         """
         Determine the slot_outcome of a sequence of dispo data points collected in Validation Experiment 2.
 
@@ -745,12 +745,15 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
              appointment date.
             first_status_after: The appointment status as of the first time the appointment was seen after the
              appointment date. If the appointment was rescheduled, then this will be None.
+            last_status_date_diff: Number of days before the appt start date that the appt was seen.
             start_time: The time the appointment is scheduled to start at. If the start_time is midnight, the
              appointment is assumed to be an inpatient appointment, and automatically marked as False - not a no show.
 
         Returns: rescheduled, canceled, show, or None (not a slot)
 
         """
+        if last_status_date_diff >= -2:
+            return None
         if no_show:
             if last_status_before in ['ter', 'anm'] and (pd.isna(first_status_after)):
                 return 'rescheduled'
@@ -763,9 +766,10 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
         else:
             return 'show'
 
-    one_day['slot_outcome'] = one_day.apply(lambda x:
-                                            determine_dispo_slot_outcome(x['NoShow'], x['type_before'], x['type_after'],
-                                                                         x['start_time']), axis=1)
+    one_day['slot_outcome'] = one_day.apply(lambda x: determine_dispo_slot_outcome(x['NoShow'], x['type_before'],
+                                                                                   x['type_after'],
+                                                                                   x['date_diff_before'],
+                                                                                   x['start_time']), axis=1)
 
     return one_day
 
