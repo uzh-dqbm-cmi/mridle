@@ -457,7 +457,7 @@ def adjust_patient_class(original_patient_class: str) -> str:
         'stationär': 'inpatient',
         'teilstationär': 'inpatient',
     }
-    if pd.isnull(original_patient_class):
+    if pd.isnull(original_patient_class) or (type(original_patient_class) == str and original_patient_class == 'nan'):
         return default_patient_class
     elif original_patient_class in patient_class_map.keys():
         return patient_class_map[original_patient_class]
