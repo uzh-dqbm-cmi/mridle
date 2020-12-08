@@ -732,7 +732,7 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
             return None
 
     one_day['NoShow'] = one_day.apply(lambda x: determine_dispo_no_show(x['type_before'], x['type_after'],
-                                                                        x['diff_before'], x['start_time']), axis=1)
+                                                                        x['date_diff_before'], x['start_time']), axis=1)
 
     def determine_dispo_slot_outcome(no_show: bool, last_status_before: str, first_status_after: str,
                                      start_time: pd.Timestamp) -> Union[str, None]:
