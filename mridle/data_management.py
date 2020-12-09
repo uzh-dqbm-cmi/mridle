@@ -593,6 +593,17 @@ def filter_duplicate_patient_time_slots(slot_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_dispo_e1_df(dispo_examples: List[Dict]) -> pd.DataFrame:
+    """
+    Convert the dispo data from validation experiment 1 into a dataframe and process it. Processing steps include:
+    - formatting column data types
+    - de-duping double show+canceled appointments
+
+    Args:
+        dispo_examples: Raw yaml list of dictionaries.
+
+    Returns: Dataframe of appointments collected in validation experiment 1.
+
+    """
     dispo_slot_df = build_dispo_df(dispo_examples)
 
     # use same de-duping function, create columns as necessary
@@ -604,6 +615,18 @@ def build_dispo_e1_df(dispo_examples: List[Dict]) -> pd.DataFrame:
 
 
 def build_dispo_e2_df(dispo_examples: List[Dict]) -> pd.DataFrame:
+    """
+        Convert the dispo data from validation experiment 2 into a dataframe and process it. Processing steps include:
+        - formatting column data types
+        - identifying rescheduled no shows from the sequence of dispo data points
+        - de-duping double show+canceled appointments
+
+        Args:
+            dispo_examples: Raw yaml list of dictionaries.
+
+        Returns: Dataframe of appointments collected in validation experiment 1.
+
+        """
     dispo_df = build_dispo_df(dispo_examples)
     dispo_slot_df = find_no_shows_from_dispo_exp_two(dispo_df)
 
