@@ -614,7 +614,7 @@ def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
 
 def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Identify no show events from the data collected in Dispo Experiment 2.
+    Identify no show events from the data collected in Validation Experiment 2.
 
     Args:
         dispo_e2_df: result of `build_dispo_df` on the dispo data collected for experiment 2.
@@ -644,17 +644,33 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
                        suffixes=('_before', '_after')
                        ).sort_values(['start_time'])
 
-    def determine_dispo_no_show(type_before, type_after, start_time) -> Union[bool, None]:
+    def determine_dispo_no_show(last_status_before: str, first_status_after: str, start_time: pd.Timestamp
+                                ) -> Union[bool, None]:
+        """
+        Determine whether a sequence of dispo data points collected in Validation Experiment 2 represents a no-show,
+        based on the appointment's status before and after the appointment date, and the start time of the appointment.
+
+        Args:
+            last_status_before: The appointment status as of the last time the appointment was seen before the
+             appointment date.
+            first_status_after: The appointment status as of the first time the appointment was seen after the
+             appointment date. If the appointment was rescheduled, then this will be None.
+            start_time: The time the appointment is scheduled to start at. If the start_time is midnight, the
+             appointment is assumed to be an inpatient appointment, and automatically marked as False - not a no show.
+
+        Returns: bool of whether the appointment is a no show, or None if the status cannot be determined.
+
+        """
         if start_time.hour == 0:
             return False  # inpatient
-        if type_before in ['ter', 'anm']:
-            if type_after in ['bef', 'unt', 'schr']:
+        if last_status_before in ['ter', 'anm']:
+            if first_status_after in ['bef', 'unt', 'schr']:
                 return False  # show
-            elif pd.isna(type_after):
+            elif pd.isna(first_status_after):
                 return True  # rescheduled no show
-            elif type_after == 'ter':
+            elif first_status_after == 'ter':
                 return True  # "to be rescheduled"?
-        elif pd.isna(type_before) and type_after == 'bef':
+        elif pd.isna(last_status_before) and first_status_after == 'bef':
             return False  # inpatient
         else:
             return None
@@ -662,11 +678,27 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
     one_day['NoShow'] = one_day.apply(lambda x: determine_dispo_no_show(x['type_before'], x['type_after'],
                                                                         x['start_time']), axis=1)
 
-    def determine_dispo_rescheduled_no_show(no_show, type_before, type_after, start_time) -> Union[str, None]:
+    def determine_dispo_slot_outcome(no_show: bool, last_status_before: str, first_status_after: str,
+                                     start_time: pd.Timestamp) -> Union[str, None]:
+        """
+        Determine the slot_outcome of a sequence of dispo data points collected in Validation Experiment 2.
+
+        Args:
+            no_show: outcome of `determine_dispo_no_show`.
+            last_status_before: The appointment status as of the last time the appointment was seen before the
+             appointment date.
+            first_status_after: The appointment status as of the first time the appointment was seen after the
+             appointment date. If the appointment was rescheduled, then this will be None.
+            start_time: The time the appointment is scheduled to start at. If the start_time is midnight, the
+             appointment is assumed to be an inpatient appointment, and automatically marked as False - not a no show.
+
+        Returns: rescheduled, canceled, show, or None (not a slot)
+
+        """
         if no_show:
-            if type_before in ['ter', 'anm'] and (pd.isna(type_after)):
+            if last_status_before in ['ter', 'anm'] and (pd.isna(first_status_after)):
                 return 'rescheduled'
-            elif type_before in ['ter', 'anm'] and type_after == 'ter':
+            elif last_status_before in ['ter', 'anm'] and first_status_after == 'ter':
                 return 'canceled'
             else:
                 return None
@@ -676,9 +708,8 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
             return 'show'
 
     one_day['slot_outcome'] = one_day.apply(lambda x:
-                                            determine_dispo_rescheduled_no_show(x['NoShow'], x['type_before'],
-                                                                                x['type_after'], x['start_time']
-                                                                                ), axis=1)
+                                            determine_dispo_slot_outcome(x['NoShow'], x['type_before'], x['type_after'],
+                                                                         x['start_time']), axis=1)
 
     return one_day
 
