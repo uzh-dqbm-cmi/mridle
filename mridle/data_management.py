@@ -16,7 +16,7 @@ import datetime as dt
 import pandas as pd
 import numpy as np
 import re
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Union
 
 
 STATUS_MAP = {
@@ -262,6 +262,21 @@ def integrate_dicom_data(slot_df: pd.DataFrame, dicom_times_df: pd.DataFrame) ->
 # === HELPER FUNCTIONS ===================================================================
 # ========================================================================================
 
+def is_number(x):
+    try:
+        float(x)
+        return True
+    except ValueError:
+        return False
+
+
+def nan_non_numbers(x):
+    if is_number(x):
+        return x
+    else:
+        return np.nan
+
+
 def prep_raw_df_for_parquet(raw_df: pd.DataFrame) -> pd.DataFrame:
     """
     Convert all dataframe columns to the appropriate data type. By default, the raw data is read in as mostly mixed-type
@@ -278,8 +293,9 @@ def prep_raw_df_for_parquet(raw_df: pd.DataFrame) -> pd.DataFrame:
     ]
     drop_cols = [
         'PlacerOrderNo',
+        'StationTelefon',
     ]
-    category_cols = [
+    str_category_cols = [
         'History_OrderStatus',
         'OrderStatus',
         'PatientClass',
@@ -297,16 +313,18 @@ def prep_raw_df_for_parquet(raw_df: pd.DataFrame) -> pd.DataFrame:
         'WohnadrOrt',
         'WohnadrPLZ',
         'City',
-        'Zip',
         'Zivilstand',
         'Sprache',
         'MRNCmpdId',
         'StationName',
-        'StationTelefon',
         'ApprovalStatusCode',
         'PerformProcedureID',
         'PerformProcedureName',
         'SourceFeedName',
+    ]
+    number_category_cols = [
+        'Zip',
+
     ]
 
     string_cols = [
@@ -319,8 +337,12 @@ def prep_raw_df_for_parquet(raw_df: pd.DataFrame) -> pd.DataFrame:
         if col in df.columns:
             df.drop(col, axis=1, inplace=True)
 
-    for col in category_cols:
-        df[col] = df[col].astype(str)
+    for col in str_category_cols:
+        # df[col] = df[col].astype(str)
+        df[col] = df[col].astype('category')
+
+    for col in number_category_cols:
+        df[col] = df[col].apply(nan_non_numbers)
         df[col] = df[col].astype('category')
 
     for col in string_cols:
@@ -572,10 +594,10 @@ def filter_duplicate_patient_time_slots(slot_df: pd.DataFrame) -> pd.DataFrame:
 
 def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
     """
-    Convert dispo file to dataframe and converts date column to pd.datetime format.
+    Convert raw dispo data to dataframe and format the data types, namely dates and times.
 
     Args:
-        dispo_examples: List of dictionaries containing appointment information
+        dispo_examples: List of dictionaries containing appointment information collected at the Dispo.
 
     Returns: Dataframe with datetime type conversions
 
@@ -584,9 +606,71 @@ def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
     dispo_df['patient_id'] = dispo_df['patient_id'].astype(int)
     dispo_df['start_time'] = pd.to_datetime(dispo_df['date'] + ' ' + dispo_df['start_time'], dayfirst=True)
     dispo_df['date'] = pd.to_datetime(dispo_df['date'], dayfirst=True)
-    dispo_df['slot_outcome'] = np.where(dispo_df['type'] == 'show', 'show', dispo_df['slot_outcome'])
+    if 'date_recorded' in dispo_df.columns:
+        dispo_df['date_recorded'] = pd.to_datetime(dispo_df['date_recorded'], dayfirst=True)
 
     return dispo_df
+
+
+def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Identify no show events from the data collected in Dispo Experiment 2.
+
+    Args:
+        dispo_e2_df: result of `build_dispo_df` on the dispo data collected for experiment 2.
+
+    Returns: pd.DataFrame with one row per slot and 2 new columns: `NoShow` bool column and `slot_outcome` str column.
+
+    """
+    # calculate business days between date and recorded date
+    # (np function requires datetime type)
+    dispo_e2_df['date_dt'] = dispo_e2_df['date'].dt.date
+    dispo_e2_df['date_recorded_dt'] = dispo_e2_df['date_recorded'].dt.date
+    dispo_e2_df['date_diff'] = dispo_e2_df.apply(lambda x: np.busday_count(x['date_dt'], x['date_recorded_dt']), axis=1)
+    dispo_e2_df.drop(columns=['date_dt', 'date_recorded_dt'], inplace=True)
+
+    # Find the first time a slot was recorded. Select all instances where the slot was recorded in advance of the appt,
+    # and then pick the first occurance by applying a cumcount and selecting the 0th row.
+    before = dispo_e2_df[dispo_e2_df['date_diff'] < 0]
+    before_pick_first = before.sort_values(['patient_id', 'date_recorded'])
+    before_pick_first['rank'] = before_pick_first.groupby('patient_id').cumcount()
+    before_first = before_pick_first[before_pick_first['rank'] == 0].copy()
+    before_first.drop('rank', axis=1, inplace=True)
+
+    # Select the rows where the slot was observed 1 business day after the slot date.
+    after = dispo_e2_df[dispo_e2_df['date_diff'] == 1]
+
+    one_day = pd.merge(before_first, after, how='outer', on=['patient_id', 'date', 'start_time'],
+                       suffixes=('_before', '_after')
+                       ).sort_values(['start_time'])
+
+    def determine_dispo_no_show(type_before, type_after) -> Union[bool, None]:
+        if type_before in ['ter', 'anm']:
+            if type_after == 'bef':
+                return False  # show
+            elif pd.isna(type_after):
+                return True
+            elif type_after == 'ter':
+                return True  # wait what is this case?!
+        elif pd.isna(type_before) and type_after == 'bef':
+            return False  # inpatient
+        else:
+            return None
+
+    one_day['NoShow'] = one_day.apply(lambda x: determine_dispo_no_show(x['type_before'], x['type_after']), axis=1)
+
+    def determine_dispo_rescheduled_no_show(type_before, type_after) -> Union[str, None]:
+        # TODO: How to identify canceled? Is it important?
+        if type_before in ['ter', 'anm'] and pd.isna(type_after):
+            return 'rescheduled'
+        else:
+            return 'show'
+
+    one_day['slot_outcome'] = one_day.apply(lambda x:
+                                            determine_dispo_rescheduled_no_show(x['type_before'], x['type_after']),
+                                            axis=1)
+
+    return one_day
 
 
 def string_set(a_list):
@@ -639,6 +723,48 @@ def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame,
         print('In Slot_df but not in Dispo: {}'.format(slot_df_patids.difference(dispo_patids)))
 
     return dispo_patids, slot_df_patids
+
+
+def validation_exp_confusion_matrix(dispo_df: pd.DataFrame, slot_df: pd.DataFrame, columns: List[str] = None
+                                    ) -> pd.DataFrame:
+    """
+    Build a confusion matrix for each appointment found in dispo_df and how it is represented in slot_df.
+
+    Args:
+        dispo_df: result of `build_dispo_df`
+        slot_df: result of `build_slot_df`
+        columns: columns to keep in the confusion matrix (for exp 1, `['show', 'canceled']`,
+         for exp 2, `['rescheduled', 'show']`)
+
+    Returns: Confusion matrix data frame
+
+    """
+    d = dispo_df[['patient_id', 'start_time', 'slot_outcome']].copy()
+    d['patient_id'] = d['patient_id'].astype(str)
+
+    # filter slot_df to only the dates in dispo_df
+    dispo_dates = dispo_df['date'].dt.date.unique()
+    r = slot_df[slot_df['start_time'].dt.date.isin(dispo_dates)][
+        ['FillerOrderNo', 'MRNCmpdId', 'start_time', 'slot_outcome']]
+
+    result = pd.merge(d, r, left_on=['patient_id', 'start_time'], right_on=['MRNCmpdId', 'start_time'], how='outer',
+                      suffixes=('_dispo', '_rdsc'))
+
+    # create one patient id column that combines the dispo patient_id and slot_df patient_id
+    result['id_or'] = np.where(~result['patient_id'].isna(), result['patient_id'], result['MRNCmpdId'])
+    result['slot_outcome_dispo'].fillna('not present', inplace=True)
+    result['slot_outcome_rdsc'].fillna('missing', inplace=True)
+
+    error_pivot = pd.pivot_table(result, index='slot_outcome_dispo', columns=['slot_outcome_rdsc'], values='id_or',
+                                 aggfunc='count')
+
+    dispo_cols = columns.copy()
+    rdsc_cols = columns.copy()
+    if 'not present' in error_pivot.index:
+        dispo_cols.extend(['not present'])
+    if 'missing' in error_pivot.columns:
+        rdsc_cols.extend(['missing'])
+    return error_pivot.reindex(dispo_cols)[rdsc_cols]
 
 
 def generate_data_firstexperiment_plot(dispo_data: pd.DataFrame, slot_df: pd.DataFrame) -> pd.DataFrame:
@@ -787,6 +913,27 @@ def jaccard_index(dispo_set: Set, extract_set: Set) -> float:
         score = (float(len(dispo_set.intersection(extract_set))) / len(dispo_set.union(extract_set)))
 
     return score
+
+
+def jaccard_for_outcome(dispo_df: pd.DataFrame, slot_df: pd.DataFrame, slot_outcome: str) -> float:
+    """
+    Calculate the Jaccard score for a slot_outcome represented in both dispo_df and slot_df
+
+    Args:
+        dispo_df: result of `build_dispo_df`
+        slot_df: result of `build_slot_df`
+        slot_outcome:result of `set_slot_outcome`
+
+    Returns: Jaccard score
+    """
+    dispo_dates = dispo_df['date'].dt.date.unique()
+    slot_only_dates_df = slot_df[slot_df['start_time'].dt.date.isin(dispo_dates)]
+
+    dispo_outcome_ids = dispo_df[dispo_df['slot_outcome'] == slot_outcome]['patient_id'].astype(str).sort_values()
+    rdsc_outcome_ids = slot_only_dates_df[slot_only_dates_df['slot_outcome'] == slot_outcome]['MRNCmpdId'].astype(
+        str).sort_values()
+
+    return jaccard_index(set(dispo_outcome_ids), set(rdsc_outcome_ids))
 
 
 def print_validation_summary_metrics(dispo_df, slot_df):
