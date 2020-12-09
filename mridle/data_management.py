@@ -917,7 +917,7 @@ def jaccard_index(dispo_set: Set, extract_set: Set) -> float:
 
 def jaccard_for_outcome(dispo_df: pd.DataFrame, slot_df: pd.DataFrame, slot_outcome: str) -> float:
     """
-    Calcualte the Jaccard score for a slotoutcome represented in both dispo_df and slot_df
+    Calculate the Jaccard score for a slot_outcome represented in both dispo_df and slot_df
 
     Args:
         dispo_df: result of `build_dispo_df`
