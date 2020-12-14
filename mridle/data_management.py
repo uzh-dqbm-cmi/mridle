@@ -606,6 +606,13 @@ def build_dispo_e1_df(dispo_examples: List[Dict]) -> pd.DataFrame:
     """
     dispo_slot_df = build_dispo_df(dispo_examples)
 
+    # Ignore midnight appts with `slot_outcome == cancel` because these are not valid slots.
+    # They are neither a `show` nor a `no show` (bc inpatient)
+    dispo_slot_df['slot_outcome'] = np.where((dispo_slot_df['start_time'].dt.hour == 0) &
+                                             (dispo_slot_df['slot_outcome'] == 'canceled'),
+                                             '',
+                                             dispo_slot_df['slot_outcome'])
+
     # use same de-duping function, create columns as necessary
     dispo_slot_df['MRNCmpdId'] = dispo_slot_df['patient_id']
     dispo_slot_df['NoShow'] = np.where(dispo_slot_df['slot_outcome'] == 'show', False, True)
@@ -653,7 +660,6 @@ def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
     dispo_df['date'] = pd.to_datetime(dispo_df['date'], dayfirst=True)
     if 'date_recorded' in dispo_df.columns:
         dispo_df['date_recorded'] = pd.to_datetime(dispo_df['date_recorded'], dayfirst=True)
-
     return dispo_df
 
 
