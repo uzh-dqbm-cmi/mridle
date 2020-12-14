@@ -719,13 +719,14 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
         # only allow no-shows if the appt was recorded <=2 days in advance
         # i.e. exclude appts that were noted >2 days in advnce but then moved before the 2 day window
         if last_status_date_diff < -2:
-            if last_status_before in ['ter', 'anm']:
-                if first_status_after in ['bef', 'unt', 'schr']:
-                    return False  # show
-                elif pd.isna(first_status_after):
-                    return True  # rescheduled no show
-                elif first_status_after == 'ter':
-                    return True  # "to be rescheduled"?
+            return None
+        if last_status_before in ['ter', 'anm']:
+            if first_status_after in ['bef', 'unt', 'schr']:
+                return False  # show
+            elif pd.isna(first_status_after):
+                return True  # rescheduled no show
+            elif first_status_after == 'ter':
+                return True  # "to be rescheduled"?
         elif pd.isna(last_status_before) and first_status_after == 'bef':
             return False  # inpatient
         else:
