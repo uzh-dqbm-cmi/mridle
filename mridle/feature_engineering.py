@@ -156,6 +156,7 @@ def feature_marital(status_df: pd.DataFrame) -> pd.DataFrame:
         'XXX': 'undefined',
         # [LED, VRH, GTR, UNB, GES, VRW, PAR, nan, XXX]
     }
+    print(status_df.Zivilstand.unique())
     status_df['marital'] = status_df['Zivilstand'].apply(lambda x: zivilstand_abbreviation_mapping[x])
     return status_df
 
