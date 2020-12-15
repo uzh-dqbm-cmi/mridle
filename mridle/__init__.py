@@ -5,6 +5,7 @@ from mridle import feature_engineering
 from mridle import experiment
 from mridle import model_evaluation
 from mridle import experiments
+from mridle import figures
 
 __all__ = ['data_management', 'exploration_utilities', 'plotting_utilities', 'feature_engineering', 'experiment',
-           'model_evaluation', 'experiments']
+           'model_evaluation', 'experiments', 'figures']
