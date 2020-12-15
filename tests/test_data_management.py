@@ -309,6 +309,41 @@ class TestBuildSlotDF(unittest.TestCase):
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
+    def test_appt_false_start_and_start_time_moved_ahead(self):
+        raw_df = pd.DataFrame.from_records([
+            # date,                             now_status,           now_sched_for_date
+            (day(0),                            code['scheduled'],    day(5)),
+            (day(4),                            code['registered'],   day(5)),
+            (day(5),                            code['started'],      day(5)),
+            (day(5) + pd.Timedelta(minutes=10), code['scheduled'],    day(8)),
+            (day(7),                            code['registered'],   day(8)),
+            (day(8),                            code['started'],      day(8)),
+            (day(8) + pd.Timedelta(minutes=10), code['examined'],     day(8)),
+        ],
+            columns=[date_col, now_status_col, now_sched_for_date_col]
+        )
+        raw_df['PatientClass'] = 'stationär'
+
+        expected_slot_df = pd.DataFrame([
+            {
+                'start_time': day(8),
+                'end_time': day(8) + pd.Timedelta(minutes=30),
+                'NoShow': False,
+                'slot_outcome': 'show',
+                'slot_type': 'inpatient',
+                'slot_type_detailed': 'inpatient',
+                'time_slot_status': False,
+                'duplicate_appt': 0,
+                'patient_class_adj': 'inpatient',
+            }
+        ])
+
+        raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
+        status_df = build_status_df(raw_df)
+        slot_df = build_slot_df(status_df)
+
+        pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
+
     def test_duplicate_appt_half_canceled_creates_one_show(self):
         raw_df = pd.DataFrame.from_records([
             # fon, date,                               now_status,            now_sched_for_date
