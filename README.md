@@ -147,9 +147,16 @@ should be similar. A value over 1 represents a larger number of appointments in 
 (only works on USZ machine)
 
 ```python
-dispo_examples = dm['dispo_data']['manual_examples.yaml'].load()
-dispo_df = mridle.data_management.build_dispo_df(dispo_examples)
+dispo_data_1a = dm['dispo_data'].select('experiment1A').load()
+dispo_data_1b = dm['dispo_data'].select('experiment1B').load()
+dispo_data_e1 = dispo_data_1a + dispo_data_1b
+dispo_e1_df = mridle.data_management.build_dispo_e1_df(dispo_data_e1)
 
+dispo_e2_records = dm['dispo_data'].select('2').load()
+dispo_e2_slot_df = mridle.data_management.build_dispo_e2_df(dispo_e2_records)
+```
+
+```python
 slot_type_detailed = 'show'
 df_exp1 = mridle.data_management.generate_data_firstexperiment_plot(dispo_df, slot_df)
 df_ratios = mridle.data_management.calculate_ratios_experiment(df_exp1, slot_type_detailed)
