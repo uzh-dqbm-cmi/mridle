@@ -43,13 +43,12 @@ SERVICE_NAMES_TO_EXCLUDE = ['Zweitbefundung MR', 'Fremduntersuchung MR']
 # === MAJOR TRANSFORMATION STEPS =========================================================
 # ========================================================================================
 
-def build_status_df(raw_df: pd.DataFrame, test_patient_ids: List[str]) -> pd.DataFrame:
+def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     """
     Clean up the raw appointment status change dataset into a nicely formatted version.
 
     Args:
         raw_df: raw data file of RIS export.
-        test_patient_ids: List of patient ids that are test ids, and should be excluded.
 
     Returns: Dataframe with one row per appointment status change.
         The resulting dataframe has the columns (illustrative, not a complete list):
@@ -70,7 +69,6 @@ def build_status_df(raw_df: pd.DataFrame, test_patient_ids: List[str]) -> pd.Dat
 
     """
     df = raw_df.copy()
-    df = df[~df['MRNCmpdId'].isin(test_patient_ids)].copy()
     df = convert_DtTm_cols(df)
     df = restrict_to_relevant_machines(df, RELEVANT_MACHINES)
     df = exclude_irrelevant_service_names(df, SERVICE_NAMES_TO_EXCLUDE)
@@ -86,14 +84,15 @@ def build_status_df(raw_df: pd.DataFrame, test_patient_ids: List[str]) -> pd.Dat
     return df
 
 
-def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None, include_id_cols: bool = True
-                  ) -> pd.DataFrame:
+def build_slot_df(input_status_df: pd.DataFrame, test_patient_ids: pd.DataFrame, agg_dict: Dict[str, str] = None,
+                  include_id_cols: bool = True) -> pd.DataFrame:
     """
     Convert status_df into slot_df. Identify "show" and "no show" appointment slots from status_df,
     and synthesize into a single dataframe of all appointments that occurred or were supposed to occur (but no-show'ed).
 
     Args:
         input_status_df: row-per-status-change dataframe.
+        test_patient_ids: List of patient ids that are test ids, and should be excluded.
         agg_dict: aggregation dict to pass to pd.DataFrame.agg() that specifies  columns to include about the slots.
             If no agg_dict is passed, the default will be used.
         include_id_cols: whether to include patient and appointment id columns in the resulting dataset.
@@ -173,6 +172,8 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
             slot_df.sort_values('start_time', inplace=True)
         else:
             slot_df.drop('start_time', axis=1, inplace=True)
+
+    slot_df = slot_df[~slot_df['MRNCmpdId'].isin(test_patient_ids)].copy()
 
     slot_df.reset_index(drop=True, inplace=True)
     return slot_df
