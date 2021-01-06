@@ -43,12 +43,13 @@ SERVICE_NAMES_TO_EXCLUDE = ['Zweitbefundung MR', 'Fremduntersuchung MR']
 # === MAJOR TRANSFORMATION STEPS =========================================================
 # ========================================================================================
 
-def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
+def build_status_df(raw_df: pd.DataFrame, test_patient_ids: List[str]) -> pd.DataFrame:
     """
     Clean up the raw appointment status change dataset into a nicely formatted version.
 
     Args:
         raw_df: raw data file of RIS export.
+        test_patient_ids: List of patient ids that are test ids, and should be excluded.
 
     Returns: Dataframe with one row per appointment status change.
         The resulting dataframe has the columns (illustrative, not a complete list):
@@ -69,6 +70,7 @@ def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
 
     """
     df = raw_df.copy()
+    df = df[~df['MRNCmpdId'].isin(test_patient_ids)].copy()
     df = convert_DtTm_cols(df)
     df = restrict_to_relevant_machines(df, RELEVANT_MACHINES)
     df = exclude_irrelevant_service_names(df, SERVICE_NAMES_TO_EXCLUDE)
@@ -592,7 +594,7 @@ def filter_duplicate_patient_time_slots(slot_df: pd.DataFrame) -> pd.DataFrame:
     return first_slot_only
 
 
-def build_dispo_e1_df(dispo_examples: List[Dict]) -> pd.DataFrame:
+def build_dispo_e1_df(dispo_examples: List[Dict], test_patient_ids: List[str]) -> pd.DataFrame:
     """
     Convert the dispo data from validation experiment 1 into a dataframe and process it. Processing steps include:
     - formatting column data types
@@ -600,11 +602,12 @@ def build_dispo_e1_df(dispo_examples: List[Dict]) -> pd.DataFrame:
 
     Args:
         dispo_examples: Raw yaml list of dictionaries.
+        test_patient_ids: List of patient ids that are test ids, and should be excluded.
 
     Returns: Dataframe of appointments collected in validation experiment 1.
 
     """
-    dispo_slot_df = build_dispo_df(dispo_examples)
+    dispo_slot_df = build_dispo_df(dispo_examples, test_patient_ids)
 
     # Ignore midnight appts with `slot_outcome == cancel` because these are not valid slots.
     # They are neither a `show` nor a `no show` (bc inpatient)
@@ -621,7 +624,7 @@ def build_dispo_e1_df(dispo_examples: List[Dict]) -> pd.DataFrame:
     return deduped_dispo_slot_df
 
 
-def build_dispo_e2_df(dispo_examples: List[Dict]) -> pd.DataFrame:
+def build_dispo_e2_df(dispo_examples: List[Dict], test_patient_ids: List[str]) -> pd.DataFrame:
     """
         Convert the dispo data from validation experiment 2 into a dataframe and process it. Processing steps include:
         - formatting column data types
@@ -630,11 +633,12 @@ def build_dispo_e2_df(dispo_examples: List[Dict]) -> pd.DataFrame:
 
         Args:
             dispo_examples: Raw yaml list of dictionaries.
+            test_patient_ids: List of patient ids that are test ids, and should be excluded.
 
         Returns: Dataframe of appointments collected in validation experiment 1.
 
         """
-    dispo_df = build_dispo_df(dispo_examples)
+    dispo_df = build_dispo_df(dispo_examples, test_patient_ids)
     dispo_slot_df = find_no_shows_from_dispo_exp_two(dispo_df)
 
     # use same de-duping function, create columns as necessary
@@ -644,17 +648,19 @@ def build_dispo_e2_df(dispo_examples: List[Dict]) -> pd.DataFrame:
     return deduped_dispo_slot_df
 
 
-def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
+def build_dispo_df(dispo_examples: List[Dict], test_patient_ids: List[str]) -> pd.DataFrame:
     """
     Convert raw dispo data to dataframe and format the data types, namely dates and times.
 
     Args:
         dispo_examples: List of dictionaries containing appointment information collected at the Dispo.
+        test_patient_ids: List of patient ids that are test ids, and should be excluded.
 
     Returns: Dataframe with datetime type conversions
 
     """
     dispo_df = pd.DataFrame(dispo_examples)
+    dispo_df = dispo_df[~dispo_df['patient_id'].isin(test_patient_ids)].copy()
     dispo_df['patient_id'] = dispo_df['patient_id'].astype(int)
     dispo_df['start_time'] = pd.to_datetime(dispo_df['date'] + ' ' + dispo_df['start_time'], dayfirst=True)
     dispo_df['date'] = pd.to_datetime(dispo_df['date'], dayfirst=True)
