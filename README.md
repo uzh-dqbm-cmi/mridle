@@ -147,8 +147,8 @@ should be similar. A value over 1 represents a larger number of appointments in 
 (only works on USZ machine)
 
 ```python
-dispo_data_1a = dm['dispo_data'].select('experiment1A').load()
-dispo_data_1b = dm['dispo_data'].select('experiment1B').load()
+dispo_data_1a = dm['dispo_data']['experiment1A.yaml'].load()
+dispo_data_1b = dm['dispo_data']['experiment1B.yaml'].load()
 dispo_data_e1 = dispo_data_1a + dispo_data_1b
 dispo_e1_df = mridle.data_management.build_dispo_e1_df(dispo_data_e1)
 
