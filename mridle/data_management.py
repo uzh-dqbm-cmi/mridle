@@ -691,8 +691,8 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
     # advance of the appt, and then pick the last occurance by applying a cumcount to the descending ordered list and
     # selecting the 0th row.
     before = dispo_e2_df[dispo_e2_df['date_diff'] < 0]
-    before_pick_last = before.sort_values(['patient_id', 'date_recorded'], ascending=False)
-    before_pick_last['rank'] = before_pick_last.groupby('patient_id').cumcount()
+    before_pick_last = before.sort_values(['patient_id', 'date', 'date_recorded'], ascending=False)
+    before_pick_last['rank'] = before_pick_last.groupby('patient_id', 'date').cumcount()
     before_last = before_pick_last[before_pick_last['rank'] == 0].copy()
     before_last.drop('rank', axis=1, inplace=True)
 
