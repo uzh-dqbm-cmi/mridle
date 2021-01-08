@@ -764,7 +764,8 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
 
         """
         if last_status_date_diff < -3:
-            return None
+            # return None
+            pass
         if no_show:
             if last_status_before in ['ter', 'anm'] and (pd.isna(first_status_after)):
                 return 'rescheduled'
