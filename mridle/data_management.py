@@ -724,8 +724,11 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
         if start_time.hour == 0:
             return False  # inpatient
         # only allow no-shows if the appt was recorded <=2 days in advance
-        # i.e. exclude appts that were noted >2 days in advnce but then moved before the 2 day window
-        if last_status_date_diff < -2:
+        # i.e. exclude appts that were noted >2 days in advance but then moved before the 2 day window
+        #  except do 3 days, because dispo data were collected at the end of the day, so something that was rescheduled
+        #  on day -2 (a no-show!) was actually last captured manually on day -3
+        #  except on day -3
+        if last_status_date_diff < -3:
             return None
         if last_status_before in ['ter', 'anm']:
             if first_status_after in ['bef', 'unt', 'schr']:
