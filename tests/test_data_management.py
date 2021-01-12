@@ -77,7 +77,7 @@ class TestBuildSlotDF(unittest.TestCase):
 
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
         status_df = build_status_df(raw_df)
-        slot_df = build_slot_df(status_df)
+        slot_df = build_slot_df(status_df, exclude_patient_ids=[])
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
@@ -93,7 +93,7 @@ class TestBuildSlotDF(unittest.TestCase):
 
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, None)
         status_df = build_status_df(raw_df)
-        slot_df = build_slot_df(status_df)
+        slot_df = build_slot_df(status_df, exclude_patient_ids=[])
 
         self.assertEqual(slot_df.shape[0], 0)
 
@@ -109,7 +109,7 @@ class TestBuildSlotDF(unittest.TestCase):
 
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, None)
         status_df = build_status_df(raw_df)
-        slot_df = build_slot_df(status_df)
+        slot_df = build_slot_df(status_df, exclude_patient_ids=[])
 
         self.assertEqual(slot_df.shape[0], 0)
 
@@ -125,7 +125,7 @@ class TestBuildSlotDF(unittest.TestCase):
 
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, None)
         status_df = build_status_df(raw_df)
-        slot_df = build_slot_df(status_df)
+        slot_df = build_slot_df(status_df, exclude_patient_ids=[])
 
         self.assertEqual(slot_df.shape[0], 0)
 
@@ -169,7 +169,7 @@ class TestBuildSlotDF(unittest.TestCase):
 
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
         status_df = build_status_df(raw_df)
-        slot_df = build_slot_df(status_df)
+        slot_df = build_slot_df(status_df, exclude_patient_ids=[])
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
@@ -213,7 +213,7 @@ class TestBuildSlotDF(unittest.TestCase):
 
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
         status_df = build_status_df(raw_df)
-        slot_df = build_slot_df(status_df)
+        slot_df = build_slot_df(status_df, exclude_patient_ids=[])
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
@@ -243,7 +243,7 @@ class TestBuildSlotDF(unittest.TestCase):
 
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
         status_df = build_status_df(raw_df)
-        slot_df = build_slot_df(status_df)
+        slot_df = build_slot_df(status_df, exclude_patient_ids=[])
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
@@ -274,7 +274,7 @@ class TestBuildSlotDF(unittest.TestCase):
 
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
         status_df = build_status_df(raw_df)
-        slot_df = build_slot_df(status_df)
+        slot_df = build_slot_df(status_df, exclude_patient_ids=[])
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
@@ -305,7 +305,7 @@ class TestBuildSlotDF(unittest.TestCase):
 
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
         status_df = build_status_df(raw_df)
-        slot_df = build_slot_df(status_df)
+        slot_df = build_slot_df(status_df, exclude_patient_ids=[])
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
@@ -340,7 +340,7 @@ class TestBuildSlotDF(unittest.TestCase):
 
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
         status_df = build_status_df(raw_df)
-        slot_df = build_slot_df(status_df)
+        slot_df = build_slot_df(status_df, exclude_patient_ids=[])
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
@@ -383,7 +383,7 @@ class TestBuildSlotDF(unittest.TestCase):
 
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df, create_fon=False)
         status_df = build_status_df(raw_df)
-        slot_df = build_slot_df(status_df)
+        slot_df = build_slot_df(status_df, exclude_patient_ids=[])
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
@@ -426,7 +426,7 @@ class TestBuildSlotDF(unittest.TestCase):
 
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df, create_fon=False)
         status_df = build_status_df(raw_df)
-        slot_df = build_slot_df(status_df)
+        slot_df = build_slot_df(status_df, exclude_patient_ids=[])
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
@@ -468,7 +468,7 @@ class TestBuildSlotDF(unittest.TestCase):
 
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df, create_fon=False)
         status_df = build_status_df(raw_df)
-        slot_df = build_slot_df(status_df)
+        slot_df = build_slot_df(status_df, exclude_patient_ids=[])
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
@@ -500,7 +500,7 @@ class TestBuildSlotDF(unittest.TestCase):
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
         expected_slot_df.drop(columns=['FillerOrderNo', 'MRNCmpdId'], inplace=True)
         status_df = build_status_df(raw_df)
-        slot_df = build_slot_df(status_df, include_id_cols=False)
+        slot_df = build_slot_df(status_df, include_id_cols=False, exclude_patient_ids=[])
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
@@ -531,7 +531,7 @@ class TestBuildSlotDF(unittest.TestCase):
 
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
         status_df = build_status_df(raw_df)
-        slot_df = build_slot_df(status_df)
+        slot_df = build_slot_df(status_df, exclude_patient_ids=[])
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
