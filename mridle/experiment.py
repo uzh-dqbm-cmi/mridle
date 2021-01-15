@@ -383,6 +383,8 @@ class Predictor:
         Returns: prediction value.
 
         """
+        print('data point')
+        print(data_point)
         data_processed = self.preprocess_fun(data_point)
         x, feature_cols = self.transform_func(data_processed, self.encoders)
         return self.model.predict(x), self.model.predict_proba(x)
