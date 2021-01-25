@@ -746,7 +746,7 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
         #  except on day -3
         if last_status_date_diff < -2:
             return None
-        if last_status_before in ['ter', 'anm']:
+        elif last_status_before in ['ter', 'anm']:
             if first_status_after in ['bef', 'unt', 'schr']:
                 return False  # show
             elif pd.isna(first_status_after):
@@ -780,9 +780,8 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
 
         """
         if last_status_date_diff < -2:
-            # return None
-            pass
-        if no_show:
+            return None
+        elif no_show:
             if last_status_before in ['ter', 'anm'] and (pd.isna(first_status_after)):
                 return 'rescheduled'
             elif last_status_before in ['ter', 'anm'] and first_status_after == 'ter':
