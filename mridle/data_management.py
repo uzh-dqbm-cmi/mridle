@@ -744,7 +744,7 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
         #  except do 3 days, because dispo data were collected at the end of the day, so something that was rescheduled
         #  on day -2 (a no-show!) was actually last captured manually on day -3
         #  except on day -3
-        if last_status_date_diff < -3:
+        if last_status_date_diff < -2:
             return None
         if last_status_before in ['ter', 'anm']:
             if first_status_after in ['bef', 'unt', 'schr']:
@@ -779,7 +779,7 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
         Returns: rescheduled, canceled, show, or None (not a slot)
 
         """
-        if last_status_date_diff < -3:
+        if last_status_date_diff < -2:
             # return None
             pass
         if no_show:
