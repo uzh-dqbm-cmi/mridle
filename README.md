@@ -22,10 +22,10 @@ raw_df = dm['rdsc_extracts']['five_years'].select('parquet').load()
 test_pat_ids = dm['dispo_data']['exclude_patient_ids.yaml'].load()
 
 # build row-per-status-change data set
-status_df = mridle.data_management.build_status_df(raw_df)
+status_df = mridle.data_management.build_status_df(raw_df, exclude_pat_ids=test_pat_ids)
 
 # build row-per-slot (no show slot or completed slot) data set
-slot_df = mridle.data_management.build_slot_df(status_df, exclude_pat_ids=test_pat_ids)
+slot_df = mridle.data_management.build_slot_df(status_df)
 ```
 
 where `status_df` contains the columns:
@@ -152,10 +152,10 @@ dispo_data_1a = dm['dispo_data']['experiment1A.yaml'].load()
 dispo_data_1b = dm['dispo_data']['experiment1B.yaml'].load()
 test_pat_ids = dm['dispo_data']['exclude_patient_ids.yaml'].load()
 dispo_data_e1 = dispo_data_1a + dispo_data_1b
-dispo_e1_df = mridle.data_management.build_dispo_e1_df(dispo_data_e1, exclude_patient_ids=test_pat_ids)
+dispo_e1_df = mridle.data_management.build_dispo_exp_1_df(dispo_data_e1, exclude_patient_ids=test_pat_ids)
 
 dispo_e2_records = dm['dispo_data'].select('2').load()
-dispo_e2_slot_df = mridle.data_management.build_dispo_e2_df(dispo_e2_records)
+dispo_e2_slot_df = mridle.data_management.build_dispo_exp_2_df(dispo_e2_records)
 ```
 
 ```python
@@ -235,8 +235,8 @@ dispo_e2_df = mridle.data_management.find_no_shows_from_dispo_exp_two(dispo_e2_d
 
 # build rdsc dataframe to compare to
 rdsc_exp_2_df = dm['rdsc_extracts'].select('exp_2').select('RIS_2020_week40_fix_column_headers.csv').load()
-rdsc_exp_2_status_df = mridle.data_management.build_status_df(rdsc_exp_2_df)
-rdsc_exp_2_slot_df = mridle.data_management.build_slot_df(rdsc_exp_2_status_df, exclude_patient_ids=test_pat_ids)
+rdsc_exp_2_status_df = mridle.data_management.build_status_df(rdsc_exp_2_df, exclude_patient_ids=test_pat_ids)
+rdsc_exp_2_slot_df = mridle.data_management.build_slot_df(rdsc_exp_2_status_df)
 
 # plot daily Jaccard scores
 mridle.plotting_utilities.plot_scatter_bar_jaccard_per_type(dispo_e2_df, rdsc_exp_2_slot_df, 'rescheduled')
