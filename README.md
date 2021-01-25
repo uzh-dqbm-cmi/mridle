@@ -152,10 +152,10 @@ dispo_data_1a = dm['dispo_data']['experiment1A.yaml'].load()
 dispo_data_1b = dm['dispo_data']['experiment1B.yaml'].load()
 test_pat_ids = dm['dispo_data']['exclude_patient_ids.yaml'].load()
 dispo_data_e1 = dispo_data_1a + dispo_data_1b
-dispo_e1_df = mridle.data_management.build_dispo_e1_df(dispo_data_e1, exclude_patient_ids=test_pat_ids)
+dispo_e1_df = mridle.data_management.build_dispo_exp_1_df(dispo_data_e1, exclude_patient_ids=test_pat_ids)
 
 dispo_e2_records = dm['dispo_data'].select('2').load()
-dispo_e2_slot_df = mridle.data_management.build_dispo_e2_df(dispo_e2_records)
+dispo_e2_slot_df = mridle.data_management.build_dispo_exp_2_df(dispo_e2_records)
 ```
 
 ```python

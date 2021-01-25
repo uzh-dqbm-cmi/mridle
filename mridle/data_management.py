@@ -93,8 +93,9 @@ def build_slot_df(input_status_df: pd.DataFrame, exclude_patient_ids: List[str],
     Args:
         input_status_df: row-per-status-change dataframe.
         exclude_patient_ids: List of patient ids that are test ids, and should be excluded.
-        agg_dict: aggregation dict to pass to pd.DataFrame.agg() that specifies  columns to include about the slots.
-            If no agg_dict is passed, the default will be used.
+        agg_dict: aggregation dict to pass to pd.DataFrame.agg() that specifies which columns from status_df to include
+            in slot_df. It is recommended to aggregate by 'last' to use the latest value recorded for the slot. If no
+            agg_dict is passed, the default will be used.
         include_id_cols: whether to include patient and appointment id columns in the resulting dataset.
 
     Returns: row-per-appointment-slot dataframe.
@@ -596,7 +597,7 @@ def filter_duplicate_patient_time_slots(slot_df: pd.DataFrame) -> pd.DataFrame:
     return first_slot_only
 
 
-def build_dispo_e1_df(dispo_examples: List[Dict], exclude_patient_ids: List[str]) -> pd.DataFrame:
+def build_dispo_exp_1_df(dispo_examples: List[Dict], exclude_patient_ids: List[str]) -> pd.DataFrame:
     """
     Convert the dispo data from validation experiment 1 into a dataframe and process it. Processing steps include:
     - formatting column data types
@@ -626,7 +627,7 @@ def build_dispo_e1_df(dispo_examples: List[Dict], exclude_patient_ids: List[str]
     return deduped_dispo_slot_df
 
 
-def build_dispo_e2_df(dispo_examples: List[Dict], exclude_patient_ids: List[str]) -> pd.DataFrame:
+def build_dispo_exp_2_df(dispo_examples: List[Dict], exclude_patient_ids: List[str]) -> pd.DataFrame:
     """
         Convert the dispo data from validation experiment 2 into a dataframe and process it. Processing steps include:
         - formatting column data types
