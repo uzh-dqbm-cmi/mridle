@@ -19,6 +19,7 @@ from mridle.data_management import SHOW_COLS
 
 dm = DataManager('mridle')
 raw_df = dm['rdsc_extracts']['five_years'].select('parquet').load()
+# load patient ids that are known to be test patient ids (not real patients)
 test_pat_ids = dm['dispo_data']['exclude_patient_ids.yaml'].load()
 
 # build row-per-status-change data set
