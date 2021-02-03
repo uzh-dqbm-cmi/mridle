@@ -1,7 +1,6 @@
 import altair as alt
 from sklearn.metrics import classification_report, roc_curve, roc_auc_score
 import pandas as pd
-from IPython.display import display
 from typing import Any
 
 
@@ -32,8 +31,8 @@ def evaluate_model_on_test_set(true_labels: Any, predicted_labels: Any, predicte
     ).properties(
         title='Receiver operating characteristic'
     )
-    display(chart)
 
     # Evaluating model - Compute Area Under the Receiver Operating Characteristic Curve (ROC AUC)
     print('The ROC_AUC_SCORE is : {}'.format(roc_auc_score(true_labels, predicted_values)))
 
+    return chart

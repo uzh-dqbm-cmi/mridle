@@ -1,10 +1,10 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(name='mridle',
       version='0.0.1',
       description='',
       url='https://github.com/uzh-dqbm-cmi/mridle',
-      packages=['mridle'],
+      packages=find_packages(),
       python_requires='>=3.7.3',
       install_requires=[
             'altair',

@@ -111,13 +111,13 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
     """
 
     default_agg_dict = {
-        'patient_class_adj': 'min',
-        'start_time': 'min',
-        'end_time': 'min',
+        'patient_class_adj': 'last',
+        'start_time': 'last',
+        'end_time': 'last',
         'NoShow': 'min',
-        'slot_outcome': 'min',
-        'slot_type': 'min',
-        'slot_type_detailed': 'min',
+        'slot_outcome': 'last',
+        'slot_type': 'last',
+        'slot_type_detailed': 'last',
         'EnteringOrganisationDeviceID': 'last',
         'UniversalServiceName': 'last',
     }
@@ -457,7 +457,7 @@ def adjust_patient_class(original_patient_class: str) -> str:
         'stationär': 'inpatient',
         'teilstationär': 'inpatient',
     }
-    if pd.isnull(original_patient_class):
+    if pd.isnull(original_patient_class) or (type(original_patient_class) == str and original_patient_class == 'nan'):
         return default_patient_class
     elif original_patient_class in patient_class_map.keys():
         return patient_class_map[original_patient_class]
@@ -592,6 +592,58 @@ def filter_duplicate_patient_time_slots(slot_df: pd.DataFrame) -> pd.DataFrame:
     return first_slot_only
 
 
+def build_dispo_e1_df(dispo_examples: List[Dict]) -> pd.DataFrame:
+    """
+    Convert the dispo data from validation experiment 1 into a dataframe and process it. Processing steps include:
+    - formatting column data types
+    - de-duping double show+canceled appointments
+
+    Args:
+        dispo_examples: Raw yaml list of dictionaries.
+
+    Returns: Dataframe of appointments collected in validation experiment 1.
+
+    """
+    dispo_slot_df = build_dispo_df(dispo_examples)
+
+    # Ignore midnight appts with `slot_outcome == cancel` because these are not valid slots.
+    # They are neither a `show` nor a `no show` (bc inpatient)
+    dispo_slot_df['slot_outcome'] = np.where((dispo_slot_df['start_time'].dt.hour == 0) &
+                                             (dispo_slot_df['slot_outcome'] == 'canceled'),
+                                             '',
+                                             dispo_slot_df['slot_outcome'])
+
+    # use same de-duping function, create columns as necessary
+    dispo_slot_df['MRNCmpdId'] = dispo_slot_df['patient_id']
+    dispo_slot_df['NoShow'] = np.where(dispo_slot_df['slot_outcome'] == 'show', False, True)
+    deduped_dispo_slot_df = filter_duplicate_patient_time_slots(dispo_slot_df)
+    deduped_dispo_slot_df.drop(['MRNCmpdId'], axis=1, inplace=True)
+    return deduped_dispo_slot_df
+
+
+def build_dispo_e2_df(dispo_examples: List[Dict]) -> pd.DataFrame:
+    """
+        Convert the dispo data from validation experiment 2 into a dataframe and process it. Processing steps include:
+        - formatting column data types
+        - identifying rescheduled no shows from the sequence of dispo data points
+        - de-duping double show+canceled appointments
+
+        Args:
+            dispo_examples: Raw yaml list of dictionaries.
+
+        Returns: Dataframe of appointments collected in validation experiment 1.
+
+        """
+    dispo_df = build_dispo_df(dispo_examples)
+    dispo_slot_df = find_no_shows_from_dispo_exp_two(dispo_df)
+
+    # use same de-duping function, create columns as necessary
+    dispo_slot_df['MRNCmpdId'] = dispo_slot_df['patient_id']
+    deduped_dispo_slot_df = filter_duplicate_patient_time_slots(dispo_slot_df)
+    deduped_dispo_slot_df.drop(['MRNCmpdId'], axis=1, inplace=True)
+    return deduped_dispo_slot_df
+
+
 def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
     """
     Convert raw dispo data to dataframe and format the data types, namely dates and times.
@@ -608,13 +660,12 @@ def build_dispo_df(dispo_examples: List[Dict]) -> pd.DataFrame:
     dispo_df['date'] = pd.to_datetime(dispo_df['date'], dayfirst=True)
     if 'date_recorded' in dispo_df.columns:
         dispo_df['date_recorded'] = pd.to_datetime(dispo_df['date_recorded'], dayfirst=True)
-
     return dispo_df
 
 
 def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Identify no show events from the data collected in Dispo Experiment 2.
+    Identify no show events from the data collected in Validation Experiment 2.
 
     Args:
         dispo_e2_df: result of `build_dispo_df` on the dispo data collected for experiment 2.
@@ -644,31 +695,72 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
                        suffixes=('_before', '_after')
                        ).sort_values(['start_time'])
 
-    def determine_dispo_no_show(type_before, type_after) -> Union[bool, None]:
-        if type_before in ['ter', 'anm']:
-            if type_after == 'bef':
+    def determine_dispo_no_show(last_status_before: str, first_status_after: str, start_time: pd.Timestamp
+                                ) -> Union[bool, None]:
+        """
+        Determine whether a sequence of dispo data points collected in Validation Experiment 2 represents a no-show,
+        based on the appointment's status before and after the appointment date, and the start time of the appointment.
+
+        Args:
+            last_status_before: The appointment status as of the last time the appointment was seen before the
+             appointment date.
+            first_status_after: The appointment status as of the first time the appointment was seen after the
+             appointment date. If the appointment was rescheduled, then this will be None.
+            start_time: The time the appointment is scheduled to start at. If the start_time is midnight, the
+             appointment is assumed to be an inpatient appointment, and automatically marked as False - not a no show.
+
+        Returns: bool of whether the appointment is a no show, or None if the status cannot be determined.
+
+        """
+        if start_time.hour == 0:
+            return False  # inpatient
+        if last_status_before in ['ter', 'anm']:
+            if first_status_after in ['bef', 'unt', 'schr']:
                 return False  # show
-            elif pd.isna(type_after):
-                return True
-            elif type_after == 'ter':
-                return True  # wait what is this case?!
-        elif pd.isna(type_before) and type_after == 'bef':
+            elif pd.isna(first_status_after):
+                return True  # rescheduled no show
+            elif first_status_after == 'ter':
+                return True  # "to be rescheduled"?
+        elif pd.isna(last_status_before) and first_status_after == 'bef':
             return False  # inpatient
         else:
             return None
 
-    one_day['NoShow'] = one_day.apply(lambda x: determine_dispo_no_show(x['type_before'], x['type_after']), axis=1)
+    one_day['NoShow'] = one_day.apply(lambda x: determine_dispo_no_show(x['type_before'], x['type_after'],
+                                                                        x['start_time']), axis=1)
 
-    def determine_dispo_rescheduled_no_show(type_before, type_after) -> Union[str, None]:
-        # TODO: How to identify canceled? Is it important?
-        if type_before in ['ter', 'anm'] and pd.isna(type_after):
-            return 'rescheduled'
+    def determine_dispo_slot_outcome(no_show: bool, last_status_before: str, first_status_after: str,
+                                     start_time: pd.Timestamp) -> Union[str, None]:
+        """
+        Determine the slot_outcome of a sequence of dispo data points collected in Validation Experiment 2.
+
+        Args:
+            no_show: outcome of `determine_dispo_no_show`.
+            last_status_before: The appointment status as of the last time the appointment was seen before the
+             appointment date.
+            first_status_after: The appointment status as of the first time the appointment was seen after the
+             appointment date. If the appointment was rescheduled, then this will be None.
+            start_time: The time the appointment is scheduled to start at. If the start_time is midnight, the
+             appointment is assumed to be an inpatient appointment, and automatically marked as False - not a no show.
+
+        Returns: rescheduled, canceled, show, or None (not a slot)
+
+        """
+        if no_show:
+            if last_status_before in ['ter', 'anm'] and (pd.isna(first_status_after)):
+                return 'rescheduled'
+            elif last_status_before in ['ter', 'anm'] and first_status_after == 'ter':
+                return 'canceled'
+            else:
+                return None
+        elif start_time.hour == 0:
+            return None  # inpatient
         else:
             return 'show'
 
     one_day['slot_outcome'] = one_day.apply(lambda x:
-                                            determine_dispo_rescheduled_no_show(x['type_before'], x['type_after']),
-                                            axis=1)
+                                            determine_dispo_slot_outcome(x['NoShow'], x['type_before'], x['type_after'],
+                                                                         x['start_time']), axis=1)
 
     return one_day
 
