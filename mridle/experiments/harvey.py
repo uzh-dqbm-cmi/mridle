@@ -1,11 +1,14 @@
 from mridle.experiment import ModelRun
 import pandas as pd
+import numpy as np
 from sklearn.preprocessing import StandardScaler
 from typing import Any, Dict, List, Tuple
 
 cols_for_modeling = ['no_show_before', 'no_show_before_sq', 'sched_days_advanced', 'hour_sched',
                      'distance_to_usz', 'age', 'close_to_usz', 'male', 'female', 'age_sq',
-                     'sched_days_advanced_sq', 'distance_to_usz_sq', 'sched_2_days', 'age_20_60']
+                     'sched_days_advanced_sq', 'distance_to_usz_sq', 'sched_2_days', 'age_20_60',
+                     'historic_no_show_cnt']
+
 
 class HarveyModel(ModelRun):
 
@@ -45,6 +48,12 @@ class HarveyModel(ModelRun):
         """
         feature_columns = cols_for_modeling
         return data_set[feature_columns].copy(), feature_columns
+
+    @classmethod
+    def get_test_data_set(cls):
+        df = pd.DataFrame(np.random.randint(0, 100, size=(100, len(cols_for_modeling))), columns=cols_for_modeling)
+        df['noshow'] = np.where(df[cols_for_modeling[0]] > 50, 1, 0)
+        return df
 
 
 def process_features_for_model(dataframe: pd.DataFrame) -> pd.DataFrame:
