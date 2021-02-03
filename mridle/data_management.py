@@ -977,3 +977,23 @@ def print_validation_summary_metrics(dispo_df, slot_df):
 
     return pd.DataFrame(slot_cnts).T[['dispo', 'extract', 'jaccard']].style.format(
         {'dispo': '{:.0f}', 'extract': '{:.0f}', 'jaccard': '{:.2f}'})
+
+
+def normalize_dataframe(df_features: pd.DataFrame, cols: List[str]) -> pd.DataFrame:
+    '''
+    Normalize columns in cols list
+
+    Args:
+        df_features: dataframe with features used in model
+        cols: list of features on which min_max normalization is executed
+
+    Returns:
+        Normalized dataframes
+    '''
+
+    result = df_features.copy()
+    for feature_name in cols:
+        max_value = df_features[feature_name].max()
+        min_value = df_features[feature_name].min()
+        result[feature_name] = (df_features[feature_name] - min_value) / (max_value - min_value)
+    return result
