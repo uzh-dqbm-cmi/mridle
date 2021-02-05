@@ -25,9 +25,6 @@ class HarveyModel(ModelRun):
             Dict of encoders.
         """
         autoscaler = StandardScaler()
-        features = ['historic_no_show_cnt', 'no_show_before']
-        train_set = train_set.copy()
-        train_set[features] = autoscaler.fit_transform(train_set[features])
 
         return {
             'autoscaler': autoscaler
