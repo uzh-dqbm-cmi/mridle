@@ -7,6 +7,15 @@ from typing import Any
 def evaluate_model_on_test_set(true_labels: Any, predicted_labels: Any, predicted_values: Any):
     """
     Prints a classification report, confusion matrix, and ROC curve for a predictor.
+
+    Args:
+        true_labels: ground truth labels
+        predicted_labels: labels predicted from model, can be either 0 or 1
+        predicted_values: values predicted from model, can be anything between 0 and 1
+
+    Returns:
+        plot AUROC
+
     """
     # Evaluation model
     print(classification_report(true_labels, predicted_labels))
