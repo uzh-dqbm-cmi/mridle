@@ -455,8 +455,8 @@ def plot_a_day_for_device(df: pd.DataFrame, device: str, year: int, month: int, 
     plt.show()
 
 
-def plot_pos_class_freq_per_x(input_df: pd.DataFrame, var_x: str, var2freq: str, var_y: str):
-    '''
+def plot_pos_class_freq_per_x(input_df: pd.DataFrame, var_x: str, var2freq: str, var_y: str, **kwargs: Any):
+    """
     The objective of this function is to:
     (1) use the original feature set to generate a dataframe with three columns to get insights
     into the dataset: (a) var_x which is the variable of interest (b) Frequencies of var_y per
@@ -465,12 +465,17 @@ def plot_pos_class_freq_per_x(input_df: pd.DataFrame, var_x: str, var2freq: str,
 
     Args:
         input_df: dataframe containing features for modeling
-        var_x: variable of interest,e.g., 'historic_no_show_cnt'
+        var_x: variable of interest,e.g., 'no_show_before'
         var2freq: frequency of var_y per value of var_x
         var_y: probability of var_y per value of var_x
+        **kwargs: user may add extra variables (a) xlim=[0, 100] (b) ylim=[0, 0.5]
 
     Returns: None
-    '''
+    """
+
+    xlimits = kwargs.get('xlim', None)
+    ylimits = kwargs.get('ylim', None)
+
     # First make a crosstabulation - var2freq / var_x
     table_frequencies = pd.crosstab(input_df[var2freq], input_df[var_x], margins=True)
 
@@ -493,6 +498,11 @@ def plot_pos_class_freq_per_x(input_df: pd.DataFrame, var_x: str, var2freq: str,
 
     sns.set(style='white')
     sns.relplot(x=var_x, y=var_y, alpha=0.8, size='frequencies', sizes=(40, 400), data=output_df)
+
+    if xlimits is not None:
+        plt.xlim(xlimits[0], xlimits[1])
+    if ylimits is not None:
+        plt.ylim(ylimits[0], ylimits[1])
 
 
 def plot_validation_experiment(df_ratio: pd.DataFrame) -> alt.Chart:
