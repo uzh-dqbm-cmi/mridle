@@ -8,4 +8,4 @@ from mridle import experiments
 from mridle import figures
 
 __all__ = ['data_management', 'exploration_utilities', 'plotting_utilities', 'feature_engineering', 'experiment',
-           'model_evaluation', 'experiments', 'figures']
+           'model_evaluation', 'experiments', 'figures', 'idle_time']
