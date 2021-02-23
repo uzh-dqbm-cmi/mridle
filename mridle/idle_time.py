@@ -79,17 +79,17 @@ def plot_daily_appt_idle_segments(appts_and_gaps: pd.DataFrame) -> alt.Chart:
     )
 
 
-def plot_hist_idle_gap_length(daily_idle_stats: pd.DataFrame) -> alt.Chart:
+def plot_hist_idle_gap_length(idle_df: pd.DataFrame) -> alt.Chart:
     """
     Plot a histogram of idle time gap lengths.
 
     Args:
-        daily_idle_stats: result of `calc_daily_idle_time_stats`
+        daily_idle_stats: result of `calc_idle_time_gaps`
 
     Returns: histogram of idle time gap lengths.
 
     """
-    return alt.Chart(daily_idle_stats[['date', 'idle_time']]).mark_bar().encode(
+    return alt.Chart(idle_df[['date', 'idle_time']]).mark_bar().encode(
         alt.X('idle_time', bin=alt.Bin(extent=[0, 1], step=0.05)),
         y='count()'
     )
@@ -114,6 +114,7 @@ def plot_total_active_idle_time_per_day(daily_idle_stats: pd.DataFrame) -> alt.C
         alt.X("date"),
         y='hours',
         color='time_type:N',
+        tooltip=['date', 'hours'],
     ).facet(
         column=alt.Row("image_device_id:N")
     )
