@@ -4,21 +4,46 @@ import numpy as np
 
 
 def calc_idle_time_gaps(dicom_times_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Calculate the length of idle time gaps in between appointments.
+
+    Args:
+        dicom_times_df: result of `mridle.data_management.format_dicom_times_df`
+
+    Returns: `dicom_times_df` dataframe with added columns:
+     - `previous_end`: the end time of the preceding appointment (if the first appointment of the day, then pd.NaT)
+     - `idle_time`: the number of hours (as a float) of time between the end of the previous appointment
+      (`previous_end`) and the start of the current apppointment (`image_start`).
+
+    """
     idle_df = dicom_times_df.copy()
     idle_df['date'] = pd.to_datetime(idle_df['image_start'].dt.date)
     key_cols = ['date', 'image_device_id']
     idle_df = idle_df.sort_values(key_cols + ['image_start'])
     idle_df['previous_end_shift'] = idle_df.groupby(key_cols)['image_end'].shift(1)
+    # if there is overlap between the appointments (previous end time is after current start time), then ignore this
+    # 'between' segment
     idle_df['previous_end'] = np.where(idle_df['previous_end_shift'] < idle_df['image_start'],
                                        idle_df['previous_end_shift'], pd.NaT)
     idle_df['previous_end'] = pd.to_datetime(idle_df['previous_end'])
     one_hour = pd.to_timedelta(1, unit='H')
+    # be careful not to calculate idle time when appointments overlap
     idle_df['idle_time'] = np.where(idle_df['previous_end'] < idle_df['image_start'],
                                     (idle_df['image_start'] - idle_df['previous_end']) / one_hour, 0)
     return idle_df
 
 
 def calc_daily_idle_time_stats(idle_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Transform a row-per-appointment dataframe into a row-per-day dataframe showing active and idle time per day.
+    Args:
+        idle_df: result of `calc_idle_time_gaps`
+
+    Returns: Dataframe with columns ['date', 'image_device_id', 'idle_time' (float hours),
+     'image_start' (first image of the day), 'image_end' (last image of the day), 'active_hours' (float hours,
+      'idle_time_pct']
+
+    """
     daily_idle_stats = idle_df.groupby(['date', 'image_device_id']).agg({
         'idle_time': 'sum',
         'image_start': 'min',
