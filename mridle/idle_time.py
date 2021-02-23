@@ -5,6 +5,7 @@ import numpy as np
 
 def calc_idle_time_gaps(dicom_times_df: pd.DataFrame) -> pd.DataFrame:
     idle_df = dicom_times_df.copy()
+    idle_df['date'] = idle_df['image_start'].dt.date
     key_cols = ['date', 'image_device_id']
     idle_df = idle_df.sort_values(key_cols + ['image_start'])
     idle_df['previous_end_shift'] = idle_df.groupby(key_cols)['image_end'].shift(1)
