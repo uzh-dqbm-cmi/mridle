@@ -1,14 +1,15 @@
 import unittest
 import pandas as pd
 import numpy as np
-from mridle.data_management import build_status_df, build_slot_df, STATUS_MAP
+from mridle.data_management import build_status_df, build_slot_df, build_dispo_df, find_no_shows_from_dispo_exp_two,\
+    STATUS_MAP
 
 
 code = {status: letter_code for letter_code, status in STATUS_MAP.items()}
 
 
-def day(num_days_from_start):
-    return pd.Timestamp(year=2019, month=1, day=1, hour=9, minute=0) + pd.Timedelta(days=num_days_from_start)
+def day(num_days_from_start, hour=9):
+    return pd.Timestamp(year=2019, month=1, day=1, hour=hour, minute=0) + pd.Timedelta(days=num_days_from_start)
 
 
 date_col = 'History_MessageDtTm'
@@ -535,3 +536,111 @@ class TestBuildSlotDF(unittest.TestCase):
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
+
+class TestExperimentTwoDataProcessing(unittest.TestCase):
+
+    def test_show(self):
+        dispo_exp_2_records = [
+            {
+                'patient_id': 1,
+                'date': str(day(3).date()),
+                'start_time': str(day(3).time()),
+                'machine': 'MR1',
+                'type': 'ter',
+                'date_recorded': str(day(0).date()),
+            },
+            {
+                'patient_id': 1,
+                'date': str(day(3).date()),
+                'start_time': str(day(3).time()),
+                'machine': 'MR1',
+                'type': 'bef',
+                'date_recorded': str(day(6).date()),  # skip over weekend
+            },
+
+        ]
+
+        expected = pd.DataFrame([
+            {
+                'patient_id': 1,
+                'date': day(3, hour=0),
+                'start_time': day(3),
+                'machine_before': 'MR1',
+                'type_before': 'ter',
+                'date_recorded_before': day(0, hour=0),
+                'date_diff_before': -3,
+                'machine_after': 'MR1',
+                'type_after': 'bef',
+                'date_recorded_after': day(6, hour=0),
+                'date_diff_after': 1,
+                'NoShow': None,
+                'slot_outcome': None,
+            }
+        ])
+        dispo_exp_2_df = build_dispo_df(dispo_exp_2_records, test_patient_ids=[])
+        result = find_no_shows_from_dispo_exp_two(dispo_exp_2_df)
+        pd.testing.assert_frame_equal(result, expected, check_like=True)
+
+    def test_no_show(self):
+        dispo_exp_2_records = [
+            {
+                'patient_id': 1,
+                'date': str(day(2).date()),
+                'start_time': str(day(2).time()),
+                'machine': 'MR1',
+                'type': 'ter',
+                'date_recorded': str(day(0).date()),
+            },
+
+        ]
+
+        expected = pd.DataFrame({
+            'patient_id': pd.Series([1]),
+            'date': pd.Series([day(2, hour=0)]),
+            'start_time': pd.Series([day(2)]),
+            'machine_before': pd.Series(['MR1']),
+            'type_before': pd.Series(['ter']),
+            'date_recorded_before': pd.Series([day(0, hour=0)]),
+            'date_diff_before': pd.Series([-2]),
+            'machine_after': pd.Series([np.NaN], dtype=str),
+            'type_after': pd.Series([np.NaN], dtype=str),
+            'date_recorded_after': pd.Series([np.datetime64('NaT')]),
+            'date_diff_after': pd.Series([np.NaN]),
+            'NoShow': pd.Series([True]),
+            'slot_outcome': pd.Series(['rescheduled']),
+        })
+        dispo_exp_2_df = build_dispo_df(dispo_exp_2_records, test_patient_ids=[])
+        result = find_no_shows_from_dispo_exp_two(dispo_exp_2_df)
+        pd.testing.assert_frame_equal(result, expected, check_like=True)
+
+    def test_no_slot_for_three_days_advance(self):
+        dispo_exp_2_records = [
+            {
+                'patient_id': 1,
+                'date': str(day(3).date()),
+                'start_time': str(day(3).time()),
+                'machine': 'MR1',
+                'type': 'ter',
+                'date_recorded': str(day(0).date()),
+            },
+
+        ]
+
+        expected = pd.DataFrame({
+            'patient_id': pd.Series([1]),
+            'date': pd.Series([day(3, hour=0)]),
+            'start_time': pd.Series([day(3)]),
+            'machine_before': pd.Series(['MR1']),
+            'type_before': pd.Series(['ter']),
+            'date_recorded_before': pd.Series([day(0, hour=0)]),
+            'date_diff_before': pd.Series([-3]),
+            'machine_after': pd.Series([np.NaN], dtype=str),
+            'type_after': pd.Series([np.NaN], dtype=str),
+            'date_recorded_after': pd.Series([np.datetime64('NaT')]),
+            'date_diff_after': pd.Series([np.NaN]),
+            'NoShow': pd.Series([None]),
+            'slot_outcome': pd.Series([None]),
+        })
+        dispo_exp_2_df = build_dispo_df(dispo_exp_2_records, test_patient_ids=[])
+        result = find_no_shows_from_dispo_exp_two(dispo_exp_2_df)
+        pd.testing.assert_frame_equal(result, expected, check_like=True)
