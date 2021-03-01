@@ -8,6 +8,7 @@ cols_for_modeling = ['no_show_before', 'no_show_before_sq', 'sched_days_advanced
                      'distance_to_usz', 'age', 'close_to_usz', 'male', 'female', 'age_sq',
                      'sched_days_advanced_sq', 'distance_to_usz_sq', 'sched_2_days', 'age_20_60']
 
+col_names_normalization = ['male']
 
 class HarveyModel(ModelRun):
 
