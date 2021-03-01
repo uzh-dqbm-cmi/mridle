@@ -53,15 +53,14 @@ class HarveyModel(ModelRun):
 
 
 def process_features_for_model(dataframe: pd.DataFrame) -> pd.DataFrame:
-    '''
+    """
     Changes variables for model optimization modifying feature_df
 
     Args:
         dataframe: dataframe obtained from feature generation
 
     Returns: modified dataframe specific for this model
-    '''
-
+    """
     dataframe['no_show_before_sq'] = dataframe['no_show_before'] ** (2)
     dataframe['sched_days_advanced_sq'] = dataframe['sched_days_advanced'] ** 2
     dataframe['age_sq'] = dataframe['age'] ** 2

@@ -1,7 +1,5 @@
 import unittest
-import pandas as pd
-import numpy as np
-from mridle.experiment import ModelRun, PartitionedExperiment
+from mridle.experiment import PartitionedExperiment
 from mridle.experiments.harvey import HarveyModel
 from sklearn.ensemble import RandomForestClassifier
 
@@ -9,12 +7,11 @@ from sklearn.ensemble import RandomForestClassifier
 class TestExperiment(unittest.TestCase):
 
     def test_integration_test(self):
-        columns = ['historic_no_show_cnt', 'days_sched_in_advance', 'sched_for_hour', 'no_show_before']
-        df = pd.DataFrame(np.random.randint(0, 100, size=(100, len(columns))), columns=columns)
-        df['noshow'] = np.where(df['historic_no_show_cnt'] > 50, 1, 0)
         harvey_model_run = HarveyModel
+        data_set = harvey_model_run.get_test_data_set()
+        label_key = 'noshow'
 
-        exp = PartitionedExperiment(name='test', data_set=df, label_key='noshow', preprocessing_func=None,
+        exp = PartitionedExperiment(name='test', data_set=data_set, label_key=label_key, preprocessing_func=None,
                                     model_run_class=harvey_model_run, model=RandomForestClassifier(), hyperparams={},
                                     verbose=True)
         results = exp.run(run_hyperparam_search=False)
