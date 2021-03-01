@@ -16,6 +16,8 @@ class ModelRun:
      - `build_x_features` (required)
      - `train_encoders` (optional)
      - `build_y_vector` (optional)
+
+     To test your ModelRun implementation, you can implement `get_test_data_set` to provide a dataset for use in tests.
     """
 
     def __init__(self, train_set: Any, test_set: Any, label_key: str, model: Any, hyperparams: Dict,
@@ -141,6 +143,13 @@ class ModelRun:
             Dict of encoders.
         """
         return {}
+
+    @classmethod
+    def get_test_data_set(cls):
+        """Provide a small dataset for use in test cases. Dataset should be small, and have the same column names and
+        dtypes as is expected of the real input data."""
+        raise NotImplementedError("The ModelRun class must be subclassed to be used, "
+                                  "with the `build_x_features` function implemented.")
 
     @classmethod
     def build_x_features(cls, data_set: Any, encoders: Dict) -> pd.DataFrame:
