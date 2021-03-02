@@ -7,7 +7,7 @@ import random
 import altair as alt
 import seaborn as sns
 from copy import deepcopy
-from typing import Any, Dict
+from typing import Any, Dict, List
 from mridle.data_management import validate_against_dispo_data, jaccard_index
 
 
@@ -737,7 +737,7 @@ def plot_scatter_dispo_extract_slot_cnt(dispo_data: pd.DataFrame, slot_df: pd.Da
     return plot_diagonal + plot_slot_cnt
 
 
-def plot_importances(var_importances, var_col_names):
+def plot_importances(var_importances: List, var_col_names: List):
     """
     Function that generates single importance plots for a single given model
 
@@ -762,7 +762,7 @@ def plot_importances(var_importances, var_col_names):
     plt.show()
 
 
-def plot_importances_averages(var_importances_list, var_col_names):
+def plot_importances_averages(var_importances_list: List, var_col_names: List):
     """
     Function that plots the importance averages for multiple models
 
