@@ -735,3 +735,92 @@ def plot_scatter_dispo_extract_slot_cnt(dispo_data: pd.DataFrame, slot_df: pd.Da
         color=alt.Color('slot_outcome', scale=color_scale)).interactive()
 
     return plot_diagonal + plot_slot_cnt
+
+
+def plot_importances(var_importances, var_col_names):
+    """
+    Function that generates single importance plots for a single given model
+
+    Args:
+        var_importances is a list with single importances for a given model
+        var_col_names is a list with variable names for a given model
+
+    Returns: plot with importances for a single model
+    """
+
+    fig, ax = plt.subplots()
+    width = 0.4  # the width of the bars
+    ind = np.arange(len(var_importances))  # the x locations for the groups
+    ax.barh(ind, var_importances, width, color='green')
+    ax.set_yticks(ind + width / 10)
+    ax.set_yticklabels(var_col_names, minor=False)
+    plt.title('Feature importance in RandomForest Classifier')
+    plt.xlabel('Relative importance')
+    plt.ylabel('feature')
+    plt.figure(figsize=(5, 5))
+    fig.set_size_inches(6.5, 4.5, forward=True)
+    plt.show()
+
+
+def plot_importances_averages(var_importances_list, var_col_names):
+    """
+    Function that plots the importance averages for multiple models
+
+    Args:
+        var_importances_list is a list with all importance values for a
+        given set of models.
+        val_col_names is a list with all variable names for the models.
+
+    Returns: plot with average importances
+    """
+    average_list, std_list = [], []
+
+    # Per model
+    for i in range(0, len(var_importances_list[0])):
+        values_to_avg = []
+        # Per feature of interest
+        for j in range(0, len(var_importances_list)):
+            values_to_avg.append(var_importances_list[j][i])
+        average = np.mean(np.array(values_to_avg))
+        std = np.std(np.array(values_to_avg))
+        average_list.append(average)
+        std_list.append(std)
+
+    fig, ax = plt.subplots()
+    width = 0.4  # the width of the bars
+    ind = np.arange(len(var_importances_list[0]))  # the x locations for the groups
+    ax.barh(ind, average_list, width, color='green', xerr=std_list, capsize=5)
+    ax.set_yticks(ind + width / 10)
+    ax.set_yticklabels(var_col_names, minor=False)
+    plt.xlim(0, 1)
+    plt.title('Feature importance in RandomForest Classifier')
+    plt.xlabel('Relative importance')
+    plt.ylabel('feature')
+    plt.savefig('average_importances.svg')
+
+
+def plot_importances_estimator(experiment: Any, cols_for_modeling: List):
+    """
+    Function generate plots importances for an estimator
+
+    Args:
+        experiment.model_runs is a set of runs for a given model trained
+        in different folds within the dataset of interest.
+
+    Returns: Importance plots
+    """
+    importance_score_list = []
+
+    for model_index in range(len(experiment.model_runs)):
+        current_model_name = 'Partition ' + str(model_index)
+        modelrun_object = experiment.model_runs[current_model_name]
+
+        clf_optimal = experiment.model_runs[current_model_name].model
+        importances = clf_optimal.feature_importances_
+        print('These are the -importance scores-: {}'.format(importances))
+        col = cols_for_modeling
+
+        plot_importances(importances, col)
+        importance_score_list.append(importances)
+
+    plot_importances_averages(importance_score_list, col)
