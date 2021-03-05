@@ -3,12 +3,13 @@ import pandas as pd
 import numpy as np
 
 
-def calc_idle_time_gaps(dicom_times_df: pd.DataFrame) -> pd.DataFrame:
+def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, time_buffer=0) -> pd.DataFrame:
     """
     Calculate the length of idle time gaps in between appointments.
 
     Args:
         dicom_times_df: result of `mridle.data_management.format_dicom_times_df`
+        time_buffer: buffer time in minutes, to take from start and add to end of appointment
 
     Returns: `dicom_times_df` dataframe with added columns:
      - `previous_end`: the end time of the preceding appointment (if the first appointment of the day, then pd.NaT)
@@ -23,13 +24,20 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame) -> pd.DataFrame:
     idle_df['previous_end_shift'] = idle_df.groupby(key_cols)['image_end'].shift(1)
     # if there is overlap between the appointments (previous end time is after current start time), then ignore this
     # 'between' segment
-    idle_df['previous_end'] = np.where(idle_df['previous_end_shift'] < idle_df['image_start'],
-                                       idle_df['previous_end_shift'], pd.NaT)
+
+    idle_df['image_start_buffer'] = idle_df['image_start'] - pd.to_timedelta(time_buffer, unit="M")
+    idle_df['previous_end_shift_buffer'] = idle_df['previous_end_shift'] + pd.to_timedelta(time_buffer, unit="M")
+
+    idle_df['previous_end'] = np.where(idle_df['previous_end_shift_buffer'] < idle_df['image_start_buffer'],
+                                       idle_df['previous_end_shift_buffer'], pd.NaT)
     idle_df['previous_end'] = pd.to_datetime(idle_df['previous_end'])
     one_hour = pd.to_timedelta(1, unit='H')
     # be careful not to calculate idle time when appointments overlap
-    idle_df['idle_time'] = np.where(idle_df['previous_end'] < idle_df['image_start'],
-                                    (idle_df['image_start'] - idle_df['previous_end']) / one_hour, 0)
+    idle_df['idle_time'] = np.where(idle_df['previous_end'] < idle_df['image_start_buffer'],
+                                    (idle_df['image_start_buffer'] - idle_df['previous_end']) / one_hour, 0)
+    # End Mark edit
+
+
     return idle_df
 
 
