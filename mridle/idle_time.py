@@ -25,13 +25,13 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, time_buffer_mins=0) -> pd.
     # if there is overlap between the appointments (previous end time is after current start time), then ignore this
     # 'between' segment
 
-    idle_df['image_start_buffer'] = idle_df['image_start'] - pd.to_timedelta(time_buffer_mins, unit="M")
-    idle_df['previous_end_shift_buffer'] = idle_df['previous_end_shift'] + pd.to_timedelta(time_buffer_mins, unit="M")
+    idle_df['image_start_buffer'] = idle_df['image_start'] - pd.to_timedelta(time_buffer_mins, unit='minute')
+    idle_df['previous_end_shift_buffer'] = idle_df['previous_end_shift'] + pd.to_timedelta(time_buffer_mins, unit='minute')
 
     idle_df['previous_end'] = np.where(idle_df['previous_end_shift_buffer'] < idle_df['image_start_buffer'],
                                        idle_df['previous_end_shift_buffer'], pd.NaT)
     idle_df['previous_end'] = pd.to_datetime(idle_df['previous_end'])
-    one_hour = pd.to_timedelta(1, unit='minute')
+    one_hour = pd.to_timedelta(1, unit='H')
     # be careful not to calculate idle time when appointments overlap
     idle_df['idle_time'] = np.where(idle_df['previous_end'] < idle_df['image_start_buffer'],
                                     (idle_df['image_start_buffer'] - idle_df['previous_end']) / one_hour, 0)
