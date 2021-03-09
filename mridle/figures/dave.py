@@ -182,9 +182,11 @@ def plot_dave_b(slot_df: pd.DataFrame, dicom_times_df: pd.DataFrame, example_dat
     return (example_day & (daily_over_time | day_of_week)).configure_mark(opacity=0.75)
 
 
-def plot_appt_len_vs_var(dicom_df: pd.DataFrame, variable: str, type: str, sort_order: list = []):
-    if type == "scatter":
-        chart = alt.Chart(dicom_df[[variable, 'appt_len_float', 'UniversalServiceName']]).mark_point().encode(
+def plot_appt_len_vs_var(dicom_df: pd.DataFrame, variable: str, group_col: str, plot_type: str, sort_order=None):
+    if sort_order is None:
+        sort_order = []
+    if plot_type == "scatter":
+        fig = alt.Chart(dicom_df[[variable, 'appt_len_float', 'UniversalServiceName']]).mark_point().encode(
             alt.X(variable, sort=sort_order),
             y='appt_len_float'
         ).properties(
@@ -193,8 +195,8 @@ def plot_appt_len_vs_var(dicom_df: pd.DataFrame, variable: str, type: str, sort_
         ).facet(
             column='UniversalServiceName'
         )
-    elif type == "boxplot":
-        chart = alt.Chart(dicom_df[[variable, 'appt_len_float', 'UniversalServiceName']]).mark_boxplot().encode(
+    elif plot_type == "boxplot":
+        fig = alt.Chart(dicom_df[[variable, 'appt_len_float', 'UniversalServiceName']]).mark_boxplot().encode(
             alt.X(variable, sort=sort_order),
             y='appt_len_float'
         ).properties(
@@ -203,10 +205,14 @@ def plot_appt_len_vs_var(dicom_df: pd.DataFrame, variable: str, type: str, sort_
         ).facet(
             column='UniversalServiceName'
         )
-    else:
-        chart = "No plot generated - make sure 'type' argument is either ""scatter"" or ""boxplot"""
 
-    return chart
+    if group_col:
+        fig.facet(column=group_col)
+
+    else:
+        fig = "No plot generated - make sure 'plot_type' argument is either 'scatter' or 'boxplot"
+
+    return fig
 
 
 def main():
