@@ -182,6 +182,18 @@ def plot_dave_b(slot_df: pd.DataFrame, dicom_times_df: pd.DataFrame, example_dat
     return (example_day & (daily_over_time | day_of_week)).configure_mark(opacity=0.75)
 
 
+def plot_appt_len_vs_var(dicom_df: pd.DataFrame, variable: str, sort_order: list):
+    return alt.Chart(dicom_df[[variable, 'appt_len_float', 'UniversalServiceName']]).mark_boxplot().encode(
+        alt.X(variable, sort=sort_order),
+        y='appt_len_float'
+    ).properties(
+        width=180,
+        height=180
+    ).facet(
+        column='UniversalServiceName'
+    )
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_dir', default='mridle', help='The path to the data directory, or key to DataManager')
