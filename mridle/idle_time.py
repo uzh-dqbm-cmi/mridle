@@ -35,6 +35,10 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, time_buffer_mins=0) -> pd.
     # be careful not to calculate idle time when appointments overlap
     idle_df['idle_time'] = np.where(idle_df['previous_end'] < idle_df['image_start_buffer'],
                                     (idle_df['image_start_buffer'] - idle_df['previous_end']) / one_hour, 0)
+    idle_df['buffer_time_before'] = np.where(idle_df['previous_end'] < idle_df['image_start_buffer'],
+                                    (idle_df['image_start_buffer'] - idle_df['previous_end']) / one_hour, 0)
+    idle_df['buffer_time_after'] = np.where(idle_df['previous_end'] < idle_df['image_start_buffer'],
+                                    (idle_df['image_start_buffer'] - idle_df['previous_end']) / one_hour, 0)
 
     return idle_df
 
@@ -82,6 +86,9 @@ def calc_appts_and_gaps(idle_df: pd.DataFrame) -> pd.DataFrame:
     gaps.columns = ['date', 'image_device_id', 'start', 'end']
     gaps = gaps[gaps['start'].dt.date == gaps['end'].dt.date].copy()
     gaps['status'] = 'idle'
+
+    buffers = idle_df[['date', 'image_device_id', 'previous_end_buffer', 'image_start_buffer']].copy()
+
 
     appts_and_gaps = pd.concat([appts, gaps])
     return appts_and_gaps
