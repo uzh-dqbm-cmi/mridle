@@ -192,9 +192,8 @@ def plot_appt_len_vs_var(dicom_df: pd.DataFrame, variable: str, group_col: str, 
         ).properties(
             width=180,
             height=180
-        ).facet(
-            column='UniversalServiceName'
         )
+        
     elif plot_type == "boxplot":
         fig = alt.Chart(dicom_df[[variable, 'appt_len_float', 'UniversalServiceName']]).mark_boxplot().encode(
             alt.X(variable, sort=sort_order),
@@ -202,8 +201,6 @@ def plot_appt_len_vs_var(dicom_df: pd.DataFrame, variable: str, group_col: str, 
         ).properties(
             width=180,
             height=180
-        ).facet(
-            column='UniversalServiceName'
         )
 
     if group_col:
