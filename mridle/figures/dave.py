@@ -184,7 +184,7 @@ def plot_dave_b(slot_df: pd.DataFrame, dicom_times_df: pd.DataFrame, example_dat
 
 def plot_appt_len_vs_var(dicom_df: pd.DataFrame, variable: str, type: str, sort_order: list = []):
     if type == "scatter":
-        chart = alt.Chart(dicom_df[[variable, 'appt_len_float', 'UniversalServiceName']]).mark_points().encode(
+        chart = alt.Chart(dicom_df[[variable, 'appt_len_float', 'UniversalServiceName']]).mark_point().encode(
             alt.X(variable, sort=sort_order),
             y='appt_len_float'
         ).properties(
@@ -205,7 +205,7 @@ def plot_appt_len_vs_var(dicom_df: pd.DataFrame, variable: str, type: str, sort_
         )
     else:
         chart = "No plot generated - make sure 'type' argument is either ""scatter"" or ""boxplot"""
-        
+
     return chart
 
 
