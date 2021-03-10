@@ -3,7 +3,7 @@ import pandas as pd
 
 
 def plot_appt_len_vs_var(dicom_df: pd.DataFrame, variable: str, plot_type: str, group_col: str = None,
-                         properties={'width': 200, 'height': 200}, sort_order=None):
+                         properties: dict = {'width': 200, 'height': 200}, sort_order: list = None) -> alt.Chart:
     """
     Generate a plot for a given variable against appt_len_float, with these on the x- and y-axis respectively.
     Can supply a column to group the x-axis data by, with a new plot being created for each group in this column
@@ -41,7 +41,7 @@ def plot_appt_len_vs_var(dicom_df: pd.DataFrame, variable: str, plot_type: str, 
             y='appt_len_float'
         )
     else:
-        fig = "No plot generated - make sure 'plot_type' argument is either 'scatter' or 'boxplot"
+        raise ValueError("No plot generated - make sure 'plot_type' argument is either 'scatter' or 'boxplot")
 
     fig = fig.properties(width=properties['width'], height=properties['height'])
 
@@ -49,4 +49,3 @@ def plot_appt_len_vs_var(dicom_df: pd.DataFrame, variable: str, plot_type: str, 
         fig = fig.facet(column=group_col)
 
     return fig
-
