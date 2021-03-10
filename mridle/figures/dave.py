@@ -221,7 +221,7 @@ def plot_appt_len_vs_var(dicom_df: pd.DataFrame, variable: str, plot_type: str, 
             y='appt_len_float'
         )
     else:
-        fig = "No plot generated - make sure 'plot_type' argument is either 'scatter' or 'boxplot"
+        raise ValueError("No plot generated - make sure 'plot_type' argument is either 'scatter' or 'boxplot")
 
     fig = fig.properties(width=properties['width'], height=properties['height'])
 
