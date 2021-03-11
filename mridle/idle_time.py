@@ -30,8 +30,9 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, time_buffer_mins=0) -> pd.
     one_hour = pd.to_timedelta(1, unit='H')
     # be careful not to calculate idle time when appointments overlap
     idle_df['time_between_appt'] = idle_df['image_start'] - idle_df['previous_end']
-    idle_df['idle_time'] = np.max(0, idle_df['time_between_appt'] - pd.to_timedelta(time_buffer_mins * 2, unit='minute'))  # take off pre- and post-appointment buffer time
-    idle_df['buffer_time'] = np.min(time_buffer_mins * 2, idle_df['time_between_appt'] - pd.to_timedelta(time_buffer_mins * 2, unit='minute'))
+    idle_minus_buffer = idle_df['time_between_appt'] - pd.to_timedelta(time_buffer_mins * 2, unit='minute')
+    idle_df['idle_time'] = idle_minus_buffer.apply(np.max, 0)
+    idle_df['buffer_time'] = idle_minus_buffer.apply(np.min, time_buffer_mins*2)
 
     idle_df = idle_df.apply(add_buffer_cols, axis=0)
 
