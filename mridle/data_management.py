@@ -704,7 +704,7 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
     dispo_e2_df.drop(columns=['date_dt', 'date_recorded_dt'], inplace=True)
 
     # Find the last time a slot was recorded before its start_time. Select all instances where the slot was recorded in
-    # advance of the appt, and then pick the last occurance by applying a cumcount to the descending ordered list and
+    # advance of the appt, and then pick the last occurrence by applying a cumcount to the descending ordered list and
     # selecting the 0th row.
     before = dispo_e2_df[dispo_e2_df['date_diff'] < 0]
     before_pick_last = before.sort_values(['patient_id', 'date', 'date_recorded'], ascending=False)
@@ -715,9 +715,11 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
     # Select the rows where the slot was observed 1 business day after the slot date.
     after = dispo_e2_df[dispo_e2_df['date_diff'] == 1]
 
-    one_day = pd.merge(before_last, after, how='outer', on=['patient_id', 'date', 'start_time'],
+    one_day = pd.merge(before_last, after, how='outer', on=['patient_id', 'date'],
                        suffixes=('_before', '_after')
-                       ).sort_values(['start_time'])
+                       )
+    one_day.rename(columns={'start_time_after': 'start_time'}, inplace=True)
+    one_day = one_day.sort_values(['start_time'])
 
     def determine_dispo_no_show(last_status_before: str, first_status_after: str, last_status_date_diff: int,
                                 start_time: pd.Timestamp) -> Union[bool, None]:
