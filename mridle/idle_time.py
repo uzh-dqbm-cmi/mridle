@@ -9,7 +9,7 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, time_buffer_mins=0) -> pd.
 
     Args:
         dicom_times_df: result of `mridle.data_management.format_dicom_times_df`
-        time_buffer: buffer time in minutes, to take from start and add to end of appointment
+        time_buffer_mins: buffer time in minutes which is taken from the start and added to end of each appointment
 
     Returns: `dicom_times_df` dataframe with added columns:
      - `previous_end`: the end time of the preceding appointment (if the first appointment of the day, then pd.NaT)
@@ -24,23 +24,28 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, time_buffer_mins=0) -> pd.
     idle_df['previous_end_shift'] = idle_df.groupby(key_cols)['image_end'].shift(1)
     # if there is overlap between the appointments (previous end time is after current start time), then ignore this
     # 'between' segment
-
-    idle_df['image_start_buffer'] = idle_df['image_start'] - pd.to_timedelta(time_buffer_mins, unit='minute')
-    idle_df['previous_end_shift_buffer'] = idle_df['previous_end_shift'] + pd.to_timedelta(time_buffer_mins, unit='minute')
-
-    idle_df['previous_end'] = np.where(idle_df['previous_end_shift_buffer'] < idle_df['image_start_buffer'],
-                                       idle_df['previous_end_shift_buffer'], pd.NaT)
+    idle_df['previous_end'] = np.where(idle_df['previous_end_shift'] < idle_df['image_start'],
+                                       idle_df['previous_end_shift'], pd.NaT)
     idle_df['previous_end'] = pd.to_datetime(idle_df['previous_end'])
     one_hour = pd.to_timedelta(1, unit='H')
     # be careful not to calculate idle time when appointments overlap
-    idle_df['idle_time'] = np.where(idle_df['previous_end'] < idle_df['image_start_buffer'],
-                                    (idle_df['image_start_buffer'] - idle_df['previous_end']) / one_hour, 0)
-    idle_df['buffer_time_before'] = np.where(idle_df['previous_end'] < idle_df['image_start_buffer'],
-                                    (idle_df['image_start_buffer'] - idle_df['previous_end']) / one_hour, 0)
-    idle_df['buffer_time_after'] = np.where(idle_df['previous_end'] < idle_df['image_start_buffer'],
-                                    (idle_df['image_start_buffer'] - idle_df['previous_end']) / one_hour, 0)
+    idle_df['time_between_appt'] = idle_df['image_start'] - idle_df['previous_end']
+    idle_df['idle_time'] = np.max(0, idle_df['time_between_appt'] - pd.to_timedelta(time_buffer_mins * 2, unit='minute'))  # take off pre- and post-appointment buffer time
+    idle_df['buffer_time'] = np.min(time_buffer_mins * 2, idle_df['time_between_appt'] - pd.to_timedelta(time_buffer_mins * 2, unit='minute'))
+
+    idle_df = idle_df.apply(add_buffer_cols, axis=0)
+
+    idle_df['idle_time'] = idle_df['idle_time'] / one_hour
+    idle_df['buffer_time'] = idle_df['buffer_time'] / one_hour
 
     return idle_df
+
+
+def add_buffer_cols(appt_row):
+    buffer_per_appt = appt_row['buffer_time'] / 2
+    appt_row['previous_end_buffer'] = appt_row['previous_end'] + buffer_per_appt
+    appt_row['image_start_buffer'] = appt_row['image_start'] + buffer_per_appt
+    return appt_row
 
 
 def calc_daily_idle_time_stats(idle_df: pd.DataFrame) -> pd.DataFrame:
