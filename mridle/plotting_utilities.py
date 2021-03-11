@@ -796,7 +796,6 @@ def plot_importances_averages(var_importances_list: List, var_col_names: List):
     plt.title('Feature importance in RandomForest Classifier')
     plt.xlabel('Relative importance')
     plt.ylabel('feature')
-    plt.savefig('average_importances.svg')
 
 
 def plot_importances_estimator(experiment: Any, cols_for_modeling: List):
