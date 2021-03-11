@@ -67,6 +67,15 @@ class HarveyModel_RandomForest(ModelRun):
 
     @classmethod
     def get_test_data_set(cls):
+        """
+        Provides test data
+
+        Args:
+            model
+
+        Returns:
+            a dataframe with the appropriate columns to test the model
+        """
         df = pd.DataFrame(np.random.randint(0, 100, size=(100, len(cols_for_modeling))), columns=cols_for_modeling)
         df['noshow'] = np.where(df[cols_for_modeling[0]] > 50, 1, 0)
         return df
