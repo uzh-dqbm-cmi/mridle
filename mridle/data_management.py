@@ -718,7 +718,10 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
     one_day = pd.merge(before_last, after, how='outer', on=['patient_id', 'date'],
                        suffixes=('_before', '_after')
                        )
-    one_day.rename(columns={'start_time_after': 'start_time'}, inplace=True)
+    # for show appointments ("start_time_after" is not null), use the "after" one in case the appt time was changed
+    # within the same day. Otherwise, use the "start_time_before".
+    one_day['start_time'] = np.where(one_day['start_time_after'].isnull(), one_day['start_time_before'],
+                                     one_day['start_time_after'])
     one_day = one_day.sort_values(['start_time'])
 
     def determine_dispo_no_show(last_status_before: str, first_status_after: str, last_status_date_diff: int,
