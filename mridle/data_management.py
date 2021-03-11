@@ -718,7 +718,7 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
     one_day = pd.merge(before_last, after, how='outer', on=['patient_id', 'date'],
                        suffixes=('_before', '_after')
                        )
-    # for show appointments ("start_time_after" is not null), use the "after" one in case the appt time was changed
+    # For show appointments ("start_time_after" is not null), use "start_time_after" in case the appt time was changed
     # within the same day. Otherwise, use the "start_time_before".
     one_day['start_time'] = np.where(one_day['start_time_after'].isnull(), one_day['start_time_before'],
                                      one_day['start_time_after'])
