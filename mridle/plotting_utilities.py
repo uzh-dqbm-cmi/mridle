@@ -762,7 +762,7 @@ def plot_importances(var_importances: List, var_col_names: List):
     plt.show()
 
 
-def plot_importances_averages(var_importances_list: List, var_col_names: List):
+def plot_importances_averages(var_importances_list: List[List[float]], var_col_names: List[str]):
     """
     Function that plots the importance averages for multiple models
 
