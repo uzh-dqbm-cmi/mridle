@@ -767,8 +767,8 @@ def plot_importances_averages(var_importances_list: List[List[float]], var_col_n
     Function that plots the importance averages for multiple models
 
     Args:
-        var_importances_list is a list with all importance values for a
-        given set of models.
+        var_importances_list: a 2 dimensional `list[i][j]` with all importance values for a
+        given set of models, where `i` is the number of models and `j` is the number of features.
         val_col_names is a list with all variable names for the models.
 
     Returns: plot with average importances
