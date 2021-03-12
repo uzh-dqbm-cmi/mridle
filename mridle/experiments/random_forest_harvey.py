@@ -32,24 +32,6 @@ hyperparams = {'n_estimators': n_estimators, 'max_features': max_features, 'max_
 class HarveyModel_RandomForest(ModelRun):
 
     @classmethod
-    def train_encoders(cls, train_set: Any) -> Dict[str, Any]:
-        """
-        Placeholder function to hold the custom encoder training functionality of a ModelRun.
-        By default, returns an empty dictionary.
-
-        Args:
-            train_set: Data set to train encoders on.
-
-        Returns:
-            Dict of encoders.
-        """
-        autoscaler = StandardScaler()
-
-        return {
-            'autoscaler': autoscaler
-        }
-
-    @classmethod
     def build_x_features(cls, data_set: Any, encoders: Dict) -> Tuple[pd.DataFrame, List]:
         """
         Build custom features
