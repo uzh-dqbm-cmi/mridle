@@ -70,19 +70,22 @@ def calc_daily_idle_time_stats(idle_df: pd.DataFrame) -> pd.DataFrame:
     Args:
         idle_df: result of `calc_idle_time_gaps`
 
-    Returns: Dataframe with columns ['date', 'image_device_id', 'idle_time' (float hours),
+    Returns: Dataframe with columns ['date', 'image_device_id', 'idle_time' (float hours), 'buffer_time' (float hours),
      'image_start' (first image of the day), 'image_end' (last image of the day), 'active_hours' (float hours,
-      'idle_time_pct']
+      'idle_time_pct', 'buffer_time_pct']
 
     """
     daily_idle_stats = idle_df.groupby(['date', 'image_device_id']).agg({
         'idle_time': 'sum',
+        'buffer_time': 'sum',
         'image_start': 'min',
         'image_end': 'max'
     }).reset_index()
     one_hour = pd.to_timedelta(1, unit='H')
     daily_idle_stats['active_hours'] = (daily_idle_stats['image_end'] - daily_idle_stats['image_start']) / one_hour
     daily_idle_stats['idle_time_pct'] = daily_idle_stats['idle_time'] / daily_idle_stats['active_hours']
+    daily_idle_stats['buffer_time_pct'] = daily_idle_stats['buffer_time'] / daily_idle_stats['active_hours']
+
     return daily_idle_stats
 
 
