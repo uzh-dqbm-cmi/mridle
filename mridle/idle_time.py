@@ -59,8 +59,10 @@ def add_buffer_cols(appt_row):
 
     """
     buffer_per_appt = pd.to_timedelta(appt_row['buffer_time'] / 2, unit='H')
-    appt_row['previous_end_buffer'] = appt_row['previous_end'] + buffer_per_appt if not pd.isnull(appt_row['previous_end']) else appt_row['previous_end']
-    appt_row['image_start_buffer'] = appt_row['image_start'] - buffer_per_appt if not pd.isnull(appt_row['image_start']) else appt_row['image_start']
+    appt_row['previous_end_buffer'] = appt_row['previous_end'] + buffer_per_appt \
+        if not pd.isnull(appt_row['previous_end']) else appt_row['previous_end']
+    appt_row['image_start_buffer'] = appt_row['image_start'] - buffer_per_appt \
+        if not pd.isnull(appt_row['image_start']) else appt_row['image_start']
     return appt_row
 
 
@@ -71,8 +73,8 @@ def calc_daily_idle_time_stats(idle_df: pd.DataFrame) -> pd.DataFrame:
         idle_df: result of `calc_idle_time_gaps`
 
     Returns: Dataframe with columns ['date', 'image_device_id', 'idle_time' (float hours), 'buffer_time' (float hours),
-     'image_start' (first image of the day), 'image_end' (last image of the day), 'active_hours' (float hours,
-      'idle_time_pct', 'buffer_time_pct']
+     'image_start' (first image of the day), 'image_end' (last image of the day), 'total_day_time' (flout hours),
+     active_time' (float hours), 'idle_time_pct', 'buffer_time_pct']
 
     """
     daily_idle_stats = idle_df.groupby(['date', 'image_device_id']).agg({
@@ -82,9 +84,10 @@ def calc_daily_idle_time_stats(idle_df: pd.DataFrame) -> pd.DataFrame:
         'image_end': 'max'
     }).reset_index()
     one_hour = pd.to_timedelta(1, unit='H')
-    daily_idle_stats['active_hours'] = (daily_idle_stats['image_end'] - daily_idle_stats['image_start']) / one_hour
-    daily_idle_stats['idle_time_pct'] = daily_idle_stats['idle_time'] / daily_idle_stats['active_hours']
-    daily_idle_stats['buffer_time_pct'] = daily_idle_stats['buffer_time'] / daily_idle_stats['active_hours']
+    daily_idle_stats['total_day_time'] = (daily_idle_stats['image_end'] - daily_idle_stats['image_start']) / one_hour
+    daily_idle_stats['idle_time_pct'] = daily_idle_stats['idle_time'] / daily_idle_stats['total_day_time']
+    daily_idle_stats['buffer_time_pct'] = daily_idle_stats['buffer_time'] / daily_idle_stats['total_day_time']
+    daily_idle_stats['active_time'] = daily_idle_stats['total_day_time'] - daily_idle_stats['idle_time'] - daily_idle_stats['buffer_time']
 
     return daily_idle_stats
 
@@ -185,9 +188,9 @@ def plot_total_active_idle_buffer_time_per_day(daily_idle_stats: pd.DataFrame) -
 
     """
     daily_between_times_melted = pd.melt(daily_idle_stats, id_vars=['date', 'image_device_id'],
-                                         value_vars=['active_hours', 'idle_time', 'buffer_time'], var_name='time_type',
+                                         value_vars=['active_time', 'idle_time', 'buffer_time'], var_name='time_type',
                                          value_name='hours')
-    domain = ['active_hours', 'idle_time', 'buffer_time']
+    domain = ['active_time', 'idle_time', 'buffer_time']
     range_ = ['#0065af', '  #fe8126  ', ' #fda96b ']
 
     return alt.Chart(daily_between_times_melted).mark_bar().encode(
