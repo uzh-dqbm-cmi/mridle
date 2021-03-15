@@ -11,7 +11,7 @@ def plot_appt_len_vs_var(dicom_df: pd.DataFrame, variable: str, plot_type: str, 
     Plot can be scatterplot or a boxplot
     Sort order of x-axis categories and properties for plot window can be specified
 
-    Args:cd 
+    Args:
         dicom_df: dataframe with dicom data, requires appt_len_float column to be present, as well as those specified
         in the 'variable' and the 'group_col' parameters
         variable: column/variable to plot against appt_len_float; will be on x-axis
