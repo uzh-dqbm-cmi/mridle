@@ -14,7 +14,7 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, time_buffer_mins=0) -> pd.
     Returns: `dicom_times_df` dataframe with added columns:
      - `previous_end`: the end time of the preceding appointment (if the first appointment of the day, then pd.NaT)
      - `idle_time`: the number of hours (as a float) of time between the end of the previous appointment
-      (`previous_end`) and the start of the current apppointment (`image_start`).
+      (`previous_end`) and the start of the current appointment (`image_start`).
 
     """
     idle_df = dicom_times_df.copy()
@@ -22,23 +22,26 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, time_buffer_mins=0) -> pd.
     key_cols = ['date', 'image_device_id']
     idle_df = idle_df.sort_values(key_cols + ['image_start'])
     idle_df['previous_end_shift'] = idle_df.groupby(key_cols)['image_end'].shift(1)
+
     # if there is overlap between the appointments (previous end time is after current start time), then ignore this
     # 'between' segment
     idle_df['previous_end'] = np.where(idle_df['previous_end_shift'] < idle_df['image_start'],
                                        idle_df['previous_end_shift'], pd.NaT)
     idle_df['previous_end'] = pd.to_datetime(idle_df['previous_end'])
     one_hour = pd.to_timedelta(1, unit='H')
-    # be careful not to calculate idle time when appointments overlap
+
     idle_df['time_between_appt'] = (idle_df['image_start'] - idle_df['previous_end'])
 
     time_buffer_dt = pd.to_timedelta(time_buffer_mins, unit='minute')
     idle_df['idle_minus_buffer'] = (idle_df['time_between_appt'] - time_buffer_dt*2) / one_hour
     idle_df['time_between_appt'] = idle_df['time_between_appt'] / one_hour
 
-    print()
+    # if 'idle_time' as calculated above is less than 0, then we have overlapping appts & buffer time, so set to 0
     idle_df['idle_time'] = np.maximum(0, idle_df['idle_minus_buffer'])
+    # If time between appointments is larger than 2 'buffer times' (one before and one after each appointment), then
+    # set buffer_time to be 2* user-specified buffer time. If less, then it means there's overlapping appts with buffer
+    # time included, so we set all the time_between_appt to be buffer time (zero idle time is dealt with in line above)
     idle_df['buffer_time'] = np.minimum(idle_df['time_between_appt'], time_buffer_dt*2/one_hour)
-    print(idle_df.head())
 
     idle_df = idle_df.apply(add_buffer_cols, axis=1)
 
@@ -49,11 +52,11 @@ def add_buffer_cols(appt_row):
     """
     Designed to be used row-wise (e.g. in a pd.apply() function, using the idle_df dataframe.
 
-    Take in row from df with column's 'buffer_time', 'previous_end', 'image_start', and return a row with two columns
+    Take in row from df with columns 'buffer_time', 'previous_end', 'image_start', and return a row with two columns
     added, namely: previous_end_buffer and image_start_buffer
 
     Args:
-        appt_row: onerow from df with column's 'buffer_time', 'previous_end'
+        appt_row: one row from df with columns 'buffer_time', 'previous_end'
         
     Returns: row with two columns added, namely: previous_end_buffer and image_start_buffer
 
@@ -73,7 +76,7 @@ def calc_daily_idle_time_stats(idle_df: pd.DataFrame) -> pd.DataFrame:
         idle_df: result of `calc_idle_time_gaps`
 
     Returns: Dataframe with columns ['date', 'image_device_id', 'idle_time' (float hours), 'buffer_time' (float hours),
-     'image_start' (first image of the day), 'image_end' (last image of the day), 'total_day_time' (flout hours),
+     'image_start' (first image of the day), 'image_end' (last image of the day), 'total_day_time' (float hours),
      active_time' (float hours), 'idle_time_pct', 'buffer_time_pct']
 
     """
@@ -94,7 +97,7 @@ def calc_daily_idle_time_stats(idle_df: pd.DataFrame) -> pd.DataFrame:
 
 def calc_appts_and_gaps(idle_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Transform a row-per-appointent dataframe into a dataframe that has one row per appointment and one row per idle gap
+    Transform a row-per-appointment dataframe into a dataframe that has one row per appointment and one row per idle gap
      between appointments.
 
     Args:
