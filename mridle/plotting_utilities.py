@@ -7,7 +7,7 @@ import random
 import altair as alt
 import seaborn as sns
 from copy import deepcopy
-from typing import Any, Dict
+from typing import Any, Dict, List
 from mridle.data_management import validate_against_dispo_data, jaccard_index
 
 
@@ -455,8 +455,8 @@ def plot_a_day_for_device(df: pd.DataFrame, device: str, year: int, month: int, 
     plt.show()
 
 
-def plot_pos_class_freq_per_x(input_df: pd.DataFrame, var_x: str, var2freq: str, var_y: str):
-    '''
+def plot_pos_class_freq_per_x(input_df: pd.DataFrame, var_x: str, var2freq: str, var_y: str, **kwargs: Any):
+    """
     The objective of this function is to:
     (1) use the original feature set to generate a dataframe with three columns to get insights
     into the dataset: (a) var_x which is the variable of interest (b) Frequencies of var_y per
@@ -465,12 +465,17 @@ def plot_pos_class_freq_per_x(input_df: pd.DataFrame, var_x: str, var2freq: str,
 
     Args:
         input_df: dataframe containing features for modeling
-        var_x: variable of interest,e.g., 'historic_no_show_cnt'
+        var_x: variable of interest,e.g., 'no_show_before'
         var2freq: frequency of var_y per value of var_x
         var_y: probability of var_y per value of var_x
+        **kwargs: user may add extra variables (a) xlim=[0, 100] (b) ylim=[0, 0.5]
 
     Returns: None
-    '''
+    """
+
+    xlimits = kwargs.get('xlim', None)
+    ylimits = kwargs.get('ylim', None)
+
     # First make a crosstabulation - var2freq / var_x
     table_frequencies = pd.crosstab(input_df[var2freq], input_df[var_x], margins=True)
 
@@ -493,6 +498,11 @@ def plot_pos_class_freq_per_x(input_df: pd.DataFrame, var_x: str, var2freq: str,
 
     sns.set(style='white')
     sns.relplot(x=var_x, y=var_y, alpha=0.8, size='frequencies', sizes=(40, 400), data=output_df)
+
+    if xlimits is not None:
+        plt.xlim(xlimits[0], xlimits[1])
+    if ylimits is not None:
+        plt.ylim(ylimits[0], ylimits[1])
 
 
 def plot_validation_experiment(df_ratio: pd.DataFrame) -> alt.Chart:
@@ -725,3 +735,91 @@ def plot_scatter_dispo_extract_slot_cnt(dispo_data: pd.DataFrame, slot_df: pd.Da
         color=alt.Color('slot_outcome', scale=color_scale)).interactive()
 
     return plot_diagonal + plot_slot_cnt
+
+
+def plot_importances(var_importances: List, var_col_names: List):
+    """
+    Function that generates single importance plots for a single given model
+
+    Args:
+        var_importances is a list with single importances for a given model
+        var_col_names is a list with variable names for a given model
+
+    Returns: plot with importances for a single model
+    """
+
+    fig, ax = plt.subplots()
+    width = 0.4  # the width of the bars
+    ind = np.arange(len(var_importances))  # the x locations for the groups
+    ax.barh(ind, var_importances, width, color='green')
+    ax.set_yticks(ind + width / 10)
+    ax.set_yticklabels(var_col_names, minor=False)
+    plt.title('Feature importance in RandomForest Classifier')
+    plt.xlabel('Relative importance')
+    plt.ylabel('feature')
+    plt.figure(figsize=(5, 5))
+    fig.set_size_inches(6.5, 4.5, forward=True)
+    plt.show()
+
+
+def plot_importances_averages(var_importances_list: List[List[float]], var_col_names: List[str]):
+    """
+    Function that plots the importance averages for multiple models
+
+    Args:
+        var_importances_list: a 2 dimensional `list[i][j]` with all importance values for a
+        given set of models, where `i` is the number of models and `j` is the number of features.
+        val_col_names is a list with all variable names for the models.
+
+    Returns: plot with average importances
+    """
+    average_list, std_list = [], []
+
+    # Per model
+    for i in range(0, len(var_importances_list[0])):
+        values_to_avg = []
+        # Per feature of interest
+        for j in range(0, len(var_importances_list)):
+            values_to_avg.append(var_importances_list[j][i])
+        average = np.mean(np.array(values_to_avg))
+        std = np.std(np.array(values_to_avg))
+        average_list.append(average)
+        std_list.append(std)
+
+    fig, ax = plt.subplots()
+    width = 0.4  # the width of the bars
+    ind = np.arange(len(var_importances_list[0]))  # the x locations for the groups
+    ax.barh(ind, average_list, width, color='green', xerr=std_list, capsize=5)
+    ax.set_yticks(ind + width / 10)
+    ax.set_yticklabels(var_col_names, minor=False)
+    plt.xlim(0, 1)
+    plt.title('Feature importance in RandomForest Classifier')
+    plt.xlabel('Relative importance')
+    plt.ylabel('feature')
+
+
+def plot_importances_estimator(experiment: Any, cols_for_modeling: List):
+    """
+    Function generate plots importances for an estimator
+
+    Args:
+        experiment.model_runs is a set of runs for a given model trained
+        in different folds within the dataset of interest.
+
+    Returns: Importance plots
+    """
+    importance_score_list = []
+
+    for model_index in range(len(experiment.model_runs)):
+        current_model_name = 'Partition ' + str(model_index)
+        modelrun_object = experiment.model_runs[current_model_name]
+
+        clf_optimal = experiment.model_runs[current_model_name].model
+        importances = clf_optimal.feature_importances_
+        print('These are the -importance scores-: {}'.format(importances))
+        col = cols_for_modeling
+
+        plot_importances(importances, col)
+        importance_score_list.append(importances)
+
+    plot_importances_averages(importance_score_list, col)
