@@ -227,6 +227,29 @@ slot_type_detailed = 'hard no-show'
 plot_scatter_dispo_extract_slot_cnt_for_type(dispo_df, slot_df, slot_type_detailed)
 ```
 
+#### Plot idle time figures
+
+There are multiple ways that we use to visualise the historic idle time for each machine. The first of these gives a bar graph with each horizontal row indicating one day, with time on the x-axis. These bars (representing days) are then coloured according to the state (active, idle, or 'buffer' time) the MRI machine was in at that given time, giving an overview of the past scheduling of the machines. Code to generate this plot is outlined below.
+
+```python
+from mridle idle_time import calc_idle_time_gaps, calc_appts_and_gaps, plot_daily_appt_idle_segments
+
+idle_df = mridle.idle_time.calc_idle_time_gaps(dicom_times_df, time_buffer_mins=5)
+daily_idle_stats = mridle.idle_time.calc_daily_idle_time_stats(idle_df)
+appts_and_gaps = mridle.idle_time.calc_appts_and_gaps(idle_df)
+mridle.idle_time.plot_daily_appt_idle_segments(appts_and_gaps, width=500, height=350)
+```
+The second plot type which we show here now gives a vertical bar for each day, with the y-axis now representing total hours (or as a percentage of the whole day). Again, these bars are coloured according to the total time the MRI machine spent in each of the three states during the day. Generation of this plot is outlined below.
+
+
+```python
+from mridle idle_time import calc_idle_time_gaps, calc_daily_idle_time_stats, plot_total_active_idle_buffer_time_per_day
+
+idle_df = mridle.idle_time.calc_idle_time_gaps(dicom_times_df, time_buffer_mins=5)
+daily_idle_stats = mridle.idle_time.calc_daily_idle_time_stats(idle_df)
+mridle.idle_time.plot_total_active_idle_buffer_time_per_day(reasonable_hours)
+```
+
 #### Data Validation Experiment 2: Rescheduled NoShows
 ```python
 exp_2 = dm['dispo_data'].select('2').load()
