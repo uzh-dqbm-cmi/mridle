@@ -239,10 +239,11 @@ def plot_daily_appt_idle_segments(appts_and_gaps: pd.DataFrame, height: int = 30
     domain = ['Active', 'Idle', 'Buffer']
     range_ = ['#0065af', '  #fe8126  ', ' #fda96b ']
 
-    appts_and_gaps.rename(columns={'status': 'Machine Status'}, inplace=True)
-    appts_and_gaps["Machine Status"].replace({'active': 'Active', 'idle': 'Idle', 'buffer': 'Buffer'}, inplace=True)
+    plot_data = appts_and_gaps.copy()
+    plot_data.rename(columns={'status': 'Machine Status'}, inplace=True)
+    plot_data["Machine Status"].replace({'active': 'Active', 'idle': 'Idle', 'buffer': 'Buffer'}, inplace=True)
 
-    return alt.Chart(appts_and_gaps).mark_bar(size=bar_size).encode(
+    return alt.Chart(plot_data).mark_bar(size=bar_size).encode(
         alt.X('hoursminutes(start)', title="Time of day"),
         alt.X2('hoursminutes(end)', title=""),
         alt.Y('yearmonthdate(date)', axis=alt.Axis(grid=False), title="Date"),
