@@ -1,6 +1,7 @@
 import altair as alt
 import pandas as pd
 import numpy as np
+import datetime
 
 
 def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, tp_agg_df: pd.DataFrame, time_buffer_mins=0) -> pd.DataFrame:
@@ -290,7 +291,7 @@ def plot_total_active_idle_buffer_time_per_day(daily_idle_stats: pd.DataFrame,
     daily_between_times_melted = pd.melt(daily_idle_stats, id_vars=['date', 'image_device_id'],
                                          value_vars=val_vars, var_name='Machine Status',
                                          value_name='hours')
-    print(daily_between_times_melted.columns)
+
     daily_between_times_melted["Machine Status"].replace(
         {val_vars[0]: 'Active', val_vars[1]: 'Idle', val_vars[2]: 'Buffer'}, inplace=True)
 
@@ -305,6 +306,7 @@ def plot_total_active_idle_buffer_time_per_day(daily_idle_stats: pd.DataFrame,
     ).facet(
         column=alt.Row("image_device_id:N")
     )
+
 
 def plot_pct_idle_per_day(daily_idle_stats: pd.DataFrame) -> alt.Chart:
     """
