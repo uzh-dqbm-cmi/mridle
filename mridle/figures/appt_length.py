@@ -4,7 +4,7 @@ from typing import Dict, List
 
 
 def plot_appt_len_vs_var(dicom_df: pd.DataFrame, variable: str, plot_type: str, group_col: str = None,
-                         properties: Dict=None, sort_order: List = None) -> alt.Chart:
+                         properties: Dict = None, sort_order: List = None) -> alt.Chart:
     """
     Generate a plot for a given variable against appt_len_float, with these on the x- and y-axis respectively.
     Can supply a column to group the x-axis data by, with a new plot being created for each group in this column

@@ -1,7 +1,6 @@
 from mridle.experiment import ModelRun
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import StandardScaler
 from typing import Any, Dict, List, Tuple
 
 cols_for_modeling = ['no_show_before', 'no_show_before_sq', 'sched_days_advanced', 'hour_sched',
@@ -11,16 +10,16 @@ cols_for_modeling = ['no_show_before', 'no_show_before_sq', 'sched_days_advanced
 col_names_normalization = ['male']
 
 # Number of treas in random forest
-n_estimators = [int(x) for x in np.linspace(start = 200, stop = 2000, num=10)]
+n_estimators = [int(x) for x in np.linspace(start=200, stop=2000, num=10)]
 # Number of features to consider in splits
-max_features = ['auto','sqrt']
+max_features = ['auto', 'sqrt']
 # Maximum number of levels in tree
-max_depth = [int(x) for x in np.linspace(10,110, num = 11)]
+max_depth = [int(x) for x in np.linspace(10, 110, num=11)]
 max_depth.append(None)
 # Min num of samples needed to split a node
-min_samples_split = [2,4,6,8,10]
+min_samples_split = [2, 4, 6, 8, 10]
 # min num of samples needed at each leaf node
-min_samples_leaf = [1,2,5,10]
+min_samples_leaf = [1, 2, 5, 10]
 # bootstrap
 bootstrap = [True, False]
 
