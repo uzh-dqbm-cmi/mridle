@@ -258,8 +258,8 @@ def plot_hist_idle_gap_length(idle_df: pd.DataFrame) -> alt.Chart:
     Returns: histogram of idle time gap lengths.
 
     """
-    return alt.Chart(idle_df[['date', 'idle_time']]).mark_bar().encode(
-        alt.X('idle_time', bin=alt.Bin(extent=[0, 1], step=0.05)),
+    return alt.Chart(idle_df[['date', 'idle']]).mark_bar().encode(
+        alt.X('idle', bin=alt.Bin(extent=[0, 1], step=0.05)),
         y='count()'
     )
 
@@ -277,10 +277,10 @@ def plot_total_active_idle_buffer_time_per_day(daily_idle_stats: pd.DataFrame,
 
     """
     if use_percentage:
-        val_vars = ['active_time_pct', 'idle_time_pct', 'buffer_time_pct']
+        val_vars = ['active_pct', 'idle_pct', 'buffer_pct']
         y_label = "Percentage of day"
     else:
-        val_vars = ['active_time', 'idle_time', 'buffer_time']
+        val_vars = ['active', 'idle', 'buffer']
         y_label = "Hours"
 
     daily_between_times_melted = pd.melt(daily_idle_stats, id_vars=['date', 'image_device_id'],
@@ -316,7 +316,7 @@ def plot_pct_idle_per_day(daily_idle_stats: pd.DataFrame) -> alt.Chart:
     """
     return alt.Chart(daily_idle_stats).mark_bar().encode(
         alt.X("date"),
-        y='idle_time_pct',
+        y='idle_pct',
     ).facet(
         column=alt.Row("image_device_id:N")
     )
