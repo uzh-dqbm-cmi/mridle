@@ -48,14 +48,19 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, tp_agg_df: pd.DataFrame, t
                                                                                                  ascending=False)
     idle_df['last_appt'] = np.where(idle_df['last_appt'] == 1, 1, 0)
 
+    idle_df['one_side_buffer_flag'] = 0  # used if appointment is last appointment and it goes beyond the end of day limit, so we only add buffer time before this appt, not after. Also used for cases in the following lines, where we add a dummy row for the end of the day when the last appt is within the limits of the day. This row is added for easier calculation of the buffer and idle times towards the end of the day
     last_appts = idle_df[idle_df['last_appt'] == 1]
     new_rows = []
     for idx, row in last_appts.iterrows():
         if row['image_end'] < row['day_end']:
-            image_start_end = row['day_end'] + pd.to_timedelta(time_buffer_mins, unit='m')
-            new_rows.append([image_start_end, image_start_end, row['date'], row['image_device_id'], 1])
+            image_start_end = row['day_end']  # + pd.to_timedelta(time_buffer_mins, unit='m')
+            new_rows.append([image_start_end, image_start_end, row['date'], row['image_device_id'], 1,
+                             row['day_length'], row['day_start'], row['day_end'], 1])
+        else:
+            idle_df.loc[idle_df['AccessionNumber'] == row['AccessionNumber'], 'one_side_buffer_flag'] = 1
 
-    new_rows_df = pd.DataFrame(new_rows, columns=['image_start', 'image_end', 'date', 'image_device_id', 'within_day'])
+    new_rows_df = pd.DataFrame(new_rows, columns=['image_start', 'image_end', 'date', 'image_device_id', 'within_day',
+                                                  'day_length', 'day_start', 'day_end', 'one_side_buffer_flag'])
     idle_df = pd.concat([idle_df, new_rows_df])
 
     key_cols = ['date', 'image_device_id']
@@ -73,26 +78,38 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, tp_agg_df: pd.DataFrame, t
     first_appts = idle_df[idle_df['first_appt'] == 1]
     for idx, row in first_appts.iterrows():
         if row['image_start'] > row['day_start']:
-            idle_df.loc[idle_df['AccessionNumber'] == row['AccessionNumber'], 'previous_end'] = row[
-                                                                                                    'day_start'] - pd.to_timedelta(
-                time_buffer_mins, unit='m')
+            idle_df.loc[idle_df['AccessionNumber'] == row['AccessionNumber'], 'previous_end'] = row['day_start'] # - pd.to_timedelta(time_buffer_mins, unit='m')
+        else:
+            idle_df.loc[idle_df['AccessionNumber'] == row['AccessionNumber'], 'one_side_buffer_flag'] = 1
 
     idle_df['time_between_appt'] = (idle_df['image_start'] - idle_df['previous_end'])
 
     time_buffer_dt = pd.to_timedelta(time_buffer_mins, unit='minute')
-    idle_df['idle_minus_buffer'] = (idle_df['time_between_appt'] - time_buffer_dt * 2) / one_hour
+    # idle_df['idle_minus_buffer'] = (idle_df['time_between_appt'] - time_buffer_dt * 2) / one_hour
+    # idle_df.loc[idle_df['one_side_buffer_flag'] == 1, 'idle_minus_buffer'] = (idle_df.loc[idle_df['one_side_buffer_flag'] == 1, 'time_between_appt'] - time_buffer_dt) / one_hour
     idle_df['time_between_appt'] = idle_df['time_between_appt'] / one_hour
 
     # if 'idle_time' as calculated above is less than 0, then we have overlapping appts & buffer time, so set to 0
-    idle_df['idle_time'] = np.maximum(0, idle_df['idle_minus_buffer'])
+    # idle_df['idle_time'] = np.maximum(0, idle_df['idle_minus_buffer'])
     # If time between appointments is larger than 2 'buffer times' (one before and one after each appointment), then
     # set buffer_time to be 2* user-specified buffer time. If less, then it means there's overlapping appts with buffer
     # time included, so we set all the time_between_appt to be buffer time (zero idle time is dealt with in line above)
     idle_df['buffer_time'] = np.minimum(idle_df['time_between_appt'], time_buffer_dt * 2 / one_hour)
 
+    # Add buffer cols to idle_df
     idle_df = idle_df.apply(add_buffer_cols, axis=1)
+    idle_df.drop('buffer_time', axis=1, inplace=True)
+    # If appt row is one of the dummy 'end of day' appointments created above, set the buffer to be 0 by setting the
+    # image_start_buffer time back to the original end of day time
+    idle_df.loc[(idle_df['one_side_buffer_flag'] == 1) & (idle_df['AccessionNumber'].isna()),
+                'image_start_buffer'] = idle_df.loc[(idle_df['one_side_buffer_flag'] == 1) & (idle_df['AccessionNumber'].isna()), 'image_start']
+    # idle_df.loc[idle_df['one_side_buffer_flag'] == 1, 'buffer_time'] = (idle_df.loc[idle_df['one_side_buffer_flag'] == 1, 'buffer_time'] - (time_buffer_dt / one_hour))
+    # idle_df['buffer_time'] = np.maximum(idle_df['buffer_time'], 0)
 
-    idle_df['buffer_time'] = np.where(idle_df['AccessionNumber'].isna(), 0, idle_df['buffer_time'])
+    idle_df.loc[(idle_df['one_side_buffer_flag'] == 0) & (idle_df['first_appt'] == 1),
+                'previous_end_buffer'] = idle_df.loc[(idle_df['one_side_buffer_flag'] == 0) & (idle_df['first_appt'] == 1), 'previous_end']
+
+    # idle_df['active_time'] = (idle_df['image_end'] - idle_df['image_start']) / one_hour
 
     return idle_df
 
@@ -110,6 +127,7 @@ def add_buffer_cols(appt_row):
     Returns: row with two columns added, namely: previous_end_buffer and image_start_buffer
 
     """
+
     buffer_per_appt = pd.to_timedelta(appt_row['buffer_time'] / 2, unit='H')
     appt_row['previous_end_buffer'] = appt_row['previous_end'] + buffer_per_appt \
         if not pd.isnull(appt_row['previous_end']) else appt_row['previous_end']
@@ -118,65 +136,37 @@ def add_buffer_cols(appt_row):
     return appt_row
 
 
-def calc_daily_idle_time_stats(idle_df: pd.DataFrame, time_buffer_mins=0) -> pd.DataFrame:
+def calc_daily_idle_time_stats(appts_and_gaps: pd.DataFrame) -> pd.DataFrame:
     """
     Transform a row-per-appointment dataframe into a row-per-day dataframe showing active and idle time per day.
     Args:
-        idle_df: result of `calc_idle_time_gaps`
-
-    Returns: Dataframe with columns ['date', 'image_device_id', 'idle_time' (float hours), 'buffer_time' (float hours),
-     'image_start' (first image of the day), 'image_end' (last image of the day), 'total_day_time' (float hours),
-     active_time' (float hours), 'idle_time_pct', 'buffer_time_pct']
+        appts_and_gaps: resulting df from calc_appts_and_gaps()
+    Returns: Dataframe with columns ['date', 'image_device_id', 'idle' (float hours), 'buffer' (float hours),
+     'start' (time of start of the day), 'end' (time of end of the day), 'total_day_time' (float hours),
+     active' (float hours), 'active_pct', 'idle_pct', 'buffer_pct']
 
     """
-    idle_df_copy = idle_df.copy()
-    idle_df_copy = idle_df_copy[idle_df_copy['within_day'] == 1]
-
-    daily_idle_stats = idle_df_copy.groupby(['date', 'image_device_id', 'day_length', 'day_start', 'day_end']).agg({
-        'idle_time': 'sum',
-        'buffer_time': 'sum',
-        'image_start': 'min',
-        'image_end': 'max',
-
+    appts_and_gaps_copy = appts_and_gaps.copy()
+    daily_stats = appts_and_gaps_copy.groupby(['date', 'image_device_id', 'status']).agg({
+        'status_duration': 'sum'
     }).reset_index()
     one_hour = pd.to_timedelta(1, unit='H')
+    total_day_times = appts_and_gaps_copy.groupby(['date', 'image_device_id']).agg({
+        'start': 'min',
+        'end': 'max'
+    }).reset_index()
+    total_day_times['total_day_time'] = (total_day_times['end'] - total_day_times['start']) / one_hour
 
-    daily_idle_stats['pre_start_diff'] = np.maximum(0, (
-                daily_idle_stats['image_start'] - daily_idle_stats['day_start']) / one_hour)
-    daily_idle_stats['post_end_diff'] = np.maximum(0, (
-                daily_idle_stats['day_end'] - daily_idle_stats['image_end']) / one_hour)
+    stats = daily_stats.pivot_table(columns='status', values='status_duration',
+                                    index=['date', 'image_device_id']).reset_index()
+    stats = stats.merge(total_day_times, on=['date', 'image_device_id'])
 
-    # daily_idle_stats['pre_start_idle'] = np.maximum(0, daily_idle_stats['pre_start_diff'] - (time_buffer_mins/60))
-    # daily_idle_stats['pre_start_buffer'] = np.maximum((time_buffer_mins/60), daily_idle_stats['pre_start_diff'] - (time_buffer_mins/60))
+    stats['active'] = stats['total_day_time'] - stats['buffer'] - stats['idle']  # as there might be overlaps in appts, so we don't want to doublecount
+    stats['active_pct'] = stats['active'] / stats['total_day_time']
+    stats['buffer_pct'] = stats['buffer'] / stats['total_day_time']
+    stats['idle_pct'] = stats['idle'] / stats['total_day_time']
 
-    # daily_idle_stats['post_end_idle'] = np.maximum(0, daily_idle_stats['post_end_diff'] - (time_buffer_mins/60))
-    # daily_idle_stats['post_end_buffer'] = np.maximum((time_buffer_mins/60), daily_idle_stats['post_end_diff'] - (time_buffer_mins/60))
-
-    daily_idle_stats['pre_start_idle'] = np.maximum(0, daily_idle_stats['pre_start_diff'] - (time_buffer_mins / 60))
-    # If time between appointments is larger than 2 'buffer times' (one before and one after each appointment), then
-    # set buffer_time to be 2* user-specified buffer time. If less, then it means there's overlapping appts with buffer
-    # time included, so we set all the time_between_appt to be buffer time (zero idle time is dealt with in line above)
-    daily_idle_stats['pre_start_buffer'] = np.minimum(daily_idle_stats['pre_start_diff'], (time_buffer_mins / 60))
-
-    daily_idle_stats['post_end_idle'] = np.maximum(0, daily_idle_stats['post_end_diff'] - (time_buffer_mins / 60))
-    # If time between appointments is larger than 2 'buffer times' (one before and one after each appointment), then
-    # set buffer_time to be 2* user-specified buffer time. If less, then it means there's overlapping appts with buffer
-    # time included, so we set all the time_between_appt to be buffer time (zero idle time is dealt with in line above)
-    daily_idle_stats['post_end_buffer'] = np.minimum(daily_idle_stats['post_end_diff'], (time_buffer_mins / 60))
-
-    daily_idle_stats['idle_time'] = daily_idle_stats['idle_time'] + daily_idle_stats['pre_start_idle'] + \
-                                    daily_idle_stats['post_end_idle']
-    daily_idle_stats['buffer_time'] = daily_idle_stats['buffer_time'] + daily_idle_stats['pre_start_buffer'] + \
-                                      daily_idle_stats['post_end_buffer']
-
-    daily_idle_stats['total_day_time'] = daily_idle_stats['day_length'] / 60
-    daily_idle_stats['idle_time_pct'] = daily_idle_stats['idle_time'] / daily_idle_stats['total_day_time']
-    daily_idle_stats['buffer_time_pct'] = daily_idle_stats['buffer_time'] / daily_idle_stats['total_day_time']
-    daily_idle_stats['active_time'] = daily_idle_stats['total_day_time'] - daily_idle_stats['idle_time'] - \
-                                      daily_idle_stats['buffer_time']
-    daily_idle_stats['active_time_pct'] = daily_idle_stats['active_time'] / daily_idle_stats['total_day_time']
-
-    return daily_idle_stats
+    return stats
 
 
 def calc_appts_and_gaps(idle_df: pd.DataFrame) -> pd.DataFrame:
@@ -218,6 +208,9 @@ def calc_appts_and_gaps(idle_df: pd.DataFrame) -> pd.DataFrame:
     pre_buffers['status'] = 'buffer'
 
     appts_and_gaps = pd.concat([appts, gaps, post_buffers, pre_buffers])
+    appts_and_gaps['status_duration'] = (appts_and_gaps['end'] - appts_and_gaps['start']) / pd.to_timedelta(1, unit='H')
+    appts_and_gaps = appts_and_gaps.sort_values('start')
+
     return appts_and_gaps
 
 
@@ -253,6 +246,7 @@ def plot_daily_appt_idle_segments(appts_and_gaps: pd.DataFrame, height: int = 30
                  ).facet(
         column=alt.Row("image_device_id:N", title="MR Machine #")
     )
+
 
 def plot_hist_idle_gap_length(idle_df: pd.DataFrame) -> alt.Chart:
     """
