@@ -263,18 +263,18 @@ def plot_daily_appt_idle_segments(appts_and_gaps: pd.DataFrame, height: int = 30
     )
 
 
-def plot_hist_idle_gap_length(idle_df: pd.DataFrame) -> alt.Chart:
+def plot_hist_idle_gap_length(appts_and_gaps: pd.DataFrame) -> alt.Chart:
     """
     Plot a histogram of idle time gap lengths.
 
     Args:
-        idle_df: result of `calc_idle_time_gaps`
+        appts_and_gaps: result of `calc_appts_and_gaps`
 
     Returns: histogram of idle time gap lengths.
 
     """
-    return alt.Chart(idle_df[['date', 'idle']]).mark_bar().encode(
-        alt.X('idle', bin=alt.Bin(extent=[0, 1], step=0.05)),
+    return alt.Chart(appts_and_gaps.loc[appts_and_gaps['status'] == 'idle', ['status_duration']]).mark_bar().encode(
+        alt.X('status_duration', bin=alt.Bin(extent=[0, 1], step=0.05)),
         y='count()'
     )
 
