@@ -62,7 +62,7 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, tp_agg_df: pd.DataFrame, t
     # we also don't need to add a dummy appointment row
     last_appts = idle_df[idle_df['last_appt'] == 1]
     new_rows_df = pd.DataFrame(columns=['image_start', 'image_end', 'date', 'image_device_id', 'within_day',
-                                     'day_length_tp', 'day_start_tp', 'day_end_tp', 'one_side_buffer_flag'])
+                                        'day_length_tp', 'day_start_tp', 'day_end_tp', 'one_side_buffer_flag'])
 
     for idx, row in last_appts.iterrows():
         if row['image_end'] < row['day_end_tp']:

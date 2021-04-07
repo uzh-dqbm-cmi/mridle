@@ -112,7 +112,6 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
          - UniversalServiceName: str, the kind of appointment
          - MRNCmpdId (if available): str, patient id
     """
-
     default_agg_dict = {
         'patient_class_adj': 'last',
         'start_time': 'last',
@@ -949,7 +948,7 @@ def validation_exp_confusion_matrix(dispo_df: pd.DataFrame, slot_df: pd.DataFram
 
 
 def generate_data_firstexperiment_plot(dispo_data: pd.DataFrame, slot_df: pd.DataFrame) -> pd.DataFrame:
-    '''
+    """
     Iterates over unique dates in dispo_data (software data) and slot_df (extract)
     For each UNIQUE date, counts how many ["show","soft no-show","hard no-show"] there are.
 
@@ -959,7 +958,7 @@ def generate_data_firstexperiment_plot(dispo_data: pd.DataFrame, slot_df: pd.Dat
 
     Returns: dataframe that contains, date, year, num_shows, num_rescheduled, num_canceled , 'extract/experiment'
 
-    '''
+    """
 
     df = pd.DataFrame(columns=['date', 'year', 'dispo_show', 'dispo_rescheduled', 'dispo_canceled',
                                'extract_show', 'extract_rescheduled', 'extract_canceled'])
