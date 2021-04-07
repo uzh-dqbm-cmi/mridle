@@ -13,11 +13,11 @@ build_slot_df():
 """
 
 import datetime as dt
-import pandas as pd
-import numpy as np
 import re
 from typing import Dict, List, Set, Union
 
+import numpy as np
+import pandas as pd
 
 STATUS_MAP = {
     'p': 'requested',

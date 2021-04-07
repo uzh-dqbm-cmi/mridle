@@ -33,7 +33,7 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, time_buffer_mins=0) -> pd.
     idle_df['time_between_appt'] = (idle_df['image_start'] - idle_df['previous_end'])
 
     time_buffer_dt = pd.to_timedelta(time_buffer_mins, unit='minute')
-    idle_df['idle_minus_buffer'] = (idle_df['time_between_appt'] - time_buffer_dt*2) / one_hour
+    idle_df['idle_minus_buffer'] = (idle_df['time_between_appt'] - time_buffer_dt * 2) / one_hour
     idle_df['time_between_appt'] = idle_df['time_between_appt'] / one_hour
 
     # if 'idle_time' as calculated above is less than 0, then we have overlapping appts & buffer time, so set to 0
@@ -41,7 +41,7 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, time_buffer_mins=0) -> pd.
     # If time between appointments is larger than 2 'buffer times' (one before and one after each appointment), then
     # set buffer_time to be 2* user-specified buffer time. If less, then it means there's overlapping appts with buffer
     # time included, so we set all the time_between_appt to be buffer time (zero idle time is dealt with in line above)
-    idle_df['buffer_time'] = np.minimum(idle_df['time_between_appt'], time_buffer_dt*2/one_hour)
+    idle_df['buffer_time'] = np.minimum(idle_df['time_between_appt'], time_buffer_dt * 2 / one_hour)
 
     idle_df = idle_df.apply(add_buffer_cols, axis=1)
 
@@ -57,7 +57,7 @@ def add_buffer_cols(appt_row):
 
     Args:
         appt_row: one row from df with columns 'buffer_time', 'previous_end'
-        
+
     Returns: row with two columns added, namely: previous_end_buffer and image_start_buffer
 
     """
@@ -80,19 +80,19 @@ def calc_daily_idle_time_stats(idle_df: pd.DataFrame) -> pd.DataFrame:
      active_time' (float hours), 'idle_time_pct', 'buffer_time_pct']
 
     """
-    daily_idle_stats = idle_df.groupby(['date', 'image_device_id']).agg({
+    daily_stats = idle_df.groupby(['date', 'image_device_id']).agg({
         'idle_time': 'sum',
         'buffer_time': 'sum',
         'image_start': 'min',
         'image_end': 'max'
     }).reset_index()
     one_hour = pd.to_timedelta(1, unit='H')
-    daily_idle_stats['total_day_time'] = (daily_idle_stats['image_end'] - daily_idle_stats['image_start']) / one_hour
-    daily_idle_stats['idle_time_pct'] = daily_idle_stats['idle_time'] / daily_idle_stats['total_day_time']
-    daily_idle_stats['buffer_time_pct'] = daily_idle_stats['buffer_time'] / daily_idle_stats['total_day_time']
-    daily_idle_stats['active_time'] = daily_idle_stats['total_day_time'] - daily_idle_stats['idle_time'] - daily_idle_stats['buffer_time']
+    daily_stats['total_day_time'] = (daily_stats['image_end'] - daily_stats['image_start']) / one_hour
+    daily_stats['idle_time_pct'] = daily_stats['idle_time'] / daily_stats['total_day_time']
+    daily_stats['buffer_time_pct'] = daily_stats['buffer_time'] / daily_stats['total_day_time']
+    daily_stats['active_time'] = daily_stats['total_day_time'] - daily_stats['idle_time'] - daily_stats['buffer_time']
 
-    return daily_idle_stats
+    return daily_stats
 
 
 def calc_appts_and_gaps(idle_df: pd.DataFrame) -> pd.DataFrame:

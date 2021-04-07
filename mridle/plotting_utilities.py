@@ -814,7 +814,7 @@ def plot_importances_estimator(experiment: Any, cols_for_modeling: List):
         current_model_name = 'Partition ' + str(model_index)
         modelrun_object = experiment.model_runs[current_model_name]
 
-        clf_optimal = experiment.model_runs[current_model_name].model
+        clf_optimal = modelrun_object.model
         importances = clf_optimal.feature_importances_
         print('These are the -importance scores-: {}'.format(importances))
         col = cols_for_modeling
