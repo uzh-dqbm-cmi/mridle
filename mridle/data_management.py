@@ -293,11 +293,11 @@ def aggregate_terminplanner(terminplanner_df: pd.DataFrame) -> pd.DataFrame:
     tp_df['terminende'] = tp_df['Termin'] + tp_df['Dauer in dt']
     tp_df['Termin'] = tp_df['Termin'].dt.time
     tp_df['terminende'] = tp_df['terminende'].dt.time
-    tp_agg = tp_df.groupby(['Terminbuch', 'Wochentag', 'TERMINRASTER_NAME', 'gültig von', 'gültig bis']).agg(
-        {'Termin': 'min',
-         'terminende': 'max',
-         'Dauer in Min.': 'sum'}
-    ).reset_index()
+    tp_agg = tp_df.groupby(['Terminbuch', 'Wochentag', 'TERMINRASTER_NAME', 'gültig von', 'gültig bis']).agg({
+        'Termin': 'min',
+        'terminende': 'max',
+        'Dauer in Min.': 'sum'
+    }).reset_index()
 
     tp_agg.rename(columns={'Wochentag': 'day_of_week',
                            'Terminbuch': 'image_device_id',
