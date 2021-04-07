@@ -100,6 +100,7 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, tp_agg_df: pd.DataFrame, t
 
     time_buffer_dt = pd.to_timedelta(time_buffer_mins, unit='minute')
 
+
     # If time between appointments is larger than 2 'buffer times' (one before and one after each appointment), then
     # set buffer_time to be 2 * user-specified buffer time. If less, then it means there's overlapping appts with buffer
     # time included, so we set all the time_between_appt to be buffer time (zero idle time is dealt with in line above)
