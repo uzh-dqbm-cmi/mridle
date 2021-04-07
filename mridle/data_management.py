@@ -269,16 +269,16 @@ def aggregate_terminplanner(terminplanner_df: pd.DataFrame) -> pd.DataFrame:
             MR1         DO          MR1 IDR (Donnerstag)   05.12.2018  20.02.2019      07:35       35
 
     )
-    and returns an aggregated representation of this data, with each row representing one day, and the start and end
-    time of the window for appointments.
+    and returns an aggregated representation of this data, with each row representing one day of the week, and the 
+    start and end time of the window for appointments.
 
     Args:
         terminplanner_df: Raw terminplanner data, provided by Beat Hümbelin
 
     Returns:
-        tp_agg, a pd.DataFrame with a row for each day/machine combination, with information on the starting and
-        finishing time for the MR machine, along with a date range for which these times are applicable for. A
-        column containing the total number of minutes in the day is included as well.
+        tp_agg, a pd.DataFrame with a row for each day of the week/machine combination, with information on the
+        starting and finishing time for the MR machine, along with a date range for which these times are applicable
+        for. A column containing the total number of minutes in the day is included as well.
     """
     tp_df = terminplanner_df.copy()
     tp_df['Termin'] = pd.to_datetime(tp_df['Termin'], format='%H:%M')

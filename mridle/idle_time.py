@@ -44,7 +44,7 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, tp_agg_df: pd.DataFrame, t
     idle_df['day_start_tp'] = idle_df.apply(lambda x: datetime.datetime.combine(x['date'], x['day_start_tp']), axis=1)
     idle_df['day_end_tp'] = idle_df.apply(lambda x: datetime.datetime.combine(x['date'], x['day_end_tp']), axis=1)
 
-    # Add column indicating if the appointment was the first / last appointment for that day for that MR machine
+    # Add columns indicating if the appointment was the first / last appointment for that day for that MR machine
     idle_df['first_appt'] = idle_df.groupby(['date', 'image_device_id'])['image_start'].transform('rank',
                                                                                                   ascending=True)
     idle_df['first_appt'] = np.where(idle_df['first_appt'] == 1, 1, 0)
