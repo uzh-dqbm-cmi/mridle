@@ -276,9 +276,9 @@ def aggregate_terminplanner(terminplanner_df: pd.DataFrame) -> pd.DataFrame:
         terminplanner_df: Raw terminplanner data, provided by Beat Hümbelin
 
     Returns:
-        tp_agg, a pd.DataFrame with a row for each day/machine combination, with information on the starting and
-        finishing time for the MR machine, along with a date range for which these times are applicable for. A
-        column containing the total number of minutes in the day is included as well.
+        tp_agg, a pd.DataFrame with a row for each day of the week/machine combination, with information on the
+        starting and finishing time for the MR machine, along with a date range for which these times are applicable
+        for. A column containing the total number of minutes in the day is included as well.
     """
     tp_df = terminplanner_df.copy()
     tp_df['Termin'] = pd.to_datetime(tp_df['Termin'], format='%H:%M')
