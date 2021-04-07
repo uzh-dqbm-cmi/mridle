@@ -4,8 +4,8 @@ from mridle.data_management import aggregate_terminplanner
 from mridle.idle_time import calc_idle_time_gaps, calc_daily_idle_time_stats, calc_appts_and_gaps
 
 
-def day(num_days_from_start, hour=9):
-    return pd.Timestamp(year=2019, month=1, day=1, hour=hour, minute=0) + pd.Timedelta(days=num_days_from_start)
+def day(num_days_from_start, hour=9, minute=0):
+    return pd.Timestamp(year=2019, month=1, day=1, hour=hour, minute=minute) + pd.Timedelta(days=num_days_from_start)
 
 
 one_hour = pd.to_timedelta(1, unit='H')
@@ -31,8 +31,8 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'AccessionNumber': 1,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=30),
-                'image_end': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=5)
+                'image_start': day(num_days_from_start=6, hour=14, minute=30),
+                'image_end': day(num_days_from_start=6, hour=15, minute=5)
             }
         ])
 
@@ -80,8 +80,8 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'AccessionNumber': 1,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=30),
-                'image_end': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=5)
+                'image_start': day(num_days_from_start=6, hour=14, minute=30),
+                'image_end': day(num_days_from_start=6, hour=15, minute=5)
             },
             {
                 'AccessionNumber': 2,
@@ -146,22 +146,22 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'AccessionNumber': 1,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=30),
-                'image_end': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=5)
+                'image_start': day(num_days_from_start=6, hour=14, minute=30),
+                'image_end': day(num_days_from_start=6, hour=15, minute=5)
             },
             {
                 'AccessionNumber': 2,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=20),
-                'image_end': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=50)
+                'image_start': day(num_days_from_start=6, hour=15, minute=20),
+                'image_end': day(num_days_from_start=6, hour=15, minute=50)
             },
             {
                 'AccessionNumber': 3,
                 'StudyDescription': '-',
                 'image_device_id': 2,
-                'image_start': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=20),
-                'image_end': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=45)
+                'image_start': day(num_days_from_start=6, hour=14, minute=20),
+                'image_end': day(num_days_from_start=6, hour=14, minute=45)
             }
         ])
 
@@ -226,22 +226,22 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'AccessionNumber': 1,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=20),
-                'image_end': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=50)
+                'image_start': day(num_days_from_start=6, hour=14, minute=20),
+                'image_end': day(num_days_from_start=6, hour=14, minute=50)
             },
             {
                 'AccessionNumber': 2,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=55),
-                'image_end': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=15)
+                'image_start': day(num_days_from_start=6, hour=14, minute=55),
+                'image_end': day(num_days_from_start=6, hour=15, minute=15)
             },
             {
                 'AccessionNumber': 3,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=20),
-                'image_end': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=50)
+                'image_start': day(num_days_from_start=6, hour=15, minute=20),
+                'image_end': day(num_days_from_start=6, hour=15, minute=50)
             }
         ])
 
@@ -290,15 +290,15 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'AccessionNumber': 1,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=20),
-                'image_end': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=50)
+                'image_start': day(num_days_from_start=6, hour=14, minute=20),
+                'image_end': day(num_days_from_start=6, hour=14, minute=50)
             },
             {
                 'AccessionNumber': 2,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=45),
-                'image_end': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=15)
+                'image_start': day(num_days_from_start=6, hour=14, minute=45),
+                'image_end': day(num_days_from_start=6, hour=15, minute=15)
             }
         ])
 
@@ -347,15 +347,15 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'AccessionNumber': 1,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=13) + pd.Timedelta(minutes=55),
-                'image_end': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=20)
+                'image_start': day(num_days_from_start=6, hour=13, minute=55),
+                'image_end': day(num_days_from_start=6, hour=14, minute=20)
             },
             {
                 'AccessionNumber': 2,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=45),
-                'image_end': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=15)
+                'image_start': day(num_days_from_start=6, hour=14, minute=45),
+                'image_end': day(num_days_from_start=6, hour=15, minute=15)
             }
         ])
 
@@ -405,15 +405,15 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'AccessionNumber': 1,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=20),
-                'image_end': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=55)
+                'image_start': day(num_days_from_start=6, hour=14, minute=20),
+                'image_end': day(num_days_from_start=6, hour=14, minute=55)
             },
             {
                 'AccessionNumber': 2,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=35),
-                'image_end': day(num_days_from_start=6, hour=16) + pd.Timedelta(minutes=10)
+                'image_start': day(num_days_from_start=6, hour=15, minute=35),
+                'image_end': day(num_days_from_start=6, hour=16, minute=10)
             }
         ])
 
@@ -472,22 +472,22 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'AccessionNumber': 1,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=30),
-                'image_end': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=5)
+                'image_start': day(num_days_from_start=6, hour=14, minute=30),
+                'image_end': day(num_days_from_start=6, hour=15, minute=5)
             },
             {
                 'AccessionNumber': 2,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=20),
-                'image_end': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=50)
+                'image_start': day(num_days_from_start=6, hour=15, minute=20),
+                'image_end': day(num_days_from_start=6, hour=15, minute=50)
             },
             {
                 'AccessionNumber': 3,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=7, hour=14) + pd.Timedelta(minutes=20),
-                'image_end': day(num_days_from_start=7, hour=14) + pd.Timedelta(minutes=45)
+                'image_start': day(num_days_from_start=7, hour=14, minute=20),
+                'image_end': day(num_days_from_start=7, hour=14, minute=45)
             }
         ])
 
@@ -554,22 +554,22 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'AccessionNumber': 1,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=13) + pd.Timedelta(minutes=50),
-                'image_end': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=25)
+                'image_start': day(num_days_from_start=6, hour=13, minute=50),
+                'image_end': day(num_days_from_start=6, hour=14, minute=25)
             },
             {
                 'AccessionNumber': 2,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=55),
-                'image_end': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=30)
+                'image_start': day(num_days_from_start=6, hour=14, minute=55),
+                'image_end': day(num_days_from_start=6, hour=15, minute=30)
             },
             {
                 'AccessionNumber': 3,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=45),
-                'image_end': day(num_days_from_start=6, hour=16) + pd.Timedelta(minutes=15)
+                'image_start': day(num_days_from_start=6, hour=15, minute=45),
+                'image_end': day(num_days_from_start=6, hour=16, minute=15)
             }
         ])
 
@@ -620,22 +620,22 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'AccessionNumber': 1,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=13) + pd.Timedelta(minutes=50),
-                'image_end': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=25)
+                'image_start': day(num_days_from_start=6, hour=13, minute=50),
+                'image_end': day(num_days_from_start=6, hour=14, minute=25)
             },
             {
                 'AccessionNumber': 2,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=30),
-                'image_end': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=30)
+                'image_start': day(num_days_from_start=6, hour=14, minute=30),
+                'image_end': day(num_days_from_start=6, hour=15, minute=30)
             },
             {
                 'AccessionNumber': 3,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=45),
-                'image_end': day(num_days_from_start=6, hour=16) + pd.Timedelta(minutes=15)
+                'image_start': day(num_days_from_start=6, hour=15, minute=45),
+                'image_end': day(num_days_from_start=6, hour=16, minute=15)
             }
         ])
 
@@ -686,27 +686,27 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'AccessionNumber': 1,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=13) + pd.Timedelta(minutes=50),
-                'image_end': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=25)
+                'image_start': day(num_days_from_start=6, hour=13, minute=50),
+                'image_end': day(num_days_from_start=6, hour=14, minute=25)
             },
             {
                 'AccessionNumber': 2,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=20),
-                'image_end': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=30)
+                'image_start': day(num_days_from_start=6, hour=14, minute=20),
+                'image_end': day(num_days_from_start=6, hour=15, minute=30)
             },
             {
                 'AccessionNumber': 3,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=45),
-                'image_end': day(num_days_from_start=6, hour=16) + pd.Timedelta(minutes=15)
+                'image_start': day(num_days_from_start=6, hour=15, minute=45),
+                'image_end': day(num_days_from_start=6, hour=16, minute=15)
             }
         ])
 
         expected_total_day_time1 = 2.0 + (25 / 60)
-        expected_active_time1 = 35 + 65 + 30
+        expected_active_time1 = 35 + 70 - 5 + 30
         expected_buffer_time1 = 10
         expected_idle_time1 = 5
 
@@ -751,22 +751,22 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'AccessionNumber': 1,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=30),
-                'image_end': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=5)
+                'image_start': day(num_days_from_start=6, hour=14, minute=30),
+                'image_end': day(num_days_from_start=6, hour=15, minute=5)
             },
             {
                 'AccessionNumber': 2,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=20),
-                'image_end': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=50)
+                'image_start': day(num_days_from_start=6, hour=15, minute=20),
+                'image_end': day(num_days_from_start=6, hour=15, minute=50)
             },
             {
                 'AccessionNumber': 3,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=16) + pd.Timedelta(minutes=20),
-                'image_end': day(num_days_from_start=6, hour=16) + pd.Timedelta(minutes=50)
+                'image_start': day(num_days_from_start=6, hour=16, minute=20),
+                'image_end': day(num_days_from_start=6, hour=16, minute=50)
             }
         ])
 
@@ -815,15 +815,15 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'AccessionNumber': 1,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=14) + pd.Timedelta(minutes=30),
-                'image_end': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=5)
+                'image_start': day(num_days_from_start=6, hour=14, minute=30),
+                'image_end': day(num_days_from_start=6, hour=15, minute=5)
             },
             {
                 'AccessionNumber': 2,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=20),
-                'image_end': day(num_days_from_start=6, hour=15) + pd.Timedelta(minutes=50)
+                'image_start': day(num_days_from_start=6, hour=15, minute=20),
+                'image_end': day(num_days_from_start=6, hour=15, minute=50)
             }
         ])
 

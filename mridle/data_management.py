@@ -299,12 +299,13 @@ def aggregate_terminplanner(terminplanner_df: pd.DataFrame) -> pd.DataFrame:
          'Dauer in Min.': 'sum'}
     ).reset_index()
 
-    tp_agg.rename(columns={'Terminbuch': 'device_id',
-                           'Termin': 'day_start',
-                           'terminende': 'day_end',
-                           'Dauer in Min.': 'day_length',
-                           'gültig von': 'gültig_von',
-                           'gültig bis': 'gültig_bis'}, inplace=True)
+    tp_agg.rename(columns={'Wochentag': 'day_of_week',
+                           'Terminbuch': 'image_device_id',
+                           'Termin': 'day_start_tp',
+                           'terminende': 'day_end_tp',
+                           'Dauer in Min.': 'day_length_tp',
+                           'gültig von': 'applicable_from',
+                           'gültig bis': 'applicable_to'}, inplace=True)
     return tp_agg
 
 

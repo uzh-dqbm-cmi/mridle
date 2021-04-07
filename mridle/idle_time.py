@@ -15,9 +15,11 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, tp_agg_df: pd.DataFrame, t
 
     Returns: `dicom_times_df` dataframe with added columns:
      - `previous_end`: the end time of the preceding appointment (if the first appointment of the day, then pd.NaT)
-     - `idle_time`: the number of hours (as a float) of time between the end of the previous appointment
-      (`previous_end`) and the start of the current appointment (`image_start`).
-
+     - `day_start_tp`: 'official' start of day as in terminplanner data
+     - `day_end_tp`: 'official' end of day as in terminplanner data
+     - `first_appt`: flag indicating if the appointment is the first one for the given weekday and machine combination
+     - `last_appt`: flag indicating if the appointment is the last one for the given weekday and machine combination
+     - ... and others used to aid buffer & idle time calculation later
     """
     idle_df = dicom_times_df.copy()
 
@@ -25,22 +27,22 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, tp_agg_df: pd.DataFrame, t
     idle_df['day_of_week'] = idle_df['image_start'].dt.day_name()
 
     # Join on terminplanner data
-    idle_df = idle_df.merge(tp_agg_df, how='left', left_on=['day_of_week', 'image_device_id'],
-                            right_on=['Wochentag', 'device_id'])
-    idle_df = idle_df[(idle_df['image_start'] >= idle_df["gültig_von"]) &
-                      (idle_df['image_start'] <= idle_df["gültig_bis"])]
-    idle_df = idle_df.drop(['gültig_von', 'gültig_bis'], axis=1)
+    idle_df = idle_df.merge(tp_agg_df, how='left', on=['day_of_week', 'image_device_id'])
+    idle_df = idle_df[(idle_df['image_start'] >= idle_df["applicable_from"]) &
+                      (idle_df['image_start'] <= idle_df["applicable_to"])]
+    idle_df = idle_df.drop(['applicable_from', 'applicable_to'], axis=1)
 
     # Using terminplanner df, add flag for each appointment indicating whether it falls within the times outlined by the
     # terminplanner, and then limit our data to only those appts
     idle_df['within_day'] = np.where(
-        (idle_df['image_end'].dt.time > idle_df['day_start']) & (idle_df['image_start'].dt.time < idle_df['day_end']),
+        (idle_df['image_end'].dt.time > idle_df['day_start_tp']) &
+        (idle_df['image_start'].dt.time < idle_df['day_end_tp']),
         1, 0)
 
     idle_df = idle_df[idle_df['within_day'] == 1]
 
-    idle_df['day_start'] = idle_df.apply(lambda x: datetime.datetime.combine(x['date'], x['day_start']), axis=1)
-    idle_df['day_end'] = idle_df.apply(lambda x: datetime.datetime.combine(x['date'], x['day_end']), axis=1)
+    idle_df['day_start_tp'] = idle_df.apply(lambda x: datetime.datetime.combine(x['date'], x['day_start_tp']), axis=1)
+    idle_df['day_end_tp'] = idle_df.apply(lambda x: datetime.datetime.combine(x['date'], x['day_end_tp']), axis=1)
 
     # Add column indicating if the appointment was the first / last appointment for that day for that MR machine
     idle_df['first_appt'] = idle_df.groupby(['date', 'image_device_id'])['image_start'].transform('rank',
@@ -50,27 +52,34 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, tp_agg_df: pd.DataFrame, t
                                                                                                  ascending=False)
     idle_df['last_appt'] = np.where(idle_df['last_appt'] == 1, 1, 0)
 
-    #
     idle_df['one_side_buffer_flag'] = 0
     # For the 'last appts' in the day which finish within the day (by terminplanner), we need to calculate idle time
     # until the end of the day as given by the terminplanner, so we add a dummy appointment row for the end of the day,
-    # which will then be used automatically later on for calculating idle ] buffer
+    # which will then be used automatically later on for calculating idle/buffer
     #
     # If appt end is later than the end of day by the terminplanner, then we need to note this for later (for
     # buffer calc);
     # we also don't need to add a dummy appointment row
     last_appts = idle_df[idle_df['last_appt'] == 1]
-    new_rows = []
+    new_rows_df = pd.DataFrame(columns=['image_start', 'image_end', 'date', 'image_device_id', 'within_day',
+                                     'day_length_tp', 'day_start_tp', 'day_end_tp', 'one_side_buffer_flag'])
+
     for idx, row in last_appts.iterrows():
-        if row['image_end'] < row['day_end']:
-            image_start_end = row['day_end']
-            new_rows.append([image_start_end, image_start_end, row['date'], row['image_device_id'], 1,
-                             row['day_length'], row['day_start'], row['day_end'], 1])
+        if row['image_end'] < row['day_end_tp']:
+            new_rows_df = new_rows_df.append({
+                'image_start': row['day_end_tp'],
+                'image_end': row['day_end_tp'],
+                'date': row['date'],
+                'image_device_id': row['image_device_id'],
+                'within_day': 1,
+                'day_length_tp': row['day_length_tp'],
+                'day_start_tp': row['day_start_tp'],
+                'day_end_tp': row['day_end_tp'],
+                'one_side_buffer_flag': 1
+            }, ignore_index=True)
         else:
             idle_df.loc[idle_df['AccessionNumber'] == row['AccessionNumber'], 'one_side_buffer_flag'] = 1
 
-    new_rows_df = pd.DataFrame(new_rows, columns=['image_start', 'image_end', 'date', 'image_device_id', 'within_day',
-                                                  'day_length', 'day_start', 'day_end', 'one_side_buffer_flag'])
     idle_df = pd.concat([idle_df, new_rows_df])
 
     key_cols = ['date', 'image_device_id']
@@ -91,8 +100,8 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, tp_agg_df: pd.DataFrame, t
     # the start of the day), and idle/buffer time will be calculated as normal later
     first_appts = idle_df[idle_df['first_appt'] == 1]
     for idx, row in first_appts.iterrows():
-        if row['image_start'] > row['day_start']:
-            idle_df.loc[idle_df['AccessionNumber'] == row['AccessionNumber'], 'previous_end'] = row['day_start']
+        if row['image_start'] > row['day_start_tp']:
+            idle_df.loc[idle_df['AccessionNumber'] == row['AccessionNumber'], 'previous_end'] = row['day_start_tp']
         else:
             idle_df.loc[idle_df['AccessionNumber'] == row['AccessionNumber'], 'one_side_buffer_flag'] = 1
 
