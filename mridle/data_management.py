@@ -268,7 +268,7 @@ def aggregate_terminplanner(terminplanner_df: pd.DataFrame) -> pd.DataFrame:
             MR1         DO          MR1 IDR (Donnerstag)   05.12.2018  20.02.2019      07:35       35
 
     )
-    and returns an aggregated representation of this data, with each row representing one day of the week, and the 
+    and returns an aggregated representation of this data, with each row representing one day of the week, and the
     start and end time of the window for appointments.
 
     Args:
