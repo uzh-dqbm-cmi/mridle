@@ -112,7 +112,6 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
          - UniversalServiceName: str, the kind of appointment
          - MRNCmpdId (if available): str, patient id
     """
-
     default_agg_dict = {
         'patient_class_adj': 'last',
         'start_time': 'last',
@@ -259,6 +258,54 @@ def integrate_dicom_data(slot_df: pd.DataFrame, dicom_times_df: pd.DataFrame) ->
             slot_w_dicom_df.shape[0], slot_df.shape[0]))
 
     return slot_w_dicom_df
+
+
+def aggregate_terminplanner(terminplanner_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Takes in raw terminplanner data, where each row represents one possible appointment slot
+    (e.g.   Terminbuch  Wochentag   TERMINRASTER_NAME      gültig von  gültig bis      Termin      Dauer in Min.
+            MR1         DO          MR1 IDR (Donnerstag)   05.12.2018  20.02.2019      07:00       35
+            MR1         DO          MR1 IDR (Donnerstag)   05.12.2018  20.02.2019      07:35       35
+
+    )
+    and returns an aggregated representation of this data, with each row representing one day of the week, and the
+    start and end time of the window for appointments.
+
+    Args:
+        terminplanner_df: Raw terminplanner data, provided by Beat Hümbelin
+
+    Returns:
+        tp_agg, a pd.DataFrame with a row for each day of the week/machine combination, with information on the
+        starting and finishing time for the MR machine, along with a date range for which these times are applicable
+        for. A column containing the total number of minutes in the day is included as well.
+    """
+    tp_df = terminplanner_df.copy()
+    tp_df['Termin'] = pd.to_datetime(tp_df['Termin'], format='%H:%M')
+    tp_df['Terminbuch'] = tp_df['Terminbuch'].replace({'MR1': 1, 'MR2': 2})
+    tp_df['Wochentag'] = tp_df['Wochentag'].replace({'MO': 'Monday',
+                                                     'DI': 'Tuesday',
+                                                     'MI': 'Wednesday',
+                                                     'DO': 'Thursday',
+                                                     'FR': 'Friday'
+                                                     })
+    tp_df['Dauer in dt'] = pd.to_timedelta(tp_df['Dauer in Min.'], unit='m')
+    tp_df['terminende'] = tp_df['Termin'] + tp_df['Dauer in dt']
+    tp_df['Termin'] = tp_df['Termin'].dt.time
+    tp_df['terminende'] = tp_df['terminende'].dt.time
+    tp_agg = tp_df.groupby(['Terminbuch', 'Wochentag', 'TERMINRASTER_NAME', 'gültig von', 'gültig bis']).agg({
+        'Termin': 'min',
+        'terminende': 'max',
+        'Dauer in Min.': 'sum'
+    }).reset_index()
+
+    tp_agg.rename(columns={'Wochentag': 'day_of_week',
+                           'Terminbuch': 'image_device_id',
+                           'Termin': 'day_start_tp',
+                           'terminende': 'day_end_tp',
+                           'Dauer in Min.': 'day_length_tp',
+                           'gültig von': 'applicable_from',
+                           'gültig bis': 'applicable_to'}, inplace=True)
+    return tp_agg
 
 
 # ========================================================================================
@@ -901,7 +948,7 @@ def validation_exp_confusion_matrix(dispo_df: pd.DataFrame, slot_df: pd.DataFram
 
 
 def generate_data_firstexperiment_plot(dispo_data: pd.DataFrame, slot_df: pd.DataFrame) -> pd.DataFrame:
-    '''
+    """
     Iterates over unique dates in dispo_data (software data) and slot_df (extract)
     For each UNIQUE date, counts how many ["show","soft no-show","hard no-show"] there are.
 
@@ -911,7 +958,7 @@ def generate_data_firstexperiment_plot(dispo_data: pd.DataFrame, slot_df: pd.Dat
 
     Returns: dataframe that contains, date, year, num_shows, num_rescheduled, num_canceled , 'extract/experiment'
 
-    '''
+    """
 
     df = pd.DataFrame(columns=['date', 'year', 'dispo_show', 'dispo_rescheduled', 'dispo_canceled',
                                'extract_show', 'extract_rescheduled', 'extract_canceled'])
