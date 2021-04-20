@@ -12,6 +12,7 @@ class TestFindNoShowsPositive(unittest.TestCase):
             'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': 'scheduled',
             'now_status': 'scheduled',
+            'first_created_date': pd.Timestamp(year=2018, month=12, day=1, hour=9),
         }, index=[0])
         self.assertTrue(example_row.apply(find_no_shows, axis=1).iloc[0])
 
@@ -22,6 +23,7 @@ class TestFindNoShowsPositive(unittest.TestCase):
             'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=2, hour=9),
             'was_status': 'scheduled',
             'now_status': 'scheduled',
+            'first_created_date': pd.Timestamp(year=2018, month=12, day=1, hour=9),
         }, index=[0])
         self.assertTrue(example_row.apply(find_no_shows, axis=1).iloc[0])
 
@@ -32,6 +34,7 @@ class TestFindNoShowsPositive(unittest.TestCase):
             'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': 'registered',
             'now_status': 'scheduled',
+            'first_created_date': pd.Timestamp(year=2018, month=12, day=1, hour=9),
         }, index=[0])
         self.assertTrue(example_row.apply(find_no_shows, axis=1).iloc[0])
 
@@ -42,6 +45,7 @@ class TestFindNoShowsPositive(unittest.TestCase):
             'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': 'registered',
             'now_status': 'canceled',
+            'first_created_date': pd.Timestamp(year=2018, month=12, day=1, hour=9),
         }, index=[0])
         self.assertTrue(example_row.apply(find_no_shows, axis=1).iloc[0])
 
@@ -52,6 +56,7 @@ class TestFindNoShowsPositive(unittest.TestCase):
             'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=2, hour=9),
             'was_status': 'scheduled',
             'now_status': 'canceled',
+            'first_created_date': pd.Timestamp(year=2018, month=12, day=1, hour=9),
         }, index=[0])
         self.assertTrue(example_row.apply(find_no_shows, axis=1).iloc[0])
 
@@ -65,6 +70,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
             'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=4, hour=9),
             'was_status': 'scheduled',
             'now_status': 'scheduled',
+            'first_created_date': pd.Timestamp(year=2018, month=12, day=1, hour=9),
         }, index=[0])
         self.assertFalse(example_row.apply(find_no_shows, axis=1).iloc[0])
 
@@ -75,6 +81,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
             'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=4, hour=9),
             'was_status': 'registered',
             'now_status': 'scheduled',
+            'first_created_date': pd.Timestamp(year=2018, month=12, day=1, hour=9),
         }, index=[0])
         self.assertFalse(example_row.apply(find_no_shows, axis=1).iloc[0])
 
@@ -85,6 +92,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
             'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': 'scheduled',
             'now_status': 'scheduled',
+            'first_created_date': pd.Timestamp(year=2018, month=12, day=1, hour=9),
         }, index=[0])
         self.assertFalse(example_row.apply(find_no_shows, axis=1).iloc[0])
 
@@ -95,6 +103,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
             'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': 'requested',
             'now_status': 'scheduled',
+            'first_created_date': pd.Timestamp(year=2018, month=12, day=1, hour=9),
         }, index=[0])
         self.assertFalse(example_row.apply(find_no_shows, axis=1).iloc[0])
 
@@ -105,6 +114,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
             'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': 'requested',
             'now_status': 'requested',
+            'first_created_date': pd.Timestamp(year=2018, month=12, day=1, hour=9),
         }, index=[0])
         self.assertFalse(example_row.apply(find_no_shows, axis=1).iloc[0])
 
@@ -115,6 +125,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
             'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': 'scheduled',
             'now_status': 'registered',
+            'first_created_date': pd.Timestamp(year=2018, month=12, day=1, hour=9),
         }, index=[0])
         self.assertFalse(example_row.apply(find_no_shows, axis=1).iloc[0])
 
@@ -125,6 +136,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
             'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': 'registered',
             'now_status': 'waiting',
+            'first_created_date': pd.Timestamp(year=2018, month=12, day=1, hour=9),
         }, index=[0])
         self.assertFalse(example_row.apply(find_no_shows, axis=1).iloc[0])
 
@@ -135,6 +147,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
             'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': 'waiting',
             'now_status': 'started',
+            'first_created_date': pd.Timestamp(year=2018, month=12, day=1, hour=9),
         }, index=[0])
         self.assertFalse(example_row.apply(find_no_shows, axis=1).iloc[0])
 
@@ -145,6 +158,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
             'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': 'started',
             'now_status': 'examined',
+            'first_created_date': pd.Timestamp(year=2018, month=12, day=1, hour=9),
         }, index=[0])
         self.assertFalse(example_row.apply(find_no_shows, axis=1).iloc[0])
 
@@ -155,6 +169,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
             'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': 'scheduled',
             'now_status': 'written',
+            'first_created_date': pd.Timestamp(year=2018, month=12, day=1, hour=9),
         }, index=[0])
         self.assertFalse(example_row.apply(find_no_shows, axis=1).iloc[0])
 
@@ -165,6 +180,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
             'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
             'was_status': None,
             'now_status': 'scheduled',
+            'first_created_date': pd.Timestamp(year=2018, month=12, day=1, hour=9),
         }, index=[0])
         self.assertFalse(example_row.apply(find_no_shows, axis=1).iloc[0])
 
@@ -175,6 +191,7 @@ class TestFindNoShowsNegative(unittest.TestCase):
             'was_sched_for_date': None,
             'was_status': 'scheduled',
             'now_status': 'scheduled',
+            'first_created_date': pd.Timestamp(year=2018, month=12, day=1, hour=9),
         }, index=[0])
         self.assertFalse(example_row.apply(find_no_shows, axis=1).iloc[0])
 
@@ -185,6 +202,18 @@ class TestFindNoShowsNegative(unittest.TestCase):
             'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=2, hour=0),
             'was_status': 'scheduled',
             'now_status': 'scheduled',
+            'first_created_date': pd.Timestamp(year=2018, month=12, day=1, hour=9),
+        }, index=[0])
+        self.assertFalse(example_row.apply(find_no_shows, axis=1).iloc[0])
+
+    def test_first_created_date_is_same_as_reschedule_date(self):
+        example_row = pd.DataFrame({
+            'patient_class_adj': 'ambulant',
+            'date': pd.Timestamp(year=2019, month=1, day=1, hour=9),
+            'was_sched_for_date': pd.Timestamp(year=2019, month=1, day=1, hour=10),
+            'was_status': 'scheduled',
+            'now_status': 'scheduled',
+            'first_created_date': pd.Timestamp(year=2019, month=1, day=1, hour=8),
         }, index=[0])
         self.assertFalse(example_row.apply(find_no_shows, axis=1).iloc[0])
 
