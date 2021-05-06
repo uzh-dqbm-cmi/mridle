@@ -28,7 +28,8 @@ def process_date_cols(df: pd.DataFrame):
     df_copy['AcquisitionTime'] = pd.to_datetime(df_copy['AcquisitionTime'], format='%H%M%S.%f').dt.time
     df_copy.loc[~df_copy['AcquisitionDate'].isnull(), 'acq_week'] = df_copy.loc[
         ~df_copy['AcquisitionDate'].isnull(), 'AcquisitionDate'].apply(lambda x: x.isocalendar().week)
-    df_copy.loc[~df_copy['AcquisitionTime'].isnull(), 'acq_datetime'] = df_copy[~df_copy['AcquisitionTime'].isnull()].apply(
+    df_copy.loc[~df_copy['AcquisitionTime'].isnull(),
+                'acq_datetime'] = df_copy[~df_copy['AcquisitionTime'].isnull()].apply(
         lambda x: dt.datetime.combine(x['AcquisitionDate'], x['AcquisitionTime']), axis=1)
 
     return df_copy
@@ -85,8 +86,9 @@ def get_image_time_cols(df):
     df_copy['acq_prev_datetime'] = df_copy.groupby('AccessionNumber')['acq_datetime'].shift(1)
     df_copy['acq_next_datetime'] = df_copy.groupby('AccessionNumber')['acq_datetime'].shift(-1)
 
-    df_copy['time_between_next_image'] = (df_copy['acq_next_datetime'] - df_copy['acq_datetime']) / pd.to_timedelta(1, unit='S')
-    df_copy['time_between_prev_image'] = (df_copy['acq_datetime'] - df_copy['acq_prev_datetime']) / pd.to_timedelta(1, unit='S')
+    one_second = pd.to_timedelta(1, unit='S')
+    df_copy['time_between_next_image'] = (df_copy['acq_next_datetime'] - df_copy['acq_datetime']) / one_second
+    df_copy['time_between_prev_image'] = (df_copy['acq_datetime'] - df_copy['acq_prev_datetime']) / one_second
 
     df_copy['big_image_gap'] = np.max(df_copy[['time_between_next_image', 'time_between_prev_image']], axis=1)
     df_copy['big_image_gap'] = df_copy[['AccessionNumber', 'big_image_gap']].groupby('AccessionNumber').transform(
