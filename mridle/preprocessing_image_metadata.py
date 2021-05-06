@@ -130,6 +130,6 @@ def remove_start_end_images(df):
 
     for idx, row in remove_after.iterrows():
         df_copy = df_copy[~((df_copy['img_rank_rev'] <= row['img_rank_rev']) &
-                            (df_copy['AccessionNumber'] == row['AccessionNumber']))]
+                            df_copy(df_copy['AccessionNumber'] == row['AccessionNumber']))]
 
     return df_copy
