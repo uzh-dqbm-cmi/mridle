@@ -122,9 +122,9 @@ def remove_start_end_images(df):
     """
     df_copy = df.copy()
     remove_before = df_copy.loc[(df_copy['img_rank'] <= 5) & (df_copy['time_between_next_image'] > 1800),
-                           ["AccessionNumber", "img_rank"]]
+                                ["AccessionNumber", "img_rank"]]
     remove_after = df_copy.loc[(df_copy['img_rank_rev'] <= 5) & (df_copy['time_between_prev_image'] > 1800),
-                          ["AccessionNumber", "img_rank_rev"]]
+                               ["AccessionNumber", "img_rank_rev"]]
 
     for idx, row in remove_before.iterrows():
         df_copy = df_copy[~((df_copy['img_rank'] <= row['img_rank']) &
