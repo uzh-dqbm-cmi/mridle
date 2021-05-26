@@ -347,14 +347,9 @@ class ModelRun:
 
     @classmethod
     def get_selected_xgb_hyperparams(cls, model: Any) -> Dict[str, Any]:
-        """Get hyperparams out of a sklearn random forest model. """
+        """Get hyperparams out of an XGBoost model. """
 
-        chosen_hyperparams = model.get_xgb_params(cls.hyperparams.keys())
-        #chosen_hyperparams = {
-        #    'n_estimators': model.n_estimators,
-        #    'eta': model.learning_rate,
-        #    'max_depth': model.max_depth
-        #}
+        chosen_hyperparams = model.get_params()
 
         return chosen_hyperparams
 
