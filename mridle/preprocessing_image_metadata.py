@@ -57,7 +57,7 @@ def remove_na_and_duplicates(df: pd.DataFrame):
 
 def get_image_time_cols(df):
     """
-    Adds some useful columns to the dataframe that are used later in calculations and data processing.
+    Adds columns describing the order (rank) and time differences between images within an appointment to the dataframe.
 
     The first group of these columns is time information for the previous and the next image in the sequence of images
     per appointment. Also added are columns calculating the time between the previous image in the appointment and the
