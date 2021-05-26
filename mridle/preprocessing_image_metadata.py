@@ -39,8 +39,7 @@ def remove_na_and_duplicates(df: pd.DataFrame):
     """
     Removes duplicate rows and removes appointments with no AccessionNumber (appointment ID) or no data given
 
-    NOTE: This AccessionNumber being null 'issue' is currently being checked by Marc Bovet, so perhaps this will become
-    redundant in the future.
+    TODO: Determine the cause of Null AccessionNumbers
 
     Args:
         df: Dataframe containing columns ['AccessionNumber', 'AcquisitionDate']
