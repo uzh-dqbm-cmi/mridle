@@ -37,17 +37,17 @@ class CustomXGB(ModelRun):
         return data_set[feature_columns].copy(), feature_columns
 
 
-# def process_features_for_model(dataframe: pd.DataFrame) -> pd.DataFrame:
-#   """
-#    Changes variables for model optimization modifying feature_df
-#
-#    Args:
-#        dataframe: dataframe obtained from feature generation
-#
-#    Returns: modified dataframe specific for this model
-#    """
-#
-#    dataframe['sched_2_days'] = dataframe['sched_days_advanced'] <= 2
-#    dataframe['close_to_usz'] = dataframe['distance_to_usz'] < 16
-#
-#    return dataframe
+def process_features_for_model(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """
+    Changes variables for model optimization modifying feature_df
+
+    Args:
+       dataframe: dataframe obtained from feature generation
+
+    Returns: modified dataframe specific for this model
+    """
+
+    dataframe['sched_2_days'] = dataframe['sched_days_advanced'] <= 2
+    dataframe['close_to_usz'] = dataframe['distance_to_usz'] < 16
+
+    return dataframe
