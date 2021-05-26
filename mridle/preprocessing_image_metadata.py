@@ -121,7 +121,7 @@ def remove_gaps_at_start_end(df):
     """
     df_copy = df.copy()
     remove_before = df_copy.loc[(df_copy['img_rank'] <= 5) & (df_copy['time_between_next_image'] > 1800),
-                                w["AccessionNumber", "img_rank"]]
+                                ["AccessionNumber", "img_rank"]]
     remove_after = df_copy.loc[(df_copy['img_rank_rev'] <= 5) & (df_copy['time_between_prev_image'] > 1800),
                                ["AccessionNumber", "img_rank_rev"]]
 
