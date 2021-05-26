@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 from sklearn.base import clone
 from sklearn.feature_selection import RFECV
-from sklearn.model_selection import RandomizedSearchCV
-from sklearn.metrics import f1_score
+from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
+from sklearn.metrics import f1_score, balanced_accuracy_score
 from typing import Any, Dict, List, Tuple, Callable
 from sklearn.model_selection import StratifiedKFold
 
@@ -274,10 +274,12 @@ class ModelRun:
         accuracy = model.score(x_test, y_test)
         f1_macro = f1_score(y_test, y_test_predicted, average='macro')
         f1_micro = f1_score(y_test, y_test_predicted, average='micro')
+        balanced_acc = balanced_accuracy_score(y_test, y_test_predicted)
         return {
             "accuracy": accuracy,
             "f1_macro": f1_macro,
             "f1_micro": f1_micro,
+            'balanced_accuracy': balanced_acc
         }
 
     def get_feature_importances(self) -> pd.DataFrame:
@@ -311,6 +313,7 @@ class ModelRun:
         """
         model_hyperparam_func_map = {
             "<class 'sklearn.ensemble._forest.RandomForestClassifier'>": self.get_selected_random_forest_hyperparams,
+            "<class 'xgboost.sklearn.XGBClassifier'>": self.get_selected_xgb_hyperparams,
             "<class 'sklearn.svm._classes.SVC'>": self.get_selected_svc_hyperparams,
             "<class 'sklearn.linear_model._logistic.LogisticRegression'>": self.get_selected_logistic_reg_hyperparams
         }
@@ -340,6 +343,19 @@ class ModelRun:
             'min_samples_leaf': model.min_samples_leaf,
             'class_weight': model.class_weight,
         }
+        return chosen_hyperparams
+
+    @classmethod
+    def get_selected_xgb_hyperparams(cls, model: Any) -> Dict[str, Any]:
+        """Get hyperparams out of a sklearn random forest model. """
+
+        chosen_hyperparams = model.get_xgb_params()
+        #chosen_hyperparams = {
+        #    'n_estimators': model.n_estimators,
+        #    'eta': model.learning_rate,
+        #    'max_depth': model.max_depth
+        #}
+
         return chosen_hyperparams
 
     @classmethod
@@ -494,8 +510,8 @@ class PartitionedExperiment:
     @classmethod
     def run_experiment_on_one_partition(cls, data_set: Dict, label_key: str, partition_ids: List[int],
                                         preprocessing_func: Callable, model_run_class: ModelRun, model,
-                                        hyperparams: Dict, run_hyperparam_search: bool, feature_subset: List[str],
-                                        reduce_features: bool):
+                                        hyperparams: Dict, run_hyperparam_search: bool, 
+                                        feature_subset: List[str], reduce_features: bool):
         train_set, test_set = cls.materialize_partition(partition_ids, data_set)
         mr = model_run_class(train_set=train_set, test_set=test_set, label_key=label_key, model=model,
                              preprocessing_func=preprocessing_func, hyperparams=hyperparams,
