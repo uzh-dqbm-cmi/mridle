@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 
 
-def process_date_cols(df: pd.DataFrame):
+def process_date_cols(df: pd.DataFrame) -> pd.DataFrame:
     """
     Take in the dataframe provided by Marc and add some date columns for easier calculations later
 
