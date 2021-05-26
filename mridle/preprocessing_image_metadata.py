@@ -14,7 +14,7 @@ import pandas as pd
 
 def process_date_cols(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Take in the dataframe provided by Marc and add some date columns for easier calculations later
+    Take in the DICOM dataframe and add some date columns for easier calculations later
 
     Args:
         df: Dataframe where each row represents one image for an appointment,
