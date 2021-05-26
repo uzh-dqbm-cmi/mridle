@@ -1,8 +1,6 @@
 from mridle.experiment import ModelRun
 import pandas as pd
-import numpy as np
 from typing import Any, Dict, List, Tuple
-import xgboost as xgb
 
 # cols_for_modeling = ['no_show_before', 'no_show_before_sq', 'sched_days_advanced', 'hour_sched',
 #                      'distance_to_usz', 'age', 'close_to_usz', 'male', 'female', 'age_sq',

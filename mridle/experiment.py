@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.base import clone
 from sklearn.feature_selection import RFECV
-from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
+from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import f1_score, balanced_accuracy_score
 from typing import Any, Dict, List, Tuple, Callable
 from sklearn.model_selection import StratifiedKFold
