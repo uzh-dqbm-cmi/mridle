@@ -646,4 +646,3 @@ class PartitionedExperiment:
         Returns: a Predictor.
         """
         return self.model_runs[partition].generate_predictor()
-    
