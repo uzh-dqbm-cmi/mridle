@@ -55,7 +55,7 @@ def remove_na_and_duplicates(df: pd.DataFrame):
     return df_copy
 
 
-def get_image_time_cols(df):
+def add_image_time_cols(df):
     """
     Adds columns describing the order (rank) and time differences between images within an appointment to the dataframe.
 
@@ -99,11 +99,11 @@ def get_image_time_cols(df):
     return df_copy
 
 
-def remove_start_end_images(df):
+def remove_gaps_at_start_end(df):
     """
-    Take in image metadata from Marc's (RDSC) extract and remove images that are within the first or last 5 images of
-    the appointment, AND where there is a large gap (default of 30 minutes, 1800 seconds) contained within the first
-    or last 5 images of the sequence.
+    If there is a large gap (default of 30 minutes, 1800 seconds) contained within the first or last 5 images of the
+    sequence, remove the images before/after this gap (before if it's at the start of an sequence, after if it's at
+    the end).
 
     e.g. if there are 3 images taken at ~9am, and then a gap of 90 minutes until the remaining images are taken as part
     of this AccessionNumber (could be 100+ images), we remove these 3 images at the start, leaving behind only the
@@ -121,7 +121,7 @@ def remove_start_end_images(df):
     """
     df_copy = df.copy()
     remove_before = df_copy.loc[(df_copy['img_rank'] <= 5) & (df_copy['time_between_next_image'] > 1800),
-                                ["AccessionNumber", "img_rank"]]
+                                w["AccessionNumber", "img_rank"]]
     remove_after = df_copy.loc[(df_copy['img_rank_rev'] <= 5) & (df_copy['time_between_prev_image'] > 1800),
                                ["AccessionNumber", "img_rank_rev"]]
 
