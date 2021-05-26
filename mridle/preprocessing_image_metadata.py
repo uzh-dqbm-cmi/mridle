@@ -1,5 +1,5 @@
 """
-Code to process the data extracts from Marc Bovet at the RDSC. This data extract comes with each appointment having
+Code to process the DICOM metadata extracts from the DFL-IT. This data extract comes with each appointment having
 multiple rows associated with it, each row representing an image scanned by the MRI machine. We receive just a subset
 of the metadata related to this image, and no actual image file.
 
