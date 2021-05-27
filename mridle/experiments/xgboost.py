@@ -2,15 +2,6 @@ from mridle.experiment import ModelRun
 import pandas as pd
 from typing import Any, Dict, List, Tuple
 
-# cols_for_modeling = ['no_show_before', 'no_show_before_sq', 'sched_days_advanced', 'hour_sched',
-#                      'distance_to_usz', 'age', 'close_to_usz', 'male', 'female', 'age_sq',
-#                      'sched_days_advanced_sq', 'distance_to_usz_sq', 'sched_2_days', 'age_20_60']
-
-# max_depth = [2, 4, 10, 50, 100, None]
-# n_estimators = np.arange(10, 800, dtype=int)
-# learning_rate = np.arange(np.log(0.005), np.log(0.2))
-
-# hyperparams = {'max_depth': max_depth, 'n_estimators': n_estimators, 'learning_rate': learning_rate}
 y_column = 'NoShow'
 
 
