@@ -35,7 +35,7 @@ def process_date_cols(df: pd.DataFrame) -> pd.DataFrame:
     return df_copy
 
 
-def remove_na_and_duplicates(df: pd.DataFrame):
+def remove_na_and_duplicates(df: pd.DataFrame) -> pd.DataFrame:
     """
     Removes duplicate rows and removes appointments with no AccessionNumber (appointment ID) or no data given
 
@@ -55,7 +55,7 @@ def remove_na_and_duplicates(df: pd.DataFrame):
     return df_copy
 
 
-def add_image_time_cols(df):
+def add_image_time_cols(df: pd.DataFrame) -> pd.DataFrame:
     """
     Adds columns describing the order (rank) and time differences between images within an appointment to the dataframe.
 
@@ -99,7 +99,7 @@ def add_image_time_cols(df):
     return df_copy
 
 
-def remove_gaps_at_start_end(df):
+def remove_gaps_at_start_end(df: pd.DataFrame) -> pd.DataFrame:
     """
     If there is a large gap (default of 30 minutes, 1800 seconds) contained within the first or last 5 images of the
     sequence, remove the images before/after this gap (before if it's at the start of an sequence, after if it's at
