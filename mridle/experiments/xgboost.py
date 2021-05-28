@@ -8,22 +8,26 @@ y_column = 'NoShow'
 class CustomXGB(ModelRun):
 
     @classmethod
-    def build_x_features(cls, data_set: Any, encoders: Dict) -> Tuple[pd.DataFrame, List]:
+    def build_x_features(cls, data_set: Any, encoders: Dict, cat_columns: List) -> Tuple[pd.DataFrame, List]:
         """
         Build custom features
 
         Args:
             data_set: Data set to transform into features.
             encoders: Dict of pre-trained encoders for use in building features.
+            cat_columns: List of categorical columns, for which dummy features will be created.
 
         Returns:
             dataframe
             List of features
         """
-        feature_columns = list(data_set.columns)
-        feature_columns.remove(y_column)
 
-        return data_set[feature_columns].copy(), feature_columns
+        xgb_data = pd.get_dummies(data_set, columns=cat_columns)
+
+        cols = list(xgb_data.columns)
+        cols.remove(y_column)
+
+        return data_set[cols].copy(), cols
 
 
 def process_features_for_model(dataframe: pd.DataFrame) -> pd.DataFrame:

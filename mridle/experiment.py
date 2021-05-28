@@ -21,7 +21,8 @@ class ModelRun:
     """
 
     def __init__(self, train_set: Any, test_set: Any, label_key: str, model: Any, hyperparams: Dict,
-                 preprocessing_func: Callable, feature_subset: List = None, reduce_features=False):
+                 preprocessing_func: Callable, cat_columns: List = None, feature_subset: List = None,
+                 reduce_features=False):
         """
         Create a ModelRun object.
 
@@ -43,6 +44,7 @@ class ModelRun:
         self.test_set = test_set
         self.label_key = label_key
         self.encoders = {}
+        self.cat_columns = cat_columns
         self.model = clone(model)
         self.hyperparams = hyperparams
         self.feature_subset = feature_subset
@@ -73,7 +75,7 @@ class ModelRun:
 
         """
         self.x_train, self.x_test, self.y_train, self.y_test, self.feature_cols, self.encoders = self.build_data(
-            self.train_set, self.test_set, self.label_key, self.feature_subset)
+            self.train_set, self.test_set, self.label_key, self.feature_subset, self.cat_columns)
 
         # TODO: refactor this section. LKK note: this many if/elses is no good at all!
         if run_hyperparam_search:
@@ -94,8 +96,9 @@ class ModelRun:
         return self.evaluation
 
     @classmethod
-    def build_data(cls, train_set: Any, test_set: Any, label_key: str, feature_subset: List[str]) -> \
-            Tuple[pd.DataFrame, pd.DataFrame, List, List, List[str], Dict[str, Any]]:
+    def build_data(cls, train_set: Any, test_set: Any, cat_columns: List[str], label_key: str,
+                   feature_subset: List[str]) -> Tuple[pd.DataFrame, pd.DataFrame, List, List, List[str],
+                                                       Dict[str, Any]]:
         """Orchestrates the construction of train and test x matrices, and train and test y vectors.
 
         `build_data` takes as input:
@@ -117,8 +120,8 @@ class ModelRun:
 
         encoders = cls.train_encoders(train_set)
 
-        x_train, feature_cols = cls.build_x_features(train_set, encoders)
-        x_test, feature_cols = cls.build_x_features(test_set, encoders)
+        x_train, feature_cols = cls.build_x_features(train_set, encoders, cat_columns)
+        x_test, feature_cols = cls.build_x_features(test_set, encoders, cat_columns)
 
         if feature_subset:
             x_train = cls.restrict_features_to_subset(x_train, feature_subset)
