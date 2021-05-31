@@ -508,11 +508,12 @@ class PartitionedExperiment:
 
     @classmethod
     def run_experiment_on_one_partition(cls, data_set: Dict, label_key: str, partition_ids: List[int],
-                                        preprocessing_func: Callable, model_run_class: ModelRun, model, cat_columns: List, hyperparams: Dict, run_hyperparam_search: bool,
+                                        preprocessing_func: Callable, model_run_class: ModelRun, model,
+                                        cat_columns: List, hyperparams: Dict, run_hyperparam_search: bool,
                                         feature_subset: List[str], reduce_features: bool):
         train_set, test_set = cls.materialize_partition(partition_ids, data_set)
-        mr = model_run_class(train_set=train_set, test_set=test_set, label_key=label_key, cat_columns=cat_columns, 
-			     model=model, preprocessing_func=preprocessing_func, hyperparams=hyperparams,
+        mr = model_run_class(train_set=train_set, test_set=test_set, label_key=label_key, cat_columns=cat_columns,
+                             model=model, preprocessing_func=preprocessing_func, hyperparams=hyperparams,
                              feature_subset=feature_subset, reduce_features=reduce_features)
         mr.run(run_hyperparam_search=run_hyperparam_search)
         return mr
