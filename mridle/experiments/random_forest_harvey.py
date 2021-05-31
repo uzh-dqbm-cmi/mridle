@@ -31,14 +31,13 @@ hyperparams = {'n_estimators': n_estimators, 'max_features': max_features, 'max_
 class HarveyModel_RandomForest(ModelRun):
 
     @classmethod
-    def build_x_features(cls, data_set: Any, encoders: Dict, cat_columns: List) -> Tuple[pd.DataFrame, List]:
+    def build_x_features(cls, data_set: Any, encoders: Dict) -> Tuple[pd.DataFrame, List]:
         """
         Build custom features
 
         Args:
             data_set: Data set to transform into features.
             encoders: Dict of pre-trained encoders for use in building features.
-            cat_columns: List of categorical columns, for which dummy features will be created.
 
         Returns:
             dataframe

@@ -30,7 +30,7 @@ class HarveyModel(ModelRun):
         }
 
     @classmethod
-    def build_x_features(cls, data_set: Any, encoders: Dict, cat_columns: List) -> Tuple[pd.DataFrame, List]:
+    def build_x_features(cls, data_set: Any, encoders: Dict) -> Tuple[pd.DataFrame, List]:
         """
         Build custom features
 
