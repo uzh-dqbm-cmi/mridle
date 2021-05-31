@@ -96,9 +96,8 @@ class ModelRun:
         return self.evaluation
 
     @classmethod
-    def build_data(cls, train_set: Any, test_set: Any, cat_columns: List[str], label_key: str,
-                   feature_subset: List[str]) -> Tuple[pd.DataFrame, pd.DataFrame, List, List, List[str],
-                                                       Dict[str, Any]]:
+    def build_data(cls, train_set: Any, test_set: Any, label_key: str, feature_subset: List[str],
+                   cat_columns: List[str]) -> Tuple[pd.DataFrame, pd.DataFrame, List, List, List[str], Dict[str, Any]]:
         """Orchestrates the construction of train and test x matrices, and train and test y vectors.
 
         `build_data` takes as input:
