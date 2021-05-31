@@ -96,8 +96,8 @@ class ModelRun:
         return self.evaluation
 
     @classmethod
-    def build_data(cls, train_set: Any, test_set: Any, cat_columns: List[str], label_key: str,
-                   feature_subset: List[str]) -> Tuple[pd.DataFrame, pd.DataFrame, List, List, List[str],
+    def build_data(cls, train_set: Any, test_set: Any, label_key: str,
+                   feature_subset: List[str], cat_columns: List[str]) -> Tuple[pd.DataFrame, pd.DataFrame, List, List, List[str],
                                                        Dict[str, Any]]:
         """Orchestrates the construction of train and test x matrices, and train and test y vectors.
 
@@ -419,7 +419,7 @@ class PartitionedExperiment:
      `show_feature_importances()`.
     """
 
-    def __init__(self, name: str, data_set: Any, label_key: str, preprocessing_func: Callable,
+    def __init__(self, name: str, data_set: Any, label_key: str, cat_columns: List, preprocessing_func: Callable,
                  model_run_class: ModelRun, model, hyperparams: Dict, n_partitions: int = 5,
                  stratify_by_label: bool = True, feature_subset=None, reduce_features=False, verbose=False):
         """
@@ -446,6 +446,7 @@ class PartitionedExperiment:
         self.name = name
         self.data_set = data_set
         self.label_key = label_key
+        self.cat_columns = cat_columns
         self.preprocessing_func = preprocessing_func
         self.verbose = verbose
         self.model_run_class = model_run_class
@@ -456,7 +457,7 @@ class PartitionedExperiment:
         self.reduce_features = reduce_features
 
         self.n_partitions = n_partitions
-
+        print(self.cat_columns)
         if stratify_by_label:
             self.partition_ids = self.partition_data_stratified(data_set[label_key], self.n_partitions)
         else:
@@ -494,7 +495,7 @@ class PartitionedExperiment:
                                                                  partition_ids=self.partition_ids[partition_name],
                                                                  preprocessing_func=self.preprocessing_func,
                                                                  model_run_class=self.model_run_class,
-                                                                 model=self.model,
+                                                                 model=self.model, cat_columns=self.cat_columns,
                                                                  hyperparams=self.hyperparams,
                                                                  run_hyperparam_search=run_hyperparam_search,
                                                                  feature_subset=self.feature_subset,
@@ -507,12 +508,11 @@ class PartitionedExperiment:
 
     @classmethod
     def run_experiment_on_one_partition(cls, data_set: Dict, label_key: str, partition_ids: List[int],
-                                        preprocessing_func: Callable, model_run_class: ModelRun, model,
-                                        hyperparams: Dict, run_hyperparam_search: bool,
+                                        preprocessing_func: Callable, model_run_class: ModelRun, model, cat_columns: List, hyperparams: Dict, run_hyperparam_search: bool,
                                         feature_subset: List[str], reduce_features: bool):
         train_set, test_set = cls.materialize_partition(partition_ids, data_set)
-        mr = model_run_class(train_set=train_set, test_set=test_set, label_key=label_key, model=model,
-                             preprocessing_func=preprocessing_func, hyperparams=hyperparams,
+        mr = model_run_class(train_set=train_set, test_set=test_set, label_key=label_key, cat_columns=cat_columns, 
+			     model=model, preprocessing_func=preprocessing_func, hyperparams=hyperparams,
                              feature_subset=feature_subset, reduce_features=reduce_features)
         mr.run(run_hyperparam_search=run_hyperparam_search)
         return mr

@@ -22,12 +22,12 @@ class CustomXGB(ModelRun):
             List of features
         """
 
+        print(cat_columns)
         xgb_data = pd.get_dummies(data_set, columns=cat_columns)
-
         cols = list(xgb_data.columns)
         cols.remove(y_column)
 
-        return data_set[cols].copy(), cols
+        return xgb_data[cols].copy(), cols
 
 
 def process_features_for_model(dataframe: pd.DataFrame) -> pd.DataFrame:
