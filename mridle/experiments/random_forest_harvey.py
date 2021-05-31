@@ -38,7 +38,7 @@ class HarveyModel_RandomForest(ModelRun):
         Args:
             data_set: Data set to transform into features.
             encoders: Dict of pre-trained encoders for use in building features.
-            categorical_cols: List of categorical columns, for which dummy features will be created.
+            cat_columns: List of categorical columns, for which dummy features will be created.
 
         Returns:
             dataframe
