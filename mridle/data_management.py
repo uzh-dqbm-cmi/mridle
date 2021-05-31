@@ -858,7 +858,7 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
                 return None
         elif start_time.hour == 0:
             if first_status_after == 'bef':
-              return 'show'
+                return 'show'
             else:
                 return None  # inpatient
         else:
