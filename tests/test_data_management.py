@@ -565,8 +565,6 @@ class TestExperimentTwoDataProcessing(unittest.TestCase):
                 'patient_id': 1,
                 'date': day(3, hour=0),
                 'start_time': day(3),
-                'start_time_before': day(3),
-                'start_time_after': day(3),
                 'machine_before': 'MR1',
                 'type_before': 'ter',
                 'date_recorded_before': day(0, hour=0),
@@ -600,8 +598,6 @@ class TestExperimentTwoDataProcessing(unittest.TestCase):
             'patient_id': pd.Series([1]),
             'date': pd.Series([day(2, hour=0)]),
             'start_time': pd.Series([day(2)]),
-            'start_time_before': pd.Series([day(2)]),
-            'start_time_after': pd.Series([np.NaN], dtype='datetime64[ns]'),
             'machine_before': pd.Series(['MR1']),
             'type_before': pd.Series(['ter']),
             'date_recorded_before': pd.Series([day(0, hour=0)]),
@@ -634,8 +630,6 @@ class TestExperimentTwoDataProcessing(unittest.TestCase):
             'patient_id': pd.Series([1]),
             'date': pd.Series([day(3, hour=0)]),
             'start_time': pd.Series([day(3)]),
-            'start_time_before': pd.Series([day(3)]),
-            'start_time_after': pd.Series([np.NaN], dtype='datetime64[ns]'),
             'machine_before': pd.Series(['MR1']),
             'type_before': pd.Series(['ter']),
             'date_recorded_before': pd.Series([day(0, hour=0)]),
@@ -651,23 +645,23 @@ class TestExperimentTwoDataProcessing(unittest.TestCase):
         result = find_no_shows_from_dispo_exp_two(dispo_exp_2_df)
         pd.testing.assert_frame_equal(result, expected, check_like=True)
 
-    def test_show_despite_change_in_time_within_same_day(self):
+    def test_change_in_time_within_same_day_yields_resched_and_show(self):
         dispo_exp_2_records = [
             {
                 'patient_id': 1,
-                'date': str(day(3).date()),
-                'start_time': str(day(3, hour=14).time()),
+                'date': str(day(1).date()),
+                'start_time': str(day(1, hour=14).time()),
                 'machine': 'MR1',
                 'type': 'ter',
                 'date_recorded': str(day(0).date()),
             },
             {
                 'patient_id': 1,
-                'date': str(day(3).date()),
-                'start_time': str(day(3, hour=13).time()),
+                'date': str(day(1).date()),
+                'start_time': str(day(1, hour=13).time()),  # time change!
                 'machine': 'MR1',
                 'type': 'bef',
-                'date_recorded': str(day(6).date()),  # skip over weekend
+                'date_recorded': str(day(2).date()),
             },
 
         ]
@@ -675,20 +669,33 @@ class TestExperimentTwoDataProcessing(unittest.TestCase):
         expected = pd.DataFrame([
             {
                 'patient_id': 1,
-                'date': day(3, hour=0),
-                'start_time': day(3, hour=13),
-                'start_time_before': day(3, hour=14),
-                'start_time_after': day(3, hour=13),
+                'date': day(1, hour=0),
+                'start_time': day(1, hour=14),
                 'machine_before': 'MR1',
                 'type_before': 'ter',
                 'date_recorded_before': day(0, hour=0),
-                'date_diff_before': -3,
+                'date_diff_before': -1,
+                'machine_after': None,
+                'type_after': None,
+                'date_recorded_after': None,
+                'date_diff_after': None,
+                'NoShow': True,
+                'slot_outcome': 'rescheduled',
+            },
+            {
+                'patient_id': 1,
+                'date': day(1, hour=0),
+                'start_time': day(1, hour=13),
+                'machine_before': None,
+                'type_before': None,
+                'date_recorded_before': None,
+                'date_diff_before': None,
                 'machine_after': 'MR1',
                 'type_after': 'bef',
-                'date_recorded_after': day(6, hour=0),
+                'date_recorded_after': day(2, hour=0),
                 'date_diff_after': 1,
-                'NoShow': None,
-                'slot_outcome': None,
+                'NoShow': False,
+                'slot_outcome': 'show',
             }
         ])
         dispo_exp_2_df = build_dispo_df(dispo_exp_2_records, test_patient_ids=[])
