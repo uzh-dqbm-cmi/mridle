@@ -702,6 +702,78 @@ class TestExperimentTwoDataProcessing(unittest.TestCase):
         result = find_no_shows_from_dispo_exp_two(dispo_exp_2_df)
         pd.testing.assert_frame_equal(result, expected, check_like=True)
 
+    def test_midnight_show(self):
+        dispo_exp_2_records = [
+            {
+                'patient_id': 1,
+                'date': str(day(1).date()),
+                'start_time': str(day(1, hour=0).time()),
+                'machine': 'MR1',
+                'type': 'ter',
+                'date_recorded': str(day(0).date()),
+            },
+            {
+                'patient_id': 1,
+                'date': str(day(1).date()),
+                'start_time': str(day(1, hour=0).time()),  # time change!
+                'machine': 'MR1',
+                'type': 'bef',
+                'date_recorded': str(day(2).date()),
+            },
 
+        ]
 
+        expected = pd.DataFrame([
+            {
+                'patient_id': 1,
+                'date': day(1, hour=0),
+                'start_time': day(1, hour=0),
+                'machine_before': 'MR1',
+                'type_before': 'ter',
+                'date_recorded_before': day(0, hour=0),
+                'date_diff_before': -1,
+                'machine_after': 'MR1',
+                'type_after': 'bef',
+                'date_recorded_after': day(2, hour=0),
+                'date_diff_after': 1,
+                'NoShow': False,
+                'slot_outcome': 'show',
+            }
+        ])
+        dispo_exp_2_df = build_dispo_df(dispo_exp_2_records, test_patient_ids=[])
+        result = find_no_shows_from_dispo_exp_two(dispo_exp_2_df)
+        pd.testing.assert_frame_equal(result, expected, check_like=True)
 
+    def test_midnight_reschedule_yields_no_slot_assumed_inpatient(self):
+        dispo_exp_2_records = [
+            {
+                'patient_id': 1,
+                'date': str(day(1).date()),
+                'start_time': str(day(1, hour=0).time()),
+                'machine': 'MR1',
+                'type': 'ter',
+                'date_recorded': str(day(0).date()),
+            },
+        ]
+
+        expected = pd.DataFrame([
+            {
+                'patient_id': 1,
+                'date': day(1, hour=0),
+                'start_time': day(1, hour=0),
+                'machine_before': 'MR1',
+                'type_before': 'ter',
+                'date_recorded_before': day(0, hour=0),
+                'date_diff_before': -1,
+                'machine_after': None,
+                'type_after': None,
+                'date_recorded_after': np.datetime64('NaT'),
+                'date_diff_after': np.NaN,
+                'NoShow': False,
+                'slot_outcome': None,
+            }
+        ])
+
+        dispo_exp_2_df = build_dispo_df(dispo_exp_2_records, test_patient_ids=[])
+        result = find_no_shows_from_dispo_exp_two(dispo_exp_2_df)
+        pd.testing.assert_frame_equal(result, expected, check_like=True)
