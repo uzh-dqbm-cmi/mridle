@@ -1,9 +1,45 @@
+"""
+Generate figures for the analysis of the appointment reconstruction algorithm ("data validation"),
+ which compares reconstructed RIS data to  schedule data collected manually from the scheduling office ("dispo").
+
+Run the following code in a notebook to view figures (Jaccard Scores table, Confusion Matrices, and Schedule Plots):
+```
+from mridle.figures import data_validation_results as dvr
+
+data = dvr.load_data()
+dispo_data, ris_data = data
+
+# Jaccard scores
+jaccard_scores = dvs.calc_jaccard_score_table(data)
+jaccard_scores.style.format('{:.3f}')
+
+# Confusion Matrices
+dvr.calc_exp_confusion_matrix('development', data)
+dvr.calc_exp_confusion_matrix('evaluation', data)
+
+# Schedule Plots
+display(dvr.plot_validation_week(dispo_data['slot_df']['development'], 'MR1
+, title='Development Set - MR1))
+display(dvr.plot_validation_week(dispo_data['slot_df']['development'], 'MR2
+, title='Development Set - MR2))
+
+display(dvr.plot_validation_week(dispo_data['slot_df']['evaluation'], 'MR1
+, title='Development Set - MR1))
+display(dvr.plot_validation_week(dispo_data['slot_df']['evaluation'], 'MR2
+, title='Development Set - MR2))
+```
+"""
+
 import altair as alt
 import mridle
 import pandas as pd
 import numpy as np
 import datatc as dtc
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union
+
+
+ValDataDict = Dict[str, Dict[str, Union[Dict, pd.DataFrame]]]
+ValDataTuple = Tuple[ValDataDict, ValDataDict]
 
 
 experiments = {
@@ -12,28 +48,7 @@ experiments = {
     }
 
 
-def color_red(val):
-    if val > 0:
-        return 'color: red'
-    else:
-        return 'color: black'
-
-
-def color_orange(val):
-    if val > 0:
-        return 'color: orange'
-    else:
-        return 'color: black'
-
-
-def color_green(val):
-    if val > 0:
-        return 'color: green'
-    else:
-        return 'color: black'
-
-
-def load_data() -> Tuple[Dict, Dict]:
+def load_data() -> ValDataTuple:
     dd = dtc.DataDirectory.load('mridle')
 
     dispo_data = {
@@ -95,7 +110,9 @@ def load_data() -> Tuple[Dict, Dict]:
     return dispo_data, ris_data
 
 
-def calc_jaccard_score_table(data) -> pd.DataFrame:
+def calc_jaccard_score_table(data: ValDataTuple) -> pd.DataFrame:
+    """Calculate the Jaccard scores for show, rescheduled, and canceled appointments in the Development and Evaluation
+     sets and generate a table."""
     dispo_data, ris_data = data
     jaccard_results = {
         'development': {
@@ -121,7 +138,28 @@ def calc_jaccard_score_table(data) -> pd.DataFrame:
     return jaccard_results_df
 
 
-def calc_exp_confusion_matrix(exp, data):
+def color_red(val):
+    if val > 0:
+        return 'color: red'
+    else:
+        return 'color: black'
+
+
+def color_orange(val):
+    if val > 0:
+        return 'color: orange'
+    else:
+        return 'color: black'
+
+
+def color_green(val):
+    if val > 0:
+        return 'color: green'
+    else:
+        return 'color: black'
+
+
+def calc_exp_confusion_matrix(exp: str, data: ValDataTuple):
     """Create a styled dataframe of the confusion matrix for either the development or evaluation experiment."""
     dispo_data, ris_data = data
     if exp not in experiments:
@@ -142,8 +180,9 @@ def calc_exp_confusion_matrix(exp, data):
     return c
 
 
-def plot_validation_week(df, machine_id='MR1', title=''):
-    df = df.copy()
+def plot_validation_week(dispo_df: pd.DataFrame, machine_id: str = 'MR1', title: str = '') -> alt.Chart:
+    """Plot the schedule of Dispo appointments in either the Development or Evaluation set."""
+    df = dispo_df.copy()
     df = df[(~df['slot_outcome'].isnull()) & (~df['NoShow'].isnull())]
     df['EnteringOrganisationDeviceID'] = np.where(df['machine_after'].isnull(), df['machine_before'],
                                                   df['machine_after'])
@@ -156,13 +195,13 @@ def plot_validation_week(df, machine_id='MR1', title=''):
     df['end_time'] = df['start_time'] + pd.Timedelta(minutes=30)
     df['dayofweek'] = df['date'].dt.day_name()
 
-    OUTCOME_COLOR_MAP = {
+    outcome_color_map = {
         'show': '#1f77b4',
         'rescheduled': '#ff7f0e',
         'canceled': '#d62728',
     }
 
-    color_scale = alt.Scale(domain=list(OUTCOME_COLOR_MAP.keys()), range=list(OUTCOME_COLOR_MAP.values()))
+    color_scale = alt.Scale(domain=list(outcome_color_map.keys()), range=list(outcome_color_map.values()))
 
     chart = alt.Chart(df).mark_bar().encode(
         alt.Color('slot_outcome:N', scale=color_scale),
@@ -170,12 +209,8 @@ def plot_validation_week(df, machine_id='MR1', title=''):
         y=alt.Y('hoursminutes(start_time):T', title='Time'),
         y2='hoursminutes(end_time):T',
         column=alt.Column('dayofweek', sort=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], title=''),
-        #     tooltip='patient_id'
-    ).configure_mark(
-        #     opacity=0.5,
     ).properties(
         width=100,
-        #   height=recommended_height,
         title=title
     )
     return chart
