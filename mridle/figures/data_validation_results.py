@@ -121,7 +121,8 @@ def calc_jaccard_score_table(data) -> pd.DataFrame:
     return jaccard_results_df
 
 
-def calc_exp_confusion_matrix(exp, data) -> pd.Styler:
+def calc_exp_confusion_matrix(exp, data):
+    """Create a styled dataframe of the confusion matrix for either the development or evaluation experiment."""
     dispo_data, ris_data = data
     if exp not in experiments:
         raise ValueError(f'`exp` must be one of {list(experiments.keys())}')
