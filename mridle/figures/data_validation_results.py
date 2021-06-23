@@ -49,7 +49,18 @@ experiments = {
 
 
 def load_data() -> ValDataTuple:
-    dd = dtc.DataDirectory.load('mridle')
+    """
+    Load the data required to analyze the schedule reconstruction data validation results.
+
+    Returns: Data object containing the Dispo and RIS data, snapshotted at multiple stages of transformation,
+    and for both the development and evaluation experiments.
+    For Dispo data, that includes the list of records, dataframe of records, and slot dataframe.
+    For RIS data, that includes the raw dataframe, status dataframe, and slot dataframe.
+
+    Returns: Data object of type ValDataTuple.
+
+    """
+    dd = dtc.DataDirectory.load('/data/mridle/data')
 
     dispo_data = {
         'records': {
@@ -111,8 +122,17 @@ def load_data() -> ValDataTuple:
 
 
 def calc_jaccard_score_table(data: ValDataTuple) -> pd.DataFrame:
-    """Calculate the Jaccard scores for show, rescheduled, and canceled appointments in the Development and Evaluation
-     sets and generate a table."""
+    """
+    Calculate the Jaccard scores for show, rescheduled, and canceled appointments in the Development and Evaluation
+     sets and generate a table.
+
+    Args:
+        data: Dispo and RIS data object.
+
+    Returns: Dataframe with rows for show, rescheduled, and canceled appointments, and columns for development and
+     evaluation experiments, and values of the Jaccard scores.
+
+    """
     dispo_data, ris_data = data
     jaccard_results = {
         'development': {
@@ -159,8 +179,17 @@ def color_green(val):
         return 'color: black'
 
 
-def calc_exp_confusion_matrix(exp: str, data: ValDataTuple):
-    """Create a styled dataframe of the confusion matrix for either the development or evaluation experiment."""
+def calc_exp_confusion_matrix(exp: str, data: ValDataTuple) -> pd.io.formats.style.Styler:
+    """
+    Create a styled dataframe of the confusion matrix for either the development or evaluation experiment.
+
+    Args:
+        exp: Experiment to report. Either 'development' or 'evaluation'.
+        data: Data object.
+
+    Returns: Pandas dataframe styled with color coding.
+
+    """
     dispo_data, ris_data = data
     if exp not in experiments:
         raise ValueError(f'`exp` must be one of {list(experiments.keys())}')
@@ -181,7 +210,17 @@ def calc_exp_confusion_matrix(exp: str, data: ValDataTuple):
 
 
 def plot_validation_week(dispo_df: pd.DataFrame, machine_id: str = 'MR1', title: str = '') -> alt.Chart:
-    """Plot the schedule of Dispo appointments in either the Development or Evaluation set."""
+    """
+    Plot the schedule of Dispo appointments in either the Development or Evaluation set.
+
+    Args:
+        dispo_df: dispo slot dataframe.
+        machine_id: Id of the machine to plot. Either 'MR1' or 'MR2'.
+        title: Title for the plot.
+
+    Returns: altair Chart.
+
+    """
     df = dispo_df.copy()
     df = df[(~df['slot_outcome'].isnull()) & (~df['NoShow'].isnull())]
     df['EnteringOrganisationDeviceID'] = np.where(df['machine_after'].isnull(), df['machine_before'],
