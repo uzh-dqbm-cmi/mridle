@@ -162,7 +162,7 @@ class ModelRun:
         Args:
             data_set: Data set to transform into features.
             encoders: Dict of pre-trained encoders for use in building features.
-            label_key: (optional) label key that will be removed from the dataset to generate the feature set.
+            label_key: Name of the label column that will be removed from the dataset to generate the feature set.
 
         Returns:
             Tuple containing the pd.DataFrame of the feature set and a list of the column names.
