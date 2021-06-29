@@ -368,6 +368,7 @@ class ModelRun:
         delimiter_char = '__'
         file_name_components = [timestamp, model_type]
         if descriptor is not None:
+            descriptor = descriptor.replace(' ', '-')
             file_name_components.append(descriptor)
         file_name = delimiter_char.join(file_name_components) + '.pkl'
         return file_name
@@ -376,12 +377,18 @@ class ModelRun:
         """
         Save a model as a pickle to a parent_directory with a programmatic filename that includes a timestamp,
          model type, and optional descriptor.
+
         Args:
             parent_directory: The parent directory in which to save the model.
             descriptor: Optional descriptor to add to the file name.
 
         Returns: File path of the saved object.
 
+        Example Usage:
+            >>> my_model_run.save('project/data/models/')
+            >>> # saves YYYY-MM-DD_HH-MM-SS__<model_class>.pkl
+            >>> my_model_run.save('project/data/models/', descriptor='5 features')
+            >>> # saves YYYY-MM-DD_HH-MM-SS__<model_class>__5-features.pkl
         """
         file_name = self.generate_file_name(descriptor)
         file_path = Path(parent_directory, file_name)
