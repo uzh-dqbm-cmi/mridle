@@ -315,7 +315,8 @@ class ModelRun:
         model_hyperparam_func_map = {
             "<class 'sklearn.ensemble._forest.RandomForestClassifier'>": self.get_selected_random_forest_hyperparams,
             "<class 'sklearn.svm._classes.SVC'>": self.get_standard_sklearn_params,
-            "<class 'sklearn.linear_model._logistic.LogisticRegression'>": self.get_standard_sklearn_params
+            "<class 'sklearn.linear_model._logistic.LogisticRegression'>": self.get_standard_sklearn_params,
+            "<class 'xgboost.sklearn.XGBClassifier'>": self.get_standard_sklearn_params,
         }
         model_type = str(type(self.model))
         if model_type in model_hyperparam_func_map:
@@ -386,9 +387,9 @@ class ModelRun:
 
         Example Usage:
             >>> my_model_run.save('project/data/models/')
-            >>> # saves YYYY-MM-DD_HH-MM-SS__<model_class>.pkl
+            >>> # saves project/data/models/YYYY-MM-DD_HH-MM-SS__<model_class>.pkl
             >>> my_model_run.save('project/data/models/', descriptor='5 features')
-            >>> # saves YYYY-MM-DD_HH-MM-SS__<model_class>__5-features.pkl
+            >>> # saves project/data/models/YYYY-MM-DD_HH-MM-SS__<model_class>__5-features.pkl
         """
         file_name = self.generate_file_name(descriptor)
         file_path = Path(parent_directory, file_name)
