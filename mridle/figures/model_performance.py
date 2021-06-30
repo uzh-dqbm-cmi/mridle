@@ -1,8 +1,9 @@
 import altair as alt
+import pandas as pd
 
 
-def plot_num_preds_vs_precision(results_df, n_preds_col='# No-show predictions per week',
-                                precision_col='PPV / Precision', name_col='model_name'):
+def plot_num_preds_vs_precision(results_df: pd.DataFrame, n_preds_col: str = '# No-show predictions per week',
+                                precision_col: str = 'PPV / Precision', name_col: str = 'model_name') -> alt.Chart:
     """
     Taking in a dataframe containing evaluation results achieved by each model, produce a scatter plot with the
      number of positive predictions on the X-axis, and the precision on the Y-axis
