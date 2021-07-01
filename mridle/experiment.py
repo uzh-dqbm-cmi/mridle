@@ -1,4 +1,7 @@
+import datetime
 import pandas as pd
+from pathlib import Path
+import pickle
 import numpy as np
 from sklearn.base import clone
 from sklearn.feature_selection import RFECV
@@ -11,11 +14,14 @@ from sklearn.model_selection import StratifiedKFold
 class ModelRun:
     """Base class for a model experiment run.
 
-    To use this class, subclass this class and fill out the following placeholder functions with the specific
-    implementation of the model experiment:
-     - `build_x_features` (required)
-     - `train_encoders` (optional)
-     - `build_y_vector` (optional)
+    This class may be used as is, or subclassed for a more customized modeling workflow.
+    This base class assumes that train_set is a pd.DataFrame.
+
+    To customized the behavior of ModelRun, subclass this class and modify/fill out the following  functions with the
+     specific implementation of your model workflow:
+     - `build_x_features`
+     - `train_encoders`
+     - `build_y_vector`
 
      To test your ModelRun implementation, you can implement `get_test_data_set` to provide a dataset for use in tests.
     """
@@ -117,8 +123,8 @@ class ModelRun:
 
         encoders = cls.train_encoders(train_set)
 
-        x_train, feature_cols = cls.build_x_features(train_set, encoders)
-        x_test, feature_cols = cls.build_x_features(test_set, encoders)
+        x_train, feature_cols = cls.build_x_features(train_set, encoders, label_key)
+        x_test, feature_cols = cls.build_x_features(test_set, encoders, label_key)
 
         if feature_subset:
             x_train = cls.restrict_features_to_subset(x_train, feature_subset)
@@ -152,19 +158,23 @@ class ModelRun:
                                   "with the `build_x_features` function implemented.")
 
     @classmethod
-    def build_x_features(cls, data_set: Any, encoders: Dict) -> pd.DataFrame:
+    def build_x_features(cls, data_set: Any, encoders: Dict, label_key: str = '') -> Tuple[pd.DataFrame, List[str]]:
         """
-        Placeholder function to hold the custom feature building functionality of a ModelRun.
+        Create the X feature set from the data set by removing the label column.
 
         Args:
             data_set: Data set to transform into features.
             encoders: Dict of pre-trained encoders for use in building features.
+            label_key: Name of the label column that will be removed from the dataset to generate the feature set.
 
         Returns:
-            Matrix-type
+            Tuple containing the pd.DataFrame of the feature set and a list of the column names.
         """
-        raise NotImplementedError("The ModelRun class must be subclassed to be used, "
-                                  "with the `build_x_features` function implemented.")
+        cols = list(data_set.columns)
+        if label_key in cols:
+            cols.remove(label_key)
+        feature_set = data_set[cols].copy()
+        return feature_set, cols
 
     @classmethod
     def build_y_vector(cls, data_set: Any, label_key: str) -> List:
@@ -311,8 +321,9 @@ class ModelRun:
         """
         model_hyperparam_func_map = {
             "<class 'sklearn.ensemble._forest.RandomForestClassifier'>": self.get_selected_random_forest_hyperparams,
-            "<class 'sklearn.svm._classes.SVC'>": self.get_selected_svc_hyperparams,
-            "<class 'sklearn.linear_model._logistic.LogisticRegression'>": self.get_selected_logistic_reg_hyperparams
+            "<class 'sklearn.svm._classes.SVC'>": self.get_standard_sklearn_params,
+            "<class 'sklearn.linear_model._logistic.LogisticRegression'>": self.get_standard_sklearn_params,
+            "<class 'xgboost.sklearn.XGBClassifier'>": self.get_standard_sklearn_params,
         }
         model_type = str(type(self.model))
         if model_type in model_hyperparam_func_map:
@@ -343,18 +354,55 @@ class ModelRun:
         return chosen_hyperparams
 
     @classmethod
-    def get_selected_svc_hyperparams(cls, model: Any) -> Dict:
-        """Get hyperparams out of a sklearn SVC model. """
+    def get_standard_sklearn_params(cls, model: Any) -> Dict:
+        """Get hyperparams out of a standard sklearn model. """
 
         chosen_hyperparams = model.get_params()
         return chosen_hyperparams
 
-    @classmethod
-    def get_selected_logistic_reg_hyperparams(cls, model: Any) -> Dict:
-        """Get hyperparams out of a sklearn LogisticRegression model. """
+    def generate_file_name(self, descriptor: str = None):
+        """
+        Generate a filename for a model that includes the timestamp, model type, and an optional descriptor.
+        These properties are separated by '__' and the filename ends in .pkl.
 
-        chosen_hyperparams = model.get_params()
-        return chosen_hyperparams
+        Args:
+            descriptor: Optional descriptor to add to the file name.
+
+        Returns: File name with file extension.
+
+        """
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        model_type = self.model.__class__.__name__
+        delimiter_char = '__'
+        file_name_components = [timestamp, model_type]
+        if descriptor is not None:
+            descriptor = descriptor.replace(' ', '-')
+            file_name_components.append(descriptor)
+        file_name = delimiter_char.join(file_name_components) + '.pkl'
+        return file_name
+
+    def save(self, parent_directory: str, descriptor: str = None) -> Path:
+        """
+        Save a model as a pickle to a parent_directory with a programmatic filename that includes a timestamp,
+         model type, and optional descriptor.
+
+        Args:
+            parent_directory: The parent directory in which to save the model.
+            descriptor: Optional descriptor to add to the file name.
+
+        Returns: File path of the saved object.
+
+        Example Usage:
+            >>> my_model_run.save('project/data/models/')
+            >>> # saves project/data/models/YYYY-MM-DD_HH-MM-SS__<model_class>.pkl
+            >>> my_model_run.save('project/data/models/', descriptor='5 features')
+            >>> # saves project/data/models/YYYY-MM-DD_HH-MM-SS__<model_class>__5-features.pkl
+        """
+        file_name = self.generate_file_name(descriptor)
+        file_path = Path(parent_directory, file_name)
+        with open(file_path, 'wb+') as f:
+            pickle.dump(self, f)
+        return file_path
 
     def generate_predictor(self) -> 'Predictor':
         """
