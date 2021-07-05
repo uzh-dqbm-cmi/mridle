@@ -1,5 +1,5 @@
 import itertools
-from sample_size_functions import PowerSimulations
+from power_simulations.sample_size_utilities import PowerSimulations
 
 
 precision = 0.513
@@ -16,7 +16,7 @@ effect_sizes = [0.1, 0.15, 0.2]
 sample_sizes = [166 * (i+1) for i in range(10)]
 exp = PowerSimulations(sample_sizes=sample_sizes, effect_sizes=effect_sizes, num_permutation_runs=1000,
                        num_power_runs=1000, original_test_set_length=4000, significance_level=0.05,
-                       base_recall=recall, base_precision=precision)
+                       base_recall=recall, base_precision=precision, num_cpus=8, random_seed=0)
 
 
 exp.run()

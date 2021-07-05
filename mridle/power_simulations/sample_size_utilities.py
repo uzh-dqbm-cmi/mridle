@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.metrics import f1_score
 from multiprocessing import Pool
 import itertools
-from typing import List
+from typing import List, Tuple
 
 
 class PowerSimulations:
@@ -51,12 +51,15 @@ class PowerSimulations:
         """
         effect_sample_sizes = list(itertools.product(self.effect_sizes, self.sample_sizes))
         with Pool(self.num_cpus) as p:
-            results = p.map(self.__run_helper, effect_sample_sizes)
+            results = p.map(self.run_helper, effect_sample_sizes)
 
         power = [np.sum(res < self.significance_level) / len(res) for res in results]
-        self.results = pd.DataFrame(effect_sample_sizes, power)
+        results_df = pd.DataFrame(effect_sample_sizes, power)
+        results_df.reset_index(inplace=True)
+        results_df.columns = ['power', 'effect_size', 'sample_size']
+        self.results = results_df
 
-    def __run_helper(self, effect_sample_sizes: List[(float, int)]) -> List[float]:
+    def run_helper(self, effect_sample_sizes: Tuple[float, int]) -> List[float]:
         """
         Helper function for running the permutation experiments, helping with parallelisation
 
@@ -74,11 +77,12 @@ class PowerSimulations:
         if self.random_seed:
             np.random.seed(self.random_seed)
 
-        alphas = [self.permutation_trials(precision_new, recall_new, sample_size) for i in range(self.num_power_runs)]
+        alphas = [self.run_permutation_trials(precision_new, recall_new, sample_size)
+                  for i in range(self.num_power_runs)]
 
         return alphas
 
-    def permutation_trials(self, prec_new: float, rec_new: float, sample_size_new: int) -> float:
+    def run_permutation_trials(self, prec_new: float, rec_new: float, sample_size_new: int) -> float:
         """
         Execute n=self.num_permutation_runs runs of the individual permuted trial in the function one_trial.
         An alpha value for this trial is returned, and we will then obtain n=self.num_power_runs values
@@ -101,12 +105,12 @@ class PowerSimulations:
         orig_diff = f1_score(df['true'], df['pred'], average='macro') - f1_score(df_new['true'], df_new['pred'],
                                                                                  average='macro')
 
-        differences = [self.one_trial(pooled) for i in range(self.num_permutation_runs)]
+        differences = [self.run_single_trial(pooled) for i in range(self.num_permutation_runs)]
         individual_alpha = np.sum(differences > orig_diff) / len(differences)
 
         return individual_alpha
 
-    def one_trial(self, pooled_data: pd.DataFrame) -> float:
+    def run_single_trial(self, pooled_data: pd.DataFrame) -> float:
         """
         Take in pooled data, create one set of permuted datasets and return the test statistic for this one trial
         Args:
