@@ -1,5 +1,5 @@
 import itertools
-from experiments.sample_size_functions import PowerSimulations
+from sample_size_functions import PowerSimulations
 
 
 precision = 0.513
