@@ -1,4 +1,7 @@
+import datetime
 import pandas as pd
+from pathlib import Path
+import pickle
 import numpy as np
 from sklearn.base import clone
 from sklearn.feature_selection import RFECV
@@ -318,8 +321,9 @@ class ModelRun:
         """
         model_hyperparam_func_map = {
             "<class 'sklearn.ensemble._forest.RandomForestClassifier'>": self.get_selected_random_forest_hyperparams,
-            "<class 'sklearn.svm._classes.SVC'>": self.get_selected_svc_hyperparams,
-            "<class 'sklearn.linear_model._logistic.LogisticRegression'>": self.get_selected_logistic_reg_hyperparams
+            "<class 'sklearn.svm._classes.SVC'>": self.get_standard_sklearn_params,
+            "<class 'sklearn.linear_model._logistic.LogisticRegression'>": self.get_standard_sklearn_params,
+            "<class 'xgboost.sklearn.XGBClassifier'>": self.get_standard_sklearn_params,
         }
         model_type = str(type(self.model))
         if model_type in model_hyperparam_func_map:
@@ -350,18 +354,55 @@ class ModelRun:
         return chosen_hyperparams
 
     @classmethod
-    def get_selected_svc_hyperparams(cls, model: Any) -> Dict:
-        """Get hyperparams out of a sklearn SVC model. """
+    def get_standard_sklearn_params(cls, model: Any) -> Dict:
+        """Get hyperparams out of a standard sklearn model. """
 
         chosen_hyperparams = model.get_params()
         return chosen_hyperparams
 
-    @classmethod
-    def get_selected_logistic_reg_hyperparams(cls, model: Any) -> Dict:
-        """Get hyperparams out of a sklearn LogisticRegression model. """
+    def generate_file_name(self, descriptor: str = None):
+        """
+        Generate a filename for a model that includes the timestamp, model type, and an optional descriptor.
+        These properties are separated by '__' and the filename ends in .pkl.
 
-        chosen_hyperparams = model.get_params()
-        return chosen_hyperparams
+        Args:
+            descriptor: Optional descriptor to add to the file name.
+
+        Returns: File name with file extension.
+
+        """
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        model_type = self.model.__class__.__name__
+        delimiter_char = '__'
+        file_name_components = [timestamp, model_type]
+        if descriptor is not None:
+            descriptor = descriptor.replace(' ', '-')
+            file_name_components.append(descriptor)
+        file_name = delimiter_char.join(file_name_components) + '.pkl'
+        return file_name
+
+    def save(self, parent_directory: str, descriptor: str = None) -> Path:
+        """
+        Save a model as a pickle to a parent_directory with a programmatic filename that includes a timestamp,
+         model type, and optional descriptor.
+
+        Args:
+            parent_directory: The parent directory in which to save the model.
+            descriptor: Optional descriptor to add to the file name.
+
+        Returns: File path of the saved object.
+
+        Example Usage:
+            >>> my_model_run.save('project/data/models/')
+            >>> # saves project/data/models/YYYY-MM-DD_HH-MM-SS__<model_class>.pkl
+            >>> my_model_run.save('project/data/models/', descriptor='5 features')
+            >>> # saves project/data/models/YYYY-MM-DD_HH-MM-SS__<model_class>__5-features.pkl
+        """
+        file_name = self.generate_file_name(descriptor)
+        file_path = Path(parent_directory, file_name)
+        with open(file_path, 'wb+') as f:
+            pickle.dump(self, f)
+        return file_path
 
     def generate_predictor(self) -> 'Predictor':
         """
