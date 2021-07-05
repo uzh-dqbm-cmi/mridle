@@ -14,9 +14,9 @@ class PowerSimulations:
     of elements in these two lists.
     """
 
-    def __init__(self, sample_sizes, effect_sizes, num_permutation_runs, num_power_runs,
-                 original_test_set_length, significance_level, base_precision, base_recall,
-                 num_cpus):
+    def __init__(self, sample_sizes: List[int], effect_sizes: List[float], num_permutation_runs: int,
+                 num_power_runs: int, original_test_set_length: int, significance_level: float,
+                 base_precision: float, base_recall: float, num_cpus: int, random_seed: int = None):
         """
         Create a PowerSimulations objects.
 
@@ -43,6 +43,7 @@ class PowerSimulations:
         self.base_recall = base_recall
         self.results = None
         self.num_cpus = num_cpus
+        self.random_seed = random_seed
 
     def run(self):
         """
@@ -55,7 +56,7 @@ class PowerSimulations:
         power = [np.sum(res < self.significance_level) / len(res) for res in results]
         self.results = pd.DataFrame(effect_sample_sizes, power)
 
-    def __run_helper(self, effect_sample_sizes):
+    def __run_helper(self, effect_sample_sizes: List[(float, int)]) -> List[float]:
         """
         Helper function for running the permutation experiments, helping with parallelisation
 
@@ -70,13 +71,14 @@ class PowerSimulations:
 
         precision_new = self.base_precision * (1 - effect_size)
         recall_new = self.base_recall * (1 - effect_size)
+        if self.random_seed:
+            np.random.seed(self.random_seed)
 
-        np.random.seed(0)
         alphas = [self.permutation_trials(precision_new, recall_new, sample_size) for i in range(self.num_power_runs)]
 
         return alphas
 
-    def permutation_trials(self, prec_new, rec_new, sample_size_new):
+    def permutation_trials(self, prec_new: float, rec_new: float, sample_size_new: int) -> float:
         """
         Execute n=self.num_permutation_runs runs of the individual permuted trial in the function one_trial.
         An alpha value for this trial is returned, and we will then obtain n=self.num_power_runs values
@@ -104,7 +106,7 @@ class PowerSimulations:
 
         return individual_alpha
 
-    def one_trial(self, pooled_data):
+    def one_trial(self, pooled_data: pd.DataFrame) -> float:
         """
         Take in pooled data, create one set of permuted datasets and return the test statistic for this one trial
         Args:
@@ -119,8 +121,11 @@ class PowerSimulations:
         new_df = permuted[:self.original_test_set_length]
         new_df_new = permuted[self.original_test_set_length:]
 
-        return f1_score(new_df['true'], new_df['pred'], average='macro') - f1_score(new_df_new['true'],
-                                                                                    new_df_new['pred'], average='macro')
+        score = f1_score(new_df['true'], new_df['pred'], average='macro') - f1_score(new_df_new['true'],
+                                                                                     new_df_new['pred'],
+                                                                                     average='macro')
+
+        return score
 
     @staticmethod
     def generate_actuals_preds(prec: float, rec: float, n: int, p: List[float] = None) -> pd.DataFrame:
