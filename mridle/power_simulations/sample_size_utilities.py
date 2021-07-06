@@ -14,8 +14,8 @@ class PowerSimulations:
     of elements in these two lists.
     """
 
-    def __init__(self, sample_sizes: List[int], effect_sizes: List[float], num_permutation_runs: int,
-                 num_power_runs: int, original_test_set_length: int, significance_level: float,
+    def __init__(self, sample_sizes: List[int], effect_sizes: List[float], num_trials_per_run: int,
+                 num_runs_for_power_calc: int, original_test_set_length: int, significance_level: float,
                  base_precision: float, base_recall: float, num_cpus: int, random_seed: int = None):
         """
         Create a PowerSimulations objects.
@@ -23,10 +23,10 @@ class PowerSimulations:
         Args:
             sample_sizes: List of sample sizes to calculate the power for
             effect_sizes: List of effect sizes to calculate the power for
-            num_permutation_runs: number of simulations to run for the permutation test to obtain the distribution of
+            num_trials_per_run: number of simulations to run for the permutation test to obtain the distribution of
             the null hypothesis (1000+ recommended if computer speed allows)
-            num_power_runs: number of times to run the permutation experiment to obtain an estimate for the power of
-            the test
+            num_runs_for_power_calc: number of times to run the permutation experiment to obtain an estimate for the
+            power of the test
             original_test_set_length: Number of samples to create for the 'original' test set
             significance_level: Significance level to use for the permutation test
             base_precision: Precision of the model on the original test set
@@ -35,8 +35,8 @@ class PowerSimulations:
         """
         self.sample_sizes = sample_sizes
         self.effect_sizes = effect_sizes
-        self.num_permutation_runs = num_permutation_runs
-        self.num_power_runs = num_power_runs
+        self.num_trials_per_run = num_trials_per_run
+        self.num_runs_for_power_calc = num_runs_for_power_calc
         self.original_test_set_length = original_test_set_length
         self.significance_level = np.float64(significance_level)
         self.base_precision = base_precision
@@ -85,14 +85,14 @@ class PowerSimulations:
             np.random.seed(self.random_seed)
 
         alphas = [self.run_permutation_trials(precision_new, recall_new, sample_size)
-                  for i in range(self.num_power_runs)]
+                  for i in range(self.num_runs_for_power_calc)]
 
         return alphas
 
     def run_permutation_trials(self, prec_new: float, rec_new: float, sample_size_new: int) -> float:
         """
-        Execute n=self.num_permutation_runs runs of the individual permuted trial in the function one_trial.
-        An alpha value for this trial is returned, and we will then obtain n=self.num_power_runs values
+        Execute n=self.num_trials_per_run runs of the individual permuted trial in the function one_trial.
+        An alpha value for this trial is returned, and we will then obtain n=self.num_runs_for_power_calc values
         for this alpha value by running this function over and over again. Using this set of alpha values, we
         can then calculated the power of our test.
 
@@ -112,7 +112,7 @@ class PowerSimulations:
         orig_diff = f1_score(df['true'], df['pred'], average='macro') - f1_score(df_new['true'], df_new['pred'],
                                                                                  average='macro')
 
-        differences = [self.run_single_trial(pooled) for i in range(self.num_permutation_runs)]
+        differences = [self.run_single_trial(pooled) for i in range(self.num_trials_per_run)]
         individual_alpha = np.sum(differences > orig_diff) / len(differences)
 
         return individual_alpha
