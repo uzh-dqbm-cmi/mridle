@@ -20,6 +20,12 @@ class PowerSimulations:
         """
         Create a PowerSimulations objects.
 
+        The num_trials_per_run attribute is related to how many times we resample from our generated dataset, so as to
+        create the distribution under the null hypothesis, and then we compare the 'original' test statistic from
+        the given dataset to this null hypothesis to get an alpha value, and then we can reject this test or not.
+        We then run this experiment num_runs_for_power_calc times (each with a newly generated dataset) to get a %
+        of times that the null hypothesis was correctly rejected, giving us the power.
+
         Args:
             sample_sizes: List of sample sizes to calculate the power for
             effect_sizes: List of effect sizes to calculate the power for
