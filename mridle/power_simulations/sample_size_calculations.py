@@ -11,7 +11,6 @@ effect_sizes = [0.1, 0.15, 0.2]
 sample_sizes = [avg_appts_per_week * (i+1) for i in range(10)]
 effect_sample_sizes = list(itertools.product(effect_sizes, sample_sizes))
 
-# OOP
 effect_sizes = [0.1, 0.15, 0.2]
 sample_sizes = [166 * (i+1) for i in range(10)]
 exp = PowerSimulations(sample_sizes=sample_sizes, effect_sizes=effect_sizes, num_permutation_runs=1000,

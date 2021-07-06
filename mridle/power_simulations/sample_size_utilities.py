@@ -47,7 +47,13 @@ class PowerSimulations:
 
     def run(self):
         """
-        Run the permutation tests and save the results as an attribute of the object.
+        Run the permutation tests and save the results as an attribute of the object. The results are saved as a
+        dataframe, with three columns:
+            - effect_size: effect size that the test was performed for. A specific value from the list of values
+            declared at object initialisation
+            - sample_size: sample size that the test was performed for. A specific value from the list of values
+            declared at object initialisation
+            - power: Resulting power of the test, using the effect and sample size given.
         """
         effect_sample_sizes = list(itertools.product(self.effect_sizes, self.sample_sizes))
         with Pool(self.num_cpus) as p:
@@ -57,14 +63,15 @@ class PowerSimulations:
         results_df = pd.DataFrame(effect_sample_sizes, power)
         results_df.reset_index(inplace=True)
         results_df.columns = ['power', 'effect_size', 'sample_size']
+        results_df = results_df[['effect_size', 'sample_size', 'power']]
         self.results = results_df
 
     def run_helper(self, effect_sample_sizes: Tuple[float, int]) -> List[float]:
         """
-        Helper function for running the permutation experiments, helping with parallelisation
+        Helper function for running the permutation experiments, helping with parallelisation.
 
         Args:
-            effect_sample_sizes: list of tuples containing each combination of the declared effect and sample sizes
+            effect_sample_sizes: Tuple containing a single combination of the declared effect and sample sizes
 
         Returns:
             List of alpha values for each test in the power analysis trials
