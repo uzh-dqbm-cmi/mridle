@@ -57,7 +57,7 @@ class PowerSimulations:
         """
         effect_sample_sizes = list(itertools.product(self.effect_sizes, self.sample_sizes))
         with Pool(self.num_cpus) as p:
-            results = p.map(self.run_helper, effect_sample_sizes)
+            results = p.map(self.run_simulation_for_effect_size_sample_size, effect_sample_sizes)
 
         power = [np.sum(res < self.significance_level) / len(res) for res in results]
         results_df = pd.DataFrame(effect_sample_sizes, power)
@@ -66,7 +66,7 @@ class PowerSimulations:
         results_df = results_df[['effect_size', 'sample_size', 'power']]
         self.results = results_df
 
-    def run_helper(self, effect_sample_sizes: Tuple[float, int]) -> List[float]:
+    def run_simulation_for_effect_size_sample_size(self, effect_sample_sizes: Tuple[float, int]) -> List[float]:
         """
         Helper function for running the permutation experiments, helping with parallelisation.
 
