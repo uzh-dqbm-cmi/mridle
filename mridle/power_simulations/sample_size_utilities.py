@@ -1,8 +1,10 @@
+import datetime
 import numpy as np
 import pandas as pd
 from sklearn.metrics import f1_score
 from multiprocessing import Pool
 import itertools
+import logging
 from typing import List, Tuple
 
 
@@ -16,7 +18,8 @@ class PowerSimulations:
 
     def __init__(self, sample_sizes: List[int], effect_sizes: List[float], num_trials_per_run: int,
                  num_runs_for_power_calc: int, original_test_set_length: int, significance_level: float,
-                 base_precision: float, base_recall: float, num_cpus: int, random_seed: int = None):
+                 base_precision: float, base_recall: float, num_cpus: int, random_seed: int = None,
+                 log_to_file=True):
         """
         Create a PowerSimulations objects.
 
@@ -50,6 +53,32 @@ class PowerSimulations:
         self.results = None
         self.num_cpus = num_cpus
         self.random_seed = random_seed
+
+        self.set_up_logger(log_to_file)
+
+        self.log_initial_values(base_precision, base_recall, effect_sizes, num_runs_for_power_calc, num_trials_per_run,
+                                original_test_set_length, sample_sizes, significance_level)
+
+    def set_up_logger(self, log_to_file):
+        if log_to_file:
+            timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+            filename = f'power_simulation_{timestamp}.log'
+            logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S',
+                                level=logging.DEBUG, filename=filename)
+            print(f'Logging to file {filename}')
+        else:
+            logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=logging.DEBUG)
+
+    def log_initial_values(self, base_precision, base_recall, effect_sizes, num_runs_for_power_calc, num_trials_per_run,
+                           original_test_set_length, sample_sizes, significance_level):
+        logging.info(f'sample_sizes: {sample_sizes}')
+        logging.info(f'effect_sizes: {effect_sizes}')
+        logging.info(f'num_trials_per_run: {num_trials_per_run}')
+        logging.info(f'num_runs_for_power_calc: {num_runs_for_power_calc}')
+        logging.info(f'original_test_set_length: {original_test_set_length}')
+        logging.info(f'significance_level: {significance_level}')
+        logging.info(f'base_precision: {base_precision}')
+        logging.info(f'base_recall: {base_recall}')
 
     def run(self):
         """
@@ -90,12 +119,13 @@ class PowerSimulations:
         if self.random_seed:
             np.random.seed(self.random_seed)
 
-        alphas = [self.run_permutation_trials(precision_new, recall_new, sample_size)
+        alphas = [self.run_permutation_trials(precision_new, recall_new, sample_size, i)
                   for i in range(self.num_runs_for_power_calc)]
 
         return alphas
 
-    def run_permutation_trials(self, prec_new: float, rec_new: float, sample_size_new: int) -> float:
+    def run_permutation_trials(self, prec_new: float, rec_new: float, sample_size_new: int, permutation_id: int
+                               ) -> float:
         """
         Execute n=self.num_trials_per_run runs of the individual permuted trial in the function one_trial.
         An alpha value for this trial is returned, and we will then obtain n=self.num_runs_for_power_calc values
@@ -106,6 +136,7 @@ class PowerSimulations:
             prec_new: Precision that the new test set and predictions should be generated with
             rec_new: Recall that the new test set and predictions should be generated with
             sample_size_new: Sample size of new test set to be generated
+            permutation_id: id number used for logging the progress of the simulation.
 
         Returns:
             Alpha value for one group of permutation tests.
@@ -120,6 +151,9 @@ class PowerSimulations:
 
         differences = [self.run_single_trial(pooled) for i in range(self.num_trials_per_run)]
         individual_alpha = np.sum(differences > orig_diff) / len(differences)
+
+        if permutation_id % 10 == 0:
+            logging.info(f'Completed permutation #{permutation_id}')
 
         return individual_alpha
 

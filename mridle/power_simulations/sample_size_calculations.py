@@ -1,5 +1,5 @@
 import itertools
-from power_simulations.sample_size_utilities import PowerSimulations
+from mridle.power_simulations.sample_size_utilities import PowerSimulations
 
 
 precision = 0.513
