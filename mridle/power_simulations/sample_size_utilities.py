@@ -70,7 +70,6 @@ class PowerSimulations:
         else:
             logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=logging.DEBUG)
 
-
     def log_initial_values(self, base_precision, base_recall, effect_sizes, num_runs_for_power_calc, num_trials_per_run,
                            original_test_set_length, sample_sizes, significance_level):
         logging.info(f'sample_sizes: {sample_sizes}')
@@ -171,7 +170,6 @@ class PowerSimulations:
         #         logger.addHandler(fh)
         #
         #     logger.warning(f'Completed permutation #{permutation_id}')
-
 
         return individual_alpha
 
