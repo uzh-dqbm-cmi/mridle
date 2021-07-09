@@ -53,9 +53,9 @@ class PowerSimulations:
         self.results = None
         self.num_cpus = num_cpus
         self.random_seed = random_seed
+        self.logging_filename = ''
 
         self.set_up_logger(log_to_file)
-
         self.log_initial_values(base_precision, base_recall, effect_sizes, num_runs_for_power_calc, num_trials_per_run,
                                 original_test_set_length, sample_sizes, significance_level)
 
@@ -63,11 +63,13 @@ class PowerSimulations:
         if log_to_file:
             timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
             filename = f'power_simulation_{timestamp}.log'
+            self.logging_filename = filename
             logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S',
                                 level=logging.DEBUG, filename=filename)
             print(f'Logging to file {filename}')
         else:
             logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=logging.DEBUG)
+
 
     def log_initial_values(self, base_precision, base_recall, effect_sizes, num_runs_for_power_calc, num_trials_per_run,
                            original_test_set_length, sample_sizes, significance_level):
@@ -92,10 +94,9 @@ class PowerSimulations:
         """
         effect_sample_sizes = list(itertools.product(self.effect_sizes, self.sample_sizes))
         with Pool(self.num_cpus) as p:
-            results = p.map(self.run_simulation_for_effect_size_sample_size, effect_sample_sizes)
+            power_results = p.map(self.run_simulation_for_effect_size_sample_size, effect_sample_sizes)
 
-        power = [np.sum(res < self.significance_level) / len(res) for res in results]
-        results_df = pd.DataFrame(effect_sample_sizes, power)
+        results_df = pd.DataFrame(effect_sample_sizes, power_results)
         results_df.reset_index(inplace=True)
         results_df.columns = ['power', 'effect_size', 'sample_size']
         results_df = results_df[['effect_size', 'sample_size', 'power']]
@@ -121,8 +122,16 @@ class PowerSimulations:
 
         alphas = [self.run_permutation_trials(precision_new, recall_new, sample_size, i)
                   for i in range(self.num_runs_for_power_calc)]
+        power = np.sum(alphas < self.significance_level) / len(alphas)
 
-        return alphas
+        logger = logging.getLogger()  # get the root logger
+        if not logger.hasHandlers():
+            fh = logging.FileHandler(self.logging_filename)
+            fh.setLevel(logging.INFO)
+            logger.addHandler(fh)
+
+        logger.warning(f'Completed permutation: effect & sample size:{effect_sample_sizes}; Power:{power}')
+        return power
 
     def run_permutation_trials(self, prec_new: float, rec_new: float, sample_size_new: int, permutation_id: int
                                ) -> float:
@@ -142,6 +151,7 @@ class PowerSimulations:
             Alpha value for one group of permutation tests.
 
         """
+
         df = self.generate_actuals_preds(self.base_precision, self.base_recall, self.original_test_set_length)
         df_new = self.generate_actuals_preds(prec_new, rec_new, sample_size_new)
 
@@ -152,8 +162,16 @@ class PowerSimulations:
         differences = [self.run_single_trial(pooled) for i in range(self.num_trials_per_run)]
         individual_alpha = np.sum(differences > orig_diff) / len(differences)
 
-        if permutation_id % 10 == 0:
-            logging.info(f'Completed permutation #{permutation_id}')
+        # if permutation_id % 10 == 0:
+        #     logger = logging.getLogger()  # get the root logger
+        #
+        #     if not logger.hasHandlers():
+        #         fh = logging.FileHandler(self.logging_filename)
+        #         fh.setLevel(logging.INFO)
+        #         logger.addHandler(fh)
+        #
+        #     logger.warning(f'Completed permutation #{permutation_id}')
+
 
         return individual_alpha
 
