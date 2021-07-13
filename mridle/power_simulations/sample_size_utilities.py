@@ -196,25 +196,27 @@ class PowerSimulations:
         df = pd.DataFrame({'true': actuals, 'pred': preds})
         return df
 
-    def save(self, parent_directory: str, descriptor: str = None) -> Path:
+    def save(self, parent_directory: str) -> Path:
         """
-        Save a model as a pickle to a parent_directory with a programmatic filename that includes a timestamp,
-         model type, and optional descriptor.
+        Save a dictionary of the results as a pickle to a parent_directory with the same filename as the logging
+        file (different file extension)
 
         Args:
             parent_directory: The parent directory in which to save the model.
-            descriptor: Optional descriptor to add to the file name.
 
         Returns: File path of the saved object.
 
         Example Usage:
             >>> my_model_run.save('project/results/')
-            >>> # saves project/data/models/YYYY-MM-DD_HH-MM-SS__<model_class>.pkl
+            >>> # saves project/results/YYYY-MM-DD_HH-MM-SS__<model_class>.pkl
             >>> my_model_run.save('project/results/', descriptor='5 features')
-            >>> # saves project/data/models/YYYY-MM-DD_HH-MM-SS__<model_class>__5-features.pkl
+            >>> # saves project/results/YYYY-MM-DD_HH-MM-SS__<model_class>__5-features.pkl
         """
-        file_name = self.generate_file_name(descriptor)
-        file_path = Path(parent_directory, file_name)
+        # Replace below code with self.filename when Laura's logging PR is pushed
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        filename = f'power_simulation_{timestamp}.log'
+
+        filepath = Path(parent_directory, filename)
 
         to_save = {
             'results': self.results,
@@ -226,26 +228,6 @@ class PowerSimulations:
             'base_recall': self.base_recall,
             'random_seed': self.random_seed
         }
-        with open(file_path, 'wb+') as f:
+        with open(filepath, 'wb+') as f:
             pickle.dump(to_save, f)
-        return file_path
-
-    def generate_file_name(self, descriptor: str = None):
-        """
-        Generate a filename for a model that includes the timestamp, model type, and an optional descriptor.
-        These properties are separated by '__' and the filename ends in .pkl.
-
-        Args:
-            descriptor: Optional descriptor to add to the file name.
-
-        Returns: File name with file extension.
-
-        """
-        timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        delimiter_char = '__'
-        file_name_components = [timestamp]
-        if descriptor is not None:
-            descriptor = descriptor.replace(' ', '-')
-            file_name_components.append(descriptor)
-        file_name = delimiter_char.join(file_name_components) + '.pkl'
-        return file_name
+        return filepath
