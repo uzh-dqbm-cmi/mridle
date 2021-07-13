@@ -215,8 +215,19 @@ class PowerSimulations:
         """
         file_name = self.generate_file_name(descriptor)
         file_path = Path(parent_directory, file_name)
+
+        to_save = {
+            'results': self.results,
+            'num_trials_per_run': self.num_trials_per_run,
+            'num_runs_for_power_calc': self.num_runs_for_power_calc,
+            'original_test_set_length': self.original_test_set_length,
+            'significance_level': self.significance_level,
+            'base_precision': self.base_precision,
+            'base_recall': self.base_recall,
+            'random_seed': self.random_seed
+        }
         with open(file_path, 'wb+') as f:
-            pickle.dump(self, f)
+            pickle.dump(to_save, f)
         return file_path
 
     def generate_file_name(self, descriptor: str = None):
