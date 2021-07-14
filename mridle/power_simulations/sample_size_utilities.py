@@ -63,6 +63,9 @@ class PowerSimulations:
             - sample_size: sample size that the test was performed for. A specific value from the list of values
             declared at object initialisation
             - power: Resulting power of the test, using the effect and sample size given.
+
+        Args:
+            log_to_file: whether to log the progress to a file (otherwise, logs go to stdout).
         """
         logger_name = 'power_simulations'
         q_listener, q = logger_init(logger_name, log_to_file)
