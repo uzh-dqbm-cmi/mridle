@@ -147,7 +147,8 @@ class PowerSimulations:
         differences = [self.run_single_trial(pooled) for i in range(self.num_trials_per_run)]
         individual_alpha = np.sum(differences > orig_diff) / len(differences)
 
-        logging.info(f'Completed permutation #{permutation_id}')
+        if permutation_id % 10 == 0:
+            logging.info(f'Completed permutation #{permutation_id}')
 
         return individual_alpha
 
