@@ -67,8 +67,9 @@ class PowerSimulations:
         Args:
             log_to_file: whether to log the progress to a file (otherwise, logs go to stdout).
         """
-        logger_name = 'power_simulations'
-        q_listener, q = logger_init(logger_name, log_to_file)
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        run_id = f'power_simulations_{timestamp}'
+        q_listener, q = logger_init(log_name=run_id, log_to_file=log_to_file)
         self.log_initial_values()
 
         effect_sample_sizes = list(itertools.product(self.effect_sizes, self.sample_sizes))
@@ -110,7 +111,7 @@ class PowerSimulations:
         if self.random_seed:
             np.random.seed(self.random_seed)
 
-        alphas = [self.run_permutation_trials(precision_new, recall_new, sample_size, i)
+        alphas = [self.run_permutation_trials(precision_new, recall_new, sample_size)
                   for i in range(self.num_runs_for_power_calc)]
         power = np.sum(alphas < self.significance_level) / len(alphas)
 
@@ -118,8 +119,7 @@ class PowerSimulations:
 
         return power
 
-    def run_permutation_trials(self, prec_new: float, rec_new: float, sample_size_new: int, permutation_id: int
-                               ) -> float:
+    def run_permutation_trials(self, prec_new: float, rec_new: float, sample_size_new: int) -> float:
         """
         Execute n=self.num_trials_per_run runs of the individual permuted trial in the function one_trial.
         An alpha value for this trial is returned, and we will then obtain n=self.num_runs_for_power_calc values
@@ -130,7 +130,6 @@ class PowerSimulations:
             prec_new: Precision that the new test set and predictions should be generated with
             rec_new: Recall that the new test set and predictions should be generated with
             sample_size_new: Sample size of new test set to be generated
-            permutation_id: id number used for logging the progress of the simulation.
 
         Returns:
             Alpha value for one group of permutation tests.
@@ -146,10 +145,6 @@ class PowerSimulations:
 
         differences = [self.run_single_trial(pooled) for i in range(self.num_trials_per_run)]
         individual_alpha = np.sum(differences > orig_diff) / len(differences)
-
-        if permutation_id % 10 == 0:
-            logging.info(f'Completed permutation #{permutation_id}')
-
         return individual_alpha
 
     def run_single_trial(self, pooled_data: pd.DataFrame) -> float:
@@ -223,14 +218,14 @@ class PowerSimulations:
         return df
 
 
-def logger_init(logger_name: str, log_to_file: bool = True) -> Tuple[QueueListener, Queue]:
+def logger_init(log_name: str, log_to_file: bool = True) -> Tuple[QueueListener, Queue]:
     """
     Initialize a logger for use in multiprocessing.
 
     From https://stackoverflow.com/a/34964369
 
     Args:
-        logger_name: name for the logger, and also the filename if log_to_file is True.
+        log_name: name for log filename if log_to_file is True.
         log_to_file: Whether the logging should be saved in a file. If so, the logs will be saved to a file in the
          current working directory with filename in the style of <timestamp>_<name>.log.
 
@@ -238,8 +233,7 @@ def logger_init(logger_name: str, log_to_file: bool = True) -> Tuple[QueueListen
 
     """
     if log_to_file:
-        timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        filename = f'{logger_name}_{timestamp}.log'
+        filename = f'{log_name}.log'
         handler = logging.FileHandler(filename)
         print(f'Logging to file {filename}')
     else:
