@@ -1,8 +1,11 @@
+import datetime
 import numpy as np
 import pandas as pd
 from sklearn.metrics import f1_score
-from multiprocessing import Pool
+from multiprocessing import Pool, Queue
 import itertools
+import logging
+from logging.handlers import QueueHandler, QueueListener
 from typing import List, Tuple
 
 
@@ -51,7 +54,7 @@ class PowerSimulations:
         self.num_cpus = num_cpus
         self.random_seed = random_seed
 
-    def run(self):
+    def run(self, log_to_file: bool = True):
         """
         Run the permutation tests and save the results as an attribute of the object. The results are saved as a
         dataframe, with three columns:
@@ -60,17 +63,35 @@ class PowerSimulations:
             - sample_size: sample size that the test was performed for. A specific value from the list of values
             declared at object initialisation
             - power: Resulting power of the test, using the effect and sample size given.
-        """
-        effect_sample_sizes = list(itertools.product(self.effect_sizes, self.sample_sizes))
-        with Pool(self.num_cpus) as p:
-            results = p.map(self.run_simulation_for_effect_size_sample_size, effect_sample_sizes)
 
-        power = [np.sum(res < self.significance_level) / len(res) for res in results]
-        results_df = pd.DataFrame(effect_sample_sizes, power)
+        Args:
+            log_to_file: whether to log the progress to a file (otherwise, logs go to stdout).
+        """
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        run_id = f'power_simulations_{timestamp}'
+        q_listener, q = logger_init(log_name=run_id, log_to_file=log_to_file)
+        self.log_initial_values()
+
+        effect_sample_sizes = list(itertools.product(self.effect_sizes, self.sample_sizes))
+        with Pool(self.num_cpus, worker_init, [q]) as p:
+            power_results = p.map(self.run_simulation_for_effect_size_sample_size, effect_sample_sizes)
+
+        results_df = pd.DataFrame(effect_sample_sizes, power_results)
         results_df.reset_index(inplace=True)
         results_df.columns = ['power', 'effect_size', 'sample_size']
         results_df = results_df[['effect_size', 'sample_size', 'power']]
         self.results = results_df
+        q_listener.stop()
+
+    def log_initial_values(self):
+        logging.info(f'sample_sizes: {self.sample_sizes}')
+        logging.info(f'effect_sizes: {self.effect_sizes}')
+        logging.info(f'num_trials_per_run: {self.num_trials_per_run}')
+        logging.info(f'num_runs_for_power_calc: {self.num_runs_for_power_calc}')
+        logging.info(f'original_test_set_length: {self.original_test_set_length}')
+        logging.info(f'significance_level: {self.significance_level}')
+        logging.info(f'base_precision: {self.base_precision}')
+        logging.info(f'base_recall: {self.base_recall}')
 
     def run_simulation_for_effect_size_sample_size(self, effect_sample_sizes: Tuple[float, int]) -> List[float]:
         """
@@ -92,8 +113,11 @@ class PowerSimulations:
 
         alphas = [self.run_permutation_trials(precision_new, recall_new, sample_size)
                   for i in range(self.num_runs_for_power_calc)]
+        power = np.sum(alphas < self.significance_level) / len(alphas)
 
-        return alphas
+        logging.info(f'Completed permutation: effect & sample size:{effect_sample_sizes}; Power:{power}')
+
+        return power
 
     def run_permutation_trials(self, prec_new: float, rec_new: float, sample_size_new: int) -> float:
         """
@@ -111,6 +135,7 @@ class PowerSimulations:
             Alpha value for one group of permutation tests.
 
         """
+
         df = self.generate_actuals_preds(self.base_precision, self.base_recall, self.original_test_set_length)
         df_new = self.generate_actuals_preds(prec_new, rec_new, sample_size_new)
 
@@ -120,7 +145,6 @@ class PowerSimulations:
 
         differences = [self.run_single_trial(pooled) for i in range(self.num_trials_per_run)]
         individual_alpha = np.sum(differences > orig_diff) / len(differences)
-
         return individual_alpha
 
     def run_single_trial(self, pooled_data: pd.DataFrame) -> float:
@@ -192,3 +216,57 @@ class PowerSimulations:
 
         df = pd.DataFrame({'true': actuals, 'pred': preds})
         return df
+
+
+def logger_init(log_name: str, log_to_file: bool = True) -> Tuple[QueueListener, Queue]:
+    """
+    Initialize a logger for use in multiprocessing.
+
+    From https://stackoverflow.com/a/34964369
+
+    Args:
+        log_name: name for log filename if log_to_file is True.
+        log_to_file: Whether the logging should be saved in a file. If so, the logs will be saved to a file in the
+         current working directory with filename in the style of <timestamp>_<name>.log.
+
+    Returns: QueueListener and Queue
+
+    """
+    if log_to_file:
+        filename = f'{log_name}.log'
+        handler = logging.FileHandler(filename)
+        print(f'Logging to file {filename}')
+    else:
+        handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(process)s - %(asctime)s - %(levelname)s: %(message)s"))
+
+    q = Queue()
+    ql = QueueListener(q, handler)
+    ql.start()
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    # add the handler to the logger so records from this process are handled
+    logger.addHandler(handler)
+
+    return ql, q
+
+
+def worker_init(q: Queue) -> None:
+    """
+    Initialize the logger for a child process of multiprocessing.Pool. Once this initialization is run, the child
+    process just calls `logging.info`. This function relies on `logger_init` being run by the parent process first.
+
+    From https://stackoverflow.com/a/34964369
+
+    Args:
+        q: multiprocessing.Queue for a logging QueueHandler.
+
+    Returns:
+
+    """
+    # all records from worker processes go to qh and then into q
+    qh = QueueHandler(q)
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(qh)
