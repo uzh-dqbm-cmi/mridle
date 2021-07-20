@@ -196,7 +196,7 @@ class PowerSimulations:
         df = pd.DataFrame({'true': actuals, 'pred': preds})
         return df
 
-    def save(self, parent_directory: str) -> Path:
+    def save(self, parent_directory: str, descriptor: str = '') -> Path:
         """
         Save a dictionary of the results as a pickle to a parent_directory with the same filename as the logging
         file (different file extension)
@@ -214,7 +214,7 @@ class PowerSimulations:
         """
         # Replace below code with self.filename when Laura's logging PR is pushed
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        filename = f'power_simulation_{timestamp}.log'
+        filename = f'power_simulation_{descriptor}_{timestamp}.res'
 
         filepath = Path(parent_directory, filename)
 
