@@ -228,6 +228,9 @@ class PowerSimulations:
 
         Args:
             parent_directory: The parent directory in which to save the model.
+            descriptor: Optional short string to append to filename to easily see which trial the results
+            correspond with
+
 
         Returns: File path of the saved object.
 
@@ -237,8 +240,11 @@ class PowerSimulations:
             >>> my_model_run.save('project/results/', descriptor='5 features')
             >>> # saves project/results/YYYY-MM-DD_HH-MM-SS__<model_class>__5-features.pkl
         """
-        # Replace below code with self.filename when Laura's logging PR is pushed
-        filename = f'{self.filename}.res'
+        # Used if/else because I wanted underscore between filename and descriptor if given, and no underscore if not
+        if descriptor:
+            filename = f'{self.filename}_{descriptor}.res'
+        else:
+            filename = f'{self.filename}.res'
 
         filepath = Path(parent_directory, filename)
 
