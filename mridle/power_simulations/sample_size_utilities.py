@@ -55,6 +55,7 @@ class PowerSimulations:
         self.results = None
         self.num_cpus = num_cpus
         self.random_seed = random_seed
+        self.filename = ''
 
     def run(self, log_to_file: bool = True):
         """
@@ -71,6 +72,7 @@ class PowerSimulations:
         """
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         run_id = f'power_simulations_{timestamp}'
+        self.filename = run_id
         q_listener, q = logger_init(log_name=run_id, log_to_file=log_to_file)
         self.log_initial_values()
 
@@ -236,8 +238,7 @@ class PowerSimulations:
             >>> # saves project/results/YYYY-MM-DD_HH-MM-SS__<model_class>__5-features.pkl
         """
         # Replace below code with self.filename when Laura's logging PR is pushed
-        timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        filename = f'power_simulation_{descriptor}_{timestamp}.res'
+        filename = f'{self.filename}.res'
 
         filepath = Path(parent_directory, filename)
 
