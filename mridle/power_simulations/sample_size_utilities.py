@@ -235,9 +235,9 @@ class PowerSimulations:
         Returns: File path of the saved object.
 
         Example Usage:
-            >>> my_model_run.save('project/results/')
+            >>> power_sim.save('project/results/')
             >>> # saves project/results/power_simulations_YYYY-MM-DD_HH-MM-SS.pkl
-            >>> my_model_run.save('project/results/', descriptor='orig_4000')
+            >>> power_sim.save('project/results/', descriptor='orig_4000')
             >>> # saves project/results/power_simulations_YYYY-MM-DD_HH-MM-SS__orig_4000.pkl
         """
         # Used if/else because I wanted underscore between filename and descriptor if given, and no underscore if not
