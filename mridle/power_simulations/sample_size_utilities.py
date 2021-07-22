@@ -55,7 +55,7 @@ class PowerSimulations:
         self.results = None
         self.num_cpus = num_cpus
         self.random_seed = random_seed
-        self.filename = ''
+        self.run_id = ''
 
     def run(self, log_to_file: bool = True):
         """
@@ -72,7 +72,7 @@ class PowerSimulations:
         """
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         run_id = f'power_simulations_{timestamp}'
-        self.filename = run_id
+        self.run_id = run_id
         q_listener, q = logger_init(log_name=run_id, log_to_file=log_to_file)
         self.log_initial_values()
 
@@ -236,15 +236,15 @@ class PowerSimulations:
 
         Example Usage:
             >>> my_model_run.save('project/results/')
-            >>> # saves project/results/YYYY-MM-DD_HH-MM-SS__<model_class>.pkl
-            >>> my_model_run.save('project/results/', descriptor='5 features')
-            >>> # saves project/results/YYYY-MM-DD_HH-MM-SS__<model_class>__5-features.pkl
+            >>> # saves project/results/power_simulations_YYYY-MM-DD_HH-MM-SS.pkl
+            >>> my_model_run.save('project/results/', descriptor='orig_4000')
+            >>> # saves project/results/power_simulations_YYYY-MM-DD_HH-MM-SS__orig_4000.pkl
         """
         # Used if/else because I wanted underscore between filename and descriptor if given, and no underscore if not
         if descriptor:
-            filename = f'{self.filename}_{descriptor}.res'
+            filename = f'{self.run_id}_{descriptor}.pkl'
         else:
-            filename = f'{self.filename}.res'
+            filename = f'{self.run_id}.pkl'
 
         filepath = Path(parent_directory, filename)
 
