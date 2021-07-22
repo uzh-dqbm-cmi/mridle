@@ -1,4 +1,3 @@
-import datetime
 import numpy as np
 import pandas as pd
 from sklearn.metrics import f1_score
@@ -7,6 +6,9 @@ import itertools
 import logging
 from logging.handlers import QueueHandler, QueueListener
 from typing import List, Tuple
+from pathlib import Path
+import pickle
+import datetime
 
 
 class PowerSimulations:
@@ -53,6 +55,7 @@ class PowerSimulations:
         self.results = None
         self.num_cpus = num_cpus
         self.random_seed = random_seed
+        self.run_id = ''
 
     def run(self, log_to_file: bool = True):
         """
@@ -69,6 +72,7 @@ class PowerSimulations:
         """
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         run_id = f'power_simulations_{timestamp}'
+        self.run_id = run_id
         q_listener, q = logger_init(log_name=run_id, log_to_file=log_to_file)
         self.log_initial_values()
 
@@ -216,6 +220,47 @@ class PowerSimulations:
 
         df = pd.DataFrame({'true': actuals, 'pred': preds})
         return df
+
+    def save(self, parent_directory: str, descriptor: str = '') -> Path:
+        """
+        Save a dictionary of the results as a pickle to a parent_directory with the same filename as the logging
+        file (different file extension)
+
+        Args:
+            parent_directory: The parent directory in which to save the model.
+            descriptor: Optional short string to append to filename to easily see which trial the results
+            correspond with
+
+
+        Returns: File path of the saved object.
+
+        Example Usage:
+            >>> power_sim.save('project/results/')
+            >>> # saves project/results/power_simulations_YYYY-MM-DD_HH-MM-SS.pkl
+            >>> power_sim.save('project/results/', descriptor='orig_4000')
+            >>> # saves project/results/power_simulations_YYYY-MM-DD_HH-MM-SS__orig_4000.pkl
+        """
+        # Used if/else because I wanted underscore between filename and descriptor if given, and no underscore if not
+        if descriptor:
+            filename = f'{self.run_id}_{descriptor}.pkl'
+        else:
+            filename = f'{self.run_id}.pkl'
+
+        filepath = Path(parent_directory, filename)
+
+        to_save = {
+            'results': self.results,
+            'params': {'num_trials_per_run': self.num_trials_per_run,
+                       'num_runs_for_power_calc': self.num_runs_for_power_calc,
+                       'original_test_set_length': self.original_test_set_length,
+                       'significance_level': self.significance_level,
+                       'base_precision': self.base_precision,
+                       'base_recall': self.base_recall,
+                       'random_seed': self.random_seed}
+        }
+        with open(filepath, 'wb+') as f:
+            pickle.dump(to_save, f)
+        return filepath
 
 
 def logger_init(log_name: str, log_to_file: bool = True) -> Tuple[QueueListener, Queue]:
