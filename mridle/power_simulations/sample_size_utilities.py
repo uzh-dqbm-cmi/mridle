@@ -11,6 +11,17 @@ import pickle
 import datetime
 
 
+def calculate_f1_diff(orig_df, new_df):
+    """
+
+    Returns:
+
+    """
+    score = f1_score(orig_df['true'], orig_df['pred'], average='macro') - f1_score(new_df['true'], new_df['pred'],
+                                                                                   average='macro')
+    return score
+
+
 class PowerSimulations:
     """
     Class for running power simulations for calculating the sample size, effect size, and power for the
@@ -162,15 +173,24 @@ class PowerSimulations:
             Test statistic for one run of the permutation trials
 
         """
-        permuted = pooled_data.sample(frac=1)
-        new_df = permuted[:self.original_test_set_length]
-        new_df_new = permuted[self.original_test_set_length:]
-
-        score = f1_score(new_df['true'], new_df['pred'], average='macro') - f1_score(new_df_new['true'],
-                                                                                     new_df_new['pred'],
-                                                                                     average='macro')
+        new_orig_df, new_new_df = self.permute_and_split(pooled_data)
+        score = calculate_f1_diff(new_orig_df, new_new_df)
 
         return score
+
+    def permute_and_split(self, pooled_data):
+        """
+
+        Args:
+            pooled_data:
+
+        Returns:
+
+        """
+        permuted = pooled_data.sample(frac=1)
+        new_orig_df = permuted[:self.original_test_set_length]
+        new_new_df = permuted[self.original_test_set_length:]
+        return new_orig_df, new_new_df
 
     @staticmethod
     def generate_actuals_preds(prec: float, rec: float, n: int, p: List[float] = None) -> pd.DataFrame:
