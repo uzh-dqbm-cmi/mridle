@@ -11,17 +11,6 @@ import pickle
 import datetime
 
 
-def calculate_f1_diff(orig_df, new_df):
-    """
-
-    Returns:
-
-    """
-    score = f1_score(orig_df['true'], orig_df['pred'], average='macro') - f1_score(new_df['true'], new_df['pred'],
-                                                                                   average='macro')
-    return score
-
-
 class PowerSimulations:
     """
     Class for running power simulations for calculating the sample size, effect size, and power for the
@@ -173,24 +162,10 @@ class PowerSimulations:
             Test statistic for one run of the permutation trials
 
         """
-        new_orig_df, new_new_df = self.permute_and_split(pooled_data)
+        new_orig_df, new_new_df = permute_and_split(pooled_data, split_point=self.original_test_set_length)
         score = calculate_f1_diff(new_orig_df, new_new_df)
 
         return score
-
-    def permute_and_split(self, pooled_data):
-        """
-
-        Args:
-            pooled_data:
-
-        Returns:
-
-        """
-        permuted = pooled_data.sample(frac=1)
-        new_orig_df = permuted[:self.original_test_set_length]
-        new_new_df = permuted[self.original_test_set_length:]
-        return new_orig_df, new_new_df
 
     @staticmethod
     def generate_actuals_preds(prec: float, rec: float, n: int, p: List[float] = None) -> pd.DataFrame:
@@ -335,3 +310,37 @@ def worker_init(q: Queue) -> None:
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     logger.addHandler(qh)
+
+
+def calculate_f1_diff(df1: pd.DataFrame, df2: pd.DataFrame) -> float:
+    """
+    Given two dataframes, both with columns 'true' and 'pred', return the difference between the f1_score of both
+    of these dataframes.
+
+    Args:
+        df1: first dataframe
+        df2: second dataframe
+
+    Returns:
+        F1 score difference between the two provided dataframes of predicitons
+    """
+    score = f1_score(df1['true'], df1['pred'], average='macro') - f1_score(df2['true'], df2['pred'], average='macro')
+    return score
+
+
+def permute_and_split(pooled_data: pd.DataFrame, split_point: int) -> (pd.DataFrame, pd.DataFrame):
+    """
+    Take in dataset and split it into two dataframes, using provided split point
+
+    Args:
+        pooled_data: dataframe to be split
+        split_point: integer - point at which to split (i.e. row number)
+
+    Returns:
+        Two dataframes which when 'unioned' would give the original dataframe
+
+    """
+    permuted = pooled_data.sample(frac=1)
+    new_orig_df = permuted[:split_point]
+    new_new_df = permuted[split_point:]
+    return new_orig_df, new_new_df

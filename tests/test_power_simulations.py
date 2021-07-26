@@ -1,5 +1,5 @@
 import unittest
-from mridle.power_simulations.sample_size_utilities import PowerSimulations, calculate_f1_diff
+from mridle.power_simulations.sample_size_utilities import PowerSimulations, calculate_f1_diff, permute_and_split
 import pandas as pd
 from sklearn.metrics import f1_score, precision_score, recall_score
 from pandas.testing import assert_frame_equal
@@ -39,7 +39,7 @@ class TestPowerSimulations(unittest.TestCase):
 
         pooled = pd.concat([df, df_new])
 
-        df_split, df_new_split = exp.permute_and_split(pooled)
+        df_split, df_new_split = permute_and_split(pooled, split_point=exp.original_test_set_length)
 
         lengths = [len(df), len(df_new)]
         split_lengths = [len(df_split), len(df_new_split)]
@@ -62,7 +62,7 @@ class TestPowerSimulations(unittest.TestCase):
 
         pooled = pd.concat([df, df_new])
 
-        df_split, df_new_split = exp.permute_and_split(pooled)
+        df_split, df_new_split = permute_and_split(pooled, split_point=exp.original_test_set_length)
         post_split_df = pd.concat([df_split, df_new_split])
         post_split_f1 = f1_score(post_split_df['true'], post_split_df['pred'])
 
