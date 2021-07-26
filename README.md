@@ -12,15 +12,15 @@ import pandas as pd
 import numpy as np
 from IPython.display import display
 
-from datatc import DataManager
+import datatc as dtc
 import mridle
 from mridle.data_management import SHOW_COLS
 
 
-dm = DataManager('mridle')
-raw_df = dm['rdsc_extracts']['five_years'].select('parquet').load()
+dd = dtc.DataDirectory.load('mridle')
+raw_df = dd['rdsc_extracts']['five_years'].select('parquet').load()
 # load patient ids that are known to be test patient ids (not real patients)
-test_pat_ids = dm['dispo_data']['exclude_patient_ids.yaml'].load()
+test_pat_ids = dd['dispo_data']['exclude_patient_ids.yaml'].load()
 
 # build row-per-status-change data set
 status_df = mridle.data_management.build_status_df(raw_df, exclude_pat_ids=test_pat_ids)
@@ -69,8 +69,8 @@ Integrate the status change dataset with DICOM data to get accurate start time, 
 ```python
 import sqlite3
 
-dicom_db_path = dm['dicom_data']['2020_02_09_dicom_from_Christian'].select('sqlite').path
-query_text = dm['dicom_data']['2020_02_09_dicom_from_Christian'].select('image_times.sql').load(data_interface_hint='txt')
+dicom_db_path = dd['dicom_data']['2020_02_09_dicom_from_Christian'].select('sqlite').path
+query_text = dd['dicom_data']['2020_02_09_dicom_from_Christian'].select('image_times.sql').load(data_interface_hint='txt')
 c = sqlite3.connect(dicom_db_path)
 dicom_times_df = pd.read_sql_query(query_text, c)
 dicom_times_df = mridle.data_management.format_dicom_times_df(dicom_times_df)
@@ -149,14 +149,14 @@ should be similar. A value over 1 represents a larger number of appointments in 
 (only works on USZ machine)
 
 ```python
-dispo_data_1a = dm['dispo_data']['experiment1A.yaml'].load()
-dispo_data_1b = dm['dispo_data']['experiment1B.yaml'].load()
-test_pat_ids = dm['dispo_data']['exclude_patient_ids.yaml'].load()
+dispo_data_1a = dd['dispo_data']['experiment1A.yaml'].load()
+dispo_data_1b = dd['dispo_data']['experiment1B.yaml'].load()
+test_pat_ids = dd['dispo_data']['exclude_patient_ids.yaml'].load()
 dispo_data_e1 = dispo_data_1a + dispo_data_1b
 dispo_e1_df = mridle.data_management.build_dispo_exp_1_df(dispo_data_e1, exclude_patient_ids=test_pat_ids)
 
-dispo_data_2 = dm['dispo_data']['experiment2.yaml'].load()
-dispo_data_2_corrections = dm['dispo_data']['experiment2_corrections.yaml'].load()
+dispo_data_2 = dd['dispo_data']['experiment2.yaml'].load()
+dispo_data_2_corrections = dd['dispo_data']['experiment2_corrections.yaml'].load()
 dispo_e2_records = dispo_data_2 + dispo_data_2_corrections
 dispo_e2_slot_df = mridle.data_management.build_dispo_exp_2_df(dispo_e2_records)
 ```
@@ -179,7 +179,7 @@ data from that day. It is calculated by calculated the Jaccard Index.  When the 
 ```python
 from mridle.plotting_utilities import plot_scatter_bar_jaccard_per_type
 
-dispo_examples = dm['dispo_data']['manual_examples.yaml'].load()
+dispo_examples = dd['dispo_data']['manual_examples.yaml'].load()
 dispo_df = mridle.data_management.build_dispo_df(dispo_examples)
 slot_type_detailed = 'show'
 
@@ -193,7 +193,7 @@ This function compares data from the extract to the examples collected manually 
 ```python
 from mridle.plotting_utilities import plot_dispo_extract_slot_diffs
 
-dispo_examples = dm['dispo_data']['manual_examples.yaml'].load()
+dispo_examples = dd['dispo_data']['manual_examples.yaml'].load()
 dispo_df = mridle.data_management.build_dispo_df(dispo_examples)
 slot_type_detailed = 'show'
 
@@ -207,7 +207,7 @@ This function compares data from the extract to the examples collected manually 
 ```python
 from mridle.plotting_utilities import plot_scatter_dispo_extract_slot_cnt
 
-dispo_examples = dm['dispo_data']['manual_examples.yaml'].load()
+dispo_examples = dd['dispo_data']['manual_examples.yaml'].load()
 dispo_df = mridle.data_management.build_dispo_df(dispo_examples)
 
 plot_scatter_dispo_extract_slot_cnt(dispo_df, slot_df)
@@ -222,7 +222,7 @@ This function compares data from the extract to the examples collected manually 
 ```python
 from mridle.plotting_utilities import plot_scatter_dispo_extract_slot_cnt_for_type
 
-dispo_examples = dm['dispo_data']['manual_examples.yaml'].load()
+dispo_examples = dd['dispo_data']['manual_examples.yaml'].load()
 dispo_df = mridle.data_management.build_dispo_df(dispo_examples)
 slot_type_detailed = 'hard no-show'
 
@@ -253,13 +253,13 @@ plot_total_active_idle_buffer_time_per_day(reasonable_hours)
 
 #### Data Validation Experiment 2: Rescheduled NoShows
 ```python
-exp_2 = dm['dispo_data'].select('2').load()
-test_pat_ids = dm['dispo_data']['exclude_patient_ids.yaml'].load()
+exp_2 = dd['dispo_data'].select('2').load()
+test_pat_ids = dd['dispo_data']['exclude_patient_ids.yaml'].load()
 dispo_e2_df = mridle.data_management.build_dispo_df(exp_2, exclude_patient_ids=test_pat_ids)
 dispo_e2_df = mridle.data_management.find_no_shows_from_dispo_exp_two(dispo_e2_df)
 
 # build rdsc dataframe to compare to
-rdsc_exp_2_df = dm['rdsc_extracts'].select('exp_2').select('RIS_2020_week40_fix_column_headers.csv').load()
+rdsc_exp_2_df = dd['rdsc_extracts'].select('exp_2').select('RIS_2020_week40_fix_column_headers.csv').load()
 rdsc_exp_2_status_df = mridle.data_management.build_status_df(rdsc_exp_2_df, exclude_patient_ids=test_pat_ids)
 rdsc_exp_2_slot_df = mridle.data_management.build_slot_df(rdsc_exp_2_status_df)
 
@@ -272,7 +272,7 @@ Feature sets are constructed from `status_df`, using functionality from `mridle.
 
 Here's an example of using `datatc` to create and save a feature set:
 ```python
-dm['feature_sets'].save(status_df, 'harvey_seven.csv', mridle.feature_engineering.build_harvey_et_al_features_set)
+dd['feature_sets'].save(status_df, 'harvey_seven.csv', mridle.feature_engineering.build_harvey_et_al_features_set)
 ```
 This uses `datatc`'s Saved Data Transform functionality to save a dataset and the code that generated it.
 This line of code:
@@ -283,7 +283,7 @@ This line of code:
 
 Using `datatc`, one can not only load the dataset, but also view and re-use the code that generated that dataset:
 ```python
-sdt = dm['feature_sets'].latest().load()
+sdt = dd['feature_sets'].latest().load()
 
 # view and use the data
 sdt.data.head()
@@ -295,14 +295,14 @@ sdt.view_code()
 
 ## Modeling
 ```python
-from datatc import DataManager
+import datatc as dtc
 from mridle.experiment import ModelRun, PartitionedExperiment
 from mridle.experiments.harvey import HarveyModel
 from sklearn.ensemble import RandomForestClassifier
 
 # load the latest feature set
-dm = DataManager('mridle')
-sdt = dm['feature_sets'].latest().load()
+dd = dtc.DataDirectory.load('mridle')
+sdt = dd['feature_sets'].latest().load()
 
 # specify parameters of the model
 name='your human readable experiment name here'
