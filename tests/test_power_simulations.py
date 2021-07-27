@@ -26,16 +26,8 @@ def assert_frame_not_equal(*args, **kwargs):
 
 class TestPowerSimulations(unittest.TestCase):
     def test_pooling_splitting_lengths(self):
-        exp = PowerSimulations(sample_sizes=sample_sizes, effect_sizes=effect_sizes, num_trials_per_run=1000,
-                               num_runs_for_power_calc=1000, original_test_set_length=4000, significance_level=0.05,
-                               base_recall=recall, base_precision=precision, num_cpus=8, random_seed=0)
-
-        prec_new = exp.base_precision * (1 - 0.1)
-        recall_new = exp.base_recall * (1 - 0.1)
-        sample_size_new = avg_appts_per_week * 5
-
-        df = exp.generate_actuals_preds(exp.base_precision, exp.base_recall, exp.original_test_set_length)
-        df_new = exp.generate_actuals_preds(prec_new, recall_new, sample_size_new)
+        df = pd.DataFrame(np.random.randint(0, 2, size=(100, 1), columns=['test'])
+        df_new = pd.DataFrame(np.random.randint(0, 2, size=(100, 1), columns=['test'])
 
         pooled = pd.concat([df, df_new])
 
