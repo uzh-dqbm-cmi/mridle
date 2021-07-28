@@ -91,7 +91,7 @@ class TestPowerSimulations(unittest.TestCase):
 
         self.assertGreater(score, 0)
 
-    def test_generate_data_precision_orig_test_df(self):
+    def test_generate_data_precision(self):
         exp = PowerSimulations(sample_sizes=sample_sizes, effect_sizes=effect_sizes, num_trials_per_run=1000,
                                num_runs_for_power_calc=1000, original_test_set_length=4000, significance_level=0.05,
                                base_recall=recall, base_precision=precision, num_cpus=8, random_seed=0)
@@ -101,7 +101,7 @@ class TestPowerSimulations(unittest.TestCase):
 
         self.assertTrue(precision*0.97 <= generated_prec <= precision*1.03)
 
-    def test_generate_data_recall_orig_test_df(self):
+    def test_generate_data_recall(self):
         exp = PowerSimulations(sample_sizes=sample_sizes, effect_sizes=effect_sizes, num_trials_per_run=1000,
                                num_runs_for_power_calc=1000, original_test_set_length=4000, significance_level=0.05,
                                base_recall=recall, base_precision=precision, num_cpus=8, random_seed=0)
@@ -110,20 +110,6 @@ class TestPowerSimulations(unittest.TestCase):
         generated_rec = recall_score(df['true'], df['pred'])
 
         self.assertTrue(recall*0.97 <= generated_rec <= recall*1.03)
-
-    def test_generate_data_precision_new_test_df(self):
-        exp = PowerSimulations(sample_sizes=sample_sizes, effect_sizes=effect_sizes, num_trials_per_run=1000,
-                               num_runs_for_power_calc=1000, original_test_set_length=4000, significance_level=0.05,
-                               base_recall=recall, base_precision=precision, num_cpus=8, random_seed=0)
-
-        prec_new = exp.base_precision * (1 - 0.1)
-        recall_new = exp.base_recall * (1 - 0.1)
-        sample_size_new = avg_appts_per_week * 5
-
-        df_new = exp.generate_actuals_preds(prec_new, recall_new, sample_size_new)
-        generated_prec = precision_score(df_new['true'], df_new['pred'])
-
-        self.assertTrue(prec_new*0.97 <= generated_prec <= prec_new*1.03)
 
     def test_generate_data_df_proportions(self):
         class_0_proportion = 0.86
