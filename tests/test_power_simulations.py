@@ -43,10 +43,11 @@ class TestPowerSimulations(unittest.TestCase):
 
         lengths = [len(df), len(df_new)]
         split_lengths = [len(df_split), len(df_new_split)]
-        print(lengths, split_lengths)
+
         self.assertEqual(lengths, split_lengths)
 
     def test_pooling_splitting_distinct(self):
+        # split out into two tests, one for the splitting (Create dummy df and do it that way), and another for testing that same dfs aren't returned
         exp = PowerSimulations(sample_sizes=sample_sizes, effect_sizes=effect_sizes, num_trials_per_run=1000,
                                num_runs_for_power_calc=1000, original_test_set_length=4000, significance_level=0.05,
                                base_recall=recall, base_precision=precision, num_cpus=8, random_seed=0)
@@ -57,6 +58,7 @@ class TestPowerSimulations(unittest.TestCase):
 
         df = exp.generate_actuals_preds(exp.base_precision, exp.base_recall, exp.original_test_set_length)
         df_new = exp.generate_actuals_preds(prec_new, recall_new, sample_size_new)
+
         pre_split_df = pd.concat([df, df_new])
         pre_split_f1 = f1_score(pre_split_df['true'], pre_split_df['pred'])
 
@@ -66,9 +68,10 @@ class TestPowerSimulations(unittest.TestCase):
         post_split_df = pd.concat([df_split, df_new_split])
         post_split_f1 = f1_score(post_split_df['true'], post_split_df['pred'])
 
-        test_condition = assert_frame_not_equal(df, df_split) & (pre_split_f1 == post_split_f1)
+        test_condition_1 = assert_frame_not_equal(df, df_split)
+        test_condition_2 = (pre_split_f1 == post_split_f1)
 
-        self.assertTrue(test_condition)
+        self.assertTrue(test_condition_1 & test_condition_2)
 
     def test_f1_same_df(self):
         exp = PowerSimulations(sample_sizes=sample_sizes, effect_sizes=effect_sizes, num_trials_per_run=1000,
@@ -93,7 +96,6 @@ class TestPowerSimulations(unittest.TestCase):
         df_new = exp.generate_actuals_preds(prec_new, recall_new, sample_size_new)
 
         score = calculate_f1_diff(df, df_new)
-        print(score)
 
         self.assertNotEqual(score, 0)
 
@@ -110,31 +112,30 @@ class TestPowerSimulations(unittest.TestCase):
         df_new = exp.generate_actuals_preds(prec_new, recall_new, sample_size_new)
 
         score = calculate_f1_diff(df, df_new)
-        print(score)
+
         self.assertGreater(score, 0)
 
-    def test_generate_data_prec_orig_df(self):
+    def test_generate_data_precision_orig_test_df(self):
         exp = PowerSimulations(sample_sizes=sample_sizes, effect_sizes=effect_sizes, num_trials_per_run=1000,
                                num_runs_for_power_calc=1000, original_test_set_length=4000, significance_level=0.05,
                                base_recall=recall, base_precision=precision, num_cpus=8, random_seed=0)
 
         df = exp.generate_actuals_preds(exp.base_precision, exp.base_recall, exp.original_test_set_length)
         generated_prec = precision_score(df['true'], df['pred'])
-        print(precision, generated_prec)
-        self.assertAlmostEqual(precision, generated_prec, places=2)
+
         self.assertTrue(precision*0.97 <= generated_prec <= precision*1.03)
 
-    def test_generate_data_rec_orig_df(self):
+    def test_generate_data_recall_orig_test_df(self):
         exp = PowerSimulations(sample_sizes=sample_sizes, effect_sizes=effect_sizes, num_trials_per_run=1000,
                                num_runs_for_power_calc=1000, original_test_set_length=4000, significance_level=0.05,
                                base_recall=recall, base_precision=precision, num_cpus=8, random_seed=0)
 
         df = exp.generate_actuals_preds(exp.base_precision, exp.base_recall, exp.original_test_set_length)
         generated_rec = recall_score(df['true'], df['pred'])
-        print(recall*0.97, recall*1.03, generated_rec)
+
         self.assertTrue(recall*0.97 <= generated_rec <= recall*1.03)
 
-    def test_generate_data_prec_new_df(self):
+    def test_generate_data_precision_new_test_df(self):
         exp = PowerSimulations(sample_sizes=sample_sizes, effect_sizes=effect_sizes, num_trials_per_run=1000,
                                num_runs_for_power_calc=1000, original_test_set_length=4000, significance_level=0.05,
                                base_recall=recall, base_precision=precision, num_cpus=8, random_seed=0)
@@ -146,10 +147,9 @@ class TestPowerSimulations(unittest.TestCase):
         df_new = exp.generate_actuals_preds(prec_new, recall_new, sample_size_new)
         generated_prec = precision_score(df_new['true'], df_new['pred'])
 
-        print(prec_new, generated_prec)
         self.assertTrue(prec_new*0.97 <= generated_prec <= prec_new*1.03)
 
-    def test_generate_data_rec_new_df(self):
+    def test_generate_data_recall_new_test_df(self):
         exp = PowerSimulations(sample_sizes=sample_sizes, effect_sizes=effect_sizes, num_trials_per_run=1000,
                                num_runs_for_power_calc=1000, original_test_set_length=4000, significance_level=0.05,
                                base_recall=recall, base_precision=precision, num_cpus=8, random_seed=0)
@@ -161,7 +161,7 @@ class TestPowerSimulations(unittest.TestCase):
         df_new = exp.generate_actuals_preds(prec_new, recall_new, sample_size_new)
 
         generated_rec = recall_score(df_new['true'], df_new['pred'])
-        print(recall_new, generated_rec)
+
         self.assertTrue(recall_new*0.97 <= generated_rec <= recall_new*1.03)
 
 
