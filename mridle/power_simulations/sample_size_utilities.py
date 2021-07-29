@@ -313,8 +313,8 @@ class PowerSimulations:
                        'num_runs_for_power_calc': self.num_runs_for_power_calc,
                        'original_test_set_length': self.original_test_set_length,
                        'significance_level': self.significance_level,
-                       'base_precision': self.base_precision,
-                       'base_recall': self.base_recall,
+                       'base_performance': self.base_performance,
+                       'performance_type': self.performance_type,
                        'random_seed': self.random_seed}
         }
         with open(filepath, 'wb+') as f:
