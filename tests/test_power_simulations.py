@@ -41,8 +41,6 @@ class TestPowerSimulations(unittest.TestCase):
         self.assertEqual(lengths, split_lengths)
 
     def test_permute_split_no_resampling_of_rows(self):
-        # split out into two tests, one for the splitting (Create dummy df and do it that way),
-        # and another for testing that same dfs aren't returned
         df = PowerSimulations.generate_actuals_preds(precision, recall, 4000)
 
         df_split_1, df_split_2 = permute_and_split(df, split_point=3000)
