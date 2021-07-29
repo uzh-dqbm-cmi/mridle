@@ -115,7 +115,7 @@ class TestPowerSimulations(unittest.TestCase):
                                                                                 1-class_0_proportion])
         class_0 = np.sum(df['true'] == 0) / len(df)
 
-        self.assertTrue(class_0_proportion*0.97 <= class_0 <= class_0_proportion*1.03)
+        self.assertTrue(class_0_proportion*0.95 <= class_0 <= class_0_proportion*1.05)
 
 
 if __name__ == '__main__':
