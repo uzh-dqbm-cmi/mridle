@@ -233,11 +233,11 @@ class PowerSimulations:
         return df
 
     @staticmethod
-    def generate_actuals_preds_f1_macro(f1: float, n: int, p=None) -> pd.DataFrame:
+    def generate_actuals_preds_f1_macro(f1_macro: float, n: int, p=None) -> pd.DataFrame:
         """
 
         Args:
-            f1:
+            f1_macro:
             n:
             p:
 
@@ -246,7 +246,8 @@ class PowerSimulations:
         """
         if p is None:
             p = [0.86, 0.14]
-        wanted_f1 = f1
+
+        wanted_f1 = f1_macro
         recall_0 = wanted_f1 * 1.1 if wanted_f1 * 1.1 < 1 else wanted_f1
         n0, n1 = p[0] * n, p[1] * n
 
