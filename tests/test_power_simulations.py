@@ -6,9 +6,6 @@ from pandas.testing import assert_frame_equal
 import numpy as np
 
 
-precision = 0.513
-recall = 0.429
-
 avg_appts_per_week = 166
 
 effect_sizes = [0.1, 0.15, 0.2]
@@ -43,6 +40,9 @@ class TestPowerSimulations(unittest.TestCase):
     def test_permute_split_no_resampling_of_rows(self):
         # split out into two tests, one for the splitting (Create dummy df and do it that way),
         # and another for testing that same dfs aren't returned
+        performance = 0.513
+        performance_type = 'f1'
+
         df = PowerSimulations.generate_actuals_preds(precision, recall, 4000)
 
         df_split_1, df_split_2 = permute_and_split(df, split_point=3000)
