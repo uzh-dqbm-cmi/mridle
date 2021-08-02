@@ -38,8 +38,6 @@ class TestPowerSimulations(unittest.TestCase):
         self.assertEqual(lengths, split_lengths)
 
     def test_permute_split_no_resampling_of_rows(self):
-        # split out into two tests, one for the splitting (Create dummy df and do it that way),
-        # and another for testing that same dfs aren't returned
         performance = 0.513
         performance_type = 'f1'
 
@@ -117,7 +115,7 @@ class TestPowerSimulations(unittest.TestCase):
                                                                                 1-class_0_proportion])
         class_0 = np.sum(df['true'] == 0) / len(df)
 
-        self.assertTrue(class_0_proportion*0.97 <= class_0 <= class_0_proportion*1.03)
+        self.assertTrue(class_0_proportion*0.95 <= class_0 <= class_0_proportion*1.05)
 
 
 if __name__ == '__main__':
