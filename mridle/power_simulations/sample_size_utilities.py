@@ -187,8 +187,7 @@ class PowerSimulations:
         be of length n.
 
         Args:
-            prec: Precision to use when generating the sample predictions
-            rec: Recall to use when generating the sample predictions
+            performance:
             n: Size of sample
             p: Proportion of 0s and 1s in the sample
 
