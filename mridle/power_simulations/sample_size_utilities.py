@@ -42,8 +42,8 @@ class PowerSimulations:
             power of the test
             original_test_set_length: Number of samples to create for the 'original' test set
             significance_level: Significance level to use for the permutation test
-            base_precision: Precision of the model on the original test set
-            base_f1_macro: F1 macro metric for the model on the original test set
+            base_performance: Performance of the model on the original test set
+            performance_type: Score measure of the base_performance (i.e. 'f1_macro', 'precision')
             num_cpus: Number of cpus to use for the experiment executions
         """
         self.sample_sizes = sample_sizes
@@ -133,7 +133,7 @@ class PowerSimulations:
         can then calculated the power of our test.
 
         Args:
-            performance_new
+            performance_new: Required performance for the new test set to be generated (e.g. a 5% drop in performance)
             sample_size_new: Sample size of new test set to be generated
 
         Returns:
@@ -171,6 +171,10 @@ class PowerSimulations:
     def generate_actuals_preds(self, performance: float, n: int) -> pd.DataFrame:
         """
 
+        Args:
+            performance: Performance value which the created dataset should have (e.g. a precision of 0.6)
+            n: Size of dataset to be created
+
         Returns:
 
         """
@@ -180,28 +184,28 @@ class PowerSimulations:
             return self.generate_actuals_preds_f1_macro(performance, n)
 
     @staticmethod
-    def generate_actuals_preds_precision(performance: float, n: int, p: List[float] = None) -> pd.DataFrame:
+    def generate_actuals_preds_precision(precision: float, n: int, p: List[float] = None) -> pd.DataFrame:
         """
         Generate a sample dataset of true label values along with predicted values for these. This dataframe
-        is created so as to have a precision and recall equal to those provided in the parameters, and will
+        is created so as to have a precision score equal to that provided in the parameters, and will
         be of length n.
 
         Args:
-            performance:
-            n: Size of sample
+            precision: Performance value which the created dataset should have (e.g. a precision of 0.6)
+            n: Size of dataset to be created
             p: Proportion of 0s and 1s in the sample
 
         Returns:
             Dataframe of length n with two columns: one holding the 'actuals' for the data, i.e. the true class,
             and the other column containing the predicted values for these, which were chosen specifically to obtain
-            a recall and precision approx. equal to those passed in as arguments
+            a precision (approx.) equal to those passed in as arguments
         """
         if p is None:
             p = [0.86, 0.14]
 
         # We're focusing on precision, but need a value for recall as well. So we just set this to be equal to precision
-        prec = performance
-        rec = performance
+        prec = precision
+        rec = precision
 
         actuals = np.random.choice([0, 1], size=n, p=p)
         preds = actuals.copy()
@@ -234,14 +238,31 @@ class PowerSimulations:
     @staticmethod
     def generate_actuals_preds_f1_macro(f1_macro: float, n: int, p=None) -> pd.DataFrame:
         """
+        Generate a sample dataset of true label values along with predicted values for these. This dataframe
+        is created so as to have a f1_macro score equal to that provided in the parameters, and will
+        be of length n.
+
+        The generation of this dataset requires solving simultaneous equations to figure out how many true positives,
+        false positives, false negatives, and true negatives, we require in the dataset to obtain the f1_macro score
+        given. Using the following functions/definitions as starting points:
+
+        <FUNCTIONS>
+
+        We arrive to the below simplified form:
+
+        <FUNCTIONS>
+
+        Which are then solved in the code below for the given f1_macro score and sample size n.
 
         Args:
-            f1_macro:
-            n:
-            p:
+            f1_macro: Performance value which the created dataset should have (e.g. an f1_macro score of 0.6)
+            n: Size of dataset to be created
+            p: Proportion of 0s and 1s in the sample
 
         Returns:
-
+            Dataframe of length n with two columns: one holding the 'actuals' for the data, i.e. the true class,
+            and the other column containing the predicted values for these, which were chosen specifically to obtain
+            a f1_macro (approx.) equal to those passed in as arguments
         """
         if p is None:
             p = [0.86, 0.14]
