@@ -114,10 +114,18 @@ class TestPowerSimulations(unittest.TestCase):
 
         self.assertTrue(performance*0.97 <= generated_f1_macro <= performance*1.03)
 
-    def test_generate_data_df_proportions(self):
+    def test_generate_data_df_proportions_precision(self):
         class_0_proportion = 0.86
         df = PowerSimulations.generate_actuals_preds_precision(0.513, 166, p=[class_0_proportion,
                                                                               1-class_0_proportion])
+        class_0 = np.sum(df['true'] == 0) / len(df)
+
+        self.assertTrue(class_0_proportion*0.92 <= class_0 <= class_0_proportion*1.08)
+
+    def test_generate_data_df_proportions_f1_macro(self):
+        class_0_proportion = 0.86
+        df = PowerSimulations.generate_actuals_preds_f1_macro(0.6, 166, p=[class_0_proportion,
+                                                                           1-class_0_proportion])
         class_0 = np.sum(df['true'] == 0) / len(df)
 
         self.assertTrue(class_0_proportion*0.95 <= class_0 <= class_0_proportion*1.05)
