@@ -246,13 +246,29 @@ class PowerSimulations:
         false positives, false negatives, and true negatives, we require in the dataset to obtain the f1_macro score
         given. Using the following functions/definitions as starting points:
 
-        <FUNCTIONS>
+        With two classes, 0 and 1, we have:
 
-        We arrive to the below simplified form:
+        F1_macro = (p_0*r_0)/(p_0+r_0)  +  (p_1*r_1)/(p_1+r_1)
 
-        <FUNCTIONS>
+            where,
 
-        Which are then solved in the code below for the given f1_macro score and sample size n.
+        p_i = TP_i / (TP_i + FP_i)     is the precision of class i
+        r_i = TP_i / (TP_i + FN_i)     is the recall of class i
+        N_0 = TP_i + FN_i              is the number of samples in class i
+        N = N_0 + N_1                  is the size of the dataset / number of samples
+
+        and we note that FN_0 = FP_1 and FN_1 = FP_0.
+
+        We arrive to the below simplified equations:
+
+        F1_macro = (TP_0 / (2 * TP_0 + FN_0 + FN_1)) + (TP_1 / (2 * TP_1 + FN_0 + FN_1)
+        r_0 = TP_0 / (TP_0 + FN_0)
+
+
+        These two equations, along with the sample size equations, are then solved in the code below for the
+        user-specified f1_macro score and overall sample size n. Before solving these equations, we initialise recall_0
+        to a specific value. This is so we have fewer unknown variables which are to be calculated for - if we didn't
+        do this, then the system wouldn't be so easily solvable.
 
         Args:
             f1_macro: Performance value which the created dataset should have (e.g. an f1_macro score of 0.6)
