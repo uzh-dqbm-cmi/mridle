@@ -250,3 +250,16 @@ def build_harvey_et_al_features_set(status_df: pd.DataFrame, include_id_cols=Fal
     slot_df = build_slot_df(status_df, agg_dict, include_id_cols=include_id_cols)
 
     return slot_df
+
+
+
+# feature engineering for the duration model
+
+def feature_duration(dicom_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Calculates the duration of each MRI examination in minutes.
+    Returns: the original dataframe plus a duration column
+    """
+
+    dicom_df["duration"] = (dicom_df["image_end"] - dicom_df["image_start"]) / np.timedelta64(1, "m")
+    return dicom_df
