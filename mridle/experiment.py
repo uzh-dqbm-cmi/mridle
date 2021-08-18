@@ -522,8 +522,9 @@ class PartitionedExperiment:
     """
 
     def __init__(self, name: str, data_set: Any, label_key: str, preprocessing_func: Callable,
-                 model_run_class: ModelRun, model, hyperparams: Dict, n_partitions: int = 5,
-                 stratify_by_label: bool = True, feature_subset=None, reduce_features=False, verbose=False):
+                 model_run_class: ModelRun, model, hyperparams: Dict, search_type: str,
+                 scoring: str, n_partitions: int = 5, stratify_by_label: bool = True,
+                 feature_subset=None, reduce_features=False, verbose=False):
         """
 
         Args:
@@ -556,6 +557,9 @@ class PartitionedExperiment:
         self.stratify_by_label = stratify_by_label
         self.feature_subset = feature_subset
         self.reduce_features = reduce_features
+        self.hyperopt_trials = Trials()
+        self.search_type = search_type
+        self.scoring = scoring
 
         self.n_partitions = n_partitions
 
@@ -572,7 +576,7 @@ class PartitionedExperiment:
             print("Partition Stats for {}".format(self.name))
             self.report_partition_stats(self.partition_ids, data_set, label_key)
 
-    def run(self, num_partitions_to_run=None, run_hyperparam_search=True, search_type: str = "random",
+    def run(self, num_partitions_to_run=None, run_hyperparam_search=True,
             hyperopt_timeout: int = 60 * 60) -> List[Dict[str, Any]]:
         """
         Run the experiment on all partitions.
@@ -580,6 +584,7 @@ class PartitionedExperiment:
         Args:
             num_partitions_to_run: select a subset of partitions to run, for faster testing.
             run_hyperparam_search: argument to turn off hyperparam search, for faster testing.
+            hyperopt_timeout: If running hyperopt search, the user can specify how long to run this for (in seconds).
 
         Returns: List of experiment results (dicts from ModelRun.evaluation) for each of the partitions.
 
@@ -592,18 +597,16 @@ class PartitionedExperiment:
         for partition_name in self.partition_ids:
             if partition_name in partitions_to_run:
                 print("Running partition {}...".format(partition_name))
-                model_run = self.run_experiment_on_one_partition(data_set=self.data_set,
-                                                                 label_key=self.label_key,
+                model_run = self.run_experiment_on_one_partition(data_set=self.data_set, label_key=self.label_key,
                                                                  partition_ids=self.partition_ids[partition_name],
                                                                  preprocessing_func=self.preprocessing_func,
-                                                                 model_run_class=self.model_run_class,
-                                                                 model=self.model,
+                                                                 model_run_class=self.model_run_class, model=self.model,
                                                                  hyperparams=self.hyperparams,
                                                                  run_hyperparam_search=run_hyperparam_search,
-                                                                 search_type=search_type,
-                                                                 hyperopt_timeout=hyperopt_timeout,
+                                                                 search_type=self.search_type, scoring=self.scoring,
                                                                  feature_subset=self.feature_subset,
-                                                                 reduce_features=self.reduce_features)
+                                                                 reduce_features=self.reduce_features,
+                                                                 hyperopt_timeout=hyperopt_timeout)
                 self.model_runs[partition_name] = model_run
 
         print("Compiling results")
@@ -613,13 +616,13 @@ class PartitionedExperiment:
     @classmethod
     def run_experiment_on_one_partition(cls, data_set: Dict, label_key: str, partition_ids: List[int],
                                         preprocessing_func: Callable, model_run_class: ModelRun, model,
-                                        hyperparams: Dict, run_hyperparam_search: bool, search_type, hyperopt_timeout,
-                                        feature_subset: List[str], reduce_features: bool):
+                                        hyperparams: Dict, run_hyperparam_search: bool, search_type, scoring,
+                                        feature_subset: List[str], reduce_features: bool, hyperopt_timeout: int = 60):
         train_set, test_set = cls.materialize_partition(partition_ids, data_set)
         mr = model_run_class(train_set=train_set, test_set=test_set, label_key=label_key, model=model,
-                             preprocessing_func=preprocessing_func, hyperparams=hyperparams,
-                             feature_subset=feature_subset, reduce_features=reduce_features)
-        mr.run(run_hyperparam_search=run_hyperparam_search, search_type=search_type, hyperopt_timeout=hyperopt_timeout)
+                             preprocessing_func=preprocessing_func, hyperparams=hyperparams, search_type=search_type,
+                             scoring=scoring, feature_subset=feature_subset, reduce_features=reduce_features)
+        mr.run(run_hyperparam_search=run_hyperparam_search, hyperopt_timeout=hyperopt_timeout)
         return mr
 
     @classmethod
