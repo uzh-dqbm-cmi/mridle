@@ -87,7 +87,7 @@ class ModelRun:
         if run_hyperparam_search:
             self.model = self.search_hyperparameters(self.model, self.hyperparams, self.x_train, self.y_train,
                                                      search_type=self.search_type, hyperopt_timeout=hyperopt_timeout,
-                                                     hyperopt_trials=self.hyperopt_trials)
+                                                     hyperopt_trials=self.hyperopt_trials, scoring=self.scoring)
             if self.reduce_features:
                 self.rfecv = self.train_feature_reducer(self.model, self.x_train, self.y_train)
                 self.model = self.rfecv.estimator_
@@ -242,8 +242,7 @@ class ModelRun:
         if search_type == "random":
             print("HERE")
             random_search = RandomizedSearchCV(estimator=model, param_distributions=hyperparams, n_iter=10, cv=5,
-                                               verbose=2,
-                                               random_state=42, n_jobs=-1, scoring=scoring)
+                                               verbose=2, random_state=42, n_jobs=-1, scoring=scoring)
             random_search.fit(x_train, y_train)
             best_est = random_search.best_estimator_
         elif search_type == "grid":
