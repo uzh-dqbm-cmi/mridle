@@ -295,7 +295,8 @@ class ModelRun:
 
         to_minimise = np.mean(cv_results)
         if print_result:
-            print(params, to_minimise)
+            print(params)
+            print('Loss: {}'.format(to_minimise))
 
         return to_minimise
 
