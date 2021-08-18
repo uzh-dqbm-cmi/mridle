@@ -226,7 +226,7 @@ class ModelRun:
     @classmethod
     def search_hyperparameters(cls, model: Any, hyperparams: Dict[str, List], x_train: pd.DataFrame,
                                y_train: List, scoring: str, search_type: str, hyperopt_timeout: int,
-                               hyperopt_trials: Trials()) -> Any:
+                               hyperopt_trials: Any) -> Any:
         """
         Run sklearn.model_selection.Randomized_SearchCV and return the best model.
         Args:
@@ -234,13 +234,17 @@ class ModelRun:
             hyperparams: Dictionary of hyperparameter options.
             x_train: Training data input.
             y_train: Training data labels.
+            scoring: string, denoting the scoring type to use. e.g. 'f1_macro'
+            search_type: Type of search for hyperparameters. Choose between random, grid, and bayesian search. All
+            search types include cross validation
+            hyperopt_timeout: If running hyperopt search, the user can specify how long to run this for (in seconds).
+            hyperopt_trials: If running hyperopt search, the Trials object holds the results of previous hyperparameter
+            evaluations, and uses these to guide the future search.
 
         Returns: The best model.
 
         """
-        print(search_type)
         if search_type == "random":
-            print("HERE")
             random_search = RandomizedSearchCV(estimator=model, param_distributions=hyperparams, n_iter=10, cv=5,
                                                verbose=2, random_state=42, n_jobs=-1, scoring=scoring)
             random_search.fit(x_train, y_train)
@@ -251,20 +255,17 @@ class ModelRun:
             grid_search.fit(x_train, y_train)
             best_est = grid_search.best_estimator_
         elif search_type == "bayesian":
-            best_est = cls.hyperopt_param_search(model, hyperparams, x_train, y_train, timeout=hyperopt_timeout,
-                                                 trials=hyperopt_trials, nfolds=5, scoring=scoring)
+            best_est = cls.hyperopt_param_search(model, hyperparams, x_train, y_train, scoring=scoring,
+                                                 trials=hyperopt_trials, timeout=hyperopt_timeout, nfolds=5)
 
         else:
             raise NotImplementedError(
                 'search_type should be one of ''random'', ''grid'' or ''bayesian. ''{}'' given'.format(search_type))
 
-        print(best_est)
         return best_est
 
     @classmethod
-    def hyperopt_objective(cls, params, model, x_train, y_train, scoring, ids, nfolds=5):
-        print(params)
-
+    def hyperopt_objective(cls, params, model, x_train, y_train, scoring, ids, nfolds, print_result):
         model = model
         model = model.set_params(**params)
 
@@ -279,7 +280,7 @@ class ModelRun:
 
             if scoring == 'f1_macro':
                 preds = model.predict(x_test_cv)
-                loss = f1_score(y_test_cv, preds, average='macro')
+                loss = -1 * f1_score(y_test_cv, preds, average='macro')
             elif scoring == 'log_loss':
                 probs = model.predict_proba(x_test_cv)[:, 1]
                 loss = log_loss(y_test_cv, probs)
@@ -292,11 +293,15 @@ class ModelRun:
 
             cv_results.append(loss)
 
-        return np.mean(cv_results)
+        to_minimise = np.mean(cv_results)
+        if print_result:
+            print(params, to_minimise)
+
+        return to_minimise
 
     @classmethod
-    def hyperopt_param_search(cls, model, hyperparameters, x_train, y_train, scoring, timeout=5 * 60 * 60,
-                              max_evals=150, trials=Trials(), nfolds=5):
+    def hyperopt_param_search(cls, model, hyperparameters, x_train, y_train, scoring, trials, timeout=5 * 60 * 60,
+                              max_evals=150, nfolds=5, print_result=True):
 
         space = hyperparameters
 
@@ -304,8 +309,8 @@ class ModelRun:
         cv_ids.extend(list(range(len(x_train) % nfolds)))
         cv_ids = np.random.permutation(cv_ids)
 
-        best_rf = fmin(partial(cls.hyperopt_objective, model=model, x_train=x_train,
-                               y_train=y_train, scoring=scoring, ids=cv_ids, nfolds=nfolds),
+        best_rf = fmin(partial(cls.hyperopt_objective, model=model, x_train=x_train, y_train=y_train, scoring=scoring,
+                               ids=cv_ids, nfolds=nfolds, print_result=print_result),
                        space, algo=tpe.suggest, timeout=timeout, max_evals=max_evals, trials=trials)
         best_params = space_eval(space, best_rf)
         model = model.set_params(**best_params)
