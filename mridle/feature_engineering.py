@@ -252,7 +252,6 @@ def build_harvey_et_al_features_set(status_df: pd.DataFrame, include_id_cols=Fal
     return slot_df
 
 
-
 # feature engineering for the duration model
 
 def feature_duration(dicom_df: pd.DataFrame) -> pd.DataFrame:
