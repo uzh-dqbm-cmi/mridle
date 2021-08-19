@@ -74,7 +74,7 @@ class ModelRun:
         # saved to maintain and end-to-end record of the the history of data the model was trained on
         self.preprocessing_func = preprocessing_func
 
-    def run(self, run_hyperparam_search: bool = True, hyperopt_timeout: int = 60 * 60) -> Dict:
+    def run(self, run_hyperparam_search: bool = True, hyperopt_timeout: int = 360) -> Dict:
         """
         Run the modeling experiment.
 
@@ -170,10 +170,12 @@ class ModelRun:
     def build_x_features(cls, data_set: Any, encoders: Dict, label_key: str = '') -> Tuple[pd.DataFrame, List[str]]:
         """
         Create the X feature set from the data set by removing the label column.
+
         Args:
             data_set: Data set to transform into features.
             encoders: Dict of pre-trained encoders for use in building features.
             label_key: Name of the label column that will be removed from the dataset to generate the feature set.
+
         Returns:
             Tuple containing the pd.DataFrame of the feature set and a list of the column names.
         """
@@ -308,7 +310,7 @@ class ModelRun:
         return to_minimise
 
     @classmethod
-    def hyperopt_param_search(cls, model, hyperparameters, x_train, y_train, scoring_fn, trials, timeout=5 * 60 * 60,
+    def hyperopt_param_search(cls, model, hyperparameters, x_train, y_train, scoring_fn, trials, timeout=5 * 360,
                               max_evals=150, nfolds=5, print_result=True):
 
         space = hyperparameters
@@ -551,7 +553,7 @@ class PartitionedExperiment:
                 Passed through to ModelRun in order to be able to generate Predictor objects.
             model_run_class: An implemented subclass of ModelRun.
             model: A model with a fit() method.
-            hyperparams: Dictionary of hyperparameter options to try with sklearn.model_selection.RandomizedSearchCV.
+            hyperparams: Dictionary of hyperparamters to search for the best model.
             search_type: Type of search to do when searching for hyperparameters (grid, random, or bayesian)
             scoring_fn: Function type for use when performing cross validation (e.g. f1_macro)
             n_partitions: Number of partitions to split the data on and run the experiment on.
@@ -595,7 +597,7 @@ class PartitionedExperiment:
             self.report_partition_stats(self.partition_ids, data_set, label_key)
 
     def run(self, num_partitions_to_run=None, run_hyperparam_search=True,
-            hyperopt_timeout: int = 60 * 60) -> List[Dict[str, Any]]:
+            hyperopt_timeout: int = 360) -> List[Dict[str, Any]]:
         """
         Run the experiment on all partitions.
 
@@ -663,7 +665,7 @@ class PartitionedExperiment:
         return partitions
 
     @classmethod
-    def materialize_partition(cls, partition_ids: Tuple[List[int], List[int]], data_set: pd.DataFrame) \
+    def materialize_partition(cls, partition_ids: Tuple[List[int], List[int]], data_set: pd.DataFrame)\
             -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Create training and testing dataset based on the partition, which indicate the ids for the test set.
