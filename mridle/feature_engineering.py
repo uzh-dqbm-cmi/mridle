@@ -323,8 +323,8 @@ def build_feature_set(status_df: pd.DataFrame, include_id_cols=False) -> pd.Data
 
     return slot_df
 
-# feature engineering for the duration model
 
+# feature engineering for the duration model
 def feature_duration(dicom_df: pd.DataFrame) -> pd.DataFrame:
     """
     Calculates the duration of each MRI examination in minutes.
