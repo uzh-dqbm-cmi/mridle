@@ -5,10 +5,7 @@ from sklearn.metrics import f1_score, precision_score, recall_score
 from pandas.testing import assert_frame_equal
 import numpy as np
 
-
-precision = 0.513
-recall = 0.429
-
+p = 0.14
 avg_appts_per_week = 166
 
 effect_sizes = [0.1, 0.15, 0.2]
@@ -41,7 +38,9 @@ class TestPowerSimulations(unittest.TestCase):
         self.assertEqual(lengths, split_lengths)
 
     def test_permute_split_no_resampling_of_rows(self):
-        df = PowerSimulations.generate_actuals_preds(precision, recall, 4000)
+        performance = 0.513
+
+        df = PowerSimulations.generate_actuals_preds_precision(performance, 4000, p=p)
 
         df_split_1, df_split_2 = permute_and_split(df, split_point=3000)
 
@@ -50,72 +49,95 @@ class TestPowerSimulations(unittest.TestCase):
         assert_frame_equal(df, recombined)
 
     def test_permute_split_not_same_df_returned(self):
-        df_1 = PowerSimulations.generate_actuals_preds(precision, recall, 4000)
-        df_2 = PowerSimulations.generate_actuals_preds(precision, recall, 1000)
+        performance = 0.513
+        df_1 = PowerSimulations.generate_actuals_preds_precision(performance, 4000, p=p)
+        df_2 = PowerSimulations.generate_actuals_preds_precision(performance, 1000, p=p)
         pooled = pd.concat([df_1, df_2])
         df_split_1, df_split_2 = permute_and_split(pooled, split_point=4000)
 
         assert_frame_not_equal(df_1, df_split_1)
 
     def test_f1_same_df(self):
-        df = PowerSimulations.generate_actuals_preds(precision, recall, 4000)
+        performance = 0.513
+
+        df = PowerSimulations.generate_actuals_preds_precision(performance, 4000, p=p)
 
         score = calculate_f1_diff(df, df)
         self.assertEqual(score, 0)
 
     def test_f1_diff_df(self):
-        df = PowerSimulations.generate_actuals_preds(precision, recall, 4000)
+        performance = 0.513
 
-        prec_new = precision * (1 - 0.1)
-        recall_new = recall * (1 - 0.1)
+        df = PowerSimulations.generate_actuals_preds_precision(performance, 4000, p=p)
+
+        performance_new = performance * (1 - 0.1)
         sample_size_new = avg_appts_per_week * 5
 
-        df_new = PowerSimulations.generate_actuals_preds(prec_new, recall_new, sample_size_new)
+        df_new = PowerSimulations.generate_actuals_preds_precision(performance_new, sample_size_new, p=p)
 
         score = calculate_f1_diff(df, df_new)
 
         self.assertNotEqual(score, 0)
 
     def test_f1_diff_greater_than_0(self):
-        df = PowerSimulations.generate_actuals_preds(precision, recall, 4000)
+        performance = 0.513
+        df = PowerSimulations.generate_actuals_preds_precision(performance, 4000, p=p)
 
-        prec_new = precision * (1 - 0.1)
-        recall_new = recall * (1 - 0.1)
+        performance_new = performance * (1 - 0.1)
         sample_size_new = avg_appts_per_week * 5
 
-        df_new = PowerSimulations.generate_actuals_preds(prec_new, recall_new, sample_size_new)
+        df_new = PowerSimulations.generate_actuals_preds_precision(performance_new, sample_size_new, p=p)
 
         score = calculate_f1_diff(df, df_new)
 
         self.assertGreater(score, 0)
 
     def test_generate_data_precision(self):
+        performance = 0.513
         exp = PowerSimulations(sample_sizes=sample_sizes, effect_sizes=effect_sizes, num_trials_per_run=1000,
                                num_runs_for_power_calc=1000, original_test_set_length=4000, significance_level=0.05,
-                               base_recall=recall, base_precision=precision, num_cpus=8, random_seed=0)
+                               base_performance=performance, performance_type='precision', num_cpus=8, random_seed=0)
 
-        df = exp.generate_actuals_preds(exp.base_precision, exp.base_recall, exp.original_test_set_length)
+        df = exp.generate_actuals_preds_precision(exp.base_performance, exp.original_test_set_length, p=p)
         generated_prec = precision_score(df['true'], df['pred'])
 
-        self.assertTrue(precision*0.97 <= generated_prec <= precision*1.03)
+        self.assertTrue(performance*0.97 <= generated_prec <= performance*1.03)
 
-    def test_generate_data_recall(self):
+    def test_generate_data_f1_macro(self):
+        performance = 0.65
         exp = PowerSimulations(sample_sizes=sample_sizes, effect_sizes=effect_sizes, num_trials_per_run=1000,
                                num_runs_for_power_calc=1000, original_test_set_length=4000, significance_level=0.05,
-                               base_recall=recall, base_precision=precision, num_cpus=8, random_seed=0)
+                               base_performance=performance, performance_type='f1_macro', num_cpus=8, random_seed=0)
 
-        df = exp.generate_actuals_preds(exp.base_precision, exp.base_recall, exp.original_test_set_length)
-        generated_rec = recall_score(df['true'], df['pred'])
+        df = exp.generate_actuals_preds_f1_macro(exp.base_performance, exp.original_test_set_length, p=p)
+        generated_f1_macro = f1_score(df['true'], df['pred'], average='macro')
 
-        self.assertTrue(recall*0.97 <= generated_rec <= recall*1.03)
+        self.assertTrue(performance*0.97 <= generated_f1_macro <= performance*1.03)
 
-    def test_generate_data_df_proportions(self):
-        class_0_proportion = 0.86
-        df = PowerSimulations.generate_actuals_preds(precision, recall, 166, p=[class_0_proportion,
-                                                                                1-class_0_proportion])
-        class_0 = np.sum(df['true'] == 0) / len(df)
+    def test_generate_data_df_proportions_precision(self):
+        class_1_proportion = 0.2
+        exp = PowerSimulations(sample_sizes=sample_sizes, effect_sizes=effect_sizes, num_trials_per_run=1000,
+                               num_runs_for_power_calc=1000, original_test_set_length=4000, significance_level=0.05,
+                               base_performance=0.6, performance_type='precision', num_cpus=8, random_seed=0,
+                               p=class_1_proportion)
 
-        self.assertTrue(class_0_proportion*0.95 <= class_0 <= class_0_proportion*1.05)
+        df = exp.generate_actuals_preds_precision(exp.base_performance, exp.original_test_set_length,
+                                                  p=exp.p)
+        class_1 = np.sum(df['true']) / len(df)
+        self.assertTrue(exp.p*0.90 <= class_1 <= exp.p*1.1)
+
+    def test_generate_data_df_proportions_f1_macro(self):
+        class_1_proportion = 0.2
+        exp = PowerSimulations(sample_sizes=sample_sizes, effect_sizes=effect_sizes, num_trials_per_run=1000,
+                               num_runs_for_power_calc=1000, original_test_set_length=4000, significance_level=0.05,
+                               base_performance=0.6, performance_type='f1_macro', num_cpus=8, random_seed=0,
+                               p=class_1_proportion)
+
+        df = exp.generate_actuals_preds_f1_macro(exp.base_performance, exp.original_test_set_length,
+                                                 p=exp.p)
+        class_1 = np.sum(df['true']) / len(df)
+
+        self.assertTrue(exp.p*0.92 <= class_1 <= exp.p*1.08)
 
 
 if __name__ == '__main__':
