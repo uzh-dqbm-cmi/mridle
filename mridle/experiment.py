@@ -395,9 +395,12 @@ class ModelRun:
         Get the hyperparameters of the model.
         Getting hyperparameters for various sklearn models is done differently, so ModelRun contains custom functions
          for retrieiving them (in model_hyperparam_func_map).
+
         Args:
             name: The name of the model for labeling the index of the resulting dataframe.
+
         Returns: Summary of model hyperparameters in a pd.DataFrame.
+
         Raises: NotImplementedError if the model is a type that is not registered in model_hyperparam_func_map.
         """
         model_hyperparam_func_map = {
@@ -445,9 +448,12 @@ class ModelRun:
         """
         Generate a filename for a model that includes the timestamp, model type, and an optional descriptor.
         These properties are separated by '__' and the filename ends in .pkl.
+
         Args:
             descriptor: Optional descriptor to add to the file name.
-        Returns: File name with file extension.
+
+        Returns:
+            File name with file extension.
         """
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         model_type = self.model.__class__.__name__
@@ -463,10 +469,13 @@ class ModelRun:
         """
         Save a model as a pickle to a parent_directory with a programmatic filename that includes a timestamp,
          model type, and optional descriptor.
+
         Args:
             parent_directory: The parent directory in which to save the model.
             descriptor: Optional descriptor to add to the file name.
-        Returns: File path of the saved object.
+
+        Returns:
+            File path of the saved object.
         Example Usage:
             >>> my_model_run.save('project/data/models/')
             >>> # saves project/data/models/YYYY-MM-DD_HH-MM-SS__<model_class>.pkl
@@ -609,7 +618,8 @@ class PartitionedExperiment:
                 model_run = self.run_experiment_on_one_partition(data_set=self.data_set, label_key=self.label_key,
                                                                  partition_ids=self.partition_ids[partition_name],
                                                                  preprocessing_func=self.preprocessing_func,
-                                                                 model_run_class=self.model_run_class, model=self.model,
+                                                                 model_run_class=self.model_run_class,
+                                                                 model=self.model,
                                                                  hyperparams=self.hyperparams,
                                                                  run_hyperparam_search=run_hyperparam_search,
                                                                  search_type=self.search_type,
