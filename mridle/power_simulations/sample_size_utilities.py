@@ -282,13 +282,13 @@ class PowerSimulations:
         to a specific value. This is so we have fewer unknown variables which are to be calculated for - if we didn't
         do this, then the system wouldn't be so easily solvable.
 
-        After trying out a methods for setting this initial value (recall_0 set to the required f1_macro score for one),
-        setting recall to be slightly larger than the required f1_macro score was shown to generally allow a solution
-        to be found in the first iteration. Sometimes, in the 'edge' cases (i.e. with f1_macro > 0.9), setting recall
-        to this initial value doesn't allow for solutions to be found (the recall value is seemingly not high enough
-        to allow such a high overall f1_macro to be achieved). Therefore, if no solution is found after this first
-        attempt, the recall score is raised slightly, and an attempt is made to find a solution with this value. If
-        none is found, then recall is again raised. This will eventually allow for a solution to be found.
+        After trying out a methods for setting this initial value (e.g. recall_0 set equal to the required f1_macro
+        score), setting recall to be slightly larger than the required f1_macro score was shown to generally allow a
+        solution to be found in the first iteration. Sometimes, in the 'edge' cases (i.e. with f1_macro > 0.9), setting
+        recall to this initial value doesn't allow for solutions to be found (the recall value is seemingly not high
+        enough to allow such a high overall f1_macro to be achieved). Therefore, if no solution is found after this
+        first attempt, the recall score is raised slightly, and an attempt is made to find a solution with this value.
+        If none is found, then recall is again raised. This will eventually allow for a solution to be found.
 
         Args:
             f1_macro: Performance value which the created dataset should have (e.g. an f1_macro score of 0.6)
