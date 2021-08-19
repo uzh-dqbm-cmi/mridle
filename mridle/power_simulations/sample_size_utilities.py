@@ -23,7 +23,8 @@ class PowerSimulations:
 
     def __init__(self, sample_sizes: List[int], effect_sizes: List[float], num_trials_per_run: int,
                  num_runs_for_power_calc: int, original_test_set_length: int, significance_level: float,
-                 base_performance: float, performance_type: str, num_cpus: int, random_seed: int = None):
+                 base_performance: float, performance_type: str, num_cpus: int, p: float = 0.14,
+                 random_seed: int = None):
         """
         Create a PowerSimulations objects.
 
@@ -45,6 +46,8 @@ class PowerSimulations:
             base_performance: Performance of the model on the original test set
             performance_type: Score measure of the base_performance (i.e. 'f1_macro', 'precision')
             num_cpus: Number of cpus to use for the experiment executions
+            p: Proportion of 1s in the sample. Default to 0.14, which is approx. the no show rate of our dataset
+
         """
         self.sample_sizes = sample_sizes
         self.effect_sizes = effect_sizes
@@ -58,6 +61,7 @@ class PowerSimulations:
         self.num_cpus = num_cpus
         self.random_seed = random_seed
         self.run_id = ''
+        self.p = p
 
     def run(self, log_to_file: bool = True):
         """
@@ -141,8 +145,8 @@ class PowerSimulations:
 
         """
 
-        df = self.generate_actuals_preds(self.base_performance, self.original_test_set_length)
-        df_new = self.generate_actuals_preds(performance_new, sample_size_new)
+        df = self.generate_actuals_preds(self.base_performance, self.original_test_set_length, self.p)
+        df_new = self.generate_actuals_preds(performance_new, sample_size_new, self.p)
 
         pooled = pd.concat([df, df_new])
         orig_diff = f1_score(df['true'], df['pred'], average='macro') - f1_score(df_new['true'], df_new['pred'],
@@ -168,46 +172,54 @@ class PowerSimulations:
 
         return score
 
-    def generate_actuals_preds(self, performance: float, n: int) -> pd.DataFrame:
+    def generate_actuals_preds(self, performance: float, n: int, p: float) -> pd.DataFrame:
         """
 
         Args:
             performance: Performance value which the created dataset should have (e.g. a precision of 0.6)
             n: Size of dataset to be created
+            p: Proportion of 1s in the sample.
 
         Returns:
+            Dataframe of length n with two columns: one holding the 'actuals' for the data, i.e. the true class,
+            and the other column containing the predicted values for these, which were chosen specifically to obtain
+            a performance (approx.) equal to those passed in as arguments
 
         """
         if self.performance_type == 'precision':
-            return self.generate_actuals_preds_precision(performance, n)
+            return self.generate_actuals_preds_precision(performance, n, p)
         elif self.performance_type == 'f1_macro':
-            return self.generate_actuals_preds_f1_macro(performance, n)
+            return self.generate_actuals_preds_f1_macro(performance, n, p)
 
     @staticmethod
-    def generate_actuals_preds_precision(precision: float, n: int, p: List[float] = None) -> pd.DataFrame:
+    def generate_actuals_preds_precision(precision: float, n: int, p: float) -> pd.DataFrame:
         """
         Generate a sample dataset of true label values along with predicted values for these. This dataframe
         is created so as to have a precision score equal to that provided in the parameters, and will
         be of length n.
 
+        A recall value is also required to generate these datasets, but as this value won't impact on any of the
+        following corrections, and the user will be apathetic to the choice of recall, it is set automatically to be the
+        same as the value passed for precision
+
         Args:
             precision: Performance value which the created dataset should have (e.g. a precision of 0.6)
             n: Size of dataset to be created
-            p: Proportion of 0s and 1s in the sample
+            p: Proportion of 1s in the sample.
 
         Returns:
             Dataframe of length n with two columns: one holding the 'actuals' for the data, i.e. the true class,
             and the other column containing the predicted values for these, which were chosen specifically to obtain
             a precision (approx.) equal to those passed in as arguments
         """
-        if p is None:
-            p = [0.86, 0.14]
 
         # We're focusing on precision, but need a value for recall as well. So we just set this to be equal to precision
         prec = precision
         rec = precision
 
-        actuals = np.random.choice([0, 1], size=n, p=p)
+        sample_proportion = [1-p, p]
+
+        actuals = np.random.choice([0, 1], size=n, p=sample_proportion)
         preds = actuals.copy()
         n_pos = np.sum(actuals)
         rec_change = (1 - rec) * n_pos
@@ -236,7 +248,7 @@ class PowerSimulations:
         return df
 
     @staticmethod
-    def generate_actuals_preds_f1_macro(f1_macro: float, n: int, p=None) -> pd.DataFrame:
+    def generate_actuals_preds_f1_macro(f1_macro: float, n: int, p: float) -> pd.DataFrame:
         """
         Generate a sample dataset of true label values along with predicted values for these. This dataframe
         is created so as to have a f1_macro score equal to that provided in the parameters, and will
@@ -270,22 +282,28 @@ class PowerSimulations:
         to a specific value. This is so we have fewer unknown variables which are to be calculated for - if we didn't
         do this, then the system wouldn't be so easily solvable.
 
+        After trying out a methods for setting this initial value (recall_0 set to the required f1_macro score for one),
+        setting recall to be slightly larger than the required f1_macro score was shown to generally allow a solution
+        to be found in the first iteration. Sometimes, in the 'edge' cases (i.e. with f1_macro > 0.9), setting recall
+        to this initial value doesn't allow for solutions to be found (the recall value is seemingly not high enough
+        to allow such a high overall f1_macro to be achieved). Therefore, if no solution is found after this first
+        attempt, the recall score is raised slightly, and an attempt is made to find a solution with this value. If
+        none is found, then recall is again raised. This will eventually allow for a solution to be found.
+
         Args:
             f1_macro: Performance value which the created dataset should have (e.g. an f1_macro score of 0.6)
             n: Size of dataset to be created
-            p: Proportion of 0s and 1s in the sample
+            p: Proportion of 1s in the sample
 
         Returns:
             Dataframe of length n with two columns: one holding the 'actuals' for the data, i.e. the true class,
             and the other column containing the predicted values for these, which were chosen specifically to obtain
             a f1_macro (approx.) equal to those passed in as arguments
         """
-        if p is None:
-            p = [0.86, 0.14]
 
         wanted_f1 = f1_macro
         recall_0 = wanted_f1 * 1.1 if wanted_f1 * 1.1 < 1 else wanted_f1
-        n0, n1 = p[0] * n, p[1] * n
+        n0, n1 = (1-p) * n, p * n
 
         # c = tp0, d = tp1, a=fn0=fp1, b=fn1=fp0
         sol_found = False
@@ -302,19 +320,23 @@ class PowerSimulations:
             for solution in sol:
                 feasible = all(v > 0 for v in solution.values())
                 if feasible:
+                    print('sol found, recall {}'.format(recall_0))
                     tp0 = round(solution[c])
                     tp1 = round(solution[d])
                     fn0 = round(solution[a])
                     fn1 = round(solution[b])
                     sol_found = True
-                else:
-                    recall_0 = recall_0 * 1.01
+
+            if not sol_found:
+                print('sol not found, recall {}'.format(recall_0))
+                recall_0 = recall_0 * 1.01
 
         sol_list = [[0, 0]] * tp0
         sol_list.extend([[0, 1]] * fn0)
         sol_list.extend([[1, 1]] * tp1)
         sol_list.extend([[1, 0]] * fn1)
         solution_df = pd.DataFrame(sol_list, columns=['true', 'pred'])
+
         return solution_df
 
     def save(self, parent_directory: str, descriptor: str = '') -> Path:
