@@ -13,7 +13,7 @@ class TestExperiment(unittest.TestCase):
 
         exp = PartitionedExperiment(name='test', data_set=df, label_key='D', preprocessing_func=None,
                                     model_run_class=ModelRun, model=RandomForestClassifier(), hyperparams={},
-                                    verbose=True, search_type='random', scoring='f1_score')
+                                    verbose=True, search_type='random', scoring_fn='f1_score')
         results = exp.run(run_hyperparam_search=False)
         print(results)
         print("Evaluation")
@@ -30,7 +30,7 @@ class TestExperiment(unittest.TestCase):
 
         exp = PartitionedExperiment(name='test', data_set=data_set, label_key=label_key, preprocessing_func=None,
                                     model_run_class=harvey_model_run, model=RandomForestClassifier(), hyperparams={},
-                                    verbose=True, search_type='random', scoring='f1_score')
+                                    verbose=True, search_type='random', scoring_fn='f1_score')
         results = exp.run(run_hyperparam_search=False)
         print(results)
         print("Evaluation")
@@ -45,7 +45,8 @@ class TestExperiment(unittest.TestCase):
         label_key = 'noshow'
         model = RandomForestClassifier()
         harvey_model_run = HarveyModel(train_set=data_set, test_set=data_set, label_key=label_key, hyperparams={},
-                                       model=model, preprocessing_func=None, search_type='random', scoring='f1_score')
+                                       model=model, preprocessing_func=None, search_type='random',
+                                       scoring_fn='f1_score')
 
         file_name = harvey_model_run.generate_file_name()
         expected_file_name = '0000-00-00_00-00-00__RandomForestClassifier.pkl'
@@ -59,7 +60,8 @@ class TestExperiment(unittest.TestCase):
         label_key = 'noshow'
         model = RandomForestClassifier()
         harvey_model_run = HarveyModel(train_set=data_set, test_set=data_set, label_key=label_key, hyperparams={},
-                                       model=model, preprocessing_func=None, search_type='random', scoring='f1_score')
+                                       model=model, preprocessing_func=None, search_type='random',
+                                       scoring_fn='f1_score')
 
         file_name = harvey_model_run.generate_file_name('5-features')
         expected_file_name = '0000-00-00_00-00-00__RandomForestClassifier__5-features.pkl'
@@ -73,7 +75,8 @@ class TestExperiment(unittest.TestCase):
         label_key = 'noshow'
         model = RandomForestClassifier()
         harvey_model_run = HarveyModel(train_set=data_set, test_set=data_set, label_key=label_key, hyperparams={},
-                                       model=model, preprocessing_func=None, search_type='random', scoring='f1_score')
+                                       model=model, preprocessing_func=None, search_type='random',
+                                       scoring_fn='f1_score')
 
         file_name = harvey_model_run.generate_file_name('5 features')
         expected_file_name = '0000-00-00_00-00-00__RandomForestClassifier__5-features.pkl'
