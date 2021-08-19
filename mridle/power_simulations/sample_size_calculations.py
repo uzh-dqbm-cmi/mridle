@@ -1,7 +1,7 @@
 import os
 from mridle.power_simulations.sample_size_utilities import PowerSimulations
 
-performance = 0.05
+performance = 0.95
 performance_type = 'f1_macro'
 avg_appts_per_week = 166  # taken from aggregation of df_features_original data for the year 2017 (in notebook #52)
 

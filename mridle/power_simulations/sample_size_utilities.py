@@ -328,7 +328,6 @@ class PowerSimulations:
                     sol_found = True
 
             if not sol_found:
-                logging.info('Solution not found for recall {}, trying again with a modified recall value'.format(recall_0))
                 recall_0 = recall_0 * 1.01
 
         sol_list = [[0, 0]] * tp0
