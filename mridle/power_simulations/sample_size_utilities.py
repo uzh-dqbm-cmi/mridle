@@ -9,6 +9,8 @@ from typing import List, Tuple
 from pathlib import Path
 import pickle
 import datetime
+from sympy import Eq, solve
+from sympy.abc import a, b, c, d
 
 
 class PowerSimulations:
@@ -21,7 +23,8 @@ class PowerSimulations:
 
     def __init__(self, sample_sizes: List[int], effect_sizes: List[float], num_trials_per_run: int,
                  num_runs_for_power_calc: int, original_test_set_length: int, significance_level: float,
-                 base_precision: float, base_recall: float, num_cpus: int, random_seed: int = None):
+                 base_performance: float, performance_type: str, num_cpus: int, p: float = 0.14,
+                 random_seed: int = None):
         """
         Create a PowerSimulations objects.
 
@@ -40,9 +43,11 @@ class PowerSimulations:
             power of the test
             original_test_set_length: Number of samples to create for the 'original' test set
             significance_level: Significance level to use for the permutation test
-            base_precision: Precision of the model on the original test set
-            base_recall: Recall of the model on the original test set
+            base_performance: Performance of the model on the original test set
+            performance_type: Score measure of the base_performance (i.e. 'f1_macro', 'precision')
             num_cpus: Number of cpus to use for the experiment executions
+            p: Proportion of 1s in the sample. Default to 0.14, which is approx. the no show rate of our dataset
+
         """
         self.sample_sizes = sample_sizes
         self.effect_sizes = effect_sizes
@@ -50,12 +55,13 @@ class PowerSimulations:
         self.num_runs_for_power_calc = num_runs_for_power_calc
         self.original_test_set_length = original_test_set_length
         self.significance_level = np.float64(significance_level)
-        self.base_precision = base_precision
-        self.base_recall = base_recall
+        self.base_performance = base_performance
+        self.performance_type = performance_type
         self.results = None
         self.num_cpus = num_cpus
         self.random_seed = random_seed
         self.run_id = ''
+        self.p = p
 
     def run(self, log_to_file: bool = True):
         """
@@ -94,8 +100,8 @@ class PowerSimulations:
         logging.info(f'num_runs_for_power_calc: {self.num_runs_for_power_calc}')
         logging.info(f'original_test_set_length: {self.original_test_set_length}')
         logging.info(f'significance_level: {self.significance_level}')
-        logging.info(f'base_precision: {self.base_precision}')
-        logging.info(f'base_recall: {self.base_recall}')
+        logging.info(f'base_performance: {self.base_performance}')
+        logging.info(f'performance_type: {self.performance_type}')
 
     def run_simulation_for_effect_size_sample_size(self, effect_sample_sizes: Tuple[float, int]) -> List[float]:
         """
@@ -110,12 +116,12 @@ class PowerSimulations:
         """
         effect_size, sample_size = effect_sample_sizes
 
-        precision_new = self.base_precision * (1 - effect_size)
-        recall_new = self.base_recall * (1 - effect_size)
+        performance_new = self.base_performance * (1 - effect_size)
+
         if self.random_seed:
             np.random.seed(self.random_seed)
 
-        alphas = [self.run_permutation_trials(precision_new, recall_new, sample_size)
+        alphas = [self.run_permutation_trials(performance_new, sample_size)
                   for i in range(self.num_runs_for_power_calc)]
         power = np.sum(alphas < self.significance_level) / len(alphas)
 
@@ -123,7 +129,7 @@ class PowerSimulations:
 
         return power
 
-    def run_permutation_trials(self, prec_new: float, rec_new: float, sample_size_new: int) -> float:
+    def run_permutation_trials(self, performance_new: float, sample_size_new: int) -> float:
         """
         Execute n=self.num_trials_per_run runs of the individual permuted trial in the function one_trial.
         An alpha value for this trial is returned, and we will then obtain n=self.num_runs_for_power_calc values
@@ -131,8 +137,7 @@ class PowerSimulations:
         can then calculated the power of our test.
 
         Args:
-            prec_new: Precision that the new test set and predictions should be generated with
-            rec_new: Recall that the new test set and predictions should be generated with
+            performance_new: Required performance for the new test set to be generated (e.g. a 5% drop in performance)
             sample_size_new: Sample size of new test set to be generated
 
         Returns:
@@ -140,8 +145,8 @@ class PowerSimulations:
 
         """
 
-        df = self.generate_actuals_preds(self.base_precision, self.base_recall, self.original_test_set_length)
-        df_new = self.generate_actuals_preds(prec_new, rec_new, sample_size_new)
+        df = self.generate_actuals_preds(self.base_performance, self.original_test_set_length, self.p)
+        df_new = self.generate_actuals_preds(performance_new, sample_size_new, self.p)
 
         pooled = pd.concat([df, df_new])
         orig_diff = f1_score(df['true'], df['pred'], average='macro') - f1_score(df_new['true'], df_new['pred'],
@@ -167,28 +172,54 @@ class PowerSimulations:
 
         return score
 
-    @staticmethod
-    def generate_actuals_preds(prec: float, rec: float, n: int, p: List[float] = None) -> pd.DataFrame:
+    def generate_actuals_preds(self, performance: float, n: int, p: float) -> pd.DataFrame:
         """
-        Generate a sample dataset of true label values along with predicted values for these. This dataframe
-        is created so as to have a precision and recall equal to those provided in the parameters, and will
-        be of length n.
 
         Args:
-            prec: Precision to use when generating the sample predictions
-            rec: Recall to use when generating the sample predictions
-            n: Size of sample
-            p: Proportion of 0s and 1s in the sample
+            performance: Performance value which the created dataset should have (e.g. a precision of 0.6)
+            n: Size of dataset to be created
+            p: Proportion of 1s in the sample.
 
         Returns:
             Dataframe of length n with two columns: one holding the 'actuals' for the data, i.e. the true class,
             and the other column containing the predicted values for these, which were chosen specifically to obtain
-            a recall and precision approx. equal to those passed in as arguments
-        """
-        if p is None:
-            p = [0.86, 0.14]
+            a performance (approx.) equal to those passed in as arguments
 
-        actuals = np.random.choice([0, 1], size=n, p=p)
+        """
+        if self.performance_type == 'precision':
+            return self.generate_actuals_preds_precision(performance, n, p)
+        elif self.performance_type == 'f1_macro':
+            return self.generate_actuals_preds_f1_macro(performance, n, p)
+
+    @staticmethod
+    def generate_actuals_preds_precision(precision: float, n: int, p: float) -> pd.DataFrame:
+        """
+        Generate a sample dataset of true label values along with predicted values for these. This dataframe
+        is created so as to have a precision score equal to that provided in the parameters, and will
+        be of length n.
+
+        A recall value is also required to generate these datasets, but as this value won't impact on any of the
+        following corrections, and the user will be apathetic to the choice of recall, it is set automatically to be the
+        same as the value passed for precision
+
+        Args:
+            precision: Performance value which the created dataset should have (e.g. a precision of 0.6)
+            n: Size of dataset to be created
+            p: Proportion of 1s in the sample.
+
+        Returns:
+            Dataframe of length n with two columns: one holding the 'actuals' for the data, i.e. the true class,
+            and the other column containing the predicted values for these, which were chosen specifically to obtain
+            a precision (approx.) equal to those passed in as arguments
+        """
+
+        # We're focusing on precision, but need a value for recall as well. So we just set this to be equal to precision
+        prec = precision
+        rec = precision
+
+        sample_proportion = [1-p, p]
+
+        actuals = np.random.choice([0, 1], size=n, p=sample_proportion)
         preds = actuals.copy()
         n_pos = np.sum(actuals)
         rec_change = (1 - rec) * n_pos
@@ -215,6 +246,97 @@ class PowerSimulations:
 
         df = pd.DataFrame({'true': actuals, 'pred': preds})
         return df
+
+    @staticmethod
+    def generate_actuals_preds_f1_macro(f1_macro: float, n: int, p: float) -> pd.DataFrame:
+        """
+        Generate a sample dataset of true label values along with predicted values for these. This dataframe
+        is created so as to have a f1_macro score equal to that provided in the parameters, and will
+        be of length n.
+
+        The generation of this dataset requires solving simultaneous equations to figure out how many true positives,
+        false positives, false negatives, and true negatives, we require in the dataset to obtain the f1_macro score
+        given. Using the following functions/definitions as starting points:
+
+        With two classes, 0 and 1, we have:
+
+        F1_macro = (p_0*r_0)/(p_0+r_0)  +  (p_1*r_1)/(p_1+r_1)
+
+            where,
+
+        p_i = TP_i / (TP_i + FP_i)     is the precision of class i
+        r_i = TP_i / (TP_i + FN_i)     is the recall of class i
+        N_0 = TP_i + FN_i              is the number of samples in class i
+        N = N_0 + N_1                  is the size of the dataset / number of samples
+
+        and we note that FN_0 = FP_1 and FN_1 = FP_0.
+
+        We arrive to the below simplified equations:
+
+        F1_macro = (TP_0 / (2 * TP_0 + FN_0 + FN_1)) + (TP_1 / (2 * TP_1 + FN_0 + FN_1)
+        r_0 = TP_0 / (TP_0 + FN_0)
+
+
+        These two equations, along with the sample size equations, are then solved in the code below for the
+        user-specified f1_macro score and overall sample size n. Before solving these equations, we initialise recall_0
+        to a specific value. This is so we have fewer unknown variables which are to be calculated for - if we didn't
+        do this, then the system wouldn't be so easily solvable.
+
+        The recall_0 is set to be slightly larger than the required f1_macro value as it generally allows a solution
+        to be found quicker than initialising recall_0 to be equal to the f1_macro score.
+        Sometimes, in the 'edge' cases (i.e. with f1_macro > 0.9), setting
+        recall to this initial value doesn't allow for solutions to be found (the recall value is seemingly not high
+        enough to allow such a high overall f1_macro to be achieved). Therefore, if no solution is found after this
+        first attempt, the recall score is raised slightly, and an attempt is made to find a solution with this value.
+        If none is found, then recall is again raised. This will eventually allow for a solution to be found.
+
+        Args:
+            f1_macro: Performance value which the created dataset should have (e.g. an f1_macro score of 0.6)
+            n: Size of dataset to be created
+            p: Proportion of 1s in the sample
+
+        Returns:
+            Dataframe of length n with two columns: one holding the 'actuals' for the data, i.e. the true class,
+            and the other column containing the predicted values for these, which were chosen specifically to obtain
+            a f1_macro (approx.) equal to those passed in as arguments
+        """
+
+        wanted_f1 = f1_macro
+        recall_0 = wanted_f1 * 1.1 if wanted_f1 * 1.1 < 1 else wanted_f1
+        n0, n1 = (1-p) * n, p * n
+
+        # c = tp0, d = tp1, a=fn0=fp1, b=fn1=fp0
+        sol_found = False
+        tp0 = tp1 = fn0 = fn1 = 0
+        while not sol_found:
+            # using solve from sympy, with each equation of form EQ(x, y), denoting x=y
+            sol = solve(
+                [Eq((c / (2 * c + a + b)) + (d / (2 * d + a + b)), wanted_f1),
+                 Eq(c / (c + a), recall_0),
+                 Eq(a + c, n0),
+                 Eq(b + d, n1)]
+            )
+
+            for solution in sol:
+                feasible = all(v > 0 for v in solution.values())
+                if feasible:
+                    print('sol found, recall {}'.format(recall_0))
+                    tp0 = round(solution[c])
+                    tp1 = round(solution[d])
+                    fn0 = round(solution[a])
+                    fn1 = round(solution[b])
+                    sol_found = True
+
+            if not sol_found:
+                recall_0 = recall_0 * 1.01
+
+        sol_list = [[0, 0]] * tp0
+        sol_list.extend([[0, 1]] * fn0)
+        sol_list.extend([[1, 1]] * tp1)
+        sol_list.extend([[1, 0]] * fn1)
+        solution_df = pd.DataFrame(sol_list, columns=['true', 'pred'])
+
+        return solution_df
 
     def save(self, parent_directory: str, descriptor: str = '') -> Path:
         """
@@ -249,8 +371,8 @@ class PowerSimulations:
                        'num_runs_for_power_calc': self.num_runs_for_power_calc,
                        'original_test_set_length': self.original_test_set_length,
                        'significance_level': self.significance_level,
-                       'base_precision': self.base_precision,
-                       'base_recall': self.base_recall,
+                       'base_performance': self.base_performance,
+                       'performance_type': self.performance_type,
                        'random_seed': self.random_seed}
         }
         with open(filepath, 'wb+') as f:

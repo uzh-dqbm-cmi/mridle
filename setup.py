@@ -16,7 +16,8 @@ setup(name='mridle',
             'pandas>=1.0.0',
             'pgeocode',
             'scikit-learn',
-            'seaborn'
+            'seaborn',
+            'sympy'
       ],
       extras_requires={
             'dev': ['jupyter', 'pytest'],
