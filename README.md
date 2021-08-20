@@ -19,7 +19,7 @@ bash Miniconda3-latest-Linux-x86_64.sh
 8. Create a MRIdle python environment `conda create --name mridle`.
 9. `git clone` the MRIdle repo into your root directory and `pip install .` it.
 10. Ask someone in the team to give you a port for running jupyter notebooks.
-11. Connect your dedicated port to your localhost:8888 port using `ssh -N -L localhost8888:localhost:your-port your-acc-username@10.148.16.106` in the Windows command line `cmd`. Alternatively save this command in a `.bat` file.
+11. Connect your dedicated port to your localhost:8888 port using `ssh -N -L localhost:8888:localhost:your-port your-acc-username@10.148.16.106` in the Windows command line `cmd`. Alternatively save this command in a `.bat` file.
 12. Goto the MRIdle data directory `cd /data/mridle`.
 13. Start Jupyter here `jupyter notebook --port=your-port`.
 14. In your browser, go to localhost:8888. You are done!
