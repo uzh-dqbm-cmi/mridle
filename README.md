@@ -5,10 +5,11 @@ Resource Optimization for Radiology
 
 ### Setup
 MRIdle deals with patient data, therefore we work on a dedicated machine ("Louisa") which is managed by USZ.
+
 1. If you don't have a regular USZ account, get one now.
-2. Get your account on Louisa: open a USZ IT ticket (or email ict.hotline@usz.ch) and ask for an `ACC` account on the machine `vl90354`.
+2. Get your account on Louisa: See Notion for instructions for how to access Louisa.
 3. Log onto Windows on an USZ machine or via remote desktop (mypc.usz.ch).
-4. Connect to Louisa through SSH: Open PuTTY (type "putty" in start menu), enter `10.148.16.106` as the host name and press "open".
+4. Connect to Louisa through SSH: Open PuTTY (type "putty" in start menu), enter Louisa's IP address (see Notion page) as the host name and press "open".
 5. Now log in using your `ACC` account information.
 6. Optional: you can now set a new password on this linux machine with the command "passwd".
 7.  Install Miniconda.
