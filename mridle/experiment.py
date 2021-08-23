@@ -272,7 +272,71 @@ class ModelRun:
         return best_est
 
     @classmethod
-    def hyperopt_objective(cls, params, model, x_train, y_train, scoring_fn, ids, nfolds, print_result):
+    def hyperopt_param_search(cls, model, hyperparameters, x_train, y_train, scoring_fn, trials, timeout=5 * 360,
+                              max_evals=150, nfolds=5, print_result=True):
+        """
+        Function which performs the full Bayesian hyperparameter search. Uses hyperopt package as the base, and our own
+        hyperopt_objective() function as a helper.
+
+        This function takes in a model, data, a scoring function - similar to other functions.
+
+        Importantly, it also requires a set of hyperparameter distributions (defined using the hyperopt format) which it
+        searches over. It performs this search until either max_evals is reached, or the time limit (timeout) is passed.
+        The results of these trials is saved to the provied trials object, which is itself an attribute of the Modelrun
+        class.
+
+        Args:
+            model: model
+            hyperparameters: hyperparam space which the function is to search over. Defined using hyperopt format, as in
+            the following link:  http://hyperopt.github.io/hyperopt/getting-started/search_spaces/
+            x_train: training data
+            y_train: labels for training data
+            scoring_fn: function for scoring the model/parameter combination.
+            trials: hyperopt.Trials() object, used to save the results from the search
+            timeout: time (in seconds) to run the search for
+            max_evals: number of evaluations / iterations to make in the search, before ending
+            nfolds: number of folds to use in cross validation
+            print_result: boolean, giving user preference of whether to print information as the trials are being run
+
+        Returns:
+            A model fit on the provided data, using the 'best' hyperparams as found by Bayesian optimisation
+        """
+        space = hyperparameters
+
+        cv_ids = list(range(nfolds)) * np.floor((len(x_train) / nfolds)).astype(int)
+        cv_ids.extend(list(range(len(x_train) % nfolds)))
+        cv_ids = np.random.permutation(cv_ids)
+
+        best_rf = fmin(partial(cls.hyperopt_objective, model=model, x_train=x_train, y_train=y_train,
+                               scoring_fn=scoring_fn, ids=cv_ids, nfolds=nfolds, print_result=print_result),
+                       space, algo=tpe.suggest, timeout=timeout, max_evals=max_evals, trials=trials)
+        best_params = space_eval(space, best_rf)
+        model = model.set_params(**best_params)
+
+        return model.fit(x_train, y_train)
+
+    @classmethod
+    def hyperopt_objective(cls, params, model, x_train, y_train, scoring_fn: str, ids: List[int], nfolds, print_result):
+        """
+        Objective to minimise. For use with the hyperopt package, which performs Bayesian hyperparameter searches.
+        This takes in the model, data, and a list of parameter values that should be used for calculating the loss
+
+        Args:
+            params: the parameter set to test and calculte the cross validated loss for
+            model: the model
+            x_train: training data
+            y_train: training data labels
+            scoring_fn: the scoring function to use
+            ids: list of ints, the same length as x_train, which holds information on which CV fold each row should be
+            assigned to
+            nfolds: number of folds to use in cross validation
+            print_result: boolean, giving user preference of whether to print information as the trials are being run
+
+        Returns:
+            Loss associated with the given parameters, which is to be minimised over time.
+
+        """
+
         model = model
         model = model.set_params(**params)
 
@@ -308,24 +372,6 @@ class ModelRun:
             print('Loss: {}'.format(to_minimise))
 
         return to_minimise
-
-    @classmethod
-    def hyperopt_param_search(cls, model, hyperparameters, x_train, y_train, scoring_fn, trials, timeout=5 * 360,
-                              max_evals=150, nfolds=5, print_result=True):
-
-        space = hyperparameters
-
-        cv_ids = list(range(nfolds)) * np.floor((len(x_train) / nfolds)).astype(int)
-        cv_ids.extend(list(range(len(x_train) % nfolds)))
-        cv_ids = np.random.permutation(cv_ids)
-
-        best_rf = fmin(partial(cls.hyperopt_objective, model=model, x_train=x_train, y_train=y_train,
-                               scoring_fn=scoring_fn, ids=cv_ids, nfolds=nfolds, print_result=print_result),
-                       space, algo=tpe.suggest, timeout=timeout, max_evals=max_evals, trials=trials)
-        best_params = space_eval(space, best_rf)
-        model = model.set_params(**best_params)
-
-        return model.fit(x_train, y_train)
 
     @classmethod
     def train_feature_reducer(cls, model, x_train, y_train) -> RFECV:

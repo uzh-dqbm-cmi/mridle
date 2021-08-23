@@ -270,19 +270,14 @@ def build_harvey_et_al_features_set(status_df: pd.DataFrame, include_id_cols=Fal
 
 def build_feature_set(status_df: pd.DataFrame, include_id_cols=False) -> pd.DataFrame:
     """
-    Builds a feature set that replicates the Harvey et al model as best we can.
-    So far includes:
-        - sched_days_advanced: Number of days the appt was scheduled in advance
-        - day_of_week: The day of the week of the appt (1=Monday)
-        - modality: The UniversalServiceName of the appt
-        - marital: Zivilstand of the patient
-        - distance_to_usz: distance from the patient's home address to the hospital, approximated from Post Codes
-        - no_show_before: The number of no shows the patient has had up to the date of the appt
+    Builds a generic feature set.
+
     Args:
         status_df:
         include_id_cols: Whether to remove the id columns
 
     Returns:
+        Feature set, for use in modelling.
 
     """
     status_df = status_df.sort_values(['FillerOrderNo', 'date'])
