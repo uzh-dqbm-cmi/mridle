@@ -57,7 +57,7 @@ def feature_day_of_week(status_df: pd.DataFrame) -> pd.DataFrame:
     Args:
         status_df: A row-per-status-change dataframe.
 
-    Returns: A row-per-status-change dataframe with additional column 'day_of_week'.
+    Returns: A row-per-status-change dataframe with additional columns 'day_of_week' (containing integers 0-6) [is this right?!] and `dayof_week_str` containing strings in the format '[??]'.
 
     """
     status_df['day_of_week'] = status_df['was_sched_for_date'].dt.dayofweek
