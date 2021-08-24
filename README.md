@@ -1,6 +1,42 @@
 # MRIdle
 Resource Optimization for Radiology
 
+## Getting started
+
+### Setup
+MRIdle deals with patient data, therefore we work on a dedicated machine ("Louisa") which is managed by USZ.
+
+1. If you don't have a regular USZ account, get one now.
+2. Get your account on Louisa: See Notion for instructions for how to access Louisa.
+3. Log onto Windows on an USZ machine or via remote desktop (mypc.usz.ch).
+4. Connect to Louisa through SSH: Open PuTTY (type "putty" in start menu), enter `Louisa's IP address` (see Notion page) as the host name and press "open".
+5. Now log in using your `ACC` account information.
+6. Optional: you can now set a new password on this linux machine with the command `passwd`.
+7.  Install Miniconda.
+    ```
+    cp /tmp/Miniconda3-latest-Linux-x86_64.sh .
+    bash Miniconda3-latest-Linux-x86_64.sh
+    ```
+8. Create a MRIdle python environment `conda create --name mridle` and activate it `conda activate mridle`.
+9. `git clone` the MRIdle repo into your home directory and `pip install -e .` it.
+10. Ask someone in the team to give you a port for running jupyter notebooks.
+11. Connect your dedicated port to your localhost:8888 port using `ssh -N -L localhost:8888:localhost:your-port your-acc-username@louisa-ip-address` in the Windows command line `cmd`. Alternatively save this command in a `.bat` file.
+12. Goto the MRIdle data directory `cd /data/mridle`.
+13. Start Jupyter here `jupyter notebook --port=your-port`.
+14. In your browser, go to localhost:8888 to open Jupyter.
+15. In a notebook, run the following code to import the mridle module. This code snippet also activates the autoreload IPython magic so that the module automatically updates with any code changes you make.
+    ```
+    %load_ext autoreload
+    %autoreload 2
+
+    import mridle
+    ```
+
+### Rules
+- Do not delete anything.
+- Patient data, even anonymised, always stays on Lousia.
+- Naming convention for jupyter notebooks: `number_your-initials_short-description`.
+
 ## Example Usage
 
 ### Load Data
