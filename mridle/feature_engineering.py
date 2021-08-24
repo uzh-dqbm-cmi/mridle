@@ -30,7 +30,7 @@ def feature_month(status_df: pd.DataFrame) -> pd.DataFrame:
     Args:
         status_df: A row-per-status-change dataframe.
 
-    Returns: A row-per-status-change dataframe with additional column 'day_of_week'.
+    Returns: A row-per-status-change dataframe with additional column 'month' containing integers 1-12.
 
     """
     status_df['month'] = status_df['was_sched_for_date'].dt.month
