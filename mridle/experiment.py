@@ -41,7 +41,7 @@ class ModelRun:
             model:
             hyperparams: Dictionary of hyperparameter options to try with sklearn.model_selection.RandomizedSearchCV.
             search_type: Type of search to do when searching for hyperparameters (grid, random, or bayesian)
-            scoring_fn: Function type for use when performing cross validation (e.g. f1_macro)
+            scoring_fn: the scoring function to use (can be from 'f1_macro', 'log_loss', or 'brier_score')
             preprocessing_func: The function that was used to transform the raw_data into train_set. Is saved to pass to
              Predictor to maintain and end-to-end record of the the history of data the model was trained on.
             feature_subset: List of str, or None if NA. Subset of features to use. If this value is set,
@@ -241,7 +241,7 @@ class ModelRun:
             hyperparams: Dictionary of hyperparameter options.
             x_train: Training data input.
             y_train: Training data labels.
-            scoring_fn: string, denoting the scoring_fn type to use. e.g. 'f1_macro'
+            scoring_fn: the scoring function to use (can be from 'f1_macro', 'log_loss', or 'brier_score')
             search_type: Type of search for hyperparameters. Choose between random, grid, and bayesian search. All
             search types include cross validation
             hyperopt_timeout: If running hyperopt search, the user can specify how long to run this for (in seconds).
@@ -262,7 +262,7 @@ class ModelRun:
             grid_search.fit(x_train, y_train)
             best_est = grid_search.best_estimator_
         elif search_type == "bayesian":
-            best_est = cls.hyperopt_param_search(model, hyperparams, x_train, y_train, scoring_fn=scoring_fn,
+            best_est = cls.bayesian_param_search(model, hyperparams, x_train, y_train, scoring_fn=scoring_fn,
                                                  trials=hyperopt_trials, timeout=hyperopt_timeout, nfolds=5)
 
         else:
@@ -272,7 +272,7 @@ class ModelRun:
         return best_est
 
     @classmethod
-    def hyperopt_param_search(cls, model, hyperparameters, x_train, y_train, scoring_fn, trials, timeout=5 * 360,
+    def bayesian_param_search(cls, model, hyperparameters, x_train, y_train, scoring_fn, trials, timeout=5 * 360,
                               max_evals=150, nfolds=5, print_result=True):
         """
         Function which performs the full Bayesian hyperparameter search. Uses hyperopt package as the base, and our own
@@ -291,7 +291,7 @@ class ModelRun:
             the following link:  http://hyperopt.github.io/hyperopt/getting-started/search_spaces/
             x_train: training data
             y_train: labels for training data
-            scoring_fn: function for scoring the model/parameter combination.
+            scoring_fn: the scoring function to use (can be from 'f1_macro', 'log_loss', or 'brier_score')
             trials: hyperopt.Trials() object, used to save the results from the search
             timeout: time (in seconds) to run the search for
             max_evals: number of evaluations / iterations to make in the search, before ending
@@ -322,11 +322,11 @@ class ModelRun:
         This takes in the model, data, and a list of parameter values that should be used for calculating the loss
 
         Args:
-            params: the parameter set to test and calculte the cross validated loss for
+            params: the parameter set to test and calculate the cross validated loss for
             model: the model
             x_train: training data
             y_train: training data labels
-            scoring_fn: the scoring function to use
+            scoring_fn: the scoring function to use (can be from 'f1_macro', 'log_loss', or 'brier_score')
             ids: list of ints, the same length as x_train, which holds information on which CV fold each row should be
             assigned to
             nfolds: number of folds to use in cross validation
@@ -601,7 +601,7 @@ class PartitionedExperiment:
             model: A model with a fit() method.
             hyperparams: Dictionary of hyperparamters to search for the best model.
             search_type: Type of search to do when searching for hyperparameters (grid, random, or bayesian)
-            scoring_fn: Function type for use when performing cross validation (e.g. f1_macro)
+            scoring_fn: the scoring function to use (can be from 'f1_macro', 'log_loss', or 'brier_score')
             n_partitions: Number of partitions to split the data on and run the experiment on.
             stratify_by_label: Whether to stratify the partitions by label (default), otherwise partition randomly.
             feature_subset: Subset of features to use. If not used, None is passed.
