@@ -17,6 +17,7 @@ setup(name='mridle',
             'pgeocode',
             'scikit-learn',
             'seaborn',
+            'hyperopt',
             'sympy'
       ],
       extras_requires={

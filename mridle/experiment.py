@@ -5,10 +5,11 @@ import pickle
 import numpy as np
 from sklearn.base import clone
 from sklearn.feature_selection import RFECV
-from sklearn.model_selection import RandomizedSearchCV
-from sklearn.metrics import f1_score
+from sklearn.model_selection import RandomizedSearchCV, GridSearchCV, StratifiedKFold
 from typing import Any, Dict, List, Tuple, Callable
-from sklearn.model_selection import StratifiedKFold
+from hyperopt import fmin, tpe, Trials, space_eval
+from functools import partial
+from sklearn.metrics import brier_score_loss, log_loss, f1_score
 
 
 class ModelRun:
@@ -26,8 +27,8 @@ class ModelRun:
      To test your ModelRun implementation, you can implement `get_test_data_set` to provide a dataset for use in tests.
     """
 
-    def __init__(self, train_set: Any, test_set: Any, label_key: str, model: Any, hyperparams: Dict,
-                 preprocessing_func: Callable, feature_subset: List = None, reduce_features=False):
+    def __init__(self, train_set: Any, test_set: Any, label_key: str, model: Any, hyperparams: Dict, search_type: str,
+                 scoring_fn: str, preprocessing_func: Callable, feature_subset: List = None, reduce_features=False):
         """
         Create a ModelRun object.
 
@@ -39,6 +40,8 @@ class ModelRun:
              in the train and test sets.
             model:
             hyperparams: Dictionary of hyperparameter options to try with sklearn.model_selection.RandomizedSearchCV.
+            search_type: Type of search to do when searching for hyperparameters (grid, random, or bayesian)
+            scoring_fn: the scoring function to use (can be from 'f1_macro', 'log_loss', or 'brier_score')
             preprocessing_func: The function that was used to transform the raw_data into train_set. Is saved to pass to
              Predictor to maintain and end-to-end record of the the history of data the model was trained on.
             feature_subset: List of str, or None if NA. Subset of features to use. If this value is set,
@@ -53,6 +56,9 @@ class ModelRun:
         self.hyperparams = hyperparams
         self.feature_subset = feature_subset
         self.reduce_features = reduce_features
+        self.hyperopt_trials = Trials()
+        self.search_type = search_type
+        self.scoring_fn = scoring_fn
 
         # properties that will be set during self.run()
         self.x_train = None
@@ -68,12 +74,13 @@ class ModelRun:
         # saved to maintain and end-to-end record of the the history of data the model was trained on
         self.preprocessing_func = preprocessing_func
 
-    def run(self, run_hyperparam_search: bool = True) -> Dict:
+    def run(self, run_hyperparam_search: bool = True, hyperopt_timeout: int = 360) -> Dict:
         """
         Run the modeling experiment.
 
         Args:
             run_hyperparam_search: Whether to do a hyperparameter search as part of the modeling experiment.
+            hyperopt_timeout: If running hyperopt search, the user can specify how long to run this for (in seconds).
 
         Returns: Model evaluation dictionary.
 
@@ -83,7 +90,9 @@ class ModelRun:
 
         # TODO: refactor this section. LKK note: this many if/elses is no good at all!
         if run_hyperparam_search:
-            self.model = self.search_hyperparameters(self.model, self.hyperparams, self.x_train, self.y_train)
+            self.model = self.search_hyperparameters(self.model, self.hyperparams, self.x_train, self.y_train,
+                                                     search_type=self.search_type, hyperopt_timeout=hyperopt_timeout,
+                                                     hyperopt_trials=self.hyperopt_trials, scoring_fn=self.scoring_fn)
             if self.reduce_features:
                 self.rfecv = self.train_feature_reducer(self.model, self.x_train, self.y_train)
                 self.model = self.rfecv.estimator_
@@ -223,7 +232,8 @@ class ModelRun:
 
     @classmethod
     def search_hyperparameters(cls, model: Any, hyperparams: Dict[str, List], x_train: pd.DataFrame,
-                               y_train: List) -> Any:
+                               y_train: List, scoring_fn: str, search_type: str, hyperopt_timeout: int,
+                               hyperopt_trials: Any) -> Any:
         """
         Run sklearn.model_selection.Randomized_SearchCV and return the best model.
         Args:
@@ -231,14 +241,137 @@ class ModelRun:
             hyperparams: Dictionary of hyperparameter options.
             x_train: Training data input.
             y_train: Training data labels.
+            scoring_fn: the scoring function to use (can be from 'f1_macro', 'log_loss', or 'brier_score')
+            search_type: Type of search for hyperparameters. Choose between random, grid, and bayesian search. All
+            search types include cross validation
+            hyperopt_timeout: If running hyperopt search, the user can specify how long to run this for (in seconds).
+            hyperopt_trials: If running hyperopt search, the Trials object holds the results of previous hyperparameter
+            evaluations, and uses these to guide the future search.
 
         Returns: The best model.
 
         """
-        random_search = RandomizedSearchCV(estimator=model, param_distributions=hyperparams, n_iter=5, cv=2, verbose=2,
-                                           random_state=42, n_jobs=-1, scoring='f1_macro')
-        random_search.fit(x_train, y_train)
-        return random_search.best_estimator_
+        if search_type == "random":
+            random_search = RandomizedSearchCV(estimator=model, param_distributions=hyperparams, n_iter=10, cv=5,
+                                               verbose=2, random_state=42, n_jobs=-1, scoring=scoring_fn)
+            random_search.fit(x_train, y_train)
+            best_est = random_search.best_estimator_
+        elif search_type == "grid":
+            grid_search = GridSearchCV(estimator=model, param_grid=hyperparams, cv=3, verbose=2,
+                                       n_jobs=-1, scoring=scoring_fn)
+            grid_search.fit(x_train, y_train)
+            best_est = grid_search.best_estimator_
+        elif search_type == "bayesian":
+            best_est = cls.bayesian_param_search(model, hyperparams, x_train, y_train, scoring_fn=scoring_fn,
+                                                 trials=hyperopt_trials, timeout=hyperopt_timeout, nfolds=5)
+
+        else:
+            raise NotImplementedError(
+                'search_type should be one of ''random'', ''grid'' or ''bayesian. ''{}'' given'.format(search_type))
+
+        return best_est
+
+    @classmethod
+    def bayesian_param_search(cls, model, hyperparameters, x_train, y_train, scoring_fn, trials, timeout=5 * 360,
+                              max_evals=150, nfolds=5, print_result=True):
+        """
+        Function which performs the full Bayesian hyperparameter search. Uses hyperopt package as the base, and our own
+        hyperopt_objective() function as a helper.
+
+        This function takes in a model, data, a scoring function - similar to other functions.
+
+        Importantly, it also requires a set of hyperparameter distributions (defined using the hyperopt format) which it
+        searches over. It performs this search until either max_evals is reached, or the time limit (timeout) is passed.
+        The results of these trials is saved to the provied trials object, which is itself an attribute of the Modelrun
+        class.
+
+        Args:
+            model: model
+            hyperparameters: hyperparam space which the function is to search over. Defined using hyperopt format, as in
+            the following link:  http://hyperopt.github.io/hyperopt/getting-started/search_spaces/
+            x_train: training data
+            y_train: labels for training data
+            scoring_fn: the scoring function to use (can be from 'f1_macro', 'log_loss', or 'brier_score')
+            trials: hyperopt.Trials() object, used to save the results from the search
+            timeout: time (in seconds) to run the search for
+            max_evals: number of evaluations / iterations to make in the search, before ending
+            nfolds: number of folds to use in cross validation
+            print_result: boolean, giving user preference of whether to print information as the trials are being run
+
+        Returns:
+            A model fit on the provided data, using the 'best' hyperparams as found by Bayesian optimisation
+        """
+        space = hyperparameters
+
+        cv_ids = list(range(nfolds)) * np.floor((len(x_train) / nfolds)).astype(int)
+        cv_ids.extend(list(range(len(x_train) % nfolds)))
+        cv_ids = np.random.permutation(cv_ids)
+
+        best_rf = fmin(partial(cls.hyperopt_objective, model=model, x_train=x_train, y_train=y_train,
+                               scoring_fn=scoring_fn, ids=cv_ids, nfolds=nfolds, print_result=print_result),
+                       space, algo=tpe.suggest, timeout=timeout, max_evals=max_evals, trials=trials)
+        best_params = space_eval(space, best_rf)
+        model = model.set_params(**best_params)
+
+        return model.fit(x_train, y_train)
+
+    @classmethod
+    def hyperopt_objective(cls, params, model, x_train, y_train, scoring_fn: str, ids: List[int], nfolds, print_result):
+        """
+        Objective to minimise. For use with the hyperopt package, which performs Bayesian hyperparameter searches.
+        This takes in the model, data, and a list of parameter values that should be used for calculating the loss
+
+        Args:
+            params: the parameter set to test and calculate the cross validated loss for
+            model: the model
+            x_train: training data
+            y_train: training data labels
+            scoring_fn: the scoring function to use (can be from 'f1_macro', 'log_loss', or 'brier_score')
+            ids: list of ints, the same length as x_train, which holds information on which CV fold each row should be
+            assigned to
+            nfolds: number of folds to use in cross validation
+            print_result: boolean, giving user preference of whether to print information as the trials are being run
+
+        Returns:
+            Loss associated with the given parameters, which is to be minimised over time.
+
+        """
+
+        model = model
+        model = model.set_params(**params)
+
+        cv_results = []
+        for k in range(nfolds):
+            x_train_cv = x_train[ids != k]
+            y_train_cv = y_train[ids != k]
+            x_test_cv = x_train[ids == k]
+            y_test_cv = y_train[ids == k]
+
+            model = model.fit(x_train_cv, y_train_cv)
+
+            if scoring_fn == 'f1_macro':
+                preds = model.predict(x_test_cv)
+                loss = -1 * f1_score(y_test_cv, preds, average='macro')
+            elif scoring_fn == 'log_loss':
+                probs = model.predict_proba(x_test_cv)[:, 1]
+                loss = log_loss(y_test_cv, probs)
+            elif scoring_fn == 'brier_score':
+                probs = model.predict_proba(x_test_cv)[:, 1]
+                loss = brier_score_loss(y_test_cv, probs)
+            else:
+                raise NotImplementedError(
+                    'scoring_fn should be one of ''f1_macro'', ''log_loss'', or ''brier_score''. ''{}'' given'.format(
+                        scoring_fn
+                    ))
+
+            cv_results.append(loss)
+
+        to_minimise = np.mean(cv_results)
+        if print_result:
+            print(params)
+            print('Loss: {}'.format(to_minimise))
+
+        return to_minimise
 
     @classmethod
     def train_feature_reducer(cls, model, x_train, y_train) -> RFECV:
@@ -287,7 +420,7 @@ class ModelRun:
         return {
             "accuracy": accuracy,
             "f1_macro": f1_macro,
-            "f1_micro": f1_micro,
+            "f1_micro": f1_micro
         }
 
     def get_feature_importances(self) -> pd.DataFrame:
@@ -317,7 +450,6 @@ class ModelRun:
         Returns: Summary of model hyperparameters in a pd.DataFrame.
 
         Raises: NotImplementedError if the model is a type that is not registered in model_hyperparam_func_map.
-
         """
         model_hyperparam_func_map = {
             "<class 'sklearn.ensemble._forest.RandomForestClassifier'>": self.get_selected_random_forest_hyperparams,
@@ -368,8 +500,8 @@ class ModelRun:
         Args:
             descriptor: Optional descriptor to add to the file name.
 
-        Returns: File name with file extension.
-
+        Returns:
+            File name with file extension.
         """
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         model_type = self.model.__class__.__name__
@@ -390,8 +522,8 @@ class ModelRun:
             parent_directory: The parent directory in which to save the model.
             descriptor: Optional descriptor to add to the file name.
 
-        Returns: File path of the saved object.
-
+        Returns:
+            File path of the saved object.
         Example Usage:
             >>> my_model_run.save('project/data/models/')
             >>> # saves project/data/models/YYYY-MM-DD_HH-MM-SS__<model_class>.pkl
@@ -454,8 +586,9 @@ class PartitionedExperiment:
     """
 
     def __init__(self, name: str, data_set: Any, label_key: str, preprocessing_func: Callable,
-                 model_run_class: ModelRun, model, hyperparams: Dict, n_partitions: int = 5,
-                 stratify_by_label: bool = True, feature_subset=None, reduce_features=False, verbose=False):
+                 model_run_class: ModelRun, model, hyperparams: Dict, search_type: str,
+                 scoring_fn: str, n_partitions: int = 5, stratify_by_label: bool = True,
+                 feature_subset=None, reduce_features=False, verbose=False):
         """
 
         Args:
@@ -467,6 +600,8 @@ class PartitionedExperiment:
             model_run_class: An implemented subclass of ModelRun.
             model: A model with a fit() method.
             hyperparams: Dictionary of hyperparamters to search for the best model.
+            search_type: Type of search to do when searching for hyperparameters (grid, random, or bayesian)
+            scoring_fn: the scoring function to use (can be from 'f1_macro', 'log_loss', or 'brier_score')
             n_partitions: Number of partitions to split the data on and run the experiment on.
             stratify_by_label: Whether to stratify the partitions by label (default), otherwise partition randomly.
             feature_subset: Subset of features to use. If not used, None is passed.
@@ -488,6 +623,9 @@ class PartitionedExperiment:
         self.stratify_by_label = stratify_by_label
         self.feature_subset = feature_subset
         self.reduce_features = reduce_features
+        self.hyperopt_trials = Trials()
+        self.search_type = search_type
+        self.scoring_fn = scoring_fn
 
         self.n_partitions = n_partitions
 
@@ -504,13 +642,15 @@ class PartitionedExperiment:
             print("Partition Stats for {}".format(self.name))
             self.report_partition_stats(self.partition_ids, data_set, label_key)
 
-    def run(self, num_partitions_to_run=None, run_hyperparam_search=True) -> List[Dict[str, Any]]:
+    def run(self, num_partitions_to_run=None, run_hyperparam_search=True,
+            hyperopt_timeout: int = 360) -> List[Dict[str, Any]]:
         """
         Run the experiment on all partitions.
 
         Args:
             num_partitions_to_run: select a subset of partitions to run, for faster testing.
             run_hyperparam_search: argument to turn off hyperparam search, for faster testing.
+            hyperopt_timeout: If running hyperopt search, the user can specify how long to run this for (in seconds).
 
         Returns: List of experiment results (dicts from ModelRun.evaluation) for each of the partitions.
 
@@ -523,16 +663,18 @@ class PartitionedExperiment:
         for partition_name in self.partition_ids:
             if partition_name in partitions_to_run:
                 print("Running partition {}...".format(partition_name))
-                model_run = self.run_experiment_on_one_partition(data_set=self.data_set,
-                                                                 label_key=self.label_key,
+                model_run = self.run_experiment_on_one_partition(data_set=self.data_set, label_key=self.label_key,
                                                                  partition_ids=self.partition_ids[partition_name],
                                                                  preprocessing_func=self.preprocessing_func,
                                                                  model_run_class=self.model_run_class,
                                                                  model=self.model,
                                                                  hyperparams=self.hyperparams,
                                                                  run_hyperparam_search=run_hyperparam_search,
+                                                                 search_type=self.search_type,
+                                                                 scoring_fn=self.scoring_fn,
                                                                  feature_subset=self.feature_subset,
-                                                                 reduce_features=self.reduce_features)
+                                                                 reduce_features=self.reduce_features,
+                                                                 hyperopt_timeout=hyperopt_timeout)
                 self.model_runs[partition_name] = model_run
 
         print("Compiling results")
@@ -542,13 +684,13 @@ class PartitionedExperiment:
     @classmethod
     def run_experiment_on_one_partition(cls, data_set: Dict, label_key: str, partition_ids: List[int],
                                         preprocessing_func: Callable, model_run_class: ModelRun, model,
-                                        hyperparams: Dict, run_hyperparam_search: bool, feature_subset: List[str],
-                                        reduce_features: bool):
+                                        hyperparams: Dict, run_hyperparam_search: bool, search_type, scoring_fn: str,
+                                        feature_subset: List[str], reduce_features: bool, hyperopt_timeout: int = 60):
         train_set, test_set = cls.materialize_partition(partition_ids, data_set)
         mr = model_run_class(train_set=train_set, test_set=test_set, label_key=label_key, model=model,
-                             preprocessing_func=preprocessing_func, hyperparams=hyperparams,
-                             feature_subset=feature_subset, reduce_features=reduce_features)
-        mr.run(run_hyperparam_search=run_hyperparam_search)
+                             preprocessing_func=preprocessing_func, hyperparams=hyperparams, search_type=search_type,
+                             scoring_fn=scoring_fn, feature_subset=feature_subset, reduce_features=reduce_features)
+        mr.run(run_hyperparam_search=run_hyperparam_search, hyperopt_timeout=hyperopt_timeout)
         return mr
 
     @classmethod

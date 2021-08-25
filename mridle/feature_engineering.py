@@ -23,6 +23,20 @@ def identify_end_times(row: pd.DataFrame) -> dt.datetime:
         return None
 
 
+def feature_month(status_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Append the day_of_week feature to the dataframe.
+
+    Args:
+        status_df: A row-per-status-change dataframe.
+
+    Returns: A row-per-status-change dataframe with additional column 'month' containing integers 1-12.
+
+    """
+    status_df['month'] = status_df['was_sched_for_date'].dt.month
+    return status_df
+
+
 def feature_hour_sched(status_df: pd.DataFrame) -> pd.DataFrame:
     """
     Append the hour_sched feature to the dataframe using was_sched_for_date.
@@ -33,6 +47,24 @@ def feature_hour_sched(status_df: pd.DataFrame) -> pd.DataFrame:
     Returns: A row-per-status-change dataframe with additional column 'hour_sched'.
     """
     status_df['hour_sched'] = status_df['was_sched_for_date'].dt.hour
+    return status_df
+
+
+def feature_day_of_week(status_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Append the day_of_week feature to the dataframe.
+
+    Args:
+        status_df: A row-per-status-change dataframe.
+
+    Returns:
+        A row-per-status-change dataframe with additional columns 'day_of_week' (containing integers 0-6)
+        and `day_of_week_str` containing strings in the format 'Monday', 'Tuesday', ...
+
+    """
+    status_df['day_of_week'] = status_df['was_sched_for_date'].dt.dayofweek
+    status_df['day_of_week_str'] = status_df['was_sched_for_date'].dt.strftime('%A')
+
     return status_df
 
 
@@ -72,20 +104,6 @@ def feature_days_scheduled_in_advance(status_df: pd.DataFrame) -> pd.DataFrame:
     status_df['sched_days_advanced'] = status_df.apply(identify_sched_events, axis=1)
     status_df['sched_days_advanced'] = status_df.groupby('FillerOrderNo')['sched_days_advanced'].shift(1).fillna(
         method='ffill')
-    return status_df
-
-
-def feature_day_of_week(status_df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Append the day_of_week feature to the dataframe.
-
-    Args:
-        status_df: A row-per-status-change dataframe.
-
-    Returns: A row-per-status-change dataframe with additional column 'day_of_week'.
-
-    """
-    status_df['day_of_week'] = status_df['was_sched_for_date'].dt.dayofweek
     return status_df
 
 
@@ -252,8 +270,58 @@ def build_harvey_et_al_features_set(status_df: pd.DataFrame, include_id_cols=Fal
     return slot_df
 
 
-# feature engineering for the duration model
+def build_feature_set(status_df: pd.DataFrame, include_id_cols=False) -> pd.DataFrame:
+    """
+    Builds a generic feature set.
 
+    Args:
+        status_df:
+        include_id_cols: Whether to remove the id columns
+
+    Returns:
+        Feature set, for use in modelling.
+
+    """
+    status_df = status_df.sort_values(['FillerOrderNo', 'date'])
+    status_df = feature_hour_sched(status_df)
+    status_df = feature_days_scheduled_in_advance(status_df)
+    status_df = feature_day_of_week(status_df)
+    status_df = feature_month(status_df)
+    status_df = feature_modality(status_df)
+    status_df = feature_insurance_class(status_df)
+    status_df = feature_sex(status_df)
+    status_df = feature_age(status_df)
+    status_df = feature_marital(status_df)
+    status_df = feature_post_code(status_df)
+    status_df = feature_distance_to_usz(status_df)
+    status_df = feature_no_show_before(status_df)
+
+    agg_dict = {
+        'NoShow': 'min',
+        'hour_sched': 'first',
+        'sched_days_advanced': 'first',
+        'modality': 'last',
+        'insurance_class': 'last',
+        'day_of_week': 'last',
+        'day_of_week_str': 'last',
+        'month': 'last',
+        'sex': 'last',
+        'age': 'last',
+        'marital': 'last',
+        'post_code': 'last',
+        'distance_to_usz': 'last',
+        'no_show_before': 'last',
+        'slot_outcome': 'last',
+        'date': 'last'
+
+    }
+
+    slot_df = build_slot_df(status_df, agg_dict, include_id_cols=include_id_cols)
+
+    return slot_df
+
+
+# feature engineering for the duration model
 def feature_duration(dicom_df: pd.DataFrame) -> pd.DataFrame:
     """
     Calculates the duration of each MRI examination in minutes.
