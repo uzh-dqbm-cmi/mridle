@@ -76,8 +76,11 @@ def plot_appt_types_over_time(df: pd.DataFrame, start_date, end_date, color_map=
     df_filtered['week'] = df_filtered['start_time'] - pd.to_timedelta(df_filtered['start_time'].dt.dayofweek, unit='d')
     df_filtered['week'] = pd.to_datetime(df_filtered['week'].dt.date)
 
+    df_filtered['year_month'] = df_filtered['start_time'].dt.to_period('M').dt.to_timestamp()
+
     start_date = pd.to_datetime(start_date)
     end_date = pd.to_datetime(end_date)
+
     # make sure the end date is at a week boundary
     end_date = end_date - pd.to_timedelta(end_date.dayofweek, unit='d')
     df_filtered = df_filtered[df_filtered['start_time'] >= start_date]
@@ -91,10 +94,10 @@ def plot_appt_types_over_time(df: pd.DataFrame, start_date, end_date, color_map=
 
     return alt.Chart(df_filtered).mark_line(strokeWidth=3).encode(
         y=alt.Y('count(FillerOrderNo):N', title='Appt Count'),
-        x=alt.X('yearmonthdate(week):T', title='Week', axis=alt.Axis(format='%b %d')),
-        order=alt.Order("monthdate(week)"),
+        x=alt.X('yearmonth(year_month):T', title='Week', axis=alt.Axis(format="%b-%Y")),
+        order=alt.Order("yearmonth(year_month)"),
         color=alt.Color('slot_type_detailed:N', scale=color_scale, legend=alt.Legend(title='Slot Type (detailed)')),
-        tooltip='monthdate(week)',
+        tooltip='yearmonth(year_month)',
     ).properties(
         width=475,
         height=250,
