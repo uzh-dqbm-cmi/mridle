@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Tuple, Callable
 from hyperopt import fmin, tpe, Trials, space_eval
 from functools import partial
 from sklearn.metrics import brier_score_loss, log_loss, f1_score
+from mridle.data_management import split_df_to_train_validate_test
 
 
 class ModelRun:
@@ -27,8 +28,9 @@ class ModelRun:
      To test your ModelRun implementation, you can implement `get_test_data_set` to provide a dataset for use in tests.
     """
 
-    def __init__(self, train_set: Any, test_set: Any, label_key: str, model: Any, hyperparams: Dict, search_type: str,
-                 scoring_fn: str, preprocessing_func: Callable, feature_subset: List = None, reduce_features=False):
+    def __init__(self, data: Any, label_key: str, model: Any, hyperparams: Dict, search_type: str,
+                 scoring_fn: str, preprocessing_func: Callable, feature_subset: List = None, reduce_features=False,
+                 dummy_cols: List = None):
         """
         Create a ModelRun object.
 
@@ -48,8 +50,7 @@ class ModelRun:
              `self.build_x_features` will restrict the X datasets to the specified columns.
             reduce_features: Whether to use sklearn.feature_selection.RFECV to identify a subset of features.
         """
-        self.train_set = train_set
-        self.test_set = test_set
+        self.data = data
         self.label_key = label_key
         self.encoders = {}
         self.model = clone(model)
@@ -59,6 +60,7 @@ class ModelRun:
         self.hyperopt_trials = Trials()
         self.search_type = search_type
         self.scoring_fn = scoring_fn
+        self.dummy_cols = dummy_cols
 
         # properties that will be set during self.run()
         self.x_train = None
@@ -73,6 +75,7 @@ class ModelRun:
 
         # saved to maintain and end-to-end record of the the history of data the model was trained on
         self.preprocessing_func = preprocessing_func
+        self.build_data()
 
     def run(self, run_hyperparam_search: bool = True, hyperopt_timeout: int = 360) -> Dict:
         """
@@ -85,8 +88,6 @@ class ModelRun:
         Returns: Model evaluation dictionary.
 
         """
-        self.x_train, self.x_test, self.y_train, self.y_test, self.feature_cols, self.encoders = self.build_data(
-            self.train_set, self.test_set, self.label_key, self.feature_subset)
 
         # TODO: refactor this section. LKK note: this many if/elses is no good at all!
         if run_hyperparam_search:
@@ -108,9 +109,7 @@ class ModelRun:
             self.evaluation = self.evaluate_model(self.model, self.x_test, self.y_test, self.y_test_predicted)
         return self.evaluation
 
-    @classmethod
-    def build_data(cls, train_set: Any, test_set: Any, label_key: str, feature_subset: List[str]) -> \
-            Tuple[pd.DataFrame, pd.DataFrame, List, List, List[str], Dict[str, Any]]:
+    def build_data(self):
         """Orchestrates the construction of train and test x matrices, and train and test y vectors.
 
         `build_data` takes as input:
@@ -130,20 +129,25 @@ class ModelRun:
 
         """
 
-        encoders = cls.train_encoders(train_set)
+        # encoders = cls.train_encoders(data)
+        data_copy = self.data.copy()
 
-        x_train, feature_cols = cls.build_x_features(train_set, encoders, label_key)
-        x_test, feature_cols = cls.build_x_features(test_set, encoders, label_key)
+        if self.feature_subset:
+            data_copy = self.restrict_features_to_subset(data_copy, self.feature_subset)
+            self.feature_cols = self.feature_subset
 
-        if feature_subset:
-            x_train = cls.restrict_features_to_subset(x_train, feature_subset)
-            x_test = cls.restrict_features_to_subset(x_test, feature_subset)
-            feature_cols = feature_subset
+        if self.dummy_cols:
+            data_copy = self.get_dummies(data_copy)
 
-        y_train = cls.build_y_vector(train_set, label_key)
-        y_test = cls.build_y_vector(test_set, label_key)
+        self.data = data_copy
 
-        return x_train, x_test, y_train, y_test, feature_cols, encoders
+        train, test = split_df_to_train_validate_test(data_copy)
+
+        self.x_train = self.build_x_features(train)
+        self.x_test = self.build_x_features(test)
+
+        self.y_train = self.build_y_vector(train, self.label_key)
+        self.y_test = self.build_y_vector(test, self.label_key)
 
     @classmethod
     def train_encoders(cls, train_set: Any) -> Dict[str, Any]:
@@ -167,13 +171,12 @@ class ModelRun:
                                   "with the `build_x_features` function implemented.")
 
     @classmethod
-    def build_x_features(cls, data_set: Any, encoders: Dict, label_key: str = '') -> Tuple[pd.DataFrame, List[str]]:
+    def build_x_features(cls, data_set: Any, label_key: str = '') -> Tuple[pd.DataFrame, List[str]]:
         """
         Create the X feature set from the data set by removing the label column.
 
         Args:
             data_set: Data set to transform into features.
-            encoders: Dict of pre-trained encoders for use in building features.
             label_key: Name of the label column that will be removed from the dataset to generate the feature set.
 
         Returns:
@@ -544,6 +547,10 @@ class ModelRun:
             Predictor
         """
         return Predictor(self.model, self.encoders, self.preprocessing_func, self.build_x_features)
+
+    def get_dummies(self, df):
+        df_copy = df.copy()
+        return pd.get_dummies(df_copy, columns=self.dummy_cols)
 
 
 class Predictor:
