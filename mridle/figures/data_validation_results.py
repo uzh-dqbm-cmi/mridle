@@ -36,7 +36,7 @@ import pandas as pd
 import numpy as np
 import datatc as dtc
 from typing import Dict, Tuple, Union
-
+import pandas.io.formats.style
 
 ValDataDict = Dict[str, Dict[str, Union[Dict, pd.DataFrame]]]
 ValDataTuple = Tuple[ValDataDict, ValDataDict]
