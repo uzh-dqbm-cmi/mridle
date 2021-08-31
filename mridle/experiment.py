@@ -63,6 +63,7 @@ class ModelRun:
         self.dummy_cols = dummy_cols
 
         # properties that will be set during self.run()
+        self.preprocessed_data = None
         self.x_train = None
         self.x_test = None
         self.y_train = None
@@ -139,7 +140,7 @@ class ModelRun:
         if self.dummy_cols:
             data_copy = self.get_dummies(data_copy)
 
-        self.data = data_copy
+        self.preprocessed_data = data_copy
 
         train, test = split_df_to_train_validate_test(data_copy)
 
