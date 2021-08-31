@@ -230,7 +230,7 @@ class ModelRun:
 
         """
         column_mask = [col in feature_subset for col in df.columns]
-        df = df[column_mask].copy()
+        df = df.loc[:, column_mask].copy()
         df.columns = feature_subset
         return df
 
