@@ -28,8 +28,7 @@ class ModelRun:
     """
 
     def __init__(self, train_set: Any, test_set: Any, label_key: str, model: Any, hyperparams: Dict, search_type: str,
-                 scoring_fn: str, preprocessing_func: Callable, feature_subset: List = None, reduce_features=False,
-                 dummy_cols: List = None):
+                 scoring_fn: str, preprocessing_func: Callable, feature_subset: List = None, reduce_features=False):
         """
         Create a ModelRun object.
 
@@ -60,10 +59,8 @@ class ModelRun:
         self.hyperopt_trials = Trials()
         self.search_type = search_type
         self.scoring_fn = scoring_fn
-        self.dummy_cols = dummy_cols
 
         # properties that will be set during self.run()
-        self.preprocessed_data = None
         self.x_train = None
         self.x_test = None
         self.y_train = None
@@ -520,10 +517,6 @@ class ModelRun:
             Predictor
         """
         return Predictor(self.model, self.encoders, self.preprocessing_func, self.build_x_features)
-
-    def get_dummies(self, df):
-        df_copy = df.copy()
-        return pd.get_dummies(df_copy, columns=self.dummy_cols)
 
 
 class Predictor:
