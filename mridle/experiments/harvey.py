@@ -2,7 +2,7 @@ from mridle.experiment import ModelRun
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict
 
 cols_for_modeling = ['no_show_before', 'no_show_before_sq', 'sched_days_advanced', 'hour_sched',
                      'distance_to_usz', 'age', 'close_to_usz', 'male', 'female', 'age_sq',
@@ -30,23 +30,6 @@ class HarveyModel(ModelRun):
         }
 
     @classmethod
-    def build_x_features(cls, data_set: Any, encoders: Dict, label_key: str = '') -> Tuple[pd.DataFrame, List]:
-        """
-        Build custom features
-
-        Args:
-            data_set: Data set to transform into features.
-            encoders: Dict of pre-trained encoders for use in building features.
-            label_key: (optional) label key that will be removed from the dataset to generate the feature set.
-
-        Returns:
-            dataframe
-            List of features
-        """
-        feature_columns = cols_for_modeling
-        return data_set[feature_columns].copy(), feature_columns
-
-    @classmethod
     def get_test_data_set(cls):
         df = pd.DataFrame(np.random.randint(0, 100, size=(100, len(cols_for_modeling))), columns=cols_for_modeling)
         df['noshow'] = np.where(df[cols_for_modeling[0]] > 50, 1, 0)
@@ -54,14 +37,14 @@ class HarveyModel(ModelRun):
 
 
 def process_features_for_model(dataframe: pd.DataFrame) -> pd.DataFrame:
-    '''
+    """
     Changes variables for model optimization modifying feature_df
 
     Args:
         dataframe: dataframe obtained from feature generation
 
     Returns: modified dataframe specific for this model
-    '''
+    """
 
     dataframe['no_show_before_sq'] = dataframe['no_show_before'] ** (2)
     dataframe['sched_days_advanced_sq'] = dataframe['sched_days_advanced'] ** 2

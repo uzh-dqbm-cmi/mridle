@@ -10,8 +10,9 @@ class TestExperiment(unittest.TestCase):
 
     def test_base_ModelRun_integration_test(self):
         df = pd.DataFrame(np.random.randint(0, 100, size=(500, 4)), columns=list('ABCD'))
-
-        exp = PartitionedExperiment(name='test', data_set=df, label_key='D', preprocessing_func=None,
+        print(df.head())
+        exp = PartitionedExperiment(name='test', data_set=df, feature_subset = ['A','C'],
+                                    label_key='D', preprocessing_func=None,
                                     model_run_class=ModelRun, model=RandomForestClassifier(), hyperparams={},
                                     verbose=True, search_type='random', scoring_fn='f1_score')
         results = exp.run(run_hyperparam_search=False)
@@ -27,9 +28,11 @@ class TestExperiment(unittest.TestCase):
         harvey_model_run = HarveyModel
         data_set = harvey_model_run.get_test_data_set()
         label_key = 'noshow'
-
-        exp = PartitionedExperiment(name='test', data_set=data_set, label_key=label_key, preprocessing_func=None,
-                                    model_run_class=harvey_model_run, model=RandomForestClassifier(), hyperparams={},
+        feature_subset = ['no_show_before', 'no_show_before_sq', 'sched_days_advanced', 'hour_sched',
+                          'distance_to_usz', 'age', 'close_to_usz']
+        exp = PartitionedExperiment(name='test', data_set=data_set, feature_subset=feature_subset, label_key=label_key,
+                                    preprocessing_func=None, model_run_class=harvey_model_run,
+                                    model=RandomForestClassifier(), hyperparams={},
                                     verbose=True, search_type='random', scoring_fn='f1_score')
         results = exp.run(run_hyperparam_search=False)
         print(results)

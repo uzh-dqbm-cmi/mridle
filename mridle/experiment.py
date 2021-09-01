@@ -153,8 +153,9 @@ class ModelRun:
         Returns:
             Tuple containing the pd.DataFrame of the feature set and a list of the column names.
         """
-
-        data_subset = data_set[feature_subset].copy()
+        data_subset = data_set.copy()
+        if feature_subset:
+            data_subset = data_subset[feature_subset]
         data_subset = data_subset.drop(['label_key'], axis=1, errors='ignore')
         return data_subset
 
@@ -405,7 +406,7 @@ class ModelRun:
 
         """
         if hasattr(self.model, 'feature_importances_'):
-            fi = pd.DataFrame(self.model.feature_importances_, index=self.feature_cols)
+            fi = pd.DataFrame(self.model.feature_importances_, index=self.feature_subset)
             fi = fi.sort_values(0, ascending=False)
             return fi
         else:
@@ -434,7 +435,7 @@ class ModelRun:
         if model_type in model_hyperparam_func_map:
             model_hyperparam_func = model_hyperparam_func_map[model_type]
             chosen_hyperparams = model_hyperparam_func(self.model)
-            chosen_hyperparams['num_features'] = len(self.feature_cols)
+            chosen_hyperparams['num_features'] = len(self.feature_subset)
 
             if name is None:
                 name = 'model'
@@ -546,7 +547,7 @@ class Predictor:
 
         """
         data_processed = self.preprocess_fun(data_point)
-        x, feature_cols = self.transform_func(data_processed, self.encoders)
+        x, feature_subset = self.transform_func(data_processed, self.encoders)
         return self.model.predict(x), self.model.predict_proba(x)
 
 
