@@ -10,7 +10,7 @@ class TestExperiment(unittest.TestCase):
 
     def test_base_ModelRun_integration_test(self):
         df = pd.DataFrame(np.random.randint(0, 100, size=(500, 4)), columns=list('ABCD'))
-        print(df.head())
+
         exp = PartitionedExperiment(name='test', data_set=df, feature_subset = ['A','C'],
                                     label_key='D', preprocessing_func=None,
                                     model_run_class=ModelRun, model=RandomForestClassifier(), hyperparams={},
