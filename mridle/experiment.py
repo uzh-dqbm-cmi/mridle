@@ -156,7 +156,7 @@ class ModelRun:
         data_subset = data_set.copy()
         if feature_subset:
             data_subset = data_subset[feature_subset]
-        data_subset = data_subset.drop(['label_key'], axis=1, errors='ignore')
+        data_subset = data_subset.drop([label_key], axis=1, errors='ignore')
         return data_subset
 
     @classmethod
