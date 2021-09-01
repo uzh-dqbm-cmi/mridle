@@ -10,7 +10,6 @@ from typing import Any, Dict, List, Tuple, Callable
 from hyperopt import fmin, tpe, Trials, space_eval
 from functools import partial
 from sklearn.metrics import brier_score_loss, log_loss, f1_score
-from mridle.data_management import split_df_to_train_validate_test
 
 
 class ModelRun:
@@ -28,7 +27,7 @@ class ModelRun:
      To test your ModelRun implementation, you can implement `get_test_data_set` to provide a dataset for use in tests.
     """
 
-    def __init__(self, data: Any, label_key: str, model: Any, hyperparams: Dict, search_type: str,
+    def __init__(self, train_set: Any, test_set: Any, label_key: str, model: Any, hyperparams: Dict, search_type: str,
                  scoring_fn: str, preprocessing_func: Callable, feature_subset: List = None, reduce_features=False,
                  dummy_cols: List = None):
         """
@@ -50,7 +49,8 @@ class ModelRun:
              `self.build_x_features` will restrict the X datasets to the specified columns.
             reduce_features: Whether to use sklearn.feature_selection.RFECV to identify a subset of features.
         """
-        self.data = data
+        self.train_set = train_set
+        self.test_set = test_set
         self.label_key = label_key
         self.encoders = {}
         self.model = clone(model)
@@ -111,44 +111,15 @@ class ModelRun:
         return self.evaluation
 
     def build_data(self):
-        """Orchestrates the construction of train and test x matrices, and train and test y vectors.
-
-        `build_data` takes as input:
-            - train_set: Any
-            - test_set: Any
-            - label_key: str. key to use in data dicts for label
-            - feature_subset: List of str, or None if NA. Subset of features to use.
-
-        `build_data` returns a Tuple of the following:
-            - x_train: pd.DataFrame
-            - x_test: pd.DataFrame
-            - y_train: List
-            - y_test: List
-            - feature_cols: List[str]
-            - encoders: Dict[str, Any]. Encoders used to generate the feature set. Encoders that may want to be saved
-                include vectorizers trained on the train_set and applied to the test_set.
-
+        """
+        Orchestrates the construction of train and test x matrices, and train and test y vectors.
         """
 
-        # encoders = cls.train_encoders(data)
-        data_copy = self.data.copy()
+        self.x_train = self.build_x_features(self.train_set, self.feature_subset, self.label_key)
+        self.x_test = self.build_x_features(self.test_set, self.feature_subset, self.label_key)
 
-        if self.feature_subset:
-            data_copy = self.restrict_features_to_subset(data_copy, self.feature_subset)
-            self.feature_cols = self.feature_subset
-
-        if self.dummy_cols:
-            data_copy = self.get_dummies(data_copy)
-
-        self.preprocessed_data = data_copy
-
-        train, test = split_df_to_train_validate_test(data_copy)
-
-        self.x_train = self.build_x_features(train)
-        self.x_test = self.build_x_features(test)
-
-        self.y_train = self.build_y_vector(train, self.label_key)
-        self.y_test = self.build_y_vector(test, self.label_key)
+        self.y_train = self.build_y_vector(self.train_set, self.label_key)
+        self.y_test = self.build_y_vector(self.test_set, self.label_key)
 
     @classmethod
     def train_encoders(cls, train_set: Any) -> Dict[str, Any]:
@@ -172,22 +143,23 @@ class ModelRun:
                                   "with the `build_x_features` function implemented.")
 
     @classmethod
-    def build_x_features(cls, data_set: Any, label_key: str = '') -> Tuple[pd.DataFrame, List[str]]:
+    def build_x_features(cls, data_set: Any, feature_subset: List[str], label_key: str = '') -> Tuple[pd.DataFrame,
+                                                                                                      List[str]]:
         """
         Create the X feature set from the data set by removing the label column.
 
         Args:
             data_set: Data set to transform into features.
+            feature_subset: Subset of features to use in X data
             label_key: Name of the label column that will be removed from the dataset to generate the feature set.
 
         Returns:
             Tuple containing the pd.DataFrame of the feature set and a list of the column names.
         """
-        cols = list(data_set.columns)
-        if label_key in cols:
-            cols.remove(label_key)
-        feature_set = data_set[cols].copy()
-        return feature_set, cols
+
+        data_subset = data_set[feature_subset].copy()
+        data_subset = data_subset.drop(['label_key'], axis=1, errors='ignore')
+        return data_subset
 
     @classmethod
     def build_y_vector(cls, data_set: Any, label_key: str) -> List:
