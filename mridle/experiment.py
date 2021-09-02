@@ -73,6 +73,11 @@ class ModelRun:
 
         # saved to maintain and end-to-end record of the the history of data the model was trained on
         self.preprocessing_func = preprocessing_func
+
+        # Will be set when model is saved, and then re-used if model is run further (for hyperparam search)
+        self.file_path = None
+
+        # Create datasets
         self.build_data()
 
     def run(self, run_hyperparam_search: bool = True, hyperopt_timeout: int = 360) -> Dict:
@@ -504,11 +509,15 @@ class ModelRun:
             >>> my_model_run.save('project/data/models/', descriptor='5 features')
             >>> # saves project/data/models/YYYY-MM-DD_HH-MM-SS__<model_class>__5-features.pkl
         """
-        file_name = self.generate_file_name(descriptor)
-        file_path = Path(parent_directory, file_name)
-        with open(file_path, 'wb+') as f:
-            pickle.dump(self, f)
-        return file_path
+        if self.file_path:
+            with open(self.file_path, 'wb+') as f:
+                pickle.dump(self, f)
+        else:
+            file_name = self.generate_file_name(descriptor)
+            self.file_path = Path(parent_directory, file_name)
+            with open(self.file_path, 'wb+') as f:
+                pickle.dump(self, f)
+        return self.file_path
 
     def generate_predictor(self) -> 'Predictor':
         """
