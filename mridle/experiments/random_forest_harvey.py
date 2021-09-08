@@ -1,7 +1,6 @@
 from mridle.experiment import ModelRun
 import pandas as pd
 import numpy as np
-from typing import Any, Dict, List, Tuple
 
 cols_for_modeling = ['no_show_before', 'no_show_before_sq', 'sched_days_advanced', 'hour_sched',
                      'distance_to_usz', 'age', 'close_to_usz', 'male', 'female', 'age_sq',
@@ -31,29 +30,9 @@ hyperparams = {'n_estimators': n_estimators, 'max_features': max_features, 'max_
 class HarveyModel_RandomForest(ModelRun):
 
     @classmethod
-    def build_x_features(cls, data_set: Any, encoders: Dict, label_key: str = '') -> Tuple[pd.DataFrame, List]:
-        """
-        Build custom features
-
-        Args:
-            data_set: Data set to transform into features.
-            encoders: Dict of pre-trained encoders for use in building features.
-            label_key: (optional) label key that will be removed from the dataset to generate the feature set.
-
-        Returns:
-            dataframe
-            List of features
-        """
-        feature_columns = cols_for_modeling
-        return data_set[feature_columns].copy(), feature_columns
-
-    @classmethod
     def get_test_data_set(cls):
         """
         Provides test data
-
-        Args:
-            model
 
         Returns:
             a dataframe with the appropriate columns to test the model
