@@ -8,12 +8,14 @@ alt.data_transformers.disable_max_rows()
 
 def plot_day_no_show(df):
     """
+    Plot no show rate aggregated by the day of the week
 
     Args:
-        df:
+        df: dataframe of appointments, with a day_of_week_str column and an indicator of whether the patient showed up
+            for the appointment
 
     Returns:
-
+        altair bar chart with one bar per day of the week showing the aggregated no-show rate
     """
     df_day_agg = df.copy()
     df_day_agg = df_day_agg[df_day_agg['day_of_week_str'].isin(['Monday', 'Tuesday', 'Wednesday',
@@ -29,12 +31,14 @@ def plot_day_no_show(df):
 
 def plot_month_no_show(df):
     """
+    Plot no show rate aggregated by the month
 
     Args:
-        df:
+        df: dataframe of appointments, with a month column and an indicator of whether the patient showed up for the
+            appointment
 
     Returns:
-
+        altair bar chart with one bar per month of the year showing the aggregated no-show rate
     """
     df_month_agg = df.copy()
     df_month_agg = df_month_agg[['month', 'NoShow']].groupby('month').apply(lambda x: np.sum(x) / len(x))
@@ -46,11 +50,14 @@ def plot_month_no_show(df):
 
 def plot_hour_no_show(df):
     """
+    Plot no show rate aggregated by the hour of the day
 
     Args:
-        df:
+        df: dataframe of appointments, with a hour column and an indicator of whether the patient showed up for the
+            appointment
 
     Returns:
+        altair bar chart with one bar per hour of the day showing the aggregated no-show rate
 
     """
     df_hour_agg = df.copy()
@@ -65,11 +72,15 @@ def plot_hour_no_show(df):
 
 def plot_age_no_show(df):
     """
+    Plot no show rate aggregated by the age of the patient
 
     Args:
-        df:
+        df: dataframe of appointments, with an age column and an indicator of whether the patient showed up for the
+            appointment
 
     Returns:
+        altair scatter plot with one mark/point per age on the x-axis, and the no-show rate on the y axis. Each point
+        is sized relative to the number of patients in that age group
 
     """
     df_age_agg = df.copy()
@@ -87,13 +98,14 @@ def plot_age_no_show(df):
 
 def plot_appts_per_patient(df, log_scale=False):
     """
+    Plot a histogram showing the number of patients which had 1 appointment, 2 appointments, 3, 4, ... and so on
 
     Args:
-        df:
-        log_scale:
+        df: dataframe containing appointments with patient IDs
+        log_scale: a boolean of whether to plot the y-axis in the log-scale or not
 
     Returns:
-
+        a histogram showing the number of patients which had 1 appointment, 2 appointments, 3, 4, ... and so on
     """
 
     df_copy = df.copy()
@@ -117,15 +129,18 @@ def plot_appts_per_patient(df, log_scale=False):
     return chart
 
 
-def plot_no_show_scatter(df, log_scale=False):
+def plot_no_show_heat_map(df, log_scale=False):
     """
+    Plot a heatmap with number of appointments on the x-axis and number of no-shows on the y-axis, with each section
+    coloured by the number of patients in each.
 
     Args:
-        df:
-        log_scale:
+        df: dataframe containing appointments with patient IDs and no-show information
+        log_scale: a boolean of whether to plot the y-axis in the log-scale or not
 
     Returns:
-
+        a heatmap with number of appointments on the x-axis and number of no-shows on the y-axis, with each section
+        coloured by the number of patients in each.
     """
     df_copy = df.copy()
     pat_appts = df_copy.groupby('MRNCmpdId').agg({'NoShow': ['count', 'sum']}).reset_index()
@@ -154,12 +169,15 @@ def plot_no_show_scatter(df, log_scale=False):
 
 def plot_appt_noshow_tree_map(df):
     """
+    Plot a treemap (https://plotly.com/python/treemaps/) showing the share of patients in each category of:
+    number appointments & number of no shows. i.e. share of patients with 1 appointment and 0 no shows, share of
+    patients with 1 appt, 1 no show, etc.
 
     Args:
-        df:
+        df: dataframe containing appointments with patient IDs and no-show information
 
     Returns:
-
+        Treemap figure as described above
     """
     df_copy = df.copy()
     appts_per_patient = df_copy.groupby('MRNCmpdId').agg({'NoShow': ['count', 'sum']}).reset_index()
