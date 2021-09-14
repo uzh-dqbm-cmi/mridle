@@ -78,7 +78,8 @@ class ModelRun:
         self.file_path = None
 
         # Create datasets
-        self.build_data()
+        self.x_train, self.x_test, self.y_train, self.y_test, self.encoders = self.build_data(
+            self.train_set, self.test_set, self.label_key, self.feature_subset)
 
     def run(self, run_hyperparam_search: bool = True, hyperopt_timeout: int = 360) -> Dict:
         """
@@ -112,16 +113,35 @@ class ModelRun:
             self.evaluation = self.evaluate_model(self.model, self.x_test, self.y_test, self.y_test_predicted)
         return self.evaluation
 
-    def build_data(self):
-        """
-        Orchestrates the construction of train and test x matrices, and train and test y vectors.
+    @classmethod
+    def build_data(cls, train_set: Any, test_set: Any, label_key: str, feature_subset: List[str]) -> \
+            Tuple[pd.DataFrame, pd.DataFrame, List, List, Dict[str, Any]]:
+        """Orchestrates the construction of train and test x matrices, and train and test y vectors.
+
+        `build_data` takes as input:
+            - train_set: Any
+            - test_set: Any
+            - label_key: str. key to use in data dicts for label
+            - feature_subset: List of str, or None if NA. Subset of features to use.
+
+        `build_data` returns a Tuple of the following:
+            - x_train: pd.DataFrame
+            - x_test: pd.DataFrame
+            - y_train: List
+            - y_test: List
+            - feature_cols: List[str]
+            - encoders: Dict[str, Any]. Encoders used to generate the feature set. Encoders that may want to be saved
+                include vectorizers trained on the train_set and applied to the test_set.
         """
 
-        self.x_train = self.build_x_features(self.train_set, self.feature_subset, self.label_key)
-        self.x_test = self.build_x_features(self.test_set, self.feature_subset, self.label_key)
+        encoders = cls.train_encoders(train_set)
+        x_train = cls.build_x_features(train_set, feature_subset, label_key, encoders)
+        x_test = cls.build_x_features(test_set, feature_subset, label_key, encoders)
 
-        self.y_train = self.build_y_vector(self.train_set, self.label_key)
-        self.y_test = self.build_y_vector(self.test_set, self.label_key)
+        y_train = cls.build_y_vector(train_set, label_key)
+        y_test = cls.build_y_vector(test_set, label_key)
+
+        return x_train, x_test, y_train, y_test, encoders
 
     @classmethod
     def train_encoders(cls, train_set: Any) -> Dict[str, Any]:
@@ -145,8 +165,8 @@ class ModelRun:
                                   "with the `build_x_features` function implemented.")
 
     @classmethod
-    def build_x_features(cls, data_set: Any, feature_subset: List[str], label_key: str = '') -> Tuple[pd.DataFrame,
-                                                                                                      List[str]]:
+    def build_x_features(cls, data_set: Any, feature_subset: List[str], label_key: str = '', encoders: Dict = None
+                         ) -> pd.DataFrame:
         """
         Create the X feature set from the data set by removing the label column.
 
@@ -154,6 +174,7 @@ class ModelRun:
             data_set: Data set to transform into features.
             feature_subset: Subset of features to use in X data
             label_key: Name of the label column that will be removed from the dataset to generate the feature set.
+            encoders: Dict of pre-trained encoders for use in building features.
 
         Returns:
             Tuple containing the pd.DataFrame of the feature set and a list of the column names.

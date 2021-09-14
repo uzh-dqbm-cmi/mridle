@@ -196,6 +196,6 @@ def plot_appt_noshow_tree_map(df):
     fig = px.treemap(appts_per_patient_counts, path=['num_appts', 'num_noshow'], values='num_patients',
                      color='num_noshow', color_discrete_map={'(?)': 'burlywood', 'Number of no-shows: 0': 'cadetblue',
                                                              '1': 'coral', '2': 'lightcoral', '>2': 'darkorange'})
-    fig.update_layout(margin=dict(t=0, l=0, r=0, b=0))
+    fig.update_layout(margin=dict(t=0, l=0, r=0, b=0))  # noqa
 
     return fig
