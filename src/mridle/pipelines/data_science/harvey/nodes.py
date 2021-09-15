@@ -1,8 +1,8 @@
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
-from mridle_kedro.pipelines.data_science import feature_engineering
-from mridle_kedro.pipelines.data_engineering.ris.nodes import build_slot_df
-from mridle_kedro.utilities.experiment import PartitionedExperiment, ModelRun
+from mridle.pipelines.data_science import feature_engineering
+from mridle.pipelines.data_engineering.ris.nodes import build_slot_df
+from mridle.utilities.experiment import PartitionedExperiment, ModelRun
 from typing import Dict, Tuple
 
 

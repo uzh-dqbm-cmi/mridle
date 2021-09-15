@@ -3,7 +3,7 @@ import pandas as pd
 import datetime as dt
 import re
 from typing import Dict, List, Union
-from mridle_kedro.utilities import data_processing
+from mridle.utilities import data_processing
 
 
 STATUS_MAP = {
