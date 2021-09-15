@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
-from mridle.data_management import aggregate_terminplanner
-from mridle.idle_time import calc_idle_time_gaps, calc_daily_idle_time_stats, calc_appts_and_gaps
+from mridle.utilities.data_management import aggregate_terminplanner
+from mridle.utilities.idle_time import calc_idle_time_gaps, calc_daily_idle_time_stats, calc_appts_and_gaps
 
 
 def day(num_days_from_start, hour=9, minute=0):

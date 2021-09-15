@@ -1,5 +1,5 @@
 import unittest
-from mridle.power_simulations.sample_size_utilities import PowerSimulations, calculate_f1_diff, permute_and_split
+from mridle.utilities.power_simulations.sample_size_utilities import PowerSimulations, calculate_f1_diff, permute_and_split
 import pandas as pd
 from sklearn.metrics import f1_score, precision_score, recall_score
 from pandas.testing import assert_frame_equal
