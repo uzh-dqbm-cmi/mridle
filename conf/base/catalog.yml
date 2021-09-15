@@ -58,12 +58,18 @@ harvey_model_results:
   filepath: /data/mridle/data/kedro_data_catalog/07_model_output/harvey_model_results.pkl
   layer: model_output
 
+# TODO: this sql doesnt work
+# dicom_3_months_Christian_sqlite:
+#   type: pandas.SQLQueryDataSet
+#   credentials:
+#       con: /data/mridle/data/kedro_data_catalog/01_raw/2021_02_09_dicom_resend_from_Christian/3monthsmrdata.200427.all.sqlite
+#   sql: /data/mridle/data/kedro_data_catalog/01_raw/2021_02_09_dicom_resend_from_Christian/image_times.sql
+#   layer: raw
+
 dicom_3_months_Christian:
-  type: pandas.SQLQueryDataSet
-  credentials:
-      con: /data/mridle/data/kedro_data_catalog/01_raw/2021_02_09_dicom_resend_from_Christian/3monthsmrdata.200427.all.sqlite
-  sql: /data/mridle/data/kedro_data_catalog/01_raw/2021_02_09_dicom_resend_from_Christian/image_times.sql
-  layer: raw
+  type: pandas.ParquetDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dicom_3_months_Christian.parquet
+  layer: intermediate
 
 dicom_3_months_rdsc:
   type: pandas.CSVDataSet
@@ -72,10 +78,11 @@ dicom_3_months_rdsc:
 
 dicom_times_df:
   type: pandas.ParquetDataSet
-  file_path: /data/mridle/data/kedro_data_catalog/02_intermediate/dicom_times_df.csv
+  filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dicom_times_df.csv
   layer: intermediate
 
 slot_w_dicom_df:
   type: pandas.ParquetDataSet
-    file_path: /data/mridle/data/kedro_data_catalog/03_primary/slot_w_dicom_df.csv
-    layer: primary
+  filepath: /data/mridle/data/kedro_data_catalog/03_primary/slot_w_dicom_df.csv
+  layer: primary
+

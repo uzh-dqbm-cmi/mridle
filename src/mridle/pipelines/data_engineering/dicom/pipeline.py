@@ -13,7 +13,7 @@ def create_pipeline(**kwargs):
             ),
             node(
                 func=integrate_dicom_data,
-                inputs=["slot_df", "dicom_3_months_Christian"],
+                inputs=["slot_df", "dicom_times_df"],
                 outputs="slot_w_dicom_df",
                 name="integrate_dicom_data"
             ),
