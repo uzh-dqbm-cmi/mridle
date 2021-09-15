@@ -10,7 +10,8 @@ isort~=5.0
 jupyter~=1.0
 jupyter_client>=5.1, <7.0
 jupyterlab~=3.0
-kedro[pandas.CSVDataSet,pandas.ExcelDataSet,pandas.ParquetDataSet]==0.17.4
+kedro[pandas.CSVDataSet,pandas.ExcelDataSet,pandas.ParquetDataSet,pandas.SQLTableDataSet]==0.17.4
+kedro-viz
 matplotlib>=3.1.0
 nbstripout~=0.4
 pgeocode
