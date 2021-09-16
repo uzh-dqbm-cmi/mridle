@@ -70,10 +70,8 @@ MRIdle uses [Kedro](https://kedro.readthedocs.io) for organizing the data pipeli
 Kedro is an open-source Python framework for creating reproducible, maintainable and modular data science code.
 It borrows concepts from software engineering best-practice and applies them to machine-learning code.
 
-Kedro organizes data transformation steps into pipelines.
-The easiest way to explore the pipelines is via Kedro's visualization tool, which you can run via `kedro viz` and view in your browser.
-
-Here is a high level overview of the kedro project structure (adapted from [this Kedro doc page](https://kedro.readthedocs.io/en/stable/12_faq/02_architecture_overview.html)):
+### Project Structure
+Here is a high level overview of this repo's kedro project structure (adapted from [this Kedro doc page](https://kedro.readthedocs.io/en/stable/12_faq/02_architecture_overview.html)):
 * The `conf/` directory contains configuration for the project, including:
     * `base/catalog.yml` defines all data files that are involved in the pipelines.
     * `base/parameters.yml` is where parameters for pipelines is stored, for example model training parameters.
@@ -85,6 +83,10 @@ Here is a high level overview of the kedro project structure (adapted from [this
     * `tests/` is where the tests go
     * `requirements.in` contains the source requirements of the project.
 * `pyproject.toml` identifies the project root by providing project metadata.
+
+### Kedro Viz
+Kedro organizes data transformation steps into pipelines.
+The easiest way to explore the pipelines is via Kedro's visualization tool, which you can open by running `kedro viz` and opening the webapp in your browser.
 
 Below is a short summary of some of the Kedro functionality you may use to work with MRIdle.
 You can read much more in the [Kedro documentation](https://kedro.readthedocs.io)!
