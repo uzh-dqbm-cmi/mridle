@@ -73,7 +73,7 @@ It borrows concepts from software engineering best-practice and applies them to 
 ### Project Structure
 Here is a high level overview of this repo's kedro project structure (adapted from [this Kedro doc page](https://kedro.readthedocs.io/en/stable/12_faq/02_architecture_overview.html)):
 * The `conf/` directory contains configuration for the project, including:
-    * `base/catalog.yml` defines all data files that are involved in the pipelines.
+    * `base/catalog/*.yml` contain data catalog entries for all data files that are involved in the pipelines.
     * `base/parameters.yml` is where parameters for pipelines is stored, for example model training parameters.
 * The `src/` directory contains the source code for the project, including:
     * `mridle/` is the package directory, and contains:

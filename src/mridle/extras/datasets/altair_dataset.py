@@ -35,7 +35,6 @@ class AltairDataSet(AbstractVersionedDataSet):
             glob_function=self._fs.glob,
         )
 
-
     def _load(self) -> np.ndarray:
         raise DataSetError("`load` is not supported on AltairDataSet")
 
