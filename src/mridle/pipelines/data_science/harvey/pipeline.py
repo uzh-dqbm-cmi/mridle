@@ -21,13 +21,13 @@ def create_pipeline(**kwargs):
             node(
                 func=train_harvey_model_logistic_reg,
                 inputs=["harvey_model_input", "params:models.harvey_logistic_reg"],
-                outputs=["harvey_model_logistic_reg", "harvey_logistic_reg_model_results"],
+                outputs=["harvey_model_logistic_reg", "harvey_model_results_logistic_reg"],
                 name="train_harvey_model_logistic_reg"
             ),
             node(
                 func=train_harvey_model_random_forest,
                 inputs=["harvey_model_input", "params:models.harvey_random_forest"],
-                outputs=["harvey_model_random_forest", "harvey_random_forest_model_results"],
+                outputs=["harvey_model_random_forest", "harvey_model_results_random_forest"],
                 name="train_harvey_model_random_forest"
             ),
         ]
