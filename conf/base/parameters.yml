@@ -1,4 +1,31 @@
 models:
+    harvey_logistic_reg:
+        name: harvey_logistic_reg
+        verbose: false
+        label_key: NoShow
+        hyperparameters:
+            penalty: ['l1', 'l2', 'elasticnet', 'none']
+            C: [0, 1, 10]
+            solver: ['liblinear', 'lbgfs']
+        search_type: random
+        scoring_fn: f1_score
+        run_hyperparam_search: false
+        features:
+            - 'no_show_before'
+            - 'no_show_before_sq'
+            - 'sched_days_advanced'
+            - 'hour_sched'
+            # - 'distance_to_usz'
+            - 'age'
+            # - 'close_to_usz'
+            - 'male'
+            - 'female'
+            - 'age_sq'
+            # - 'sched_days_advanced_sq'
+            # - 'distance_to_usz_sq'
+            - 'sched_2_days'
+            - 'age_20_60'
+
     harvey_random_forest:
         name: harvey_random_forest
         verbose: false

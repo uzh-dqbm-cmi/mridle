@@ -8,6 +8,8 @@ test_patient_ids:
   filepath: /data/mridle/data/kedro_data_catalog/01_raw/2020_07_06_RIS_five_years/test_patient_ids.yaml
   layer: raw
 
+# === RIS PIPELINE ===
+
 ris_2015_2016:
   type: pandas.ExcelDataSet
   filepath: /data/mridle/data/kedro_data_catalog/2020_07_06_RIS_five_years/RIS_2015till2016.xlsx
@@ -38,25 +40,7 @@ slot_df:
   filepath: /data/mridle/data/kedro_data_catalog/03_primary/slot_df.parquet
   layer: primary
 
-harvey_feature_set:
-  type: pandas.ParquetDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/04_feature/harvey_feature_set.parquet
-  layer: feature
-
-harvey_model_input:
-  type: pandas.ParquetDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/05_model_input/harvey_model_input.parquet
-  layer: model_input
-
-harvey_model:
-  type: pickle.PickleDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/06_models/harvey_model.pkl
-  layer: models
-
-harvey_model_results:
-  type: pickle.PickleDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/07_model_output/harvey_model_results.pkl
-  layer: model_output
+# === DICOM PIPELINE ===
 
 # TODO: this sql doesnt work
 # dicom_3_months_Christian_sqlite:
@@ -85,4 +69,36 @@ slot_w_dicom_df:
   type: pandas.ParquetDataSet
   filepath: /data/mridle/data/kedro_data_catalog/03_primary/slot_w_dicom_df.csv
   layer: primary
+
+# === HARVEY PIPELINE ===
+
+harvey_feature_set:
+  type: pandas.ParquetDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/04_feature/harvey_feature_set.parquet
+  layer: feature
+
+harvey_model_input:
+  type: pandas.ParquetDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/05_model_input/harvey_model_input.parquet
+  layer: model_input
+
+harvey_model_logistc_reg:
+  type: pickle.PickleDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/06_models/harvey_model_logistc_reg.pkl
+  layer: models
+
+harvey_model_random_forest:
+  type: pickle.PickleDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/06_models/harvey_model_random_forest.pkl
+  layer: models
+
+harvey_logistc_reg_model_results:
+  type: pickle.PickleDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/07_model_output/harvey_logistc_reg_model_results.pkl
+  layer: model_output
+
+harvey_random_forest_model_results:
+  type: pickle.PickleDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/07_model_output/harvey_random_forest_model_results.pkl
+  layer: model_output
 

@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from mridle.pipelines.data_science import feature_engineering
 from mridle.pipelines.data_engineering.ris.nodes import build_slot_df
@@ -88,6 +89,16 @@ def process_features_for_model(dataframe: pd.DataFrame, parameters: Dict) -> pd.
     features_df = dataframe[feature_list]
 
     return features_df
+
+
+def train_harvey_model_logistic_reg(features_df: pd.DataFrame, params: Dict) -> Tuple[PartitionedExperiment, Dict]:
+    model = LogisticRegression()
+    exp = PartitionedExperiment(name=params['name'], data_set=features_df, model_run_class=ModelRun, model=model,
+                                preprocessing_func=None, label_key=params['label_key'],
+                                hyperparams=params['hyperparameters'], verbose=params['verbose'],
+                                search_type=params['search_type'], scoring_fn=params['scoring_fn'])
+    results = exp.run(run_hyperparam_search=params['run_hyperparam_search'])
+    return exp, results
 
 
 def train_harvey_model_random_forest(features_df: pd.DataFrame, params: Dict) -> Tuple[PartitionedExperiment, Dict]:
