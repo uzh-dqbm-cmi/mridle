@@ -84,19 +84,16 @@ def process_features_for_model(dataframe: pd.DataFrame, parameters: Dict) -> pd.
 
     dataframe['hour_sched'].fillna(dataframe['hour_sched'].median(), inplace=True)
 
-    feature_list = parameters['models']['harvey']['features']
-    feature_list.append(parameters['models']['harvey']['label_key'])
-    features_df = dataframe[feature_list]
-
-    return features_df
+    return dataframe
 
 
 def train_harvey_model_logistic_reg(features_df: pd.DataFrame, params: Dict) -> Tuple[PartitionedExperiment, Dict]:
     model = LogisticRegression()
-    exp = PartitionedExperiment(name=params['name'], data_set=features_df, model_run_class=ModelRun, model=model,
-                                preprocessing_func=None, label_key=params['label_key'],
-                                hyperparams=params['hyperparameters'], verbose=params['verbose'],
-                                search_type=params['search_type'], scoring_fn=params['scoring_fn'])
+    exp = PartitionedExperiment(name=params['name'], data_set=features_df, feature_subset=params['feature_list'],
+                                model_run_class=ModelRun, model=model, preprocessing_func=None,
+                                label_key=params['label_key'], hyperparams=params['hyperparameters'],
+                                verbose=params['verbose'], search_type=params['search_type'],
+                                scoring_fn=params['scoring_fn'])
     results = exp.run(run_hyperparam_search=params['run_hyperparam_search'])
     return exp, results
 
@@ -123,9 +120,9 @@ def train_harvey_model_random_forest(features_df: pd.DataFrame, params: Dict) ->
                    'min_samples_split': min_samples_split, 'min_samples_leaf': min_samples_leaf,
                    'bootstrap': bootstrap}
 
-    exp = PartitionedExperiment(name=params['name'], data_set=features_df, model_run_class=ModelRun, model=model,
-                                preprocessing_func=None, label_key=params['label_key'],
-                                hyperparams=hyperparams, verbose=params['verbose'],
+    exp = PartitionedExperiment(name=params['name'], data_set=features_df, feature_subset=params['feature_list'],
+                                model_run_class=ModelRun, model=model, preprocessing_func=None,
+                                label_key=params['label_key'], hyperparams=hyperparams, verbose=params['verbose'],
                                 search_type=params['search_type'], scoring_fn=params['scoring_fn'])
     results = exp.run(run_hyperparam_search=params['run_hyperparam_search'])
     return exp, results
