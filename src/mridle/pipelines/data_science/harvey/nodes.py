@@ -89,8 +89,7 @@ def process_features_for_model(dataframe: pd.DataFrame, parameters: Dict) -> pd.
     return features_df
 
 
-def train_harvey_model(features_df: pd.DataFrame, parameters: Dict) -> Tuple[PartitionedExperiment, Dict]:
-    params = parameters['models']['harvey']
+def train_harvey_model(features_df: pd.DataFrame, params: Dict) -> Tuple[PartitionedExperiment, Dict]:
     model = RandomForestClassifier()
     exp = PartitionedExperiment(name=params['name'], data_set=features_df, model_run_class=ModelRun, model=model,
                                 preprocessing_func=None, label_key=params['label_key'],

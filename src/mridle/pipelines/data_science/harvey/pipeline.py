@@ -19,7 +19,7 @@ def create_pipeline(**kwargs):
             ),
             node(
                 func=train_harvey_model,
-                inputs=["harvey_model_input", "parameters"],
+                inputs=["harvey_model_input", "params:models.harvey"],
                 outputs=["harvey_model", "harvey_model_results"],
                 name="train_harvey_model"
             ),
