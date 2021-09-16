@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from mridle.pipelines.data_science import feature_engineering
 from mridle.pipelines.data_engineering.ris.nodes import build_slot_df
@@ -89,11 +90,30 @@ def process_features_for_model(dataframe: pd.DataFrame, parameters: Dict) -> pd.
     return features_df
 
 
-def train_harvey_model(features_df: pd.DataFrame, params: Dict) -> Tuple[PartitionedExperiment, Dict]:
+def train_harvey_model_random_forest(features_df: pd.DataFrame, params: Dict) -> Tuple[PartitionedExperiment, Dict]:
     model = RandomForestClassifier()
+
+    # Number of treas in random forest
+    n_estimators = [int(x) for x in np.linspace(**params['n_estimators'])]
+    # Number of features to consider in splits
+    max_features = params['max_features']
+    # Maximum number of levels in tree
+    max_depth = [int(x) for x in np.linspace(**params['max_depth'])]
+    max_depth.append(None)
+    # Min num of samples needed to split a node
+    min_samples_split = params['min_samples_split']
+    # min num of samples needed at each leaf node
+    min_samples_leaf = params['min_samples_leaf']
+    # bootstrap
+    bootstrap = params['bootstrap']
+
+    hyperparams = {'n_estimators': n_estimators, 'max_features': max_features, 'max_depth': max_depth,
+                   'min_samples_split': min_samples_split, 'min_samples_leaf': min_samples_leaf,
+                   'bootstrap': bootstrap}
+
     exp = PartitionedExperiment(name=params['name'], data_set=features_df, model_run_class=ModelRun, model=model,
                                 preprocessing_func=None, label_key=params['label_key'],
-                                hyperparams=params['hyperparameters'], verbose=params['verbose'],
+                                hyperparams=hyperparams, verbose=params['verbose'],
                                 search_type=params['search_type'], scoring_fn=params['scoring_fn'])
     results = exp.run(run_hyperparam_search=params['run_hyperparam_search'])
     return exp, results
