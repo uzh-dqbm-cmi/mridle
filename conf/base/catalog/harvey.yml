@@ -6,7 +6,7 @@ harvey_feature_set:
 harvey_model_input:
   type: pandas.ParquetDataSet
   filepath: /data/mridle/data/kedro_data_catalog/05_model_input/harvey_model_input.parquet
-  layer: model_input
+  layer: model input
 
 harvey_model_logistic_reg:
   type: pickle.PickleDataSet
@@ -21,12 +21,12 @@ harvey_model_random_forest:
 harvey_model_results_logistic_reg:
   type: pickle.PickleDataSet
   filepath: /data/mridle/data/kedro_data_catalog/07_model_output/harvey_model_results_logistic_reg.pkl
-  layer: model_output
+  layer: model output
 
 harvey_model_results_random_forest:
   type: pickle.PickleDataSet
   filepath: /data/mridle/data/kedro_data_catalog/07_model_output/harvey_model_results_random_forest.pkl
-  layer: model_output
+  layer: model output
 
 harvey_models_results_dict:
   type: MemoryDataSet
