@@ -137,3 +137,8 @@ data/
 *.csv
 *.xls
 *.xlsx
+*.ipynb
+
+# other
+.DS_Store
+.telemetry
