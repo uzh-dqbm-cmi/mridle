@@ -89,7 +89,7 @@ def process_features_for_model(dataframe: pd.DataFrame, parameters: Dict) -> pd.
 
 def train_harvey_model_logistic_reg(features_df: pd.DataFrame, params: Dict) -> Tuple[PartitionedExperiment, Dict]:
     model = LogisticRegression()
-    exp = PartitionedExperiment(name=params['name'], data_set=features_df, feature_subset=params['feature_list'],
+    exp = PartitionedExperiment(name=params['name'], data_set=features_df, feature_subset=params['features'],
                                 model_run_class=ModelRun, model=model, preprocessing_func=None,
                                 label_key=params['label_key'], hyperparams=params['hyperparameters'],
                                 verbose=params['verbose'], search_type=params['search_type'],
@@ -120,7 +120,7 @@ def train_harvey_model_random_forest(features_df: pd.DataFrame, params: Dict) ->
                    'min_samples_split': min_samples_split, 'min_samples_leaf': min_samples_leaf,
                    'bootstrap': bootstrap}
 
-    exp = PartitionedExperiment(name=params['name'], data_set=features_df, feature_subset=params['feature_list'],
+    exp = PartitionedExperiment(name=params['name'], data_set=features_df, feature_subset=params['features'],
                                 model_run_class=ModelRun, model=model, preprocessing_func=None,
                                 label_key=params['label_key'], hyperparams=hyperparams, verbose=params['verbose'],
                                 search_type=params['search_type'], scoring_fn=params['scoring_fn'])
