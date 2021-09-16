@@ -93,19 +93,20 @@ def process_features_for_model(dataframe: pd.DataFrame, parameters: Dict) -> pd.
 def train_harvey_model_random_forest(features_df: pd.DataFrame, params: Dict) -> Tuple[PartitionedExperiment, Dict]:
     model = RandomForestClassifier()
 
+    hp_config = params['hyperparameters']
     # Number of treas in random forest
-    n_estimators = [int(x) for x in np.linspace(**params['n_estimators'])]
+    n_estimators = [int(x) for x in np.linspace(**hp_config['n_estimators'])]
     # Number of features to consider in splits
-    max_features = params['max_features']
+    max_features = hp_config['max_features']
     # Maximum number of levels in tree
-    max_depth = [int(x) for x in np.linspace(**params['max_depth'])]
+    max_depth = [int(x) for x in np.linspace(**hp_config['max_depth'])]
     max_depth.append(None)
     # Min num of samples needed to split a node
-    min_samples_split = params['min_samples_split']
+    min_samples_split = hp_config['min_samples_split']
     # min num of samples needed at each leaf node
-    min_samples_leaf = params['min_samples_leaf']
+    min_samples_leaf = hp_config['min_samples_leaf']
     # bootstrap
-    bootstrap = params['bootstrap']
+    bootstrap = hp_config['bootstrap']
 
     hyperparams = {'n_estimators': n_estimators, 'max_features': max_features, 'max_depth': max_depth,
                    'min_samples_split': min_samples_split, 'min_samples_leaf': min_samples_leaf,
