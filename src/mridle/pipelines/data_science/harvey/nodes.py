@@ -1,3 +1,4 @@
+import altair as alt
 import pandas as pd
 import numpy as np
 from sklearn.linear_model import LogisticRegression
@@ -126,3 +127,21 @@ def train_harvey_model_random_forest(features_df: pd.DataFrame, params: Dict) ->
                                 search_type=params['search_type'], scoring_fn=params['scoring_fn'])
     results = exp.run(run_hyperparam_search=params['run_hyperparam_search'])
     return exp, results
+
+
+def plot_harvey_metrics(model_results: Dict[str, Dict]) -> alt.Chart:
+    all_results = pd.DataFrame()
+    for model_name, results in model_results.items():
+        results_df = pd.DataFrame(results)
+        results_df = pd.melt(results_df, var_name='metric')
+        results_df['model'] = model_name
+        all_results = pd.concat([all_results, results_df])
+
+    chart = alt.Chart(all_results).mark_circle(size=60, opactiy=-.7).encode(
+        x='model',
+        y='value',
+        color='model',
+    ).facet(
+        column='metric'
+    )
+    return chart
