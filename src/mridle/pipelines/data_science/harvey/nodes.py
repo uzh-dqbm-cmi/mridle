@@ -137,7 +137,7 @@ def plot_harvey_metrics(model_results: Dict[str, Dict]) -> alt.Chart:
         results_df['model'] = model_name
         all_results = pd.concat([all_results, results_df])
 
-    chart = alt.Chart(all_results).mark_circle(size=60, opactiy=-.7).encode(
+    chart = alt.Chart(all_results).mark_circle(size=60, opacity=0.7).encode(
         x='model',
         y='value',
         color='model',
