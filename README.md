@@ -6,25 +6,53 @@ Resource Optimization for Radiology
 ### Setup
 MRIdle deals with patient data, therefore we work on a dedicated machine ("Louisa") which is managed by USZ.
 
+#### Access the "Louisa" computing environment
 1. If you don't have a regular USZ account, get one now.
 2. Get your account on Louisa: See Notion for instructions for how to access Louisa.
 3. Log onto Windows on an USZ machine or via remote desktop (mypc.usz.ch).
 4. Connect to Louisa through SSH: Open PuTTY (type "putty" in start menu), enter `Louisa's IP address` (see Notion page) as the host name and press "open".
 5. Now log in using your `ACC` account information.
 6. Optional: you can now set a new password on this linux machine with the command `passwd`.
-7.  Install Miniconda.
+
+#### Installation
+1.  Install Miniconda:
     ```
     cp /tmp/Miniconda3-latest-Linux-x86_64.sh .
     bash Miniconda3-latest-Linux-x86_64.sh
     ```
-8. Create a MRIdle python environment `conda create --name mridle` and activate it `conda activate mridle`.
-9. `git clone` the MRIdle repo into your home directory and `pip install -e .` it.
-10. Ask someone in the team to give you a port for running jupyter notebooks.
-11. Connect your dedicated port to your localhost:8888 port using `ssh -N -L localhost:8888:localhost:your-port your-acc-username@louisa-ip-address` in the Windows command line `cmd`. Alternatively save this command in a `.bat` file.
-12. Goto the MRIdle data directory `cd /data/mridle`.
-13. Start Jupyter here `jupyter notebook --port=your-port`.
-14. In your browser, go to localhost:8888 to open Jupyter.
-15. In a notebook, run the following code to import the mridle module. This code snippet also activates the autoreload IPython magic so that the module automatically updates with any code changes you make.
+1. Create a MRIdle python environment:
+    ```
+    conda create --name mridle python=3.8
+    ```
+1. Activate the environment:
+    ```
+    conda activate mridle
+    ```
+1. `git clone` the MRIdle repo into your home directory via HTTPS:
+    ```
+    git clone https://github.com/uzh-dqbm-cmi/mridle.git
+    ```
+   Note: you will have to use GitHub HTTPS authentication with a [Personal Access Token](https://docs.github.com/en/github/authenticating-to-github/keeping-your-account-and-data-secure/creating-a-personal-access-token)
+1. Move into the mridle directory:
+    ```
+    cd mridle
+    ```
+1. Install the package and it's requirements:
+    ```
+    pip install -r src/requirements.txt
+    ```
+
+#### Set Up Jupyter
+
+1. Ask someone in the team to assign you a port for running Jupyter notebooks.
+1. Connect your dedicated port to your localhost:8888 port using `ssh -N -L localhost:8888:localhost:your-port your-acc-username@louisa-ip-address` in the Windows command line `cmd`. Alternatively save this command in a `.bat` file.
+1. Start Jupyter lab through kedro in order to access kedro functionality:
+    ```
+    kedro jupyter lab /data/mridle/
+    ```
+    Note: you must run this command from the top level `mridle` repo directory. 
+1. In your browser, go to `localhost:8888` to open Jupyter.
+1. In a notebook, run the following code to import the mridle module. This code snippet also activates the autoreload IPython magic so that the module automatically updates with any code changes you make.
     ```
     %load_ext autoreload
     %autoreload 2
@@ -36,6 +64,67 @@ MRIdle deals with patient data, therefore we work on a dedicated machine ("Louis
 - Do not delete anything.
 - Patient data, even anonymised, always stays on Lousia.
 - Naming convention for jupyter notebooks: `number_your-initials_short-description`.
+
+## MRIdle + Kedro
+MRIdle uses [Kedro](https://kedro.readthedocs.io) for organizing the data pipelines.
+Kedro is an open-source Python framework for creating reproducible, maintainable and modular data science code.
+It borrows concepts from software engineering best-practice and applies them to machine-learning code.
+
+Kedro organizes data transformation steps into pipelines.
+The easiest way to explore the pipelines is via Kedro's visualization tool, which you can run via `kedro viz` and view in your browser.
+
+Here is a high level overview of the kedro project structure (adapted from [this Kedro doc page](https://kedro.readthedocs.io/en/stable/12_faq/02_architecture_overview.html)):
+* The `conf/` directory contains configuration for the project, including:
+    * `base/catalog.yml` defines all data files that are involved in the pipelines.
+    * `base/parameters.yml` is where parameters for pipelines is stored, for example model training parameters.
+* The `src/` directory contains the source code for the project, including:
+    * `mridle/` is the package directory, and contains:
+        * The `pipelines/` directory, which contains the source code for your pipelines.
+        * The `utiltities/` directory contains source code that is shared across multiple pipelines, or is independent from pipelines.
+        * `pipeline_registry.py` file defines the project pipelines, i.e. pipelines that can be run using kedro run --pipeline.
+    * `tests/` is where the tests go
+    * `requirements.in` contains the source requirements of the project.
+* `pyproject.toml` identifies the project root by providing project metadata.
+
+Below is a short summary of some of the Kedro functionality you may use to work with MRIdle.
+You can read much more in the [Kedro documentation](https://kedro.readthedocs.io)!
+
+### Kedro on the command line
+
+#### Running kedro pipelines
+
+To run a pipeline on the command line, run
+```
+kedro run --pipeline "<pipeline name>"
+```
+
+You can also specify which nodes to start from or stop at:
+```
+kedro run --pipeline "<pipeline name>" --from-nodes "<nodename>"
+```
+
+### Using kedro in Jupyter & IPython
+You can also interact with kedro via Jupyter and IPython sessions.
+To start a Jupyter or IPython session with kedro activated, run `kedro jupyter lab /data/mridle/` or `kedro ipython` from within the `mridle` directory.
+Running Jupyter and IPython via kedro grants you access to 3 kedro variables:
+* `catalog`: Load data created by kedro pipelines
+* `context`: Access information about the pipelines
+* `session`: Run pipelines
+(if at any point you want to refresh these variables with changes you've made, run `%reload_kedro`)
+
+#### Kedro data catalog
+The Kedro data catalog makes loading data files from the pipelines easy:
+```
+slot_df = catalog.load('slot_df')
+```
+With this method, you can load any file defined in the Data Catalog defined in `conf/base/catalog.yml`
+
+#### Running kedro pipelines
+Here are some example commands for running pipelines within Jupyter/IPython:
+```
+session.run(pipeline_name='harvey')
+session.run(ppipeline_name='harvey', from_nodes=['train_harvey_model')
+```
 
 ## Example Usage
 
@@ -364,5 +453,5 @@ mr_0 = exp.model_runs['Partition 0']
 ```
 
 ## Tests
-`mridle` contains a test suite for validating the no-show identification algorithm.
-Run the tests by navigating to the `mridle` directory and running `pytest`.
+`mridle` contains a test suite for validating the data pipelines, including the no-show identification algorithm.
+Run the tests by navigating to the top level `mridle` directory and running `kedro test`.
