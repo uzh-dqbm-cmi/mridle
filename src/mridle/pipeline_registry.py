@@ -43,14 +43,14 @@ def register_pipelines() -> Dict[str, Pipeline]:
 
     ris_pipeline = ris.create_pipeline()
     dicom_pipeline = dicom.create_pipeline()
-    harvey_pipeline = harvey.create_pipeline()
     feature_engineering_pipeline = feature_engineering.create_pipeline()
+    harvey_pipeline = harvey.create_pipeline()
 
     return {
         "__default__": ris_pipeline,
         "ris": ris_pipeline,
         "dicom": dicom_pipeline,
-        "harvey": harvey_pipeline,
         "feature_engineering": feature_engineering_pipeline,
+        "harvey": harvey_pipeline,
 
     }
