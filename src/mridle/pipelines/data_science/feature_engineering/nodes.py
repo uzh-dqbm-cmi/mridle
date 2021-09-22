@@ -250,7 +250,7 @@ def feature_distance_to_usz(status_df: pd.DataFrame) -> pd.DataFrame:
     """
     dist = pgeocode.GeoDistance('ch')
     usz_post_code = '8091'
-    status_df['post_code'] = status_df['post_code'].astype(int).astype(str)
+    status_df['post_code'] = status_df['post_code'].astype(str).replace("\\.0", '', regex=True)
 
     unique_zips = pd.DataFrame(status_df['post_code'].unique(), columns=['post_code'])
     unique_zips['distance_to_usz'] = unique_zips['post_code'].apply(lambda x: dist.query_postal_code(x, usz_post_code))
