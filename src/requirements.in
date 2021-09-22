@@ -23,3 +23,4 @@ seaborn
 sklearn
 sympy
 wheel>=0.35, <0.37
+xgboost
