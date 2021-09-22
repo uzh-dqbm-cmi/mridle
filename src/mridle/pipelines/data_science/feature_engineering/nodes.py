@@ -273,3 +273,14 @@ def feature_no_show_before(status_df: pd.DataFrame) -> pd.DataFrame:
     # cumsum will include the current no show, so subtract 1, except don't go negative
     status_df['no_show_before'] = np.where(status_df['no_show_before'] > 0, status_df['no_show_before'] - 1, 0)
     return status_df
+
+
+# feature engineering for the duration model
+def feature_duration(dicom_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Calculates the duration of each MRI examination in minutes.
+    Returns: the original dataframe plus a duration column
+    """
+
+    dicom_df["duration"] = (dicom_df["image_end"] - dicom_df["image_start"]) / np.timedelta64(1, "m")
+    return dicom_df
