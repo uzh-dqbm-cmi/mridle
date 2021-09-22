@@ -2,7 +2,7 @@ import datetime as dt
 import pandas as pd
 import numpy as np
 import pgeocode
-from mridle.data_management import build_slot_df
+from mridle.utlities.data_management import build_slot_df
 
 
 def identify_end_times(row: pd.DataFrame) -> dt.datetime:
