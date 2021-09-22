@@ -5,7 +5,7 @@ import pgeocode
 import datetime as dt
 
 
-def build_feature_set(status_df: pd.DataFrame, include_id_cols=False) -> pd.DataFrame:
+def build_feature_set(status_df: pd.DataFrame) -> pd.DataFrame:
     """
     Builds a feature set that replicates the Harvey et al model as best we can.
     So far includes:
@@ -17,7 +17,6 @@ def build_feature_set(status_df: pd.DataFrame, include_id_cols=False) -> pd.Data
         - no_show_before: The number of no shows the patient has had up to the date of the appt
     Args:
         status_df:
-        include_id_cols: Whether to remove the id columns
 
     Returns:
 
@@ -56,7 +55,7 @@ def build_feature_set(status_df: pd.DataFrame, include_id_cols=False) -> pd.Data
         'date': 'last'
     }
 
-    slot_df = build_slot_df(status_df, agg_dict, include_id_cols=include_id_cols)
+    slot_df = build_slot_df(status_df, agg_dict, include_id_cols=True)
 
     return slot_df
 
