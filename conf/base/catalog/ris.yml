@@ -5,7 +5,7 @@
 
 test_patient_ids:
   type: yaml.YAMLDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/01_raw/2020_07_06_RIS_five_years/test_patient_ids.yaml
+  filepath: /data/mridle/data/kedro_data_catalog/01_raw/test_patient_ids.yaml
   layer: raw
 
 ris_2015_2016:
