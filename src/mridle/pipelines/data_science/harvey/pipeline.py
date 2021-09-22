@@ -9,7 +9,7 @@ def create_pipeline(**kwargs):
 
             node(
                 func=process_features_for_model,
-                inputs=["master_feature_set", "parameters"],
+                inputs=["master_feature_set"],
                 outputs="harvey_model_input",
                 name="process_features_for_harvey_model"
             ),

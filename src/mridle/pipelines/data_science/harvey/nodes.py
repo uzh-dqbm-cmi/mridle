@@ -7,7 +7,7 @@ from mridle.utilities.experiment import PartitionedExperiment, ModelRun
 from typing import Dict, Tuple
 
 
-def process_features_for_model(dataframe: pd.DataFrame, parameters: Dict) -> pd.DataFrame:
+def process_features_for_model(dataframe: pd.DataFrame) -> pd.DataFrame:
     """
     Changes variables for model optimization modifying feature_df
 
