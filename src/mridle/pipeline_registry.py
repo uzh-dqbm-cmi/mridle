@@ -31,7 +31,7 @@ from typing import Dict
 
 from kedro.pipeline import Pipeline
 from mridle.pipelines.data_engineering import ris, dicom
-from mridle.pipelines.data_science import harvey
+from mridle.pipelines.data_science import harvey, feature_engineering
 
 
 def register_pipelines() -> Dict[str, Pipeline]:
@@ -44,10 +44,13 @@ def register_pipelines() -> Dict[str, Pipeline]:
     ris_pipeline = ris.create_pipeline()
     dicom_pipeline = dicom.create_pipeline()
     harvey_pipeline = harvey.create_pipeline()
+    feature_engineering_pipeline = feature_engineering.create_pipeline()
 
     return {
         "__default__": ris_pipeline,
         "ris": ris_pipeline,
         "dicom": dicom_pipeline,
         "harvey": harvey_pipeline,
+        "feature_engineering": feature_engineering_pipeline,
+
     }

@@ -3,61 +3,8 @@ import pandas as pd
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
-from mridle.pipelines.data_science import feature_engineering
-from mridle.pipelines.data_engineering.ris.nodes import build_slot_df
 from mridle.utilities.experiment import PartitionedExperiment, ModelRun
 from typing import Dict, Tuple
-
-
-def build_harvey_et_al_features_set(status_df: pd.DataFrame, include_id_cols=False) -> pd.DataFrame:
-    """
-    Builds a feature set that replicates the Harvey et al model as best we can.
-    So far includes:
-        - sched_days_advanced: Number of days the appt was scheduled in advance
-        - day_of_week: The day of the week of the appt (1=Monday)
-        - modality: The UniversalServiceName of the appt
-        - marital: Zivilstand of the patient
-        - distance_to_usz: distance from the patient's home address to the hospital, approximated from Post Codes
-        - no_show_before: The number of no shows the patient has had up to the date of the appt
-    Args:
-        status_df:
-        include_id_cols: Whether to remove the id columns
-
-    Returns:
-
-    """
-    status_df = status_df.sort_values(['FillerOrderNo', 'date'])
-
-    status_df = feature_engineering.feature_hour_sched(status_df)
-    status_df = feature_engineering.feature_days_scheduled_in_advance(status_df)
-    status_df = feature_engineering.feature_day_of_week(status_df)
-    status_df = feature_engineering.feature_modality(status_df)
-    status_df = feature_engineering.feature_insurance_class(status_df)
-    status_df = feature_engineering.feature_sex(status_df)
-    status_df = feature_engineering.feature_age(status_df)
-    status_df = feature_engineering.feature_marital(status_df)
-    status_df = feature_engineering.feature_post_code(status_df)
-    status_df = feature_engineering.feature_distance_to_usz(status_df)
-    status_df = feature_engineering.feature_no_show_before(status_df)
-
-    agg_dict = {
-        'NoShow': 'min',
-        'hour_sched': 'first',
-        'sched_days_advanced': 'first',
-        'modality': 'last',
-        'insurance_class': 'last',
-        'day_of_week': 'last',
-        'sex': 'last',
-        'age': 'last',
-        'marital': 'last',
-        'post_code': 'last',
-        'distance_to_usz': 'last',
-        'no_show_before': 'last',
-    }
-
-    slot_df = build_slot_df(status_df, agg_dict, include_id_cols=include_id_cols)
-
-    return slot_df
 
 
 def process_features_for_model(dataframe: pd.DataFrame, parameters: Dict) -> pd.DataFrame:

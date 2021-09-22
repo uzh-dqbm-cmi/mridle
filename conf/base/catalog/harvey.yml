@@ -1,8 +1,3 @@
-harvey_feature_set:
-  type: pandas.ParquetDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/04_feature/harvey_feature_set.parquet
-  layer: feature
-
 harvey_model_input:
   type: pandas.ParquetDataSet
   filepath: /data/mridle/data/kedro_data_catalog/05_model_input/harvey_model_input.parquet
