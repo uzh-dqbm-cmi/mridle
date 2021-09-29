@@ -23,6 +23,8 @@ def build_feature_set(status_df: pd.DataFrame) -> pd.DataFrame:
     """
     status_df = status_df.sort_values(['FillerOrderNo', 'date'])
 
+    status_df = status_df[status_df['patient_class_adj'] != 'inpatient']
+
     status_df = feature_month(status_df)
     status_df = feature_hour_sched(status_df)
     status_df = feature_day_of_week(status_df)
