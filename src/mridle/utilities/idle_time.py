@@ -23,8 +23,10 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, tp_agg_df: pd.DataFrame, t
     """
     idle_df = dicom_times_df.copy()
 
-    idle_df['date'] = pd.to_datetime(idle_df['image_start'], errors='coerce')
-    idle_df['date'] = pd.to_datetime(idle_df['date'].dt.date)
+    idle_df['image_start'] = pd.to_datetime(idle_df['image_start'], errors='coerce')
+    idle_df['image_end'] = pd.to_datetime(idle_df['image_end'], errors='coerce')
+
+    idle_df['date'] = pd.to_datetime(idle_df['image_start'].dt.date)
     idle_df['day_of_week'] = idle_df['image_start'].dt.day_name()
 
     # Join on terminplanner data
