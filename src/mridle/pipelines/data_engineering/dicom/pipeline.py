@@ -13,7 +13,7 @@ def create_pipeline(**kwargs):
             ),
             node(
                 func=aggregate_dicom_images,
-                inputs="dicom_images_df",
+                inputs="dicom_series_metadata",
                 outputs="dicom_times_df",
                 name="aggregate_dicom_images"
             ),

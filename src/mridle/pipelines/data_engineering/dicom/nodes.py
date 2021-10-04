@@ -99,6 +99,7 @@ def subset_valid_appts(df, id_list_df):
 def subset_machines(df):
     df_copy = df.copy()
     df_copy = df_copy[df_copy['StationName'].isin(['MT00000173', 'MT00000213'])]
+    df_copy['StationName'] = df_copy['StationName'].map({'MT00000173': '1', 'MT00000213': '2'})
     return df_copy
 
 
