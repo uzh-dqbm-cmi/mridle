@@ -19,7 +19,7 @@ def preprocess_dicom_data(df, id_list_df):
     dicom_5_years = process_date_cols(dicom_5_years)
     dicom_5_years = add_image_time_cols(dicom_5_years)
     dicom_5_years = remove_gaps_at_start_end(dicom_5_years)
-    dicom_5_years = add_image_time_cols(dicom_5_years)
+    # dicom_5_years = add_image_time_cols(dicom_5_years)
     return dicom_5_years
 
 
@@ -27,6 +27,7 @@ def aggregate_dicom_images(df):
     df_copy = df.copy()
     df_copy_agg = df_copy.groupby(['AccessionNumber', 'big_image_gap', 'StationName']).agg(
         {'acq_datetime': [min, max]}).reset_index()
+    print(df_copy_agg.head())
     df_copy_agg.columns = ['AccessionNumber', 'big_image_gap', 'image_device_id', 'image_start', 'image_end']
     dicom_data = df_copy_agg[['AccessionNumber', 'image_device_id', 'image_start', 'image_end']]
     return dicom_data
