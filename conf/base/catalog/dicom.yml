@@ -10,10 +10,11 @@ dicom_3_months_Christian:
   type: pandas.ParquetDataSet
   filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dicom_3_months_Christian.parquet
   layer: intermediate
+raw_df_5_years = pd.read_csv('/data/mridle/data/rdsc_extracts/2021_09_03_dicom_5years/dbo_dicom_tags_pivoted.csv')
 
-dicom_3_months_rdsc:
+dicom_5_years_rdsc:
   type: pandas.CSVDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/01_raw/2021_06_07_dicom_add_end_time_tags/sane_file_name.csv
+  filepath: /data/mridle/data/rdsc_extracts/2021_09_03_dicom_5years/dbo_dicom_tags_pivoted.csv
   layer: raw
 
 dicom_times_df:
@@ -21,7 +22,17 @@ dicom_times_df:
   filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dicom_times_df.csv
   layer: intermediate
 
+dicom_images_df:
+  type: pandas.ParquetDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dicom_images_df.csv
+  layer: intermediate
+
 slot_w_dicom_df:
   type: pandas.ParquetDataSet
   filepath: /data/mridle/data/kedro_data_catalog/03_primary/slot_w_dicom_df.csv
   layer: primary
+
+id_list_df:
+  type: pandas.CSVDataSet
+  filepath: /data/mridle/data/rdsc_extracts/2021_08_11_dicom_5years/[dbo].[DicomXMLTag_In_Columns_5y].csv
+  layer: raw
