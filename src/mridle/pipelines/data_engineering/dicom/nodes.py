@@ -57,7 +57,8 @@ def integrate_dicom_data(slot_df: pd.DataFrame, dicom_times_df: pd.DataFrame) ->
     Raises:
         ValueError if number of rows in status_df changes during this transformation
     """
-    slot_w_dicom_df = pd.merge(slot_df, dicom_times_df, how='left', left_on=['FillerOrderNo', 'image_device_id'],
+    slot_w_dicom_df = pd.merge(slot_df, dicom_times_df, how='left',
+                               left_on=['FillerOrderNo', 'EnteringOrganisationDeviceID'],
                                right_on=['AccessionNumber', 'image_device_id'])
 
     # move times defined by status changes to separate columns to allow overwriting the original columns with dicom data
