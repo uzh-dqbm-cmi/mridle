@@ -10,7 +10,6 @@ dicom_3_months_Christian:
   type: pandas.ParquetDataSet
   filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dicom_3_months_Christian.parquet
   layer: intermediate
-raw_df_5_years = pd.read_csv('/data/mridle/data/rdsc_extracts/2021_09_03_dicom_5years/dbo_dicom_tags_pivoted.csv')
 
 dicom_5_years_rdsc:
   type: pandas.CSVDataSet
