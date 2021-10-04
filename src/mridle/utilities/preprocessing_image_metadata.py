@@ -24,6 +24,8 @@ def process_date_cols(df: pd.DataFrame) -> pd.DataFrame:
         dataframe with some reformatted date columns, and some new columns added
     """
     df_copy = df.copy()
+
+    df_copy['AcquisitionTime'] = df_copy['AcquisitionTime'].apply(lambda a: "{:013.6F}".format(float(a)))
     df_copy['AcquisitionDate'] = pd.to_datetime(df_copy['AcquisitionDate'], format='%Y%m%d').dt.date
     df_copy['AcquisitionTime'] = pd.to_datetime(df_copy['AcquisitionTime'], format='%H%M%S.%f').dt.time
     df_copy.loc[~df_copy['AcquisitionTime'].isnull(),
@@ -80,7 +82,6 @@ def add_image_time_cols(df: pd.DataFrame) -> pd.DataFrame:
     df_copy = df.copy()
     df_copy = df_copy.sort_values(['AccessionNumber', 'acq_datetime'])
 
-    df_copy['AcquisitionTime'] = df_copy['AcquisitionTime'].apply(lambda a: "{:013.6F}".format(float(a)))
     df_copy['AcquisitionTime_prev'] = df_copy.groupby('AccessionNumber')['AcquisitionTime'].shift(1)
     df_copy['acq_prev_datetime'] = df_copy.groupby('AccessionNumber')['acq_datetime'].shift(1)
     df_copy['acq_next_datetime'] = df_copy.groupby('AccessionNumber')['acq_datetime'].shift(-1)
