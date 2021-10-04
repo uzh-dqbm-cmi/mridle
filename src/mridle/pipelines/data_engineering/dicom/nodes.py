@@ -19,8 +19,6 @@ def preprocess_dicom_data(df, id_list_df):
     dicom_5_years = process_date_cols(dicom_5_years)
     dicom_5_years = add_image_time_cols(dicom_5_years)
     dicom_5_years = remove_gaps_at_start_end(dicom_5_years)
-    # dicom_5_years = add_image_time_cols(dicom_5_years)
-    dicom_5_years['StationName'] = dicom_5_years['StationName'].map({'MT00000173': '1', 'MT00000213': '2'})
 
     return dicom_5_years
 
@@ -59,7 +57,8 @@ def integrate_dicom_data(slot_df: pd.DataFrame, dicom_times_df: pd.DataFrame) ->
     Raises:
         ValueError if number of rows in status_df changes during this transformation
     """
-    slot_w_dicom_df = pd.merge(slot_df, dicom_times_df, how='left', left_on='FillerOrderNo', right_on='AccessionNumber')
+    slot_w_dicom_df = pd.merge(slot_df, dicom_times_df, how='left', left_on=['FillerOrderNo', 'image_device_id'],
+                               right_on=['AccessionNumber', 'image_device_id'])
 
     # move times defined by status changes to separate columns to allow overwriting the original columns with dicom data
     slot_w_dicom_df['status_start'] = slot_w_dicom_df['start_time']
@@ -101,6 +100,8 @@ def subset_valid_appts(df, id_list_df):
 def subset_machines(df):
     df_copy = df.copy()
     df_copy = df_copy[df_copy['StationName'].isin(['MT00000173', 'MT00000213'])]
+    df_copy['StationName'] = df_copy['StationName'].map({'MT00000173': '1', 'MT00000213': '2'})
+
     return df_copy
 
 
