@@ -17,19 +17,17 @@ dicom_5_years_rdsc:
   layer: raw
 
 dicom_times_df:
-  type: pandas.ParquetDataSet
+  type: pandas.CSVDataSet
   filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dicom_times_df.csv
   layer: intermediate
-  open_args_load:
-    mode: "rb"
 
 dicom_series_metadata:
-  type: pandas.ParquetDataSet
+  type: pandas.CSVDataSet
   filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dicom_series_metadata.csv
   layer: intermediate
 
 slot_w_dicom_df:
-  type: pandas.ParquetDataSet
+  type: pandas.CSVDataSet
   filepath: /data/mridle/data/kedro_data_catalog/03_primary/slot_w_dicom_df.csv
   layer: primary
 
