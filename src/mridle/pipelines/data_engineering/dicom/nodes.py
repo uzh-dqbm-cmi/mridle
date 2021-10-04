@@ -27,7 +27,6 @@ def aggregate_dicom_images(df):
     df_copy = df.copy()
     df_copy_agg = df_copy.groupby(['AccessionNumber', 'big_image_gap', 'StationName']).agg(
         {'acq_datetime': [min, max]}).reset_index()
-    print(df_copy_agg.head())
     df_copy_agg.columns = ['AccessionNumber', 'big_image_gap', 'image_device_id', 'image_start', 'image_end']
     dicom_data = df_copy_agg[['AccessionNumber', 'image_device_id', 'image_start', 'image_end']]
     return dicom_data

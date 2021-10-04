@@ -8,14 +8,14 @@ def create_pipeline(**kwargs):
             node(
                 func=preprocess_dicom_data,
                 inputs=["dicom_5_years_rdsc", "id_list_df"],
-                outputs="dicom_images_df",
+                outputs="dicom_series_metadata",
                 name="preprocess_dicom_data"
             ),
             node(
                 func=aggregate_dicom_images,
                 inputs="dicom_series_metadata",
                 outputs="dicom_times_df",
-                name="aggregate_dicom_images"
+                name="aggregate_dicom_metadata"
             ),
             node(
                 func=integrate_dicom_data,
