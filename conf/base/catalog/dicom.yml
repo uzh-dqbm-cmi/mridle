@@ -57,4 +57,7 @@ daily_idle_stats:
   type: pandas.ParquetDataSet
   filepath: /data/mridle/data/kedro_data_catalog/08_reporting/daily_idle_stats.parquet
   layer: reporting
+  load_args:
+    dtype: "{'start': pd.datetime64[ns], 'end': pd.datetime64[ns]}"
+
 
