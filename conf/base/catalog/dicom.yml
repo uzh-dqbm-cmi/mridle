@@ -54,8 +54,8 @@ appts_and_gaps:
     dtype: "{'start': pd.datetime64[ns], 'end': pd.datetime64[ns]}"
 
 daily_idle_stats:
-  type: pandas.ParquetDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/daily_idle_stats.parquet
+  type: pandas.CSVDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/daily_idle_stats.csv
   layer: reporting
   load_args:
     dtype: "{'start': pd.datetime64[ns], 'end': pd.datetime64[ns]}"
