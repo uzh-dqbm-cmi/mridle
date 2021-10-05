@@ -42,12 +42,12 @@ terminplanner_df:
   layer: raw
 
 appts_and_gaps:
-  type: pandas.CSVDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/04_feature/appts_and_gaps.csv
+  type: pandas.ParquetDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/04_feature/appts_and_gaps.parquet
   layer: feature
 
 daily_idle_stats:
-  type: pandas.CSVDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/04_feature/daily_idle_stats.csv
+  type: pandas.ParquetDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/04_feature/daily_idle_stats.parquet
   layer: feature
 
