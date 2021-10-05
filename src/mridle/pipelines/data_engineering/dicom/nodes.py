@@ -580,4 +580,8 @@ def calc_appts_and_gaps(idle_df: pd.DataFrame) -> pd.DataFrame:
     appts_and_gaps['status_duration'] = (appts_and_gaps['end'] - appts_and_gaps['start']) / pd.to_timedelta(1, unit='H')
     appts_and_gaps = appts_and_gaps.sort_values(['start', 'end'])
 
+    # Below to prevent error when attempting to save as Parquet dataset
+    appts_and_gaps['start'] = appts_and_gaps['start'].astype('datetime64[s]')
+    appts_and_gaps['end'] = appts_and_gaps['end'].astype('datetime64[s]')
+
     return appts_and_gaps
