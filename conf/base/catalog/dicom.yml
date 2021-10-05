@@ -13,7 +13,7 @@ dicom_3_months_Christian:
 
 dicom_5_years_rdsc:
   type: pandas.CSVDataSet
-  filepath: /data/mridle/data/rdsc_extracts/2021_09_03_dicom_5years/dbo_dicom_tags_pivoted.csv
+  filepath: /data/mridle/data/kedro_data_catalog/01_raw/2021_09_03_dicom_5years/dbo_dicom_tags_pivoted.csv
   layer: raw
 
 dicom_times_df:
@@ -33,5 +33,21 @@ slot_w_dicom_df:
 
 id_list_df:
   type: pandas.CSVDataSet
-  filepath: /data/mridle/data/rdsc_extracts/2021_08_11_dicom_5years/[dbo].[DicomXMLTag_In_Columns_5y].csv
+  filepath: /data/mridle/data/kedro_data_catalog/01_raw/2021_08_11_dicom_5years/[dbo].[DicomXMLTag_In_Columns_5y].csv
   layer: raw
+
+terminplanner_df:
+  type: pandas.ExcelDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/01_raw/terminplanner/210311_MR1_MR2_Terminslots.xlsx
+  layer: raw
+
+appts_and_gaps:
+  type: pandas.CSVDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/04_feature/appts_and_gaps.csv
+  layer: feature
+
+daily_idle_stats:
+  type: pandas.CSVDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/04_feature/daily_idle_stats.csv
+  layer: feature
+
