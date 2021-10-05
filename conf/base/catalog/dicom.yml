@@ -51,7 +51,7 @@ appts_and_gaps:
   filepath: /data/mridle/data/kedro_data_catalog/03_primary/appts_and_gaps.csv
   layer: primary
   load_args:
-    dtype: {'start': pd.datetime64[ns], 'end': pd.datetime64[ns]}
+    dtype: "{'start': pd.datetime64[ns], 'end': pd.datetime64[ns]}"
 
 daily_idle_stats:
   type: pandas.ParquetDataSet
