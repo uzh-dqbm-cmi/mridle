@@ -41,13 +41,21 @@ terminplanner_df:
   filepath: /data/mridle/data/kedro_data_catalog/01_raw/terminplanner/210311_MR1_MR2_Terminslots.xlsx
   layer: raw
 
+terminplanner_aggregated_df:
+  type: pandas.ExcelDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/terminplanner/210311_MR1_MR2_Terminslots.xlsx
+  layer: intermediate
+
 appts_and_gaps:
   type: pandas.ParquetDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/04_feature/appts_and_gaps.parquet
-  layer: feature
+  filepath: /data/mridle/data/kedro_data_catalog/03_primary/appts_and_gaps.parquet
+  layer: primary
+  save_args:
+    allow_truncated_timestamps: True
+
 
 daily_idle_stats:
   type: pandas.ParquetDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/04_feature/daily_idle_stats.parquet
-  layer: feature
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/daily_idle_stats.parquet
+  layer: reporting
 
