@@ -52,8 +52,6 @@ appts_and_gaps:
   layer: primary
   load_args:
     dtype: {'start': pd.datetime64[ns], 'end': pd.datetime64[ns]}
-  #save_args:
-  #  allow_truncated_timestamps: True
 
 daily_idle_stats:
   type: pandas.ParquetDataSet
