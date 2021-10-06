@@ -194,12 +194,12 @@ def plot_total_active_idle_buffer_time_per_day(daily_idle_stats: pd.DataFrame,
     range_ = ['#0065af', '#fe8126', '#fda96b']
 
     return_chart = alt.Chart(daily_between_times_melted).mark_bar().encode(
-        alt.X("date", axis=alt.Axis(title="Date")),
+        x=alt.X("date", axis=alt.Axis(title="Date")),
         y=alt.Y('hours', axis=alt.Axis(title=y_label), scale=alt.Scale(domain=[0, 1])),
         color=alt.Color('Machine Status:N', scale=alt.Scale(domain=domain, range=range_)),
         tooltip=['date', 'hours'],
     ).properties(
-        width=500
+        width=1000
     ).facet(
         column=alt.Row("image_device_id:N")
     )
