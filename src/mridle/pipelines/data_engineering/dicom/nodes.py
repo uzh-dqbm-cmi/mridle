@@ -10,6 +10,7 @@ import pandas as pd
 import datetime as dt
 import numpy as np
 import datetime
+import altair as alt
 
 
 def preprocess_dicom_data(df, id_list_df):
@@ -128,7 +129,129 @@ def generate_idle_time_stats(dicom_times_df: pd.DataFrame, terminplanner_aggrega
     return appts_and_gaps, daily_idle_stats
 
 
+def generate_plots(appts_and_gaps, daily_idle_stats):
+    """
+
+    Args:
+        appts_and_gaps:
+        daily_idle_stats:
+
+    Returns:
+
+    """
+
+    alt.data_transformers.disable_max_rows()
+
+    daily_idle_stats_mr1 = daily_idle_stats[daily_idle_stats['image_device_id'] == 1]
+    day_summary_plot = plot_total_active_idle_buffer_time_per_day(daily_idle_stats_mr1, use_percentage=True)
+
+    appts_and_gaps_mr1 = appts_and_gaps[appts_and_gaps['image_device_id'] == 1]
+    full_zebra = plot_daily_appt_idle_segments(appts_and_gaps_mr1, width=500, height=5000)
+
+    one_week = appts_and_gaps_mr1[(appts_and_gaps_mr1['start'].dt.date > pd.to_datetime('2019-03-30'))
+                                  & (appts_and_gaps_mr1['end'].dt.date < pd.to_datetime('2019-04-06'))].copy()
+
+    one_week_zebra = plot_daily_appt_idle_segments(one_week, bar_size=25, width=500, height=200)
+
+    return day_summary_plot, full_zebra, one_week_zebra
+
+
 # Helper functions
+def plot_total_active_idle_buffer_time_per_day(daily_idle_stats: pd.DataFrame,
+                                               use_percentage: bool = False) -> alt.Chart:
+    """
+    Plot the total hours spent active and idle for each day.
+
+    Args:
+        daily_idle_stats: result of `calc_daily_idle_time_stats`
+        use_percentage: boolean indicating whether to plot the y-axis as a percentage of the total day, or using
+        absolute time (hours)
+
+    Returns: Figure where x-axis is date and y-axis is total hours. Each day-column is a stacked bar with total active,
+     total idle, and total buffer hours for that day. The chart is faceted by image_device_id.
+
+    """
+    if use_percentage:
+        val_vars = ['active_pct', 'idle_pct', 'buffer_pct']
+        y_label = "Percentage of day"
+    else:
+        val_vars = ['active', 'idle', 'buffer']
+        y_label = "Hours"
+
+    daily_between_times_melted = pd.melt(daily_idle_stats, id_vars=['date', 'image_device_id'],
+                                         value_vars=val_vars, var_name='Machine Status',
+                                         value_name='hours')
+
+    daily_between_times_melted["Machine Status"].replace(
+        {val_vars[0]: 'Active', val_vars[1]: 'Idle', val_vars[2]: 'Buffer'}, inplace=True)
+
+    domain = ['Active', 'Idle', 'Buffer']
+    range_ = ['#0065af', '#fe8126', '#fda96b']
+
+    return_chart = alt.Chart(daily_between_times_melted).mark_bar().encode(
+        alt.X("date", axis=alt.Axis(title="Date")),
+        y=alt.Y('hours', axis=alt.Axis(title=y_label)),
+        color=alt.Color('Machine Status:N', scale=alt.Scale(domain=domain, range=range_)),
+        tooltip=['date', 'hours'],
+    ).facet(
+        column=alt.Row("image_device_id:N")
+    ).configure_legend()
+
+    return_chart = return_chart.configure_legend(
+        labelFontSize=15,
+        titleFontSize=20
+    )
+
+    return_chart = return_chart.configure_axis(
+        titleFontSize=16,
+        labelFontSize=14
+    )
+
+    return return_chart
+
+
+def plot_daily_appt_idle_segments(appts_and_gaps: pd.DataFrame, height: int = 300, bar_size: int = 5,
+                                  width: int = 300) -> alt.Chart:
+    """
+    Plot a history of appointments, where each day is displayed as a row with colored segments indicating active and
+     idle periods.
+
+    Args:
+        appts_and_gaps: result of `calc_appts_and_gaps`
+        height: Height of plot window. Default value 300
+        width: Width of plot window. Default value 300
+        bar_size: size of bars in plot. Default value 5
+    Returns: Figure where x-axis is time of day and y-axis is date. Each day-row is displayed as a row with colored
+     segments indicating active and idle periods. Chart is faceted by image_device_id.
+
+    """
+    domain = ['Active', 'Idle', 'Buffer']
+    range_ = ['#0065af', '  #fe8126  ', ' #fda96b ']
+
+    plot_data = appts_and_gaps.copy()
+    plot_data.rename(columns={'status': 'Machine Status'}, inplace=True)
+    plot_data["Machine Status"].replace({'active': 'Active', 'idle': 'Idle', 'buffer': 'Buffer'}, inplace=True)
+
+    return alt.Chart(plot_data).mark_bar(size=bar_size).encode(
+        alt.X('hoursminutes(start)', title="Time of day"),
+        alt.X2('hoursminutes(end)', title=""),
+        alt.Y('yearmonthdate(date)', axis=alt.Axis(grid=False), title="Date"),
+        color=alt.Color('Machine Status', scale=alt.Scale(domain=domain, range=range_)),
+        tooltip=['date', 'hoursminutes(start)', 'hoursminutes(end)', 'Machine Status'],
+    ).properties(
+        height=height, width=width
+    ).facet(
+        column=alt.Row("image_device_id:N", title="MR Machine #")
+    ).configure_axis(
+        titleFontSize=19,
+        labelFontSize=16,
+        titleFontWeight="normal"
+    ).configure_legend(
+        labelFontSize=15,
+        titleFontSize=20
+    )
+
+
 def subset_valid_appts(df, id_list_df):
     df_copy = df.copy()
     df_copy['AccessionNumber'] = pd.to_numeric(df_copy['AccessionNumber'], errors='coerce')
