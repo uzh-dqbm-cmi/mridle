@@ -195,12 +195,12 @@ def plot_total_active_idle_buffer_time_per_day(daily_idle_stats: pd.DataFrame,
 
     return_chart = alt.Chart(daily_between_times_melted).mark_bar().encode(
         alt.X("date", axis=alt.Axis(title="Date")),
-        y=alt.Y('hours', axis=alt.Axis(title=y_label)),
+        y=alt.Y('hours', axis=alt.Axis(title=y_label), scale=alt.Scale(domain=[0, 1])),
         color=alt.Color('Machine Status:N', scale=alt.Scale(domain=domain, range=range_)),
         tooltip=['date', 'hours'],
     ).facet(
         column=alt.Row("image_device_id:N")
-    ).configure_legend()
+    ).configure_legend().properties(width=500)
 
     return_chart = return_chart.configure_legend(
         labelFontSize=15,
