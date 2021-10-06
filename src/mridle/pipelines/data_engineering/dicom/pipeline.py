@@ -1,6 +1,6 @@
 from kedro.pipeline import Pipeline, node
 from .nodes import preprocess_dicom_data, aggregate_dicom_images, integrate_dicom_data, generate_idle_time_stats, \
-    prep_terminplanner, generate_plots
+    agg_terminplanner, generate_plots
 
 
 def create_pipeline(**kwargs):
@@ -25,10 +25,10 @@ def create_pipeline(**kwargs):
                 name="integrate_dicom_data"
             ),
             node(
-                func=prep_terminplanner,
+                func=agg_terminplanner,
                 inputs="terminplanner_df",
                 outputs="terminplanner_aggregated_df",
-                name="prep_terminplanner"
+                name="agg_terminplanner"
             ),
             node(
                 func=generate_idle_time_stats,
