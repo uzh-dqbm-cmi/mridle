@@ -51,7 +51,6 @@ appts_and_gaps:
   filepath: /data/mridle/data/kedro_data_catalog/03_primary/appts_and_gaps.csv
   layer: primary
   load_args:
-    #dtype: "{'start': pd.datetime64[ns], 'end': pd.datetime64[ns]}"
     date_parser: pd.to_datetime
     parse_dates: ['start', 'end']
 
@@ -60,7 +59,6 @@ daily_idle_stats:
   filepath: /data/mridle/data/kedro_data_catalog/08_reporting/daily_idle_stats.csv
   layer: reporting
   load_args:
-    #dtype: "{'start': pd.datetime64[ns], 'end': pd.datetime64[ns]}"
     date_parser: pd.to_datetime
     parse_dates: ['start', 'end']
 
