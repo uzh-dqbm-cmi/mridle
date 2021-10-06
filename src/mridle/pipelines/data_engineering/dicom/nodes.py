@@ -141,6 +141,11 @@ def generate_plots(appts_and_gaps, daily_idle_stats):
     """
 
     alt.data_transformers.disable_max_rows()
+    appts_and_gaps['date'] = pd.to_datetime(appts_and_gaps['date'])
+    appts_and_gaps['start'] = pd.to_datetime(appts_and_gaps['start'])
+    appts_and_gaps['end'] = pd.to_datetime(appts_and_gaps['end'])
+    daily_idle_stats['start'] = pd.to_datetime(daily_idle_stats['start'])
+    daily_idle_stats['end'] = pd.to_datetime(daily_idle_stats['end'])
 
     daily_idle_stats_mr1 = daily_idle_stats[daily_idle_stats['image_device_id'] == 1]
     day_summary_plot = plot_total_active_idle_buffer_time_per_day(daily_idle_stats_mr1, use_percentage=True)
