@@ -81,9 +81,7 @@ def integrate_dicom_data(slot_df: pd.DataFrame, dicom_times_df: pd.DataFrame) ->
     Raises:
         ValueError if number of rows in status_df changes during this transformation
     """
-    slot_w_dicom_df = pd.merge(slot_df, dicom_times_df, how='left',
-                               left_on=['FillerOrderNo', 'EnteringOrganisationDeviceID'],
-                               right_on=['AccessionNumber', 'image_device_id'])
+    slot_w_dicom_df = pd.merge(slot_df, dicom_times_df, how='left', left_on='FillerOrderNo', right_on='AccessionNumber')
 
     # move times defined by status changes to separate columns to allow overwriting the original columns with dicom data
     slot_w_dicom_df['status_start'] = slot_w_dicom_df['start_time']
@@ -97,9 +95,9 @@ def integrate_dicom_data(slot_df: pd.DataFrame, dicom_times_df: pd.DataFrame) ->
     slot_w_dicom_df['device_from_status'] = slot_w_dicom_df['EnteringOrganisationDeviceID']
     slot_w_dicom_df['EnteringOrganisationDeviceID'] = slot_w_dicom_df.apply(update_device_id_from_dicom, axis=1)
 
-    if slot_df.shape[0] != slot_w_dicom_df.shape[0]:
-        raise ValueError('Number of rows in slot_w_dicom_df ({:,.0f}) does not match original slot_df ({:,.0f})'.format(
-            slot_w_dicom_df.shape[0], slot_df.shape[0]))
+    if slot_df.shape[0] > slot_w_dicom_df.shape[0]:
+        raise ValueError('Number of rows in slot_w_dicom_df ({:,.0f}) is now fewer than in'
+                         ' original slot_df ({:,.0f})'.format(slot_w_dicom_df.shape[0], slot_df.shape[0]))
 
     return slot_w_dicom_df
 
