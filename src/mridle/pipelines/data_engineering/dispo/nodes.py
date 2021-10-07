@@ -282,7 +282,7 @@ def calc_exp_confusion_matrix(val_dispo_slot_df: pd.DataFrame, val_ris_slot_df: 
     c = c.applymap(color_green, subset=pd.IndexSlice['show', ['show']])
     c = c.applymap(color_green, subset=pd.IndexSlice['rescheduled', ['rescheduled']])
     c = c.applymap(color_green, subset=pd.IndexSlice['canceled', ['canceled']])
-    return c
+    return c.render()
 
 
 def validation_exp_confusion_matrix(dispo_df: pd.DataFrame, slot_df: pd.DataFrame, columns: List[str] = None

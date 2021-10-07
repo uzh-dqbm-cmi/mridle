@@ -87,11 +87,11 @@ val_ris_evaluation_slot_df:
 # RESULTS
 
 val_development_confusion_matrix:
-    type: MemoryDataSet
-#    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/
-#    layer: reporting
+    type: text.TextDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/val_development_confusion_matrix.html
+    layer: reporting
 
-val_validation_confusion_matrix:
-    type: MemoryDataSet
-#    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/
-#    layer: reporting
+val_evaluation_confusion_matrix:
+    type: text.TextDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/val_evaluation_confusion_matrix.html
+    layer: reporting
