@@ -11,8 +11,7 @@ experiment2_corrections:
     layer: raw
 
 experiment_2_records:
-    type: pandas.ParquetDataSet
-    filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dispo/experiment_2_records.parquet
+    type: MemoryDataSet
     layer: intermediate
 
 dispo_development_slot_df:
@@ -34,8 +33,7 @@ experiment3_corrections:
     layer: raw
 
 experiment_3_records:
-    type: pandas.ParquetDataSet
-    filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dispo/experiment_3_records.parquet
+    type: MemoryDataSet
     layer: intermediate
 
 dispo_evaluation_slot_df:
