@@ -52,6 +52,9 @@ val_ris_development:
 val_ris_development_status_df:
     type: pandas.CSVDataSet
     filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dispo/val_ris_development_status_df.csv
+    load_args:
+        parse_dates:
+            - was_sched_for_date
     layer: intermediate
 
 val_ris_development_slot_df:
@@ -70,6 +73,9 @@ val_ris_evaluation:
 val_ris_evaluation_status_df:
     type: pandas.CSVDataSet
     filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dispo/val_ris_evaluation_status_df.csv
+    load_args:
+        parse_dates:
+            - was_sched_for_date
     layer: intermediate
 
 val_ris_evaluation_slot_df:
