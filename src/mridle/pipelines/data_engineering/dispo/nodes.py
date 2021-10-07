@@ -306,6 +306,7 @@ def validation_exp_confusion_matrix(dispo_df: pd.DataFrame, slot_df: pd.DataFram
     dispo_dates = dispo_df['date'].dt.date.unique()
     r = slot_df[slot_df['start_time'].dt.date.isin(dispo_dates)][
         ['FillerOrderNo', 'MRNCmpdId', 'start_time', 'slot_outcome']]
+    r['MRNCmpdId'] = r['MRNCmpdId'].astype(str)
 
     result = pd.merge(d, r, left_on=['patient_id', 'start_time'], right_on=['MRNCmpdId', 'start_time'], how='outer',
                       suffixes=('_dispo', '_rdsc'))
