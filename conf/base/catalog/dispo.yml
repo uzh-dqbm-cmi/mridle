@@ -50,8 +50,8 @@ val_ris_development:
     layer: raw
 
 val_ris_development_status_df:
-    type: pandas.ParquetDataSet
-    filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dispo/val_ris_development_status_df.parquet
+    type: pandas.CSVDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dispo/val_ris_development_status_df.csv
     layer: intermediate
 
 val_ris_development_slot_df:
@@ -68,8 +68,8 @@ val_ris_evaluation:
     layer: raw
 
 val_ris_evaluation_status_df:
-    type: pandas.ParquetDataSet
-    filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dispo/val_ris_evaluation_status_df.parquet
+    type: pandas.CSVDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dispo/val_ris_evaluation_status_df.csv
     layer: intermediate
 
 val_ris_evaluation_slot_df:
