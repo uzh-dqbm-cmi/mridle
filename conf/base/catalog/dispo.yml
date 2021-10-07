@@ -54,7 +54,7 @@ val_ris_development_status_df:
     filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dispo/val_ris_development_status_df.csv
     load_args:
         dtype:
-            MRNCpmdId: int
+            MRNCmpdId: int
         parse_dates:
             - was_sched_for_date
     layer: intermediate
@@ -77,7 +77,7 @@ val_ris_evaluation_status_df:
     filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dispo/val_ris_evaluation_status_df.csv
     load_args:
         dtype:
-            MRNCpmdId: int
+            MRNCmpdId: int
         parse_dates:
             - was_sched_for_date
     layer: intermediate
