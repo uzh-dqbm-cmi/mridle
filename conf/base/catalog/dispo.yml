@@ -1,0 +1,93 @@
+# EXPERIMENT 2 / DEVELOPMENT - DISPO
+
+experiment2:
+    type: yaml.YAMLDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/01_raw/dispo/experiment2.yaml
+    layer: raw
+
+experiment2_corrections:
+    type: yaml.YAMLDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/01_raw/dispo/experiment2_corrections.yaml
+    layer: raw
+
+experiment_2_records:
+    type: pandas.ParquetDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dispo/experiment_2_records.parquet
+    layer: intermediate
+
+dispo_development_slot_df:
+    type: pandas.ParquetDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/03_primary/dispo/dispo_development_slot_df.parquet
+    layer: primary
+
+
+# EXPERIMENT 3 / EVALUATION - DISPO
+
+experiment3:
+    type: yaml.YAMLDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/01_raw/dispo/experiment3.yaml
+    layer: raw
+
+experiment3_corrections:
+    type: yaml.YAMLDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/01_raw/dispo/experiment3_corrections.yaml
+    layer: raw
+
+experiment_3_records:
+    type: pandas.ParquetDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dispo/experiment_3_records.parquet
+    layer: intermediate
+
+dispo_evaluation_slot_df:
+    type: pandas.ParquetDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/03_primary/dispo/dispo_evaluation_slot_df.parquet
+    layer: primary
+
+
+# EXPERIMENT 2 / DEVELOPMENT - RIS
+
+val_ris_development:
+    type: pandas.ParquetDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/01_raw/dispo/2020_10_13_ris_exp_2_week.parquet
+    layer: raw
+
+val_ris_development_status_df:
+    type: pandas.ParquetDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dispo/val_ris_development_status_df.parquet
+    layer: intermediate
+
+val_ris_development_slot_df:
+    type: pandas.ParquetDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/03_primary/dispo/val_ris_development_slot_df.parquet
+    layer: primary
+
+
+# EXPERIMENT 3 / EVALUATION - RIS
+
+val_ris_evaluation:
+    type: pandas.ExcelDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/01_raw/dispo/2021_05_11_ris_exp_3_week.xlsx
+    layer: raw
+
+val_ris_evaluation_status_df:
+    type: pandas.ParquetDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dispo/val_ris_evaluation_status_df.parquet
+    layer: intermediate
+
+val_ris_evaluation_slot_df:
+    type: pandas.ParquetDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/03_primary/dispo/val_ris_evaluation_slot_df.parquet
+    layer: primary
+
+
+# RESULTS
+
+val_development_confusion_matrix:
+    type: MemoryDataSet
+#    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/
+#    layer: reporting
+
+val_validation_confusion_matrix:
+    type: MemoryDataSet
+#    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/
+#    layer: reporting
