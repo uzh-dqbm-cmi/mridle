@@ -55,7 +55,8 @@ val_ris_development_status_df:
     load_args:
         dtype:
             MRNCpmdId: int
-            was_sched_for_date: pd.datetime
+        parse_dates:
+            - was_sched_for_date
     layer: intermediate
 
 val_ris_development_slot_df:
@@ -77,7 +78,8 @@ val_ris_evaluation_status_df:
     load_args:
         dtype:
             MRNCpmdId: int
-            was_sched_for_date: pd.datetime
+        parse_dates:
+            - was_sched_for_date
     layer: intermediate
 
 val_ris_evaluation_slot_df:
