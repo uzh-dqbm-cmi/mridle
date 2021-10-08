@@ -8,7 +8,7 @@ def create_pipeline(**kwargs):
         [
             node(
                 func=subset_valid_appts,
-                inputs=["dicom_5_years_rdsc", "valid_dicom_ids_2016_2019"],
+                inputs=["dicom_5_years_rdsc", "valid_dicom_ids_2014_2021"],
                 outputs="dicom_data_valid_appts",
                 name="subset_valid_appts"
             ),
