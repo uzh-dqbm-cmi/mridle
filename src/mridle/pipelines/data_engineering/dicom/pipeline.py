@@ -40,7 +40,7 @@ def create_pipeline(**kwargs):
                 func=fill_in_terminplanner_gaps,
                 inputs="terminplanner_aggregated_df",
                 outputs="terminplanner_df",
-                name="aggregate_terminplanner"
+                name="fill_in_terminplanner_gaps"
             ),
             node(
                 func=generate_idle_time_stats,
