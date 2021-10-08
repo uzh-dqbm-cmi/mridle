@@ -13,21 +13,51 @@ import datetime
 import altair as alt
 
 
-def preprocess_dicom_data(df: pd.DataFrame, id_list_df: pd.DataFrame) -> pd.DataFrame:
+def subset_valid_appts(df: pd.DataFrame, valid_dicom_ids_2014_2021: pd.DataFrame):
+    """
+    Limit provided dataset to just the relevant appointments. Appointments with alphanumeric AccessionNumbers are
+    removed, and the remaining data is subsetted to include only the appointments that are in RIS (by using
+    a previous extract from RDSC to find which appointments are in RIS - this extract has other data quality
+    issues, hence it is not used fully for this task)
+
+    Args:
+        df: Dicom data extract with no quality issues (aside from having test appointments, etc. included)
+        valid_dicom_ids_2014_2021: Previous data extract from RIS which has only valid appointments in it (e.g. no
+        data which was entered as a test, etc.). This Dicom data has other data quality issues (appointments cut
+        short, etc.), so it can't be used fully
+
+    Returns:
+        Dicom dataset with valid appointments only
+    """
+    df_copy = df.copy()
+    df_copy['AccessionNumber'] = pd.to_numeric(df_copy['AccessionNumber'], errors='coerce')
+    df_copy = df_copy[~df_copy['AccessionNumber'].isna()]
+
+    valid_dicom_ids = valid_dicom_ids_2014_2021.copy()
+    valid_dicom_ids = valid_dicom_ids.drop_duplicates()
+    valid_dicom_ids = valid_dicom_ids.pivot(['SeriesUID', 'SopImageUid', 'StudyUID'], columns='tag_name',
+                                            values='Value').reset_index()
+    valid_dicom_ids['AcquisitionDate'] = valid_dicom_ids['AcquisitionDate'].astype(float)
+    valid_dicom_ids['AccessionNumber'] = pd.to_numeric(valid_dicom_ids['AccessionNumber'], errors='coerce')
+    valid_dicom_ids = valid_dicom_ids[~valid_dicom_ids['AccessionNumber'].isna()]
+
+    id_list = valid_dicom_ids['AccessionNumber'].unique()
+    df_copy = df_copy[df_copy['AccessionNumber'].isin(id_list)]
+    return df_copy
+
+
+def preprocess_dicom_data(df: pd.DataFrame) -> pd.DataFrame:
     """
     Take in Dicom extract(s) from RDSC, and run through a series of functions to process this data. Each function is
-    described in more depth in their individual function docstring, notably the significance of the two datasets is
-    described in the docstring for subset_valid_appts().
+    described in more depth in their individual function docstring
 
     Args:
         df: Dicom extract from RDSC
-        id_list_df: Also a Dicom extract from RDSC
 
     Returns:
         Processed Dicom extract
     """
     dicom_series_metadata = df.copy()
-    dicom_series_metadata = subset_valid_appts(dicom_series_metadata, id_list_df)
     dicom_series_metadata = subset_machines(dicom_series_metadata)
     dicom_series_metadata = remove_na_and_duplicates(dicom_series_metadata)
     dicom_series_metadata = process_date_cols(dicom_series_metadata)
@@ -39,8 +69,9 @@ def preprocess_dicom_data(df: pd.DataFrame, id_list_df: pd.DataFrame) -> pd.Data
 
 def aggregate_dicom_images(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Dicom extract which is at SeriesID level, which this function aggregates up to the AccessionNumber/appointment
-    level
+    This function takes in the Dicom extract which is at SeriesID level, and aggregates this up to the
+    AccessionNumber/appointment level to create a dataframe where each row is an appointment with its start and end
+    times
 
     Args:
         df: Processed Dicom extract from preprocess_dicom_data
@@ -102,20 +133,21 @@ def integrate_dicom_data(slot_df: pd.DataFrame, dicom_times_df: pd.DataFrame) ->
     return slot_w_dicom_df
 
 
-def agg_terminplanner(terminplanner_df: pd.DataFrame) -> pd.DataFrame:
+def fill_in_terminplanner_gaps(terminplanner_aggregated_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Aggregate terminplanner to give a dataframe with one row per day and time period, along with the start and end time
-    of each day in this period.
+    The terminplanner which was provided does not contain information for all date ranges in the DICOM data which we
+    have. Therefore we 'fill in' these gaps manually here, with the assumption that the terminplanner information
+    is the same (i.e. Tuesday is always from 07.00 to 18.00 in the provided terminplanner data, so we assume that
+    to be the case for those date ranges where we have no data.
 
     Args:
-        terminplanner_df: Terminplanner data with one row per potential booking (e.g. Tuesday at 7:00 until 7:35 on MR1
-        is a potential booking time and represented with a row. Conversely, Tuesday at 4:00 (am) is not, and therefore
-        not in this dataset
+        terminplanner_aggregated_df: Terminplanner data which was previously processed and aggregated to the day level
 
     Returns:
-        Aggregated terminplanner
+        The provided dataframe with rows added to fill in the date range gaps
     """
-    tp_agg_df = aggregate_terminplanner(terminplanner_df)
+    terminplanner_df = terminplanner_aggregated_df.copy()
+
     new_rows = pd.DataFrame(
         [[1, 'Monday', 'MR1 IDR (Montag)', '17.05.2020', '01.01.2055', datetime.time(7, 0), datetime.time(18, 0), 660],
          [2, 'Monday', 'MR2 IDR (Montag)', '17.05.2020', '01.01.2055', datetime.time(7, 0), datetime.time(18, 0), 660],
@@ -129,10 +161,11 @@ def agg_terminplanner(terminplanner_df: pd.DataFrame) -> pd.DataFrame:
           805],
          [2, 'Thursday', 'MR2 IDR (Donnerstag)', '31.10.2019', '01.01.2055', datetime.time(7, 0), datetime.time(20, 30),
           805],
-         ], columns=tp_agg_df.columns)
-    tp_agg_df = tp_agg_df.append(new_rows)
-    tp_agg_df = tp_agg_df.reset_index(drop=True)
-    return tp_agg_df
+         ], columns=terminplanner_aggregated_df.columns)
+
+    terminplanner_df = terminplanner_df.append(new_rows)
+    terminplanner_df = terminplanner_df.reset_index(drop=True)
+    return terminplanner_df
 
 
 def generate_idle_time_stats(dicom_times_df: pd.DataFrame, terminplanner_aggregated_df: pd.DataFrame) -> (pd.DataFrame,
@@ -156,7 +189,8 @@ def generate_idle_time_stats(dicom_times_df: pd.DataFrame, terminplanner_aggrega
     return appts_and_gaps, daily_idle_stats
 
 
-def generate_plots(appts_and_gaps: pd.DataFrame, daily_idle_stats: pd.DataFrame) -> (alt.Chart, alt.Chart, alt.Chart):
+def generate_idle_time_plots(appts_and_gaps: pd.DataFrame, daily_idle_stats: pd.DataFrame) -> (alt.Chart, alt.Chart,
+                                                                                               alt.Chart):
     """
     Function to trigger the generation of the plots which are based off all the data cleaning and prep in this
     pipeline
@@ -177,7 +211,8 @@ def generate_plots(appts_and_gaps: pd.DataFrame, daily_idle_stats: pd.DataFrame)
     daily_idle_stats['end'] = pd.to_datetime(daily_idle_stats['end'])
 
     daily_idle_stats_mr1 = daily_idle_stats[daily_idle_stats['image_device_id'] == 1]
-    day_summary_plot = plot_total_active_idle_buffer_time_per_day(daily_idle_stats_mr1, use_percentage=True)
+    daily_idle_buffer_active_percentages_plot = plot_total_active_idle_buffer_time_per_day(daily_idle_stats_mr1,
+                                                                                           use_percentage=True)
 
     appts_and_gaps_mr1 = appts_and_gaps[appts_and_gaps['image_device_id'] == 1]
     full_zebra = plot_daily_appt_idle_segments(appts_and_gaps_mr1, width=500, height=5000)
@@ -187,7 +222,7 @@ def generate_plots(appts_and_gaps: pd.DataFrame, daily_idle_stats: pd.DataFrame)
 
     one_week_zebra = plot_daily_appt_idle_segments(one_week, bar_size=25, width=500, height=200)
 
-    return day_summary_plot, full_zebra, one_week_zebra
+    return daily_idle_buffer_active_percentages_plot, full_zebra, one_week_zebra
 
 
 # Helper functions
@@ -286,38 +321,6 @@ def plot_daily_appt_idle_segments(appts_and_gaps: pd.DataFrame, height: int = 30
         labelFontSize=15,
         titleFontSize=20
     )
-
-
-def subset_valid_appts(df: pd.DataFrame, id_list_df: pd.DataFrame):
-    """
-    Limit provided dataset to just the relevant appointments. Appointments with alphanumeric AccessionNumbers are
-    removed, and the remaining data is subsetted to include only the appointments that are in RIS (by using
-    a previous extract from RDSC to find which appointments are in RIS - this extract has other data quality
-    issues, hence it is not used fully for this task)
-
-    Args:
-        df: Dicom data extract with no quality issues (aside from having test appointments, etc. included)
-        id_list_df: Previous data extract from RIS which has only valid appointments in it (e.g. no data which was
-        entered as a test, etc.). This Dicom data has other data quality issues (appointments cut short, etc.), so
-        it can't be used fully
-
-    Returns:
-        Dicom dataset with valid appointments only
-    """
-    df_copy = df.copy()
-    df_copy['AccessionNumber'] = pd.to_numeric(df_copy['AccessionNumber'], errors='coerce')
-    df_copy = df_copy[~df_copy['AccessionNumber'].isna()]
-
-    id_list_df = id_list_df.drop_duplicates()
-    id_list_df_pivot = id_list_df.pivot(['SeriesUID', 'SopImageUid', 'StudyUID'], columns='tag_name',
-                                        values='Value').reset_index()
-    id_list_df_pivot['AcquisitionDate'] = id_list_df_pivot['AcquisitionDate'].astype(float)
-    id_list_df_pivot['AccessionNumber'] = pd.to_numeric(id_list_df_pivot['AccessionNumber'], errors='coerce')
-    id_list_df_pivot = id_list_df_pivot[~id_list_df_pivot['AccessionNumber'].isna()]
-
-    id_list = id_list_df_pivot['AccessionNumber'].unique()
-    df_copy = df_copy[df_copy['AccessionNumber'].isin(id_list)]
-    return df_copy
 
 
 def subset_machines(df: pd.DataFrame):
