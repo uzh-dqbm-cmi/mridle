@@ -86,6 +86,11 @@ val_ris_evaluation_slot_df:
 
 # RESULTS
 
+validation_jaccard_table:
+    type: pandas.CSVDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/validation_jaccard_table.html
+        layer: reporting
+
 val_development_confusion_matrix:
     type: text.TextDataSet
     filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/val_development_confusion_matrix.html

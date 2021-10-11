@@ -1,5 +1,5 @@
 from kedro.pipeline import Pipeline, node
-from .nodes import build_dispo_exp_2_df, calc_exp_confusion_matrix
+from .nodes import build_dispo_exp_2_df, calc_exp_confusion_matrix, calc_jaccard_score_table
 from ..ris.nodes import build_status_df, build_slot_df
 
 
@@ -65,6 +65,13 @@ def create_pipeline(**kwargs):
                 inputs="val_ris_evaluation_status_df",
                 outputs="val_ris_evaluation_slot_df",
                 name="build_val_ris_evaluation_slot_df"
+            ),
+            node(
+                func=calc_jaccard_score_table,
+                inputs=["dispo_development_slot_df", "val_ris_development_slot_df", "dispo_evaluation_slot_df",
+                        "val_ris_evaluation_slot_df"],
+                outputs="validation_jaccard_table",
+                name="calc_jaccard_score_table"
             ),
             node(
                 func=calc_exp_confusion_matrix,

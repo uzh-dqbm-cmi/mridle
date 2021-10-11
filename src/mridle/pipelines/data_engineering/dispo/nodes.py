@@ -1,4 +1,4 @@
-from typing import Dict, List, Union
+from typing import Dict, List, Set, Union
 
 import numpy as np
 import pandas as pd
@@ -199,66 +199,44 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
     return one_day
 
 
-# def calc_jaccard_score_table(data: ValDataTuple) -> pd.DataFrame:
-#     """
-#     Calculate the Jaccard scores for show, rescheduled, and canceled appointments in the Development and Evaluation
-#      sets and generate a table.
-#
-#     Args:
-#         data: Dispo and RIS data object.
-#
-#     Returns: Dataframe with rows for show, rescheduled, and canceled appointments, and columns for development and
-#      evaluation experiments, and values of the Jaccard scores.
-#
-#     """
-#     dispo_data, ris_data = data
-#     jaccard_results = {
-#         'development': {
-#             'show': 0,
-#             'canceled': 0,
-#             'rescheduled': 0,
-#         },
-#         'evaluation': {
-#             'show': 0,
-#             'canceled': 0,
-#             'rescheduled': 0,
-#         }
-#     }
-#
-#     for exp in experiments:
-#         dispo_slot_df = dispo_data['slot_df'][exp]
-#         ris_slot_df = ris_data['slot_df'][exp]
-#         for appt_type in ['show', 'canceled', 'rescheduled']:
-#             jaccard_results[exp][appt_type] = mridle.data_management.jaccard_for_outcome(dispo_slot_df, ris_slot_df,
-#                                                                                          appt_type)
-#
-#     jaccard_results_df = pd.DataFrame(jaccard_results)
-#     return jaccard_results_df
+def calc_jaccard_score_table(dev_dispo_slot_df: pd.DataFrame, dev_ris_slot_df: pd.DataFrame,
+                             eval_dispo_slot_df: pd.DataFrame, eval_ris_slot_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Calculate the Jaccard scores for show, rescheduled, and canceled appointments in the Development and Evaluation
+     sets and generate a table.
+
+    Args:
+        dev_dispo_slot_df: dispo slot_df from the validation development phase.
+        dev_ris_slot_df: ris slot_df from the validation development phase.
+        eval_dispo_slot_df: dispo slot_df from the validation evaluation phase.
+        eval_ris_slot_df: ris slot_df from the validation evaluation phase.
+
+    Returns: Dataframe with rows for show, rescheduled, and canceled appointments, and columns for development and
+     evaluation experiments, and values of the Jaccard scores.
+
+    """
+    jaccard_results = {
+        'development': {
+            'show': 0.,
+            'canceled': 0.,
+            'rescheduled': 0.,
+        },
+        'evaluation': {
+            'show': 0.,
+            'canceled': 0.,
+            'rescheduled': 0.,
+        }
+    }
+
+    for appt_type in ['show', 'canceled', 'rescheduled']:
+        jaccard_results['development'][appt_type] = jaccard_for_outcome(dev_dispo_slot_df, dev_ris_slot_df, appt_type)
+        jaccard_results['evaluation'][appt_type] = jaccard_for_outcome(eval_dispo_slot_df, eval_ris_slot_df, appt_type)
+
+    jaccard_results_df = pd.DataFrame(jaccard_results)
+    return jaccard_results_df
 
 
-def color_red(val):
-    if val > 0:
-        return 'color: red'
-    else:
-        return 'color: black'
-
-
-def color_orange(val):
-    if val > 0:
-        return 'color: orange'
-    else:
-        return 'color: black'
-
-
-def color_green(val):
-    if val > 0:
-        return 'color: green'
-    else:
-        return 'color: black'
-
-
-def calc_exp_confusion_matrix(val_dispo_slot_df: pd.DataFrame, val_ris_slot_df: pd.DataFrame
-                              ):
+def calc_exp_confusion_matrix(val_dispo_slot_df: pd.DataFrame, val_ris_slot_df: pd.DataFrame):
     """
     Create a styled dataframe of the confusion matrix for either the development or evaluation experiment.
 
@@ -326,3 +304,62 @@ def validation_exp_confusion_matrix(dispo_df: pd.DataFrame, slot_df: pd.DataFram
     if 'missing' in error_pivot.columns:
         rdsc_cols.extend(['missing'])
     return error_pivot.reindex(dispo_cols)[rdsc_cols]
+
+
+def jaccard_index(dispo_set: Set, extract_set: Set) -> float:
+    """
+    Calculates the Jaccard Index for two given sets
+
+    Args:
+        dispo_set: set of ids identified in the dispo dataset for a given type
+        extract_set: set of ids identified in the extract dataset for a given type
+
+    Returns: score between 0.0 and 1.0, which is the Jaccard score.
+    """
+    score = 1.0
+    if dispo_set or extract_set:
+        score = (float(len(dispo_set.intersection(extract_set))) / len(dispo_set.union(extract_set)))
+
+    return score
+
+
+def jaccard_for_outcome(dispo_df: pd.DataFrame, slot_df: pd.DataFrame, slot_outcome: str) -> float:
+    """
+    Calculate the Jaccard score for a slot_outcome represented in both dispo_df and slot_df
+
+    Args:
+        dispo_df: result of `build_dispo_df`
+        slot_df: result of `build_slot_df`
+        slot_outcome:result of `set_slot_outcome`
+
+    Returns: Jaccard score
+    """
+    dispo_dates = dispo_df['date'].dt.date.unique()
+    slot_only_dates_df = slot_df[slot_df['start_time'].dt.date.isin(dispo_dates)]
+
+    dispo_outcome_ids = dispo_df[dispo_df['slot_outcome'] == slot_outcome]['patient_id'].astype(str).sort_values()
+    rdsc_outcome_ids = slot_only_dates_df[slot_only_dates_df['slot_outcome'] == slot_outcome]['MRNCmpdId'].astype(
+        str).sort_values()
+
+    return jaccard_index(set(dispo_outcome_ids), set(rdsc_outcome_ids))
+
+
+def color_red(val):
+    if val > 0:
+        return 'color: red'
+    else:
+        return 'color: black'
+
+
+def color_orange(val):
+    if val > 0:
+        return 'color: orange'
+    else:
+        return 'color: black'
+
+
+def color_green(val):
+    if val > 0:
+        return 'color: green'
+    else:
+        return 'color: black'
