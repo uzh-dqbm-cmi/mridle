@@ -52,7 +52,7 @@ def create_pipeline(**kwargs):
                 func=generate_idle_time_plots,
                 inputs=["appts_and_gaps", "daily_idle_stats"],
                 outputs=["daily_idle_buffer_active_percentages_plot", "full_zebra", "one_week_zebra"],
-                name="generate_plots"
+                name="generate_idle_time_plots"
             )
         ]
     )

@@ -211,8 +211,8 @@ def generate_idle_time_plots(appts_and_gaps: pd.DataFrame, daily_idle_stats: pd.
     daily_idle_stats['end'] = pd.to_datetime(daily_idle_stats['end'])
 
     daily_idle_stats_mr1 = daily_idle_stats[daily_idle_stats['image_device_id'] == 1]
-    daily_idle_buffer_active_percentages_plot = plot_total_active_idle_buffer_time_per_day(daily_idle_stats_mr1,
-                                                                                           use_percentage=True)
+    daily_idle_buffer_active_percentages_plot = plot_daily_idle_buffer_active_percentages(daily_idle_stats_mr1,
+                                                                                          use_percentage=True)
 
     appts_and_gaps_mr1 = appts_and_gaps[appts_and_gaps['image_device_id'] == 1]
     full_zebra = plot_daily_appt_idle_segments(appts_and_gaps_mr1, width=500, height=5000)
@@ -226,8 +226,8 @@ def generate_idle_time_plots(appts_and_gaps: pd.DataFrame, daily_idle_stats: pd.
 
 
 # Helper functions
-def plot_total_active_idle_buffer_time_per_day(daily_idle_stats: pd.DataFrame,
-                                               use_percentage: bool = False) -> alt.Chart:
+def plot_daily_idle_buffer_active_percentages(daily_idle_stats: pd.DataFrame,
+                                              use_percentage: bool = False) -> alt.Chart:
     """
     Plot the total hours spent active and idle for each day.
 
