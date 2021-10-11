@@ -11,17 +11,72 @@ dicom_3_months_Christian:
   filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dicom_3_months_Christian.parquet
   layer: intermediate
 
-dicom_3_months_rdsc:
+dicom_5_years_rdsc:
   type: pandas.CSVDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/01_raw/2021_06_07_dicom_add_end_time_tags/sane_file_name.csv
+  filepath: /data/mridle/data/kedro_data_catalog/01_raw/2021_09_03_dicom_5years/dbo_dicom_tags_pivoted.csv
   layer: raw
 
 dicom_times_df:
-  type: pandas.ParquetDataSet
+  type: pandas.CSVDataSet
   filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dicom_times_df.csv
   layer: intermediate
 
+dicom_data_valid_appts:
+  type: pandas.CSVDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/01_raw/dicom_data_valid_appts.csv
+  layer: raw
+
+dicom_series_metadata:
+  type: pandas.CSVDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dicom_series_metadata.csv
+  layer: intermediate
+
 slot_w_dicom_df:
-  type: pandas.ParquetDataSet
+  type: pandas.CSVDataSet
   filepath: /data/mridle/data/kedro_data_catalog/03_primary/slot_w_dicom_df.csv
   layer: primary
+
+valid_dicom_ids_2014_2021:
+  type: pandas.CSVDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/01_raw/2021_08_11_dicom_5years/[dbo].[DicomXMLTag_In_Columns_5y].csv
+  layer: raw
+
+raw_terminplanner_df:
+  type: pandas.ExcelDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/01_raw/terminplanner/210311_MR1_MR2_Terminslots.xlsx
+  layer: raw
+
+terminplanner_aggregated_df:
+  type: pandas.ParquetDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/terminplanner_aggregated_df.parquet
+  layer: intermediate
+
+terminplanner_aggregated_df:
+  type: pandas.ParquetDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/terminplanner_aggregated_df.parquet
+  layer: intermediate
+
+appts_and_gaps:
+  type: pandas.CSVDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/03_primary/appts_and_gaps.csv
+  layer: primary
+
+daily_idle_stats:
+  type: pandas.CSVDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/daily_idle_stats.csv
+  layer: reporting
+
+daily_idle_buffer_active_percentages_plot:
+  type: mridle.extras.datasets.altair_dataset.AltairDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/daily_idle_buffer_active_percentages_plot.html
+  layer: reporting
+
+full_zebra:
+  type: mridle.extras.datasets.altair_dataset.AltairDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/full_zebra.html
+  layer: reporting
+
+one_week_zebra:
+  type: mridle.extras.datasets.altair_dataset.AltairDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/one_week_zebra.html
+  layer: reporting
