@@ -15,7 +15,7 @@ def create_pipeline(**kwargs):
             ),
             node(
                 func=build_dispo_exp_1_df,
-                inputs="experiment1_records",
+                inputs=["experiment1_records", "test_patient_ids"],
                 outputs="dispo_exp_1_df",
                 name="build_dispo_exp_1_df",
             ),
