@@ -20,7 +20,7 @@ def create_pipeline(**kwargs):
                 name="build_dispo_exp_1_df",
             ),
             node(
-                func=lambda x: x['EnteringOrganisationDeviceID'].isin(['MR1', 'MR2']).copy(),
+                func=lambda x: x[x['EnteringOrganisationDeviceID'].isin(['MR1', 'MR2'])].copy(),
                 inputs="slot_df",
                 outputs="slot_df_filtered_exp_1",
                 name="filter_machines_val_ris_exp_1_slot_df"
@@ -58,7 +58,7 @@ def create_pipeline(**kwargs):
                 name="build_val_ris_development_slot_df"
             ),
             node(
-                func=lambda x: x['EnteringOrganisationDeviceID'].isin(['MR1', 'MR2']).copy(),
+                func=lambda x: x[x['EnteringOrganisationDeviceID'].isin(['MR1', 'MR2'])].copy(),
                 inputs="val_ris_development_slot_df_pre_filter",
                 outputs="val_ris_development_slot_df",
                 name="filter_machines_val_ris_development_slot_df"
@@ -90,7 +90,7 @@ def create_pipeline(**kwargs):
                 name="build_val_ris_evaluation_slot_df"
             ),
             node(
-                func=lambda x: x['EnteringOrganisationDeviceID'].isin(['MR1', 'MR2']).copy(),
+                func=lambda x: x[x['EnteringOrganisationDeviceID'].isin(['MR1', 'MR2'])].copy(),
                 inputs="val_ris_evaluation_slot_df_pre_filter",
                 outputs="val_ris_evaluation_slot_df",
                 name="filter_machines_val_ris_evaluation_slot_df"
