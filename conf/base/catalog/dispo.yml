@@ -98,6 +98,10 @@ val_ris_development_slot_df_pre_filter:
 val_ris_development_slot_df:
     type: pandas.CSVDataSet
     filepath: /data/mridle/data/kedro_data_catalog/03_primary/dispo/val_ris_development_slot_df.csv
+    load_args:
+        parse_dates:
+            - start_time
+            - end_time
     layer: primary
 
 
@@ -122,6 +126,10 @@ val_ris_evaluation_slot_df_pre_filter:
 val_ris_evaluation_slot_df:
     type: pandas.CSVDataSet
     filepath: /data/mridle/data/kedro_data_catalog/03_primary/dispo/val_ris_evaluation_slot_df.csv
+    load_args:
+        parse_dates:
+            - start_time
+            - end_time
     layer: primary
 
 
