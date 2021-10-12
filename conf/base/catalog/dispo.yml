@@ -20,7 +20,7 @@ dispo_exp_1_df:
     layer: primary
 
 slot_df_filtered_exp_1:
-    type: CSVDataSet
+    type: pandas.CSVDataSet
     filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dispo/val_ris_exp_1_slot_df_filtered.parquet
     layer: intermediate
 
