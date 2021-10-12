@@ -20,11 +20,16 @@ def create_pipeline(**kwargs):
                 name="build_dispo_exp_1_df",
             ),
             node(
+                func=lambda x: x['EnteringOrganisationDeviceID'].isin(['MR1', 'MR2']).copy(),
+                inputs="slot_df",
+                outputs="slot_df_filtered_exp_1",
+                name="filter_machines_val_ris_eexp_1_slot_df"
+            ),
+            node(
                 func=calc_exp_confusion_matrix,
-                inputs=["dispo_exp_1_df", "slot_df"],
+                inputs=["dispo_exp_1_df", "slot_df_filtered_exp_1"],
                 outputs="val_exp_1_confusion_matrix",
                 name="calc_exp_1_confusion_matrix"
-
             ),
 
             # EXPERIMENT 2 - DEVELOPMENT
@@ -49,8 +54,14 @@ def create_pipeline(**kwargs):
             node(
                 func=build_slot_df,
                 inputs="val_ris_development_status_df",
-                outputs="val_ris_development_slot_df",
+                outputs="val_ris_development_slot_df_pre_filter",
                 name="build_val_ris_development_slot_df"
+            ),
+            node(
+                func=lambda x: x['EnteringOrganisationDeviceID'].isin(['MR1', 'MR2']).copy(),
+                inputs="val_ris_development_slot_df_pre_filter",
+                outputs="val_ris_development_slot_df",
+                name="filter_machines_val_ris_development_slot_df"
             ),
 
             # EXPERIMENT 3 - EVALUATION
@@ -75,8 +86,14 @@ def create_pipeline(**kwargs):
             node(
                 func=build_slot_df,
                 inputs="val_ris_evaluation_status_df",
-                outputs="val_ris_evaluation_slot_df",
+                outputs="val_ris_evaluation_slot_df_pre_filter",
                 name="build_val_ris_evaluation_slot_df"
+            ),
+            node(
+                func=lambda x: x['EnteringOrganisationDeviceID'].isin(['MR1', 'MR2']).copy(),
+                inputs="val_ris_evaluation_slot_df_pre_filter",
+                outputs="val_ris_evaluation_slot_df",
+                name="filter_machines_val_ris_evaluation_slot_df"
             ),
 
             # REPORTING
