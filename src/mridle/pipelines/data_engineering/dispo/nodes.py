@@ -1,7 +1,9 @@
-from typing import Dict, List, Set, Union
+from typing import Dict, List, Set, Tuple, Union
 
+import altair as alt
 import numpy as np
 import pandas as pd
+from functools import partial, update_wrapper
 from mridle.utilities import data_processing
 
 
@@ -304,6 +306,76 @@ def validation_exp_confusion_matrix(dispo_df: pd.DataFrame, slot_df: pd.DataFram
     if 'missing' in error_pivot.columns:
         rdsc_cols.extend(['missing'])
     return error_pivot.reindex(dispo_cols)[rdsc_cols]
+
+
+def plot_dispo_schedule(dispo_slot_df: pd.DataFrame, title: str) -> Tuple[alt.Chart, alt.Chart]:
+    """
+    Make 2 plots, showing the dispo schedules for the titled validation experiment for both MR machines.
+
+    Args:
+        dispo_slot_df: Dispo slot_df (one row per appt)
+        title: name of the validation experiment being plotted ('Development' or 'Evaluation')
+
+    Returns: 4 altair Charts showing the appointment schedules as a week calendar view.
+
+    """
+    mr1 = plot_validation_week(dispo_slot_df, 'MR1', title=f'{title} Set - MR1')
+    mr2 = plot_validation_week(dispo_slot_df, 'MR2', title=f'{title} Set - MR2')
+    return mr1, mr2
+
+
+plot_dispo_schedule_development = partial(plot_dispo_schedule, title="Development")
+update_wrapper(plot_dispo_schedule_development, plot_dispo_schedule)
+
+
+plot_dispo_schedule_evaluation = partial(plot_dispo_schedule, title="Evaluation")
+update_wrapper(plot_dispo_schedule_evaluation, plot_dispo_schedule)
+
+
+def plot_validation_week(dispo_df: pd.DataFrame, machine_id: str = 'MR1', title: str = '') -> alt.Chart:
+    """
+    Plot the schedule of Dispo appointments.
+
+    Args:
+        dispo_df: dispo slot dataframe.
+        machine_id: Id of the machine to plot. Either 'MR1' or 'MR2'.
+        title: Title for the plot.
+
+    Returns: altair Chart.
+
+    """
+    df = dispo_df.copy()
+    df = df[(~df['slot_outcome'].isnull()) & (~df['NoShow'].isnull())]
+    df['EnteringOrganisationDeviceID'] = np.where(df['machine_after'].isnull(), df['machine_before'],
+                                                  df['machine_after'])
+    valid_machines = df['EnteringOrganisationDeviceID'].unique()
+
+    if machine_id not in valid_machines:
+        raise ValueError(f'machine if {machine_id} not found. Specify one of {valid_machines}')
+    df = df[df['EnteringOrganisationDeviceID'] == machine_id]
+
+    df['end_time'] = df['start_time'] + pd.Timedelta(minutes=30)
+    df['dayofweek'] = df['date'].dt.day_name()
+
+    outcome_color_map = {
+        'show': '#1f77b4',
+        'rescheduled': '#ff7f0e',
+        'canceled': '#d62728',
+    }
+
+    color_scale = alt.Scale(domain=list(outcome_color_map.keys()), range=list(outcome_color_map.values()))
+
+    chart = alt.Chart(df).mark_bar().encode(
+        alt.Color('slot_outcome:N', scale=color_scale),
+        x='NoShow:N',
+        y=alt.Y('hoursminutes(start_time):T', title='Time'),
+        y2='hoursminutes(end_time):T',
+        column=alt.Column('dayofweek', sort=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], title=''),
+    ).properties(
+        width=100,
+        title=title
+    )
+    return chart
 
 
 def jaccard_index(dispo_set: Set, extract_set: Set) -> float:

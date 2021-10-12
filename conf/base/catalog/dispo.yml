@@ -150,3 +150,13 @@ val_evaluation_confusion_matrix:
     type: text.TextDataSet
     filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/val_evaluation_confusion_matrix.html
     layer: reporting
+
+plot_dispo_schedule_development:
+    type: mridle.extras.datasets.altair_dataset.AltairDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/plot_dispo_schedule_development.html
+    layer: reporting
+
+plot_dispo_schedule_evaluation:
+    type: mridle.extras.datasets.altair_dataset.AltairDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/plot_dispo_schedule_evaluation.html
+    layer: reporting

@@ -1,5 +1,6 @@
 from kedro.pipeline import Pipeline, node
-from .nodes import build_dispo_exp_1_df, build_dispo_exp_2_df, calc_exp_confusion_matrix, calc_jaccard_score_table
+from .nodes import build_dispo_exp_1_df, build_dispo_exp_2_df, calc_exp_confusion_matrix, calc_jaccard_score_table,\
+    plot_dispo_schedule_development, plot_dispo_schedule_evaluation
 from ..ris.nodes import build_status_df, build_slot_df
 
 
@@ -115,6 +116,18 @@ def create_pipeline(**kwargs):
                 inputs=["dispo_evaluation_slot_df", "val_ris_evaluation_slot_df"],
                 outputs="val_evaluation_confusion_matrix",
                 name="calc_evaluation_exp_confusion_matrix"
-            )
+            ),
+            node(
+                func=plot_dispo_schedule_development,
+                inputs="dispo_development_slot_df",
+                outputs="dispo_development_schedule_plot",
+                name="plot_dispo_schedule_development"
+            ),
+            node(
+                func=plot_dispo_schedule_evaluation,
+                inputs="dispo_evaluation_slot_df",
+                outputs="dispo_evaluation_schedule_plot",
+                name="plot_dispo_schedule_evaluation"
+            ),
         ]
     )
