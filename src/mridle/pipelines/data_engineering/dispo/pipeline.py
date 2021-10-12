@@ -23,7 +23,7 @@ def create_pipeline(**kwargs):
                 func=lambda x: x['EnteringOrganisationDeviceID'].isin(['MR1', 'MR2']).copy(),
                 inputs="slot_df",
                 outputs="slot_df_filtered_exp_1",
-                name="filter_machines_val_ris_eexp_1_slot_df"
+                name="filter_machines_val_ris_exp_1_slot_df"
             ),
             node(
                 func=calc_exp_confusion_matrix,

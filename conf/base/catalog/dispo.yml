@@ -19,6 +19,11 @@ dispo_exp_1_df:
     filepath: /data/mridle/data/kedro_data_catalog/03_primary/dispo/dispo_exp_1_slot_df.parquet
     layer: primary
 
+slot_df_filtered_exp_1:
+    type: CSVDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dispo/val_ris_exp_1_slot_df_filtered.parquet
+    layer: intermediate
+
 val_exp_1_confusion_matrix:
     type: text.TextDataSet
     filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/val_exp_1_confusion_matrix.html
