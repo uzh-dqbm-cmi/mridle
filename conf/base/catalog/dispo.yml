@@ -22,6 +22,10 @@ dispo_exp_1_df:
 slot_df_filtered_exp_1:
     type: pandas.CSVDataSet
     filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dispo/val_ris_exp_1_slot_df_filtered.csv
+    load_args:
+        parse_dates:
+            - start_time
+            - end_time
     layer: intermediate
 
 val_exp_1_confusion_matrix:
