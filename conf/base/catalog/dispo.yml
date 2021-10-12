@@ -151,12 +151,22 @@ val_evaluation_confusion_matrix:
     filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/val_evaluation_confusion_matrix.html
     layer: reporting
 
-dispo_dvelopment_schedule_plot:
+dispo_dvelopment_schedule_plot_mr1:
     type: mridle.extras.datasets.altair_dataset.AltairDataSet
-    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/plot_dispo_schedule_development.html
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/plot_dispo_schedule_development_mr1.html
     layer: reporting
 
-dispo_evaluation_schedule_plot:
+dispo_dvelopment_schedule_plot_mr2:
     type: mridle.extras.datasets.altair_dataset.AltairDataSet
-    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/plot_dispo_schedule_evaluation.html
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/plot_dispo_schedule_development_mr2.html
+    layer: reporting
+
+dispo_evaluation_schedule_plot_mr1:
+    type: mridle.extras.datasets.altair_dataset.AltairDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/plot_dispo_schedule_evaluation_mr1.html
+    layer: reporting
+
+dispo_evaluation_schedule_plot_mr2:
+    type: mridle.extras.datasets.altair_dataset.AltairDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/plot_dispo_schedule_evaluation_mr2.html
     layer: reporting

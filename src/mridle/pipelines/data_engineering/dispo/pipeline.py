@@ -120,13 +120,13 @@ def create_pipeline(**kwargs):
             node(
                 func=plot_dispo_schedule_development,
                 inputs="dispo_development_slot_df",
-                outputs="dispo_development_schedule_plot",
+                outputs=["dispo_development_schedule_plot_mr1", "dispo_development_schedule_plot_mr2"],
                 name="plot_dispo_schedule_development"
             ),
             node(
                 func=plot_dispo_schedule_evaluation,
                 inputs="dispo_evaluation_slot_df",
-                outputs="dispo_evaluation_schedule_plot",
+                outputs=["dispo_evaluation_schedule_plot_mr1", "dispo_evaluation_schedule_plot_mr2"],
                 name="plot_dispo_schedule_evaluation"
             ),
         ]
