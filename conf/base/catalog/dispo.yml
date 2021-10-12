@@ -1,3 +1,29 @@
+# EXPERIMENT 1 (DEPRECATED)
+
+experiment1A:
+    type: yaml.YAMLDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/01_raw/dispo/experiment1A.yaml
+    layer: raw
+
+experiment1B:
+    type: yaml.YAMLDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/01_raw/dispo/experiment1B.yaml
+    layer: raw
+
+experiment1_records:
+    type: MemoryDataSet
+    layer: intermediate
+
+dispo_exp_1_df:
+    type: pandas.ParquetDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/03_primary/dispo/dispo_exp_1_slot_df.parquet
+    layer: primary
+
+val_exp_1_confusion_matrix:
+    type: text.TextDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/val_exp_1_confusion_matrix.html
+    layer: reporting
+
 # EXPERIMENT 2 / DEVELOPMENT - DISPO
 
 experiment2:
