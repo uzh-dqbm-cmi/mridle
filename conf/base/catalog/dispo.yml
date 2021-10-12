@@ -26,7 +26,6 @@ slot_df_filtered_exp_1:
         parse_dates:
             - start_time
             - end_time
-    layer: intermediate
 
 val_exp_1_confusion_matrix:
     type: text.TextDataSet
@@ -80,8 +79,8 @@ dispo_evaluation_slot_df:
 # EXPERIMENT 2 / DEVELOPMENT - RIS
 
 val_ris_development:
-    type: pandas.ParquetDataSet
-    filepath: /data/mridle/data/kedro_data_catalog/01_raw/dispo/2020_10_13_ris_exp_2_week.parquet
+    type: pandas.CSVDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/01_raw/dispo/2020_10_13_ris_exp_2_week.csv
     layer: raw
 
 val_ris_development_status_df:
