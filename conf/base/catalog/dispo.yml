@@ -1,0 +1,172 @@
+# EXPERIMENT 1 (DEPRECATED)
+
+experiment1A:
+    type: yaml.YAMLDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/01_raw/dispo/experiment1A.yaml
+    layer: raw
+
+experiment1B:
+    type: yaml.YAMLDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/01_raw/dispo/experiment1B.yaml
+    layer: raw
+
+experiment1_records:
+    type: MemoryDataSet
+    layer: intermediate
+
+dispo_exp_1_df:
+    type: pandas.ParquetDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/03_primary/dispo/dispo_exp_1_slot_df.parquet
+    layer: primary
+
+slot_df_filtered_exp_1:
+    type: pandas.CSVDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dispo/val_ris_exp_1_slot_df_filtered.csv
+    load_args:
+        parse_dates:
+            - start_time
+            - end_time
+
+val_exp_1_confusion_matrix:
+    type: text.TextDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/val_exp_1_confusion_matrix.html
+    layer: reporting
+
+# EXPERIMENT 2 / DEVELOPMENT - DISPO
+
+experiment2:
+    type: yaml.YAMLDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/01_raw/dispo/experiment2.yaml
+    layer: raw
+
+experiment2_corrections:
+    type: yaml.YAMLDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/01_raw/dispo/experiment2_corrections.yaml
+    layer: raw
+
+experiment_2_records:
+    type: MemoryDataSet
+    layer: intermediate
+
+dispo_development_slot_df:
+    type: pandas.ParquetDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/03_primary/dispo/dispo_development_slot_df.parquet
+    layer: primary
+
+
+# EXPERIMENT 3 / EVALUATION - DISPO
+
+experiment3:
+    type: yaml.YAMLDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/01_raw/dispo/experiment3.yaml
+    layer: raw
+
+experiment3_corrections:
+    type: yaml.YAMLDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/01_raw/dispo/experiment3_corrections.yaml
+    layer: raw
+
+experiment_3_records:
+    type: MemoryDataSet
+    layer: intermediate
+
+dispo_evaluation_slot_df:
+    type: pandas.ParquetDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/03_primary/dispo/dispo_evaluation_slot_df.parquet
+    layer: primary
+
+
+# EXPERIMENT 2 / DEVELOPMENT - RIS
+
+val_ris_development:
+    type: pandas.CSVDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/01_raw/dispo/2020_10_13_ris_exp_2_week.csv
+    layer: raw
+
+val_ris_development_status_df:
+    type: pandas.CSVDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dispo/val_ris_development_status_df.csv
+    load_args:
+        parse_dates:
+            - was_sched_for_date
+    layer: intermediate
+
+val_ris_development_slot_df_pre_filter:
+    type: MemoryDataSet
+
+val_ris_development_slot_df:
+    type: pandas.CSVDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/03_primary/dispo/val_ris_development_slot_df.csv
+    load_args:
+        parse_dates:
+            - start_time
+            - end_time
+    layer: primary
+
+
+# EXPERIMENT 3 / EVALUATION - RIS
+
+val_ris_evaluation:
+    type: pandas.ExcelDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/01_raw/dispo/2021_05_11_ris_exp_3_week.xlsx
+    layer: raw
+
+val_ris_evaluation_status_df:
+    type: pandas.CSVDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dispo/val_ris_evaluation_status_df.csv
+    load_args:
+        parse_dates:
+            - was_sched_for_date
+    layer: intermediate
+
+val_ris_evaluation_slot_df_pre_filter:
+    type: MemoryDataSet
+
+val_ris_evaluation_slot_df:
+    type: pandas.CSVDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/03_primary/dispo/val_ris_evaluation_slot_df.csv
+    load_args:
+        parse_dates:
+            - start_time
+            - end_time
+    layer: primary
+
+
+# RESULTS
+
+validation_jaccard_table:
+    type: pandas.CSVDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/validation_jaccard_table.csv
+    layer: reporting
+    save_args:
+        index: True
+
+val_development_confusion_matrix:
+    type: text.TextDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/val_development_confusion_matrix.html
+    layer: reporting
+
+val_evaluation_confusion_matrix:
+    type: text.TextDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/val_evaluation_confusion_matrix.html
+    layer: reporting
+
+dispo_development_schedule_plot_mr1:
+    type: mridle.extras.datasets.altair_dataset.AltairDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/dispo_development_schedule_plot_mr1.html
+    layer: reporting
+
+dispo_development_schedule_plot_mr2:
+    type: mridle.extras.datasets.altair_dataset.AltairDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/dispo_development_schedule_plot_mr2.html
+    layer: reporting
+
+dispo_evaluation_schedule_plot_mr1:
+    type: mridle.extras.datasets.altair_dataset.AltairDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/dispo_evaluation_schedule_plot_mr1.html
+    layer: reporting
+
+dispo_evaluation_schedule_plot_mr2:
+    type: mridle.extras.datasets.altair_dataset.AltairDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dispo/dispo_evaluation_schedule_plot_mr2.html
+    layer: reporting
