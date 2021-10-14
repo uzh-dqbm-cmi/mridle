@@ -829,3 +829,25 @@ class PartitionedExperiment:
         Returns: a Predictor.
         """
         return self.model_runs[partition].generate_predictor()
+
+
+def split_df_to_train_validate_test(df_input: pd.DataFrame, train_percent=0.7, validate_percent=0.15):
+    """
+    Args:
+         df_input: dataframe with all variables of interest for the model
+    Returns: dataframe with variables split into train, validation and test sets
+    """
+
+    df_output = df_input.copy()
+
+    seed = 0
+    np.random.seed(seed)
+    perm = np.random.permutation(df_output.index)
+    df_len = len(df_output.index)
+    train_end = int(train_percent * df_len)
+    validate_end = int(validate_percent * df_len) + train_end
+    train = df_output.iloc[perm[:train_end]]
+    validate = df_output.iloc[perm[train_end:validate_end]]
+    test = df_output.iloc[perm[validate_end:]]
+
+    return train, validate, test
