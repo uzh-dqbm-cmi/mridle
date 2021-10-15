@@ -1,27 +1,11 @@
-"""
-All processing functions for the data transformation pipeline.
+from typing import Dict, List, Set, Tuple, Union
 
-### Major Data Processing Steps ###
-
-build_status_df():
- - reads raw file from filesystem and adds custom columns.
- - This data is in the format one-row-per-appt-status-change
-
-build_slot_df():
- - returns data in the form one-row-per-appointment-slot (a slot is a no show or completed appointment)
-
-"""
-
-from typing import Dict, List, Set, Union
-
+import altair as alt
 import numpy as np
 import pandas as pd
+from functools import partial, update_wrapper
 from mridle.utilities import data_processing
 
-
-# ========================================================================================
-# === HELPER FUNCTIONS ===================================================================
-# ========================================================================================
 
 def build_dispo_exp_1_df(dispo_examples: List[Dict], exclude_patient_ids: List[str]) -> pd.DataFrame:
     """
@@ -217,56 +201,68 @@ def find_no_shows_from_dispo_exp_two(dispo_e2_df: pd.DataFrame) -> pd.DataFrame:
     return one_day
 
 
-def string_set(a_list):
-    return set([str(i) for i in a_list])
-
-
-def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, day: int, month: int, year: int,
-                                slot_outcome: str, verbose: bool = False) -> Set[str]:
-
+def calc_jaccard_score_table(dev_dispo_slot_df: pd.DataFrame, dev_ris_slot_df: pd.DataFrame,
+                             eval_dispo_slot_df: pd.DataFrame, eval_ris_slot_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Identifies any appointment IDs that are in dispo_data or slot_df and not vice versa.
+    Calculate the Jaccard scores for show, rescheduled, and canceled appointments in the Development and Evaluation
+     sets and generate a table.
 
     Args:
-        dispo_data: Dataframe with appointment data
-        slot_df: Dataframe with appointment data from extract
-        day: day numeric value
-        month: month numeric value
-        year: year numeric value
-        slot_outcome: string with value ['show', 'rescheduled', 'canceled'].
-            When `show` is selected, `inpatient` appointments are also included.
-        verbose: whether to make prints during the comparison
+        dev_dispo_slot_df: dispo slot_df from the validation development phase.
+        dev_ris_slot_df: ris slot_df from the validation development phase.
+        eval_dispo_slot_df: dispo slot_df from the validation evaluation phase.
+        eval_ris_slot_df: ris slot_df from the validation evaluation phase.
 
-    Returns:
-        dispo_patids: set of strings with patient IDs from dispo
-        slot_df_patids set of strings with patient IDs from extract
+    Returns: Dataframe with rows for show, rescheduled, and canceled appointments, and columns for development and
+     evaluation experiments, and values of the Jaccard scores.
 
     """
-    if slot_outcome not in ['show', 'rescheduled', 'canceled']:
-        print('invalid type')
-        return
+    jaccard_results = {
+        'development': {
+            'show': 0.,
+            'canceled': 0.,
+            'rescheduled': 0.,
+        },
+        'evaluation': {
+            'show': 0.,
+            'canceled': 0.,
+            'rescheduled': 0.,
+        }
+    }
 
-    selected_dispo_rows = dispo_data[(dispo_data['date'].dt.day == day)
-                                     & (dispo_data['date'].dt.month == month)
-                                     & (dispo_data['date'].dt.year == year)
-                                     & (dispo_data['slot_outcome'] == slot_outcome)
-                                     ]
-    selected_slot_df_rows = slot_df[(slot_df['start_time'].dt.day == day)
-                                    & (slot_df['start_time'].dt.month == month)
-                                    & (slot_df['start_time'].dt.year == year)
-                                    & (slot_df['slot_outcome'] == slot_outcome)
-                                    ]
-    dispo_patids = string_set(list(selected_dispo_rows['patient_id'].unique()))
-    slot_df_patids = string_set(list(selected_slot_df_rows['MRNCmpdId'].unique()))
+    for appt_type in ['show', 'canceled', 'rescheduled']:
+        jaccard_results['development'][appt_type] = jaccard_for_outcome(dev_dispo_slot_df, dev_ris_slot_df, appt_type)
+        jaccard_results['evaluation'][appt_type] = jaccard_for_outcome(eval_dispo_slot_df, eval_ris_slot_df, appt_type)
 
-    if verbose:
-        print('{} Dispo Pat IDs: \n{}'.format(len(dispo_patids), dispo_patids))
-        print('{} Slot_df Pat IDs: \n{}'.format(len(slot_df_patids), slot_df_patids))
-        print()
-        print('In Dispo but not in Slot_df: {}'.format(dispo_patids.difference(slot_df_patids)))
-        print('In Slot_df but not in Dispo: {}'.format(slot_df_patids.difference(dispo_patids)))
+    jaccard_results_df = pd.DataFrame(jaccard_results)
+    return jaccard_results_df
 
-    return dispo_patids, slot_df_patids
+
+def calc_exp_confusion_matrix(val_dispo_slot_df: pd.DataFrame, val_ris_slot_df: pd.DataFrame):
+    """
+    Create a styled dataframe of the confusion matrix for either the development or evaluation experiment.
+
+    Args:
+        val_dispo_slot_df: slot_df for the dispo data to validate.
+        val_ris_slot_df: slot_df for the ris data to validate the dispo data against.
+
+    Returns: Pandas dataframe styled with color coding.
+
+    """
+    # -> pd.io.formats.style.Styler:
+
+    c = validation_exp_confusion_matrix(val_dispo_slot_df, val_ris_slot_df, ['show', 'rescheduled', 'canceled']
+                                        ).fillna(0).astype(int)
+    c.loc['not present', 'missing'] = 0
+    c = c.style.applymap(color_red, subset=pd.IndexSlice['rescheduled', ['show']])
+    c = c.applymap(color_red, subset=pd.IndexSlice['show', ['rescheduled']])
+    c = c.applymap(color_red, subset=pd.IndexSlice['show', ['canceled']])
+    c = c.applymap(color_orange, subset=pd.IndexSlice['not present', ])
+    c = c.applymap(color_orange, subset=pd.IndexSlice[:, ['missing']])
+    c = c.applymap(color_green, subset=pd.IndexSlice['show', ['show']])
+    c = c.applymap(color_green, subset=pd.IndexSlice['rescheduled', ['rescheduled']])
+    c = c.applymap(color_green, subset=pd.IndexSlice['canceled', ['canceled']])
+    return c.render()
 
 
 def validation_exp_confusion_matrix(dispo_df: pd.DataFrame, slot_df: pd.DataFrame, columns: List[str] = None
@@ -290,6 +286,7 @@ def validation_exp_confusion_matrix(dispo_df: pd.DataFrame, slot_df: pd.DataFram
     dispo_dates = dispo_df['date'].dt.date.unique()
     r = slot_df[slot_df['start_time'].dt.date.isin(dispo_dates)][
         ['FillerOrderNo', 'MRNCmpdId', 'start_time', 'slot_outcome']]
+    r['MRNCmpdId'] = r['MRNCmpdId'].astype(str)
 
     result = pd.merge(d, r, left_on=['patient_id', 'start_time'], right_on=['MRNCmpdId', 'start_time'], how='outer',
                       suffixes=('_dispo', '_rdsc'))
@@ -311,107 +308,74 @@ def validation_exp_confusion_matrix(dispo_df: pd.DataFrame, slot_df: pd.DataFram
     return error_pivot.reindex(dispo_cols)[rdsc_cols]
 
 
-def generate_data_firstexperiment_plot(dispo_data: pd.DataFrame, slot_df: pd.DataFrame) -> pd.DataFrame:
+def plot_dispo_schedule(dispo_slot_df: pd.DataFrame, title: str) -> Tuple[alt.Chart, alt.Chart]:
     """
-    Iterates over unique dates in dispo_data (software data) and slot_df (extract)
-    For each UNIQUE date, counts how many ["show","soft no-show","hard no-show"] there are.
+    Make 2 plots, showing the dispo schedules for the titled validation experiment for both MR machines.
 
     Args:
-        dispo_data: Dataframe with appointment data
-        slot_df: Dataframe with appointment data from extract
+        dispo_slot_df: Dispo slot_df (one row per appt)
+        title: name of the validation experiment being plotted ('Development' or 'Evaluation')
 
-    Returns: dataframe that contains, date, year, num_shows, num_rescheduled, num_canceled , 'extract/experiment'
+    Returns: 4 altair Charts showing the appointment schedules as a week calendar view.
 
     """
-
-    df = pd.DataFrame(columns=['date', 'year', 'dispo_show', 'dispo_rescheduled', 'dispo_canceled',
-                               'extract_show', 'extract_rescheduled', 'extract_canceled'])
-    for date_elem in dispo_data.date.dt.date.unique():
-        day, month, year = date_elem.day, date_elem.month, date_elem.year
-        # Identify how many 'shows' in dispo_data and extract
-        dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year, 'show')
-        num_dispo_show = len(dispo_patids)
-        num_extract_show = len(slot_df_patids)
-        # Identify how many 'soft no-show' in dispo_data and extract
-        dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year,
-                                                                   'rescheduled')
-        num_dispo_rescheduled = len(dispo_patids)
-        num_extract_rescheduled = len(slot_df_patids)
-        # Identify how many 'hard no-show' in dispo_data and extract
-        dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_data, slot_df, day, month, year,
-                                                                   'canceled')
-        num_dispo_canceled = len(dispo_patids)
-        num_extract_canceled = len(slot_df_patids)
-
-        df = df.append({'date': date_elem,
-                        'year': date_elem.year,
-                        'dispo_show': num_dispo_show,
-                        'dispo_rescheduled': num_dispo_rescheduled,
-                        'dispo_canceled': num_dispo_canceled,
-                        'extract_show': num_extract_show,
-                        'extract_rescheduled': num_extract_rescheduled,
-                        'extract_canceled': num_extract_canceled
-                        }, ignore_index=True)
-
-    return df
+    mr1 = plot_validation_week(dispo_slot_df, 'MR1', title=f'{title} Set - MR1')
+    mr2 = plot_validation_week(dispo_slot_df, 'MR2', title=f'{title} Set - MR2')
+    return mr1, mr2
 
 
-def calculate_ratios_experiment(df_experiment: pd.DataFrame, slot_outcome: str) -> pd.DataFrame:
+plot_dispo_schedule_development = partial(plot_dispo_schedule, title="Development")
+update_wrapper(plot_dispo_schedule_development, plot_dispo_schedule)
+
+
+plot_dispo_schedule_evaluation = partial(plot_dispo_schedule, title="Evaluation")
+update_wrapper(plot_dispo_schedule_evaluation, plot_dispo_schedule)
+
+
+def plot_validation_week(dispo_df: pd.DataFrame, machine_id: str = 'MR1', title: str = '') -> alt.Chart:
     """
-    Calculates ratios between number of show, rescheduled and canceled for plot
+    Plot the schedule of Dispo appointments.
 
     Args:
-        df_experiment: dataframe that contains num_shows, num_softnoshows,
-             num_hard_noshow per date and if it is from extract or dispo
-        slot_outcome: string with value ['show', 'rescheduled', 'canceled'].
+        dispo_df: dispo slot dataframe.
+        machine_id: Id of the machine to plot. Either 'MR1' or 'MR2'.
+        title: Title for the plot.
 
-
-    Returns: dataframe with three columns. These are ['date','year','ratio']. The last column being the
-        ratio calculated between dispo and extract. If you specify 'show' as the type, then the resulting
-        ratio column will have the ratio of 'show' appointments. This ratio is calculated as:
-        ratio = # of shows in the extract / # of shows in the dispo data
+    Returns: altair Chart.
 
     """
+    df = dispo_df.copy()
+    df = df[(~df['slot_outcome'].isnull()) & (~df['NoShow'].isnull())]
+    df['EnteringOrganisationDeviceID'] = np.where(df['machine_after'].isnull(), df['machine_before'],
+                                                  df['machine_after'])
+    valid_machines = df['EnteringOrganisationDeviceID'].unique()
 
-    if slot_outcome == 'show':
-        drop_col = ['dispo_rescheduled', 'dispo_canceled', 'extract_rescheduled', 'extract_canceled']
-        drop_col2 = ['extract_show', 'dispo_show']
-    elif slot_outcome == 'rescheduled':
-        drop_col = ['dispo_show', 'dispo_canceled', 'extract_show', 'extract_canceled']
-        drop_col2 = ['extract_rescheduled', 'dispo_rescheduled']
-    elif slot_outcome == 'canceled':
-        drop_col = ['dispo_rescheduled', 'dispo_show', 'extract_rescheduled', 'extract_show']
-        drop_col2 = ['extract_canceled', 'dispo_canceled']
+    if machine_id not in valid_machines:
+        raise ValueError(f'machine if {machine_id} not found. Specify one of {valid_machines}')
+    df = df[df['EnteringOrganisationDeviceID'] == machine_id]
 
-    df_ratios = df_experiment.copy()
-    df_ratios = df_ratios.drop(drop_col, axis=1)
-    df_ratios['ratio'] = df_ratios[drop_col2[0]] / (df_ratios[drop_col2[1]] + 1)
-    df_ratios = df_ratios.drop(drop_col2, axis=1)
+    df['end_time'] = df['start_time'] + pd.Timedelta(minutes=30)
+    df['dayofweek'] = df['date'].dt.day_name()
 
-    return df_ratios
+    outcome_color_map = {
+        'show': '#1f77b4',
+        'rescheduled': '#ff7f0e',
+        'canceled': '#d62728',
+    }
 
+    color_scale = alt.Scale(domain=list(outcome_color_map.keys()), range=list(outcome_color_map.values()))
 
-def split_df_to_train_validate_test(df_input: pd.DataFrame, train_percent=0.7, validate_percent=0.15):
-    """
-    Args:
-         df_input: dataframe with all variables of interest for the model
-
-    Returns: dataframe with variables split into train, validation and test sets
-    """
-
-    df_output = df_input.copy()
-
-    seed = 0
-    np.random.seed(seed)
-    perm = np.random.permutation(df_output.index)
-    df_len = len(df_output.index)
-    train_end = int(train_percent * df_len)
-    validate_end = int(validate_percent * df_len) + train_end
-    train = df_output.iloc[perm[:train_end]]
-    validate = df_output.iloc[perm[train_end:validate_end]]
-    test = df_output.iloc[perm[validate_end:]]
-
-    return train, validate, test
+    chart = alt.Chart(df).mark_bar().encode(
+        alt.Color('slot_outcome:N', scale=color_scale),
+        x='NoShow:N',
+        y=alt.Y('hoursminutes(start_time):T', title='Time'),
+        y2='hoursminutes(end_time):T',
+        column=alt.Column('dayofweek', sort=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], title=''),
+    ).properties(
+        width=100,
+        title=title
+    )
+    return chart
 
 
 def jaccard_index(dispo_set: Set, extract_set: Set) -> float:
@@ -452,64 +416,22 @@ def jaccard_for_outcome(dispo_df: pd.DataFrame, slot_df: pd.DataFrame, slot_outc
     return jaccard_index(set(dispo_outcome_ids), set(rdsc_outcome_ids))
 
 
-def print_validation_summary_metrics(dispo_df, slot_df):
-    """
-    Print total slot counts from slot_df and dispo_df, and their average Jaccard index per day. Metrics are printed for
-     separately show, rescheduled, and canceled slots.
-    Args:
-        dispo_df: result of build_dispo_df()
-        slot_df: result fo build_slot_df()
-
-    Returns: Dataframe with metrics
-
-    """
-    validation_dates = list(dispo_df.date.dt.date.unique())
-    slot_patids = {}
-
-    for outcome in ['show', 'rescheduled', 'canceled']:
-        slot_patids[outcome] = {}
-
-        total_slot_df_patids = []
-        total_dispo_patids = []
-        jaccard_indices = []
-        for d in validation_dates:
-            day, month, year = d.day, d.month, d.year
-            dispo_patids, slot_df_patids = validate_against_dispo_data(dispo_df, slot_df, day, month, year, outcome,
-                                                                       verbose=False)
-            total_slot_df_patids.extend(list(slot_df_patids))
-            total_dispo_patids.extend(list(dispo_patids))
-            jaccard_indices.append(jaccard_index(slot_df_patids, dispo_patids))
-
-        slot_patids[outcome]['extract'] = total_slot_df_patids
-        slot_patids[outcome]['dispo'] = total_dispo_patids
-        slot_patids[outcome]['jaccard'] = jaccard_indices
-
-    slot_cnts = {}
-    for outcome in slot_patids:
-        slot_cnts[outcome] = {}
-        for source in ['extract', 'dispo']:
-            slot_cnts[outcome][source] = len(slot_patids[outcome][source])
-            slot_cnts[outcome]['jaccard'] = sum(slot_patids[outcome]['jaccard']) / len(slot_patids[outcome]['jaccard'])
-
-    return pd.DataFrame(slot_cnts).T[['dispo', 'extract', 'jaccard']].style.format(
-        {'dispo': '{:.0f}', 'extract': '{:.0f}', 'jaccard': '{:.2f}'})
+def color_red(val):
+    if val > 0:
+        return 'color: red'
+    else:
+        return 'color: black'
 
 
-def normalize_dataframe(df_features: pd.DataFrame, cols: List[str]) -> pd.DataFrame:
-    '''
-    Normalize columns in cols list
+def color_orange(val):
+    if val > 0:
+        return 'color: orange'
+    else:
+        return 'color: black'
 
-    Args:
-        df_features: dataframe with features used in model
-        cols: list of features on which min_max normalization is executed
 
-    Returns:
-        Normalized dataframes
-    '''
-
-    result = df_features.copy()
-    for feature_name in cols:
-        max_value = df_features[feature_name].max()
-        min_value = df_features[feature_name].min()
-        result[feature_name] = (df_features[feature_name] - min_value) / (max_value - min_value)
-    return result
+def color_green(val):
+    if val > 0:
+        return 'color: green'
+    else:
+        return 'color: black'
