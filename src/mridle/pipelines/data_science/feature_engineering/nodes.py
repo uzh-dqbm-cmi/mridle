@@ -272,7 +272,7 @@ def feature_no_show_before(slot_df: pd.DataFrame) -> pd.DataFrame:
     """
     slot_df['no_show_before'] = slot_df.groupby('MRNCmpdId')['NoShow'].cumsum()
     # cumsum will include the current no show, so subtract 1, except don't go negative
-    slot_df['no_show_before'] = np.where(slot_df['no_show_before'] > 0, slot_df['no_show_before'] - 1, 0)
+    slot_df['no_show_before'] = np.where(slot_df['NoShow'], slot_df['no_show_before'] - 1, slot_df['no_show_before'])
     return slot_df
 
 
