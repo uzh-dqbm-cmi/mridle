@@ -270,10 +270,12 @@ def feature_no_show_before(slot_df: pd.DataFrame) -> pd.DataFrame:
     Returns: A row-per-appointment dataframe with additional column 'no_show_before'.
 
     """
-    slot_df['no_show_before'] = slot_df.groupby('MRNCmpdId')['NoShow'].cumsum()
+    slot_df_ordered = slot_df.sort_values('date')
+    slot_df_ordered['no_show_before'] = slot_df_ordered.groupby('MRNCmpdId')['NoShow'].cumsum()
     # cumsum will include the current no show, so subtract 1, except don't go negative
-    slot_df['no_show_before'] = np.where(slot_df['NoShow'], slot_df['no_show_before'] - 1, slot_df['no_show_before'])
-    return slot_df
+    slot_df_ordered['no_show_before'] = np.where(slot_df_ordered['NoShow'], slot_df_ordered['no_show_before'] - 1,
+                                                 slot_df_ordered['no_show_before'])
+    return slot_df_ordered
 
 
 # feature engineering for the duration model

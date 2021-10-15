@@ -20,56 +20,47 @@ class TestFeatureEngineering(unittest.TestCase):
         slot_df = pd.DataFrame([
             {
                 'MRNCmpdId': 1,
-                'date': str(day(2).date()),
-                'start_time': str(day(3).time()),
+                'date': str(day(2)),
                 'NoShow': 1
             },
             {
                 'MRNCmpdId': 1,
-                'date': str(day(3).date()),
-                'start_time': str(day(3).time()),
+                'date': str(day(3)),
                 'NoShow': 1
             },
             {
                 'MRNCmpdId': 1,
-                'date': str(day(4).date()),
-                'start_time': str(day(3).time()),
+                'date': str(day(4)),
                 'NoShow': 0
             },
             {
                 'MRNCmpdId': 2,
-                'date': str(day(2).date()),
-                'start_time': str(day(3).time()),
+                'date': str(day(2)),
                 'NoShow': 0
             },
             {
                 'MRNCmpdId': 2,
-                'date': str(day(3).date()),
-                'start_time': str(day(3).time()),
+                'date': str(day(3)),
                 'NoShow': 1
             },
             {
                 'MRNCmpdId': 3,
-                'date': str(day(1).date()),
-                'start_time': str(day(3).time()),
+                'date': str(day(1)),
                 'NoShow': 1
             },
             {
                 'MRNCmpdId': 3,
-                'date': str(day(2).date()),
-                'start_time': str(day(3).time()),
+                'date': str(day(2)),
                 'NoShow': 0
             },
             {
                 'MRNCmpdId': 3,
-                'date': str(day(3).date()),
-                'start_time': str(day(3).time()),
+                'date': str(day(3)),
                 'NoShow': 1
             },
             {
                 'MRNCmpdId': 3,
-                'date': str(day(4).date()),
-                'start_time': str(day(3).time()),
+                'date': str(day(4)),
                 'NoShow': 0
             }
         ])
@@ -77,64 +68,55 @@ class TestFeatureEngineering(unittest.TestCase):
         expected = pd.DataFrame([
             {
                 'MRNCmpdId': 1,
-                'date': str(day(2).date()),
-                'start_time': str(day(3).time()),
+                'date': str(day(2)),
                 'NoShow': 1,
                 'no_show_before': 0
             },
             {
                 'MRNCmpdId': 1,
-                'date': str(day(3).date()),
-                'start_time': str(day(3).time()),
+                'date': str(day(3)),
                 'NoShow': 1,
                 'no_show_before': 1
             },
             {
                 'MRNCmpdId': 1,
-                'date': str(day(4).date()),
-                'start_time': str(day(3).time()),
+                'date': str(day(4)),
                 'NoShow': 0,
                 'no_show_before': 2
             },
             {
                 'MRNCmpdId': 2,
-                'date': str(day(2).date()),
-                'start_time': str(day(3).time()),
+                'date': str(day(2)),
                 'NoShow': 0,
                 'no_show_before': 0
             },
             {
                 'MRNCmpdId': 2,
-                'date': str(day(3).date()),
-                'start_time': str(day(3).time()),
+                'date': str(day(3)),
                 'NoShow': 1,
                 'no_show_before': 0
             },
             {
                 'MRNCmpdId': 3,
-                'date': str(day(1).date()),
-                'start_time': str(day(3).time()),
+                'date': str(day(1)),
                 'NoShow': 1,
                 'no_show_before': 0
             },
             {
                 'MRNCmpdId': 3,
-                'date': str(day(2).date()),
-                'start_time': str(day(3).time()),
+                'date': str(day(2)),
                 'NoShow': 0,
                 'no_show_before': 1
             },
             {
                 'MRNCmpdId': 3,
-                'date': str(day(3).date()),
-                'start_time': str(day(3).time()),
+                'date': str(day(3)),
                 'NoShow': 1,
                 'no_show_before': 1
             },
             {
                 'MRNCmpdId': 3,
-                'date': str(day(4).date()),
-                'start_time': str(day(3).time()),
+                'date': str(day(4)),
                 'NoShow': 0,
                 'no_show_before': 2
             }
