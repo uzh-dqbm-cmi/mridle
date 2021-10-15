@@ -265,9 +265,9 @@ def feature_no_show_before(slot_df: pd.DataFrame) -> pd.DataFrame:
     Historic no show counts are limited to the bounds of the dataset- it does not include no-shows not included in the
      present dataset.
     Args:
-        slot_df: A row-per-status-change dataframe.
+        slot_df: A row-per-appointment dataframe.
 
-    Returns: A row-per-status-change dataframe with additional column 'no_show_before'.
+    Returns: A row-per-appointment dataframe with additional column 'no_show_before'.
 
     """
     slot_df['no_show_before'] = slot_df.groupby('MRNCmpdId')['NoShow'].cumsum()
