@@ -8,15 +8,82 @@ def day(num_days_from_start, hour=9):
 
 class TestFeatureEngineering(unittest.TestCase):
 
-    def test_no_show_before(self):
-        """
-        3 test examples included here.
+    def test_no_show_before_one_case(self):
+        slot_df = pd.DataFrame([
+            {
+                'MRNCmpdId': 1,
+                'date': str(day(2)),
+                'NoShow': 1
+            },
+            {
+                'MRNCmpdId': 1,
+                'date': str(day(3)),
+                'NoShow': 1
+            },
+            {
+                'MRNCmpdId': 1,
+                'date': str(day(4)),
+                'NoShow': 0
+            }
+        ])
 
-        First one with MRNCmpdID=1 is the case where the patient had three appointments, and the first two were no-shows
-        Second is with MRNCmpdID=2 is the case where the patient showed up for their first appt, but not their second -
-        both these rows should be returned with no_show_before equal to 0.
-        The case with MRNCmpdID=3 is where the patient alternates shows and no-shows
-        """
+        expected = pd.DataFrame([
+            {
+                'MRNCmpdId': 1,
+                'date': str(day(2)),
+                'NoShow': 1,
+                'no_show_before': 0
+            },
+            {
+                'MRNCmpdId': 1,
+                'date': str(day(3)),
+                'NoShow': 1,
+                'no_show_before': 1
+            },
+            {
+                'MRNCmpdId': 1,
+                'date': str(day(4)),
+                'NoShow': 0,
+                'no_show_before': 2
+            }
+        ])
+        result = feature_no_show_before(slot_df)
+
+        pd.testing.assert_frame_equal(result, expected, check_like=True)
+
+    def test_no_show_before_no_no_shows(self):
+        slot_df = pd.DataFrame([
+            {
+                'MRNCmpdId': 2,
+                'date': str(day(2)),
+                'NoShow': 0
+            },
+            {
+                'MRNCmpdId': 2,
+                'date': str(day(3)),
+                'NoShow': 0
+            }
+        ])
+
+        expected = pd.DataFrame([
+            {
+                'MRNCmpdId': 2,
+                'date': str(day(2)),
+                'NoShow': 0,
+                'no_show_before': 0
+            },
+            {
+                'MRNCmpdId': 2,
+                'date': str(day(3)),
+                'NoShow': 0,
+                'no_show_before': 0
+            }
+        ])
+        result = feature_no_show_before(slot_df)
+
+        pd.testing.assert_frame_equal(result, expected, check_like=True)
+
+    def test_no_show_before_two_patients(self):
         slot_df = pd.DataFrame([
             {
                 'MRNCmpdId': 1,
@@ -41,26 +108,6 @@ class TestFeatureEngineering(unittest.TestCase):
             {
                 'MRNCmpdId': 2,
                 'date': str(day(3)),
-                'NoShow': 1
-            },
-            {
-                'MRNCmpdId': 3,
-                'date': str(day(1)),
-                'NoShow': 1
-            },
-            {
-                'MRNCmpdId': 3,
-                'date': str(day(2)),
-                'NoShow': 0
-            },
-            {
-                'MRNCmpdId': 3,
-                'date': str(day(3)),
-                'NoShow': 1
-            },
-            {
-                'MRNCmpdId': 3,
-                'date': str(day(4)),
                 'NoShow': 0
             }
         ])
@@ -93,37 +140,43 @@ class TestFeatureEngineering(unittest.TestCase):
             {
                 'MRNCmpdId': 2,
                 'date': str(day(3)),
-                'NoShow': 1,
-                'no_show_before': 0
-            },
-            {
-                'MRNCmpdId': 3,
-                'date': str(day(1)),
-                'NoShow': 1,
-                'no_show_before': 0
-            },
-            {
-                'MRNCmpdId': 3,
-                'date': str(day(2)),
                 'NoShow': 0,
-                'no_show_before': 1
-            },
-            {
-                'MRNCmpdId': 3,
-                'date': str(day(3)),
-                'NoShow': 1,
-                'no_show_before': 1
-            },
-            {
-                'MRNCmpdId': 3,
-                'date': str(day(4)),
-                'NoShow': 0,
-                'no_show_before': 2
+                'no_show_before': 0
             }
         ])
         result = feature_no_show_before(slot_df)
 
         pd.testing.assert_frame_equal(result, expected, check_like=True)
 
+    def test_no_show_before_correct_ordering(self):
+        slot_df = pd.DataFrame([
+            {
+                'MRNCmpdId': 2,
+                'date': str(day(3)),
+                'NoShow': 0
+            },
+            {
+                'MRNCmpdId': 2,
+                'date': str(day(2)),
+                'NoShow': 1
+            }
+        ])
 
+        expected = pd.DataFrame([
+            {
+                'MRNCmpdId': 2,
+                'date': str(day(2)),
+                'NoShow': 1,
+                'no_show_before': 0
+            },
+            {
+                'MRNCmpdId': 2,
+                'date': str(day(3)),
+                'NoShow': 0,
+                'no_show_before': 1
+            }
+        ])
+        result = feature_no_show_before(slot_df)
+
+        pd.testing.assert_frame_equal(result.reset_index(drop=True), expected.reset_index(drop=True), check_like=True)
 
