@@ -36,7 +36,6 @@ def build_feature_set(status_df: pd.DataFrame) -> pd.DataFrame:
     status_df = feature_marital(status_df)
     status_df = feature_post_code(status_df)
     status_df = feature_distance_to_usz(status_df)
-    status_df = feature_no_show_before(status_df)
 
     agg_dict = {
         'NoShow': 'min',
@@ -52,12 +51,12 @@ def build_feature_set(status_df: pd.DataFrame) -> pd.DataFrame:
         'marital': 'last',
         'post_code': 'last',
         'distance_to_usz': 'last',
-        'no_show_before': 'last',
         'slot_outcome': 'last',
         'date': 'last'
     }
 
     slot_df = build_slot_df(status_df, agg_dict, include_id_cols=True)
+    slot_df = feature_no_show_before(slot_df)
 
     return slot_df
 
@@ -260,21 +259,23 @@ def feature_distance_to_usz(status_df: pd.DataFrame) -> pd.DataFrame:
     return status_df
 
 
-def feature_no_show_before(status_df: pd.DataFrame) -> pd.DataFrame:
+def feature_no_show_before(slot_df: pd.DataFrame) -> pd.DataFrame:
     """
     The number of no-shows the patient has had up to and _not including_ this one.
     Historic no show counts are limited to the bounds of the dataset- it does not include no-shows not included in the
      present dataset.
     Args:
-        status_df: A row-per-status-change dataframe.
+        slot_df: A row-per-appointment dataframe.
 
-    Returns: A row-per-status-change dataframe with additional column 'no_show_before'.
+    Returns: A row-per-appointment dataframe with additional column 'no_show_before'.
 
     """
-    status_df['no_show_before'] = status_df.groupby('MRNCmpdId')['NoShow'].cumsum()
+    slot_df_ordered = slot_df.sort_values('date')
+    slot_df_ordered['no_show_before'] = slot_df_ordered.groupby('MRNCmpdId')['NoShow'].cumsum()
     # cumsum will include the current no show, so subtract 1, except don't go negative
-    status_df['no_show_before'] = np.where(status_df['no_show_before'] > 0, status_df['no_show_before'] - 1, 0)
-    return status_df
+    slot_df_ordered['no_show_before'] = np.where(slot_df_ordered['NoShow'], slot_df_ordered['no_show_before'] - 1,
+                                                 slot_df_ordered['no_show_before'])
+    return slot_df_ordered
 
 
 # feature engineering for the duration model
