@@ -130,9 +130,6 @@ session.run(ppipeline_name='harvey', from_nodes=['train_harvey_model')
 
 ## Example Usage
 
-
-```
-
 `status_df` contains the columns:
 | column name | type | description |
 |---|---|---|
@@ -166,7 +163,6 @@ session.run(ppipeline_name='harvey', from_nodes=['train_harvey_model')
 | EnteringOrganisationDeviceID | object | device the appt was scheduled for |
 | UniversalServiceName | object | the kind of appointment |
 
-```
 
 ### Look at Example Appointments
 
