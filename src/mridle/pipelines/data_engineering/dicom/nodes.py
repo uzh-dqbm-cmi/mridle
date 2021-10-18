@@ -184,7 +184,7 @@ def generate_idle_time_stats(dicom_times_df: pd.DataFrame, terminplanner_aggrega
     """
     idle_df = calc_idle_time_gaps(dicom_times_df, terminplanner_aggregated_df, time_buffer_mins=5)
     appts_and_gaps = calc_appts_and_gaps(idle_df)
-    daily_idle_stats = calc_idle_time_stats(appts_and_gaps, agg_freq='daily')
+    daily_idle_stats = calc_idle_time_stats(appts_and_gaps, agg_freq='date')
     monthly_idle_stats = calc_idle_time_stats(appts_and_gaps, agg_freq='monthly')
     yearly_idle_stats = calc_idle_time_stats(appts_and_gaps, agg_freq='yearly')
 
@@ -698,7 +698,7 @@ def calc_idle_time_stats(appts_and_gaps: pd.DataFrame, agg_freq: str = 'date') -
      active' (float hours), 'active_pct', 'idle_pct', 'buffer_pct']
 
     """
-    if agg_freq not in ['day', 'month', 'year']:
+    if agg_freq not in ['date', 'month', 'year']:
         raise ValueError(f"Invalid `agg_freq` '{agg_freq}'; Must be 'date' or 'month' or 'year'")
 
     appts_and_gaps_copy = appts_and_gaps.copy()
