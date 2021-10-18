@@ -189,30 +189,19 @@ def generate_idle_time_stats(dicom_times_df: pd.DataFrame, terminplanner_aggrega
     return appts_and_gaps, daily_idle_stats
 
 
-def generate_idle_time_plots(appts_and_gaps: pd.DataFrame, daily_idle_stats: pd.DataFrame) -> (alt.Chart, alt.Chart,
-                                                                                               alt.Chart):
+def generate_zebra_plots(appts_and_gaps: pd.DataFrame) -> (alt.Chart, alt.Chart):
     """
     Function to trigger the generation of the plots which are based off all the data cleaning and prep in this
     pipeline
 
     Args:
         appts_and_gaps: Dataset created from calc_appts_and_gaps() function
-        daily_idle_stats: Dataset created from calc_daily_idle_stats() function
 
     Returns:
         Three plots, which are then saved in the 08_reporting folder as html files
     """
 
     alt.data_transformers.disable_max_rows()
-    appts_and_gaps['date'] = pd.to_datetime(appts_and_gaps['date'])
-    appts_and_gaps['start'] = pd.to_datetime(appts_and_gaps['start'])
-    appts_and_gaps['end'] = pd.to_datetime(appts_and_gaps['end'])
-    daily_idle_stats['start'] = pd.to_datetime(daily_idle_stats['start'])
-    daily_idle_stats['end'] = pd.to_datetime(daily_idle_stats['end'])
-
-    daily_idle_stats_mr1 = daily_idle_stats[daily_idle_stats['image_device_id'] == 1]
-    daily_idle_buffer_active_percentages_plot = plot_daily_idle_buffer_active_percentages(daily_idle_stats_mr1,
-                                                                                          use_percentage=True)
 
     appts_and_gaps_mr1 = appts_and_gaps[appts_and_gaps['image_device_id'] == 1]
     full_zebra = plot_daily_appt_idle_segments(appts_and_gaps_mr1, width=500, height=5000)
@@ -222,19 +211,19 @@ def generate_idle_time_plots(appts_and_gaps: pd.DataFrame, daily_idle_stats: pd.
 
     one_week_zebra = plot_daily_appt_idle_segments(one_week, bar_size=25, width=500, height=200)
 
-    return daily_idle_buffer_active_percentages_plot, full_zebra, one_week_zebra
+    return full_zebra, one_week_zebra
 
 
-# Helper functions
-def plot_daily_idle_buffer_active_percentages(daily_idle_stats: pd.DataFrame,
-                                              use_percentage: bool = False) -> alt.Chart:
+def plot_idle_buffer_active_percentages(daily_idle_stats: pd.DataFrame, plot_freq: str = 'monthly',
+                                        use_percentage: bool = True) -> alt.Chart:
     """
     Plot the total hours spent active and idle for each day.
 
     Args:
-        daily_idle_stats: result of `calc_daily_idle_time_stats`
+        daily_idle_stats: result of `calc_daily_idle_time_stats`.
+        plot_freq: the unit of the time x axis to plot (daily or monthly).
         use_percentage: boolean indicating whether to plot the y-axis as a percentage of the total day, or using
-        absolute time (hours)
+         absolute time (hours).
 
     Returns: Figure where x-axis is date and y-axis is total hours. Each day-column is a stacked bar with total active,
      total idle, and total buffer hours for that day. The chart is faceted by image_device_id.
@@ -247,6 +236,9 @@ def plot_daily_idle_buffer_active_percentages(daily_idle_stats: pd.DataFrame,
         val_vars = ['active', 'idle', 'buffer']
         y_label = "Hours"
 
+    if plot_freq not in ['daily', 'monthly']:
+        raise ValueError(f"`plot_freq` must be either 'daily' or 'monthly'' received {plot_freq}")
+
     daily_between_times_melted = pd.melt(daily_idle_stats, id_vars=['date', 'image_device_id'],
                                          value_vars=val_vars, var_name='Machine Status',
                                          value_name='hours')
@@ -257,7 +249,12 @@ def plot_daily_idle_buffer_active_percentages(daily_idle_stats: pd.DataFrame,
     domain = ['Active', 'Idle', 'Buffer']
     range_ = ['#0065af', '#fe8126', '#fda96b']
 
-    return_chart = alt.Chart(daily_between_times_melted).mark_bar().encode(
+    if plot_freq == 'daily':
+        plot_df = daily_between_times_melted
+    else:
+        plot_df = daily_between_times_melted
+
+    return_chart = alt.Chart(plot_df).mark_bar().encode(
         x=alt.X("date", axis=alt.Axis(title="Date")),
         y=alt.Y('hours', axis=alt.Axis(title=y_label), scale=alt.Scale(domain=[0, 1])),
         color=alt.Color('Machine Status:N', scale=alt.Scale(domain=domain, range=range_)),
@@ -281,6 +278,7 @@ def plot_daily_idle_buffer_active_percentages(daily_idle_stats: pd.DataFrame,
     return return_chart
 
 
+# Helper functions
 def plot_daily_appt_idle_segments(appts_and_gaps: pd.DataFrame, height: int = 300, bar_size: int = 5,
                                   width: int = 300) -> alt.Chart:
     """
