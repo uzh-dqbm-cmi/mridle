@@ -75,9 +75,9 @@ daily_idle_stats:
       - end
   layer: reporting
 
-daily_idle_buffer_active_percentages_plot:
+monthly_idle_buffer_active_percentages_plot:
   type: mridle.extras.datasets.altair_dataset.AltairDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dicom/daily_idle_buffer_active_percentages_plot.html
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dicom/monthly_idle_buffer_active_percentages_plot.html
   layer: reporting
 
 full_zebra:
