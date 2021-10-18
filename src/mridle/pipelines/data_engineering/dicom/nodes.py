@@ -199,7 +199,7 @@ def generate_idle_time_stats(appts_and_gaps: pd.DataFrame) -> (pd.DataFrame, pd.
     monthly_idle_stats = calc_idle_time_stats(appts_and_gaps, agg_freq='month')
     yearly_idle_stats = calc_idle_time_stats(appts_and_gaps, agg_freq='year')
 
-    return appts_and_gaps, daily_idle_stats, monthly_idle_stats, yearly_idle_stats
+    return daily_idle_stats, monthly_idle_stats, yearly_idle_stats
 
 
 def generate_zebra_plots(appts_and_gaps: pd.DataFrame) -> (alt.Chart, alt.Chart):
