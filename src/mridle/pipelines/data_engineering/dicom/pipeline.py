@@ -1,7 +1,7 @@
 from kedro.pipeline import Pipeline, node
 from .nodes import preprocess_dicom_data, aggregate_dicom_images, integrate_dicom_data, generate_idle_time_stats, \
-    aggregate_terminplanner, generate_zebra_plots, subset_valid_appts, fill_in_terminplanner_gaps,\
-    plot_idle_buffer_active_percentages
+    aggregate_terminplanner, subset_valid_appts, fill_in_terminplanner_gaps, calc_idle_time, \
+    plot_idle_buffer_active_percentages, generate_zebra_plots
 
 
 def create_pipeline(**kwargs):
@@ -44,9 +44,15 @@ def create_pipeline(**kwargs):
                 name="fill_in_terminplanner_gaps"
             ),
             node(
-                func=generate_idle_time_stats,
+                func=calc_idle_time,
                 inputs=["dicom_times_df", "terminplanner_df"],
-                outputs=["appts_and_gaps", "daily_idle_stats", "monthly_idle_stats", "yearly_idle_stats"],
+                outputs="appts_and_gaps",
+                name="calc_idle_time"
+            ),
+            node(
+                func=generate_idle_time_stats,
+                inputs="appts_and_gaps",
+                outputs=["daily_idle_stats", "monthly_idle_stats", "yearly_idle_stats"],
                 name="generate_idle_time_stats"
             ),
             node(

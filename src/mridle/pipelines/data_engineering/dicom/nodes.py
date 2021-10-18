@@ -168,25 +168,36 @@ def fill_in_terminplanner_gaps(terminplanner_aggregated_df: pd.DataFrame) -> pd.
     return terminplanner_df
 
 
-def generate_idle_time_stats(dicom_times_df: pd.DataFrame, terminplanner_aggregated_df: pd.DataFrame
-                             ) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame):
+def calc_idle_time(dicom_times_df: pd.DataFrame, terminplanner_aggregated_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Function to generate two datasets based off the cleaned Dicom data. Both datasets which are created are
-    explained in more detail in the relevant function docstrings
+    Calculate the idle time based on the dicom image data (when the machines are active) and the terminplanner (when the
+     machines are available for use).
 
     Args:
         dicom_times_df: Dicom extract aggregated to AccessionNumber/appointment level (resulting from
         the aggregate_dicom_images() function)
         terminplanner_aggregated_df: Aggregated terminplanner data (resulting from the agg_terminplanner() function)
 
-    Returns:
-        Four datasets which are later used for calculating metrics and plotting
+    Returns: a dataframe that has one row per appointment and one row per idle gap between appointments.
     """
     idle_df = calc_idle_time_gaps(dicom_times_df, terminplanner_aggregated_df, time_buffer_mins=5)
     appts_and_gaps = calc_appts_and_gaps(idle_df)
+    return appts_and_gaps
+
+
+def generate_idle_time_stats(appts_and_gaps: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
+    """
+    Calculate summaries of idle time at the daily, monthly, and annual level.
+
+    Args:
+        appts_and_gaps: a dataframe that has one row per appointment and one row per idle gap between appointments.
+
+    Returns:
+        Three datasets summarizing the idle time at the daily, monthly, and yearly level
+    """
     daily_idle_stats = calc_idle_time_stats(appts_and_gaps, agg_freq='date')
-    monthly_idle_stats = calc_idle_time_stats(appts_and_gaps, agg_freq='monthly')
-    yearly_idle_stats = calc_idle_time_stats(appts_and_gaps, agg_freq='yearly')
+    monthly_idle_stats = calc_idle_time_stats(appts_and_gaps, agg_freq='month')
+    yearly_idle_stats = calc_idle_time_stats(appts_and_gaps, agg_freq='year')
 
     return appts_and_gaps, daily_idle_stats, monthly_idle_stats, yearly_idle_stats
 
