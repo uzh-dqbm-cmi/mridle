@@ -46,12 +46,12 @@ def create_pipeline(**kwargs):
             node(
                 func=generate_idle_time_stats,
                 inputs=["dicom_times_df", "terminplanner_df"],
-                outputs=["appts_and_gaps", "daily_idle_stats"],
+                outputs=["appts_and_gaps", "daily_idle_stats", "monthly_idle_stats", "yearly_idle_stats"],
                 name="generate_idle_time_stats"
             ),
             node(
                 func=plot_idle_buffer_active_percentages,
-                inputs="daily_idle_stats",
+                inputs="monthly_idle_stats",
                 outputs="monthly_idle_buffer_active_percentages_plot",
                 name="plot_idle_buffer_active_percentages"
             ),

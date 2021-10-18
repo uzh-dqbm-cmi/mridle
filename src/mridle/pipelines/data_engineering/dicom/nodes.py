@@ -168,8 +168,8 @@ def fill_in_terminplanner_gaps(terminplanner_aggregated_df: pd.DataFrame) -> pd.
     return terminplanner_df
 
 
-def generate_idle_time_stats(dicom_times_df: pd.DataFrame, terminplanner_aggregated_df: pd.DataFrame) -> (pd.DataFrame,
-                                                                                                          pd.DataFrame):
+def generate_idle_time_stats(dicom_times_df: pd.DataFrame, terminplanner_aggregated_df: pd.DataFrame
+                             ) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame):
     """
     Function to generate two datasets based off the cleaned Dicom data. Both datasets which are created are
     explained in more detail in the relevant function docstrings
@@ -180,13 +180,15 @@ def generate_idle_time_stats(dicom_times_df: pd.DataFrame, terminplanner_aggrega
         terminplanner_aggregated_df: Aggregated terminplanner data (resulting from the agg_terminplanner() function)
 
     Returns:
-        Two datasets which are later used for calculating metrics and plotting
+        Four datasets which are later used for calculating metrics and plotting
     """
     idle_df = calc_idle_time_gaps(dicom_times_df, terminplanner_aggregated_df, time_buffer_mins=5)
     appts_and_gaps = calc_appts_and_gaps(idle_df)
-    daily_idle_stats = calc_daily_idle_time_stats(appts_and_gaps)
+    daily_idle_stats = calc_idle_time_stats(appts_and_gaps, agg_freq='daily')
+    monthly_idle_stats = calc_idle_time_stats(appts_and_gaps, agg_freq='monthly')
+    yearly_idle_stats = calc_idle_time_stats(appts_and_gaps, agg_freq='yearly')
 
-    return appts_and_gaps, daily_idle_stats
+    return appts_and_gaps, daily_idle_stats, monthly_idle_stats, yearly_idle_stats
 
 
 def generate_zebra_plots(appts_and_gaps: pd.DataFrame) -> (alt.Chart, alt.Chart):
@@ -214,14 +216,13 @@ def generate_zebra_plots(appts_and_gaps: pd.DataFrame) -> (alt.Chart, alt.Chart)
     return full_zebra, one_week_zebra
 
 
-def plot_idle_buffer_active_percentages(daily_idle_stats: pd.DataFrame, plot_freq: str = 'monthly',
-                                        use_percentage: bool = True) -> alt.Chart:
+def plot_idle_buffer_active_percentages(idle_stats: pd.DataFrame, use_percentage: bool = True) -> alt.Chart:
     """
     Plot the total hours spent active and idle for each day.
 
     Args:
-        daily_idle_stats: result of `calc_daily_idle_time_stats`.
-        plot_freq: the unit of the time x axis to plot (daily or monthly).
+        idle_stats: result of `calc_daily_idle_time_stats`. Must contain a date column with name from ['date', 'month',
+         or 'year'].
         use_percentage: boolean indicating whether to plot the y-axis as a percentage of the total day, or using
          absolute time (hours).
 
@@ -236,26 +237,27 @@ def plot_idle_buffer_active_percentages(daily_idle_stats: pd.DataFrame, plot_fre
         val_vars = ['active', 'idle', 'buffer']
         y_label = "Hours"
 
-    if plot_freq not in ['daily', 'monthly']:
-        raise ValueError(f"`plot_freq` must be either 'daily' or 'monthly'' received {plot_freq}")
+    date_col_options = ['date', 'month', 'year']
+    for option in date_col_options:
+        if option in idle_stats.columns:
+            x_axis_col = option
+            break
+    else:
+        raise ValueError("No date col recognized in `idle_stats`; must contains one of the following: 'date', 'month',"
+                         " or 'year'")
 
-    daily_between_times_melted = pd.melt(daily_idle_stats, id_vars=['date', 'image_device_id'],
-                                         value_vars=val_vars, var_name='Machine Status',
-                                         value_name='hours')
+    idle_stats_melted = pd.melt(idle_stats, id_vars=['date', 'image_device_id'], value_vars=val_vars,
+                                var_name='Machine Status', value_name='hours')
 
-    daily_between_times_melted["Machine Status"].replace(
+    idle_stats_melted["Machine Status"].replace(
         {val_vars[0]: 'Active', val_vars[1]: 'Idle', val_vars[2]: 'Buffer'}, inplace=True)
 
     domain = ['Active', 'Idle', 'Buffer']
     range_ = ['#0065af', '#fe8126', '#fda96b']
 
-    if plot_freq == 'daily':
-        plot_df = daily_between_times_melted
-    else:
-        plot_df = daily_between_times_melted
-
-    return_chart = alt.Chart(plot_df).mark_bar().encode(
-        x=alt.X("date", axis=alt.Axis(title="Date")),
+    alt.data_transformers.disable_max_rows()
+    return_chart = alt.Chart(idle_stats_melted).mark_bar().encode(
+        x=alt.X(x_axis_col, axis=alt.Axis(title="Date")),
         y=alt.Y('hours', axis=alt.Axis(title=y_label), scale=alt.Scale(domain=[0, 1])),
         color=alt.Color('Machine Status:N', scale=alt.Scale(domain=domain, range=range_)),
         tooltip=['date', 'hours'],
@@ -683,39 +685,51 @@ def add_buffer_cols(appt_row: pd.Series) -> pd.Series:
     return appt_row
 
 
-def calc_daily_idle_time_stats(appts_and_gaps: pd.DataFrame) -> pd.DataFrame:
+def calc_idle_time_stats(appts_and_gaps: pd.DataFrame, agg_freq: str = 'date') -> pd.DataFrame:
     """
     Transform a row-per-appointment dataframe into a row-per-day dataframe showing active and idle time per day.
+
     Args:
         appts_and_gaps: resulting df from calc_appts_and_gaps()
-    Returns: Dataframe with columns ['date', 'image_device_id', 'idle' (float hours), 'buffer' (float hours),
-     'start' (time of start of the day), 'end' (time of end of the day), 'total_day_time' (float hours),
+        agg_freq: The frequency at which to aggregate the statistics. May be 'date', 'month', or 'year'.
+
+    Returns: Dataframe with columns [<agg_freq>', 'image_device_id', 'idle' (float hours), 'buffer' (float hours),
+     'start' (time of start of the day), 'end' (time of end of the day), 'total_time' (float hours),
      active' (float hours), 'active_pct', 'idle_pct', 'buffer_pct']
 
     """
+    if agg_freq not in ['day', 'month', 'year']:
+        raise ValueError(f"Invalid `agg_freq` '{agg_freq}'; Must be 'date' or 'month' or 'year'")
+
     appts_and_gaps_copy = appts_and_gaps.copy()
-    daily_stats = appts_and_gaps_copy.groupby(['date', 'image_device_id', 'status']).agg({
+
+    if agg_freq == 'month':
+        appts_and_gaps_copy['month'] = appts_and_gaps_copy['date'].dt.to_period('M').dt.to_timestamp()
+    elif agg_freq == 'year':
+        appts_and_gaps_copy['year'] = appts_and_gaps_copy['date'].dt.year
+
+    daily_stats = appts_and_gaps_copy.groupby([agg_freq, 'image_device_id', 'status']).agg({
         'status_duration': 'sum'
     }).reset_index()
 
     one_hour = pd.to_timedelta(1, unit='H')
 
-    total_day_times = appts_and_gaps_copy.groupby(['date', 'image_device_id']).agg({
+    agg_times = appts_and_gaps_copy.groupby([agg_freq, 'image_device_id']).agg({
         'start': 'min',
         'end': 'max'
     }).reset_index()
 
-    total_day_times['total_day_time'] = (total_day_times['end'] - total_day_times['start']) / one_hour
+    agg_times['total_time'] = (agg_times['end'] - agg_times['start']) / one_hour
 
     stats = daily_stats.pivot_table(columns='status', values='status_duration',
-                                    index=['date', 'image_device_id']).reset_index()
-    stats = stats.merge(total_day_times, on=['date', 'image_device_id'])
+                                    index=[agg_freq, 'image_device_id']).reset_index()
+    stats = stats.merge(agg_times, on=[agg_freq, 'image_device_id'])
 
     # We calculate active time this way as there might be overlaps in appts, so we don't want to doublecount
-    stats['active'] = stats['total_day_time'] - stats['buffer'] - stats['idle']
-    stats['active_pct'] = stats['active'] / stats['total_day_time']
-    stats['buffer_pct'] = stats['buffer'] / stats['total_day_time']
-    stats['idle_pct'] = stats['idle'] / stats['total_day_time']
+    stats['active'] = stats['total_time'] - stats['buffer'] - stats['idle']
+    stats['active_pct'] = stats['active'] / stats['total_time']
+    stats['buffer_pct'] = stats['buffer'] / stats['total_time']
+    stats['idle_pct'] = stats['idle'] / stats['total_time']
 
     return stats
 
