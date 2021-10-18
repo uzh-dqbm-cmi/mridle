@@ -257,7 +257,7 @@ def plot_idle_buffer_active_percentages(idle_stats: pd.DataFrame, use_percentage
         raise ValueError("No date col recognized in `idle_stats`; must contains one of the following: 'date', 'month',"
                          " or 'year'")
 
-    idle_stats_melted = pd.melt(idle_stats, id_vars=['date', 'image_device_id'], value_vars=val_vars,
+    idle_stats_melted = pd.melt(idle_stats, id_vars=[x_axis_col, 'image_device_id'], value_vars=val_vars,
                                 var_name='Machine Status', value_name='hours')
 
     idle_stats_melted["Machine Status"].replace(
@@ -268,10 +268,10 @@ def plot_idle_buffer_active_percentages(idle_stats: pd.DataFrame, use_percentage
 
     alt.data_transformers.disable_max_rows()
     return_chart = alt.Chart(idle_stats_melted).mark_bar().encode(
-        x=alt.X(x_axis_col, axis=alt.Axis(title="Date")),
+        x=alt.X(x_axis_col, axis=alt.Axis(title=x_axis_col.upper())),
         y=alt.Y('hours', axis=alt.Axis(title=y_label), scale=alt.Scale(domain=[0, 1])),
         color=alt.Color('Machine Status:N', scale=alt.Scale(domain=domain, range=range_)),
-        tooltip=['date', 'hours'],
+        tooltip=[x_axis_col, 'hours'],
     ).properties(
         width=1000
     ).facet(
