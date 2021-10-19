@@ -720,13 +720,12 @@ def calc_daily_idle_time_stats(appts_and_gaps: pd.DataFrame) -> pd.DataFrame:
     Args:
         appts_and_gaps: resulting df from calc_appts_and_gaps()
 
-    Returns: Dataframe with columns [<agg_freq>', 'image_device_id', 'idle' (float hours), 'buffer' (float hours),
+    Returns: Dataframe with columns ['date', 'image_device_id', 'idle' (float hours), 'buffer' (float hours),
      'start' (time of start of the day), 'end' (time of end of the day), 'total_time' (float hours),
      active' (float hours), 'active_pct', 'idle_pct', 'buffer_pct']
 
     """
     appts_and_gaps_copy = appts_and_gaps.copy()
-
     daily_stats = appts_and_gaps_copy.groupby(['date', 'image_device_id', 'status']).agg({
         'status_duration': 'sum'
     }).reset_index()
