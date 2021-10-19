@@ -278,6 +278,13 @@ def plot_idle_buffer_active_percentages(idle_stats: pd.DataFrame, use_percentage
         raise ValueError("No date col recognized in `idle_stats`; must contains one of the following: 'date', 'month',"
                          " or 'year'")
 
+    x_axis_formats = {
+        'date': f"yearmonthdate({option})",
+        'month': f"yearmonth({option})",
+        'year': f"year({option})",
+    }
+    x_axis_format = x_axis_formats[option]
+
     idle_stats_melted = pd.melt(idle_stats, id_vars=[x_axis_col, 'image_device_id'], value_vars=val_vars,
                                 var_name='Machine Status', value_name='hours')
 
@@ -289,14 +296,12 @@ def plot_idle_buffer_active_percentages(idle_stats: pd.DataFrame, use_percentage
 
     alt.data_transformers.disable_max_rows()
     return_chart = alt.Chart(idle_stats_melted).mark_bar().encode(
-        x=alt.X(x_axis_col, axis=alt.Axis(title=x_axis_col.upper())),
+        x=alt.X(x_axis_format, axis=alt.Axis(title=x_axis_col.capitalize())),
         y=alt.Y('hours', axis=alt.Axis(title=y_label), scale=alt.Scale(domain=[0, 1])),
         color=alt.Color('Machine Status:N', scale=alt.Scale(domain=domain, range=range_)),
         tooltip=[x_axis_col, 'hours'],
-    ).properties(
-        width=1000
     ).facet(
-        column=alt.Row("image_device_id:N")
+        row=alt.Row("image_device_id:N")
     )
 
     return_chart = return_chart.configure_legend(
@@ -746,6 +751,9 @@ def calc_daily_idle_time_stats(appts_and_gaps: pd.DataFrame) -> pd.DataFrame:
     stats = daily_stats.pivot_table(columns='status', values='status_duration', index=['date', 'image_device_id']
                                     ).reset_index()
     stats = stats.merge(total_day_times, on=['date', 'image_device_id'])
+
+    # cap the total_time to a max of 24 hours in case of outlier data
+    stats['total_time'] = np.where(stats['total_time'] > 24, 24, stats['total_time'])
 
     # We calculate active time this way as there might be overlaps in appts, so we don't want to doublecount
     stats['active'] = stats['total_time'] - stats['buffer'] - stats['idle']
