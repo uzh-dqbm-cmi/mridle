@@ -195,9 +195,26 @@ def generate_idle_time_stats(appts_and_gaps: pd.DataFrame) -> (pd.DataFrame, pd.
     Returns:
         Three datasets summarizing the idle time at the daily, monthly, and yearly level
     """
-    daily_idle_stats = calc_idle_time_stats(appts_and_gaps, agg_freq='date')
-    monthly_idle_stats = calc_idle_time_stats(appts_and_gaps, agg_freq='month')
-    yearly_idle_stats = calc_idle_time_stats(appts_and_gaps, agg_freq='year')
+    daily_idle_stats = calc_daily_idle_time_stats(appts_and_gaps)
+
+    monthly_idle_stats = daily_idle_stats.copy()
+    monthly_idle_stats['month'] = monthly_idle_stats['date'].dt.to_period('M').dt.to_timestamp()
+
+    yearly_idle_stats = daily_idle_stats.copy()
+    yearly_idle_stats['year'] = yearly_idle_stats['date'].dt.year
+
+    agg_dict = {
+        'active': 'sum',
+        'butter': 'sum',
+        'idle': 'sum',
+        'total_time': 'sum',
+    }
+
+    for col, df in [('month', monthly_idle_stats), ('year', yearly_idle_stats)]:
+        df = df.groupby([col, 'image_device_id']).agg(agg_dict)
+        df['active_pct'] = df['active'] / df['total_time']
+        df['buffer_pct'] = df['buffer'] / df['total_time']
+        df['idle_pct'] = df['idle'] / df['total_time']
 
     return daily_idle_stats, monthly_idle_stats, yearly_idle_stats
 
@@ -696,45 +713,36 @@ def add_buffer_cols(appt_row: pd.Series) -> pd.Series:
     return appt_row
 
 
-def calc_idle_time_stats(appts_and_gaps: pd.DataFrame, agg_freq: str = 'date') -> pd.DataFrame:
+def calc_daily_idle_time_stats(appts_and_gaps: pd.DataFrame) -> pd.DataFrame:
     """
     Transform a row-per-appointment dataframe into a row-per-day dataframe showing active and idle time per day.
 
     Args:
         appts_and_gaps: resulting df from calc_appts_and_gaps()
-        agg_freq: The frequency at which to aggregate the statistics. May be 'date', 'month', or 'year'.
 
     Returns: Dataframe with columns [<agg_freq>', 'image_device_id', 'idle' (float hours), 'buffer' (float hours),
      'start' (time of start of the day), 'end' (time of end of the day), 'total_time' (float hours),
      active' (float hours), 'active_pct', 'idle_pct', 'buffer_pct']
 
     """
-    if agg_freq not in ['date', 'month', 'year']:
-        raise ValueError(f"Invalid `agg_freq` '{agg_freq}'; Must be 'date' or 'month' or 'year'")
-
     appts_and_gaps_copy = appts_and_gaps.copy()
 
-    if agg_freq == 'month':
-        appts_and_gaps_copy['month'] = appts_and_gaps_copy['date'].dt.to_period('M').dt.to_timestamp()
-    elif agg_freq == 'year':
-        appts_and_gaps_copy['year'] = appts_and_gaps_copy['date'].dt.year
-
-    daily_stats = appts_and_gaps_copy.groupby([agg_freq, 'image_device_id', 'status']).agg({
+    daily_stats = appts_and_gaps_copy.groupby(['date', 'image_device_id', 'status']).agg({
         'status_duration': 'sum'
     }).reset_index()
 
     one_hour = pd.to_timedelta(1, unit='H')
 
-    agg_times = appts_and_gaps_copy.groupby([agg_freq, 'image_device_id']).agg({
+    total_day_times = appts_and_gaps_copy.groupby(['date', 'image_device_id']).agg({
         'start': 'min',
         'end': 'max'
     }).reset_index()
 
-    agg_times['total_time'] = (agg_times['end'] - agg_times['start']) / one_hour
+    total_day_times['total_time'] = (total_day_times['end'] - total_day_times['start']) / one_hour
 
-    stats = daily_stats.pivot_table(columns='status', values='status_duration',
-                                    index=[agg_freq, 'image_device_id']).reset_index()
-    stats = stats.merge(agg_times, on=[agg_freq, 'image_device_id'])
+    stats = daily_stats.pivot_table(columns='status', values='status_duration', index=['date', 'image_device_id']
+                                    ).reset_index()
+    stats = stats.merge(total_day_times, on=['date', 'image_device_id'])
 
     # We calculate active time this way as there might be overlaps in appts, so we don't want to doublecount
     stats['active'] = stats['total_time'] - stats['buffer'] - stats['idle']
