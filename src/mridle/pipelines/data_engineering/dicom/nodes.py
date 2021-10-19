@@ -210,12 +210,12 @@ def generate_idle_time_stats(appts_and_gaps: pd.DataFrame) -> (pd.DataFrame, pd.
         'total_time': 'sum',
     }
 
-    monthly_idle_stats = monthly_idle_stats.groupby(['month', 'image_device_id']).agg(agg_dict)
+    monthly_idle_stats = monthly_idle_stats.groupby(['month', 'image_device_id']).agg(agg_dict).reset_index()
     monthly_idle_stats['active_pct'] = monthly_idle_stats['active'] / monthly_idle_stats['total_time']
     monthly_idle_stats['buffer_pct'] = monthly_idle_stats['buffer'] / monthly_idle_stats['total_time']
     monthly_idle_stats['idle_pct'] = monthly_idle_stats['idle'] / monthly_idle_stats['total_time']
 
-    yearly_idle_stats = yearly_idle_stats.groupby(['year', 'image_device_id']).agg(agg_dict)
+    yearly_idle_stats = yearly_idle_stats.groupby(['year', 'image_device_id']).agg(agg_dict).reset_index()
     yearly_idle_stats['active_pct'] = yearly_idle_stats['active'] / yearly_idle_stats['total_time']
     yearly_idle_stats['buffer_pct'] = yearly_idle_stats['buffer'] / yearly_idle_stats['total_time']
     yearly_idle_stats['idle_pct'] = yearly_idle_stats['idle'] / yearly_idle_stats['total_time']
