@@ -82,17 +82,11 @@ monthly_idle_stats:
   load_args:
     parse_dates:
       - month
-      - start
-      - end
   layer: reporting
 
 yearly_idle_stats:
   type: pandas.CSVDataSet
   filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dicom/yearly_idle_stats.csv
-  load_args:
-    parse_dates:
-      - start
-      - end
   layer: reporting
 
 monthly_idle_buffer_active_percentages_plot:
