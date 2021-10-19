@@ -148,6 +148,8 @@ def fill_in_terminplanner_gaps(terminplanner_aggregated_df: pd.DataFrame) -> pd.
     """
     terminplanner_df = terminplanner_aggregated_df.copy()
 
+    terminplanner_df
+
     new_rows = pd.DataFrame(
         [[1, 'Monday', 'MR1 IDR (Montag)', '17.05.2020', '01.01.2055', datetime.time(7, 0), datetime.time(18, 0), 660],
          [2, 'Monday', 'MR2 IDR (Montag)', '17.05.2020', '01.01.2055', datetime.time(7, 0), datetime.time(18, 0), 660],
