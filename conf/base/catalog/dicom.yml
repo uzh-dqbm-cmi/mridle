@@ -71,6 +71,7 @@ daily_idle_stats:
   filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dicom/daily_idle_stats.csv
   load_args:
     parse_dates:
+      - date
       - start
       - end
   layer: reporting
@@ -80,6 +81,7 @@ monthly_idle_stats:
   filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dicom/monthly_idle_stats.csv
   load_args:
     parse_dates:
+      - month
       - start
       - end
   layer: reporting
