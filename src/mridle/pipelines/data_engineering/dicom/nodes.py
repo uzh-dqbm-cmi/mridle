@@ -205,7 +205,7 @@ def generate_idle_time_stats(appts_and_gaps: pd.DataFrame) -> (pd.DataFrame, pd.
 
     agg_dict = {
         'active': 'sum',
-        'butter': 'sum',
+        'buffer': 'sum',
         'idle': 'sum',
         'total_time': 'sum',
     }
