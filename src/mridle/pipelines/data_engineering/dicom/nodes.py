@@ -147,6 +147,13 @@ def fill_in_terminplanner_gaps(terminplanner_aggregated_df: pd.DataFrame) -> pd.
     """
     tp = terminplanner_aggregated_df.copy()
 
+    tp['applicable_from'] = pd.to_datetime(tp['applicable_from'])
+    tp['applicable_to'] = pd.to_datetime(tp['applicable_to'])
+    tp['rank'] = tp[['image_device_id', 'day_of_week', 'TERMINRASTER_NAME', 'applicable_from']].groupby(
+        ['image_device_id', 'day_of_week', 'TERMINRASTER_NAME']).rank()
+    tp['rank_rev'] = tp[['image_device_id', 'day_of_week', 'TERMINRASTER_NAME', 'applicable_from']].groupby(
+        ['image_device_id', 'day_of_week', 'TERMINRASTER_NAME']).rank(ascending=False)
+
     new_rows_begin = tp[tp['rank'] == 1].copy()
     new_rows_begin['applicable_to'] = new_rows_begin['applicable_from'] - datetime.timedelta(days=1)
     new_rows_begin['applicable_from'] = datetime.datetime(year=2014, month=1, day=1)
@@ -154,7 +161,7 @@ def fill_in_terminplanner_gaps(terminplanner_aggregated_df: pd.DataFrame) -> pd.
     new_rows_end = tp[
         (tp['rank_rev'] == 1) & (tp['applicable_to'] < datetime.datetime(year=2022, month=12, day=31))].copy()
     new_rows_end['applicable_from'] = new_rows_end['applicable_to'] + datetime.timedelta(days=1)
-    new_rows_end['applicable_to'] = datetime.datetime(year=2022, month=12, day=31)
+    new_rows_end['applicable_to'] = datetime.datetime(year=datetime.datetime.now().year + 3, month=12, day=31)
 
     terminplanner_df = pd.concat([tp, new_rows_begin, new_rows_end], axis=0).sort_values(
         ['TERMINRASTER_NAME', 'applicable_from'])
