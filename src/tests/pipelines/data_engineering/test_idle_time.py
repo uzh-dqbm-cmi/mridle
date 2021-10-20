@@ -36,7 +36,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
             }
         ])
 
-        expected_total_day_time = 2.0
+        expected_total_time = 2.0
         expected_active_time = 35
         expected_buffer_time = 10
         expected_idle_time = 75
@@ -44,13 +44,13 @@ class TestTerminplannerAggregation(unittest.TestCase):
         expected = pd.DataFrame([{
             'date': day(num_days_from_start=6, hour=0),
             'image_device_id': 1,
-            'total_day_time': expected_total_day_time,  # hours
+            'total_time': expected_total_time,  # hours
             'active': expected_active_time / 60,  # fraction of hours
             'idle': expected_idle_time / 60,  # fraction of hours
             'buffer': expected_buffer_time / 60,  # fraction of hours
-            'active_pct': (expected_active_time / 60) / expected_total_day_time,
-            'idle_pct': (expected_idle_time / 60) / expected_total_day_time,
-            'buffer_pct': (expected_buffer_time / 60) / expected_total_day_time
+            'active_pct': (expected_active_time / 60) / expected_total_time,
+            'idle_pct': (expected_idle_time / 60) / expected_total_time,
+            'buffer_pct': (expected_buffer_time / 60) / expected_total_time
         }])
 
         tp_agg = aggregate_terminplanner(terminplanner_dummy)
@@ -59,7 +59,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
         appts_and_gaps = calc_appts_and_gaps(idle_df)
 
         stats = calc_daily_idle_time_stats(appts_and_gaps)
-        result = stats[['date', 'image_device_id', 'total_day_time', 'active', 'idle', 'buffer',
+        result = stats[['date', 'image_device_id', 'total_time', 'active', 'idle', 'buffer',
                         'active_pct', 'idle_pct', 'buffer_pct']]
         pd.testing.assert_frame_equal(result, expected, check_like=True)
 
@@ -92,7 +92,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
             }
         ])
 
-        expected_total_day_time = 2.0
+        expected_total_time = 2.0
         expected_active_time = 35 + 30
         expected_buffer_time = 10 + 10
         expected_idle_time = 35
@@ -100,13 +100,13 @@ class TestTerminplannerAggregation(unittest.TestCase):
         expected = pd.DataFrame([{
             'date': day(num_days_from_start=6, hour=0),
             'image_device_id': 1,
-            'total_day_time': expected_total_day_time,  # hours
+            'total_time': expected_total_time,  # hours
             'active': expected_active_time / 60,  # fraction of hours
             'idle': expected_idle_time / 60,  # fraction of hours
             'buffer': expected_buffer_time / 60,  # fraction of hours
-            'active_pct': (expected_active_time / 60) / expected_total_day_time,
-            'idle_pct': (expected_idle_time / 60) / expected_total_day_time,
-            'buffer_pct': (expected_buffer_time / 60) / expected_total_day_time
+            'active_pct': (expected_active_time / 60) / expected_total_time,
+            'idle_pct': (expected_idle_time / 60) / expected_total_time,
+            'buffer_pct': (expected_buffer_time / 60) / expected_total_time
         }])
 
         tp_agg = aggregate_terminplanner(terminplanner_dummy)
@@ -115,7 +115,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
         appts_and_gaps = calc_appts_and_gaps(idle_df)
 
         stats = calc_daily_idle_time_stats(appts_and_gaps)
-        result = stats[['date', 'image_device_id', 'total_day_time', 'active', 'idle', 'buffer',
+        result = stats[['date', 'image_device_id', 'total_time', 'active', 'idle', 'buffer',
                         'active_pct', 'idle_pct', 'buffer_pct']]
 
         pd.testing.assert_frame_equal(result, expected, check_like=True)
@@ -165,12 +165,12 @@ class TestTerminplannerAggregation(unittest.TestCase):
             }
         ])
 
-        expected_total_day_time1 = 2.0
+        expected_total_time1 = 2.0
         expected_active_time1 = 35 + 30
         expected_buffer_time1 = 10 + 10
         expected_idle_time1 = 25 + 5 + 5
 
-        expected_total_day_time2 = 1.0
+        expected_total_time2 = 1.0
         expected_active_time2 = 25
         expected_buffer_time2 = 10
         expected_idle_time2 = 25
@@ -178,24 +178,24 @@ class TestTerminplannerAggregation(unittest.TestCase):
         expected = pd.DataFrame([{
             'date': day(num_days_from_start=6, hour=0),
             'image_device_id': 1,
-            'total_day_time': expected_total_day_time1,  # hours
+            'total_time': expected_total_time1,  # hours
             'active': expected_active_time1 / 60,  # fraction of hours
             'idle': expected_idle_time1 / 60,  # fraction of hours
             'buffer': expected_buffer_time1 / 60,  # fraction of hours
-            'active_pct': (expected_active_time1 / 60) / expected_total_day_time1,
-            'idle_pct': (expected_idle_time1 / 60) / expected_total_day_time1,
-            'buffer_pct': (expected_buffer_time1 / 60) / expected_total_day_time1
+            'active_pct': (expected_active_time1 / 60) / expected_total_time1,
+            'idle_pct': (expected_idle_time1 / 60) / expected_total_time1,
+            'buffer_pct': (expected_buffer_time1 / 60) / expected_total_time1
             },
             {
             'date': day(num_days_from_start=6, hour=0),
             'image_device_id': 2,
-            'total_day_time': expected_total_day_time2,  # hours
+            'total_time': expected_total_time2,  # hours
             'active': expected_active_time2 / 60,  # fraction of hours
             'idle': expected_idle_time2 / 60,  # fraction of hours
             'buffer': expected_buffer_time2 / 60,  # fraction of hours
-            'active_pct': (expected_active_time2 / 60) / expected_total_day_time2,
-            'idle_pct': (expected_idle_time2 / 60) / expected_total_day_time2,
-            'buffer_pct': (expected_buffer_time2 / 60) / expected_total_day_time2
+            'active_pct': (expected_active_time2 / 60) / expected_total_time2,
+            'idle_pct': (expected_idle_time2 / 60) / expected_total_time2,
+            'buffer_pct': (expected_buffer_time2 / 60) / expected_total_time2
             }
         ])
 
@@ -205,7 +205,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
         appts_and_gaps = calc_appts_and_gaps(idle_df)
 
         stats = calc_daily_idle_time_stats(appts_and_gaps)
-        result = stats[['date', 'image_device_id', 'total_day_time', 'active', 'idle', 'buffer',
+        result = stats[['date', 'image_device_id', 'total_time', 'active', 'idle', 'buffer',
                         'active_pct', 'idle_pct', 'buffer_pct']]
         pd.testing.assert_frame_equal(result, expected, check_like=True)
 
@@ -245,7 +245,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
             }
         ])
 
-        expected_total_day_time1 = 2.0
+        expected_total_time1 = 2.0
         expected_active_time1 = 80
         expected_buffer_time1 = 20
         expected_idle_time1 = 20
@@ -253,13 +253,13 @@ class TestTerminplannerAggregation(unittest.TestCase):
         expected = pd.DataFrame([{
             'date': day(num_days_from_start=6, hour=0),
             'image_device_id': 1,
-            'total_day_time': expected_total_day_time1,  # hours
+            'total_time': expected_total_time1,  # hours
             'active': expected_active_time1 / 60,  # fraction of hours
             'idle': expected_idle_time1 / 60,  # fraction of hours
             'buffer': expected_buffer_time1 / 60,  # fraction of hours
-            'active_pct': (expected_active_time1 / 60) / expected_total_day_time1,
-            'idle_pct': (expected_idle_time1 / 60) / expected_total_day_time1,
-            'buffer_pct': (expected_buffer_time1 / 60) / expected_total_day_time1
+            'active_pct': (expected_active_time1 / 60) / expected_total_time1,
+            'idle_pct': (expected_idle_time1 / 60) / expected_total_time1,
+            'buffer_pct': (expected_buffer_time1 / 60) / expected_total_time1
         }
         ])
 
@@ -269,7 +269,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
         appts_and_gaps = calc_appts_and_gaps(idle_df)
 
         stats = calc_daily_idle_time_stats(appts_and_gaps)
-        result = stats[['date', 'image_device_id', 'total_day_time', 'active', 'idle', 'buffer',
+        result = stats[['date', 'image_device_id', 'total_time', 'active', 'idle', 'buffer',
                         'active_pct', 'idle_pct', 'buffer_pct']]
         pd.testing.assert_frame_equal(result, expected, check_like=True)
 
@@ -302,7 +302,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
             }
         ])
 
-        expected_total_day_time1 = 2.0
+        expected_total_time1 = 2.0
         expected_active_time1 = 55
         expected_buffer_time1 = 10
         expected_idle_time1 = 55
@@ -310,13 +310,13 @@ class TestTerminplannerAggregation(unittest.TestCase):
         expected = pd.DataFrame([{
             'date': day(num_days_from_start=6, hour=0),
             'image_device_id': 1,
-            'total_day_time': expected_total_day_time1,  # hours
+            'total_time': expected_total_time1,  # hours
             'active': expected_active_time1 / 60,  # fraction of hours
             'idle': expected_idle_time1 / 60,  # fraction of hours
             'buffer': expected_buffer_time1 / 60,  # fraction of hours
-            'active_pct': (expected_active_time1 / 60) / expected_total_day_time1,
-            'idle_pct': (expected_idle_time1 / 60) / expected_total_day_time1,
-            'buffer_pct': (expected_buffer_time1 / 60) / expected_total_day_time1
+            'active_pct': (expected_active_time1 / 60) / expected_total_time1,
+            'idle_pct': (expected_idle_time1 / 60) / expected_total_time1,
+            'buffer_pct': (expected_buffer_time1 / 60) / expected_total_time1
         }
         ])
 
@@ -326,7 +326,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
         appts_and_gaps = calc_appts_and_gaps(idle_df)
 
         stats = calc_daily_idle_time_stats(appts_and_gaps)
-        result = stats[['date', 'image_device_id', 'total_day_time', 'active', 'idle', 'buffer',
+        result = stats[['date', 'image_device_id', 'total_time', 'active', 'idle', 'buffer',
                         'active_pct', 'idle_pct', 'buffer_pct']]
         pd.testing.assert_frame_equal(result, expected, check_like=True)
 
@@ -359,20 +359,20 @@ class TestTerminplannerAggregation(unittest.TestCase):
             }
         ])
 
-        expected_total_day_time1 = 2.0 + 5 / 60
+        expected_total_time1 = 2.0 + 5 / 60
         expected_active_time1 = 55
         expected_buffer_time1 = 15
         expected_idle_time1 = 55
 
         expected = pd.DataFrame([{
             'image_device_id': 1,
-            'total_day_time': expected_total_day_time1,  # hours
+            'total_time': expected_total_time1,  # hours
             'active': expected_active_time1 / 60,  # fraction of hours
             'idle': expected_idle_time1 / 60,  # fraction of hours
             'buffer': expected_buffer_time1 / 60,  # fraction of hours
-            'active_pct': (expected_active_time1 / 60) / expected_total_day_time1,
-            'idle_pct': (expected_idle_time1 / 60) / expected_total_day_time1,
-            'buffer_pct': (expected_buffer_time1 / 60) / expected_total_day_time1
+            'active_pct': (expected_active_time1 / 60) / expected_total_time1,
+            'idle_pct': (expected_idle_time1 / 60) / expected_total_time1,
+            'buffer_pct': (expected_buffer_time1 / 60) / expected_total_time1
         }
         ])
 
@@ -385,7 +385,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
         stats = calc_daily_idle_time_stats(appts_and_gaps)
 
         result = stats[
-            ['image_device_id', 'total_day_time', 'active', 'idle', 'buffer', 'active_pct', 'idle_pct', 'buffer_pct']]
+            ['image_device_id', 'total_time', 'active', 'idle', 'buffer', 'active_pct', 'idle_pct', 'buffer_pct']]
         pd.testing.assert_frame_equal(result, expected, check_like=True)
 
     def test_appt_ending_after_day(self):
@@ -417,20 +417,20 @@ class TestTerminplannerAggregation(unittest.TestCase):
             }
         ])
 
-        expected_total_day_time1 = 2.0 + 10 / 60
+        expected_total_time1 = 2.0 + 10 / 60
         expected_active_time1 = 70
         expected_buffer_time1 = 15
         expected_idle_time1 = 45
 
         expected = pd.DataFrame([{
             'image_device_id': 1,
-            'total_day_time': expected_total_day_time1,  # hours
+            'total_time': expected_total_time1,  # hours
             'active': expected_active_time1 / 60,  # fraction of hours
             'idle': expected_idle_time1 / 60,  # fraction of hours
             'buffer': expected_buffer_time1 / 60,  # fraction of hours
-            'active_pct': (expected_active_time1 / 60) / expected_total_day_time1,
-            'idle_pct': (expected_idle_time1 / 60) / expected_total_day_time1,
-            'buffer_pct': (expected_buffer_time1 / 60) / expected_total_day_time1
+            'active_pct': (expected_active_time1 / 60) / expected_total_time1,
+            'idle_pct': (expected_idle_time1 / 60) / expected_total_time1,
+            'buffer_pct': (expected_buffer_time1 / 60) / expected_total_time1
         }
         ])
 
@@ -443,7 +443,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
         stats = calc_daily_idle_time_stats(appts_and_gaps)
 
         result = stats[
-            ['image_device_id', 'total_day_time', 'active', 'idle', 'buffer', 'active_pct', 'idle_pct', 'buffer_pct']]
+            ['image_device_id', 'total_time', 'active', 'idle', 'buffer', 'active_pct', 'idle_pct', 'buffer_pct']]
         pd.testing.assert_frame_equal(result, expected, check_like=True)
 
     def test_two_days(self):
@@ -491,12 +491,12 @@ class TestTerminplannerAggregation(unittest.TestCase):
             }
         ])
 
-        expected_total_day_time1 = 2.0
+        expected_total_time1 = 2.0
         expected_active_time1 = 35 + 30
         expected_buffer_time1 = 10 + 10
         expected_idle_time1 = 25 + 5 + 5
 
-        expected_total_day_time2 = 1.0
+        expected_total_time2 = 1.0
         expected_active_time2 = 25
         expected_buffer_time2 = 10
         expected_idle_time2 = 25
@@ -504,24 +504,24 @@ class TestTerminplannerAggregation(unittest.TestCase):
         expected = pd.DataFrame([{
             'date': day(num_days_from_start=6, hour=0),
             'image_device_id': 1,
-            'total_day_time': expected_total_day_time1,  # hours
+            'total_time': expected_total_time1,  # hours
             'active': expected_active_time1 / 60,  # fraction of hours
             'idle': expected_idle_time1 / 60,  # fraction of hours
             'buffer': expected_buffer_time1 / 60,  # fraction of hours
-            'active_pct': (expected_active_time1 / 60) / expected_total_day_time1,
-            'idle_pct': (expected_idle_time1 / 60) / expected_total_day_time1,
-            'buffer_pct': (expected_buffer_time1 / 60) / expected_total_day_time1
+            'active_pct': (expected_active_time1 / 60) / expected_total_time1,
+            'idle_pct': (expected_idle_time1 / 60) / expected_total_time1,
+            'buffer_pct': (expected_buffer_time1 / 60) / expected_total_time1
         },
             {
                 'date': day(num_days_from_start=7, hour=0),
                 'image_device_id': 1,
-                'total_day_time': expected_total_day_time2,  # hours
+                'total_time': expected_total_time2,  # hours
                 'active': expected_active_time2 / 60,  # fraction of hours
                 'idle': expected_idle_time2 / 60,  # fraction of hours
                 'buffer': expected_buffer_time2 / 60,  # fraction of hours
-                'active_pct': (expected_active_time2 / 60) / expected_total_day_time2,
-                'idle_pct': (expected_idle_time2 / 60) / expected_total_day_time2,
-                'buffer_pct': (expected_buffer_time2 / 60) / expected_total_day_time2
+                'active_pct': (expected_active_time2 / 60) / expected_total_time2,
+                'idle_pct': (expected_idle_time2 / 60) / expected_total_time2,
+                'buffer_pct': (expected_buffer_time2 / 60) / expected_total_time2
             }
         ])
 
@@ -533,7 +533,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
         stats = calc_daily_idle_time_stats(appts_and_gaps)
 
         result = stats[
-            ['date', 'image_device_id', 'total_day_time', 'active', 'idle', 'buffer', 'active_pct', 'idle_pct',
+            ['date', 'image_device_id', 'total_time', 'active', 'idle', 'buffer', 'active_pct', 'idle_pct',
              'buffer_pct']]
         pd.testing.assert_frame_equal(result, expected, check_like=True)
 
@@ -573,7 +573,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
             }
         ])
 
-        expected_total_day_time1 = 2.0 + (25 / 60)
+        expected_total_time1 = 2.0 + (25 / 60)
         expected_active_time1 = 35 + 35 + 30
         expected_buffer_time1 = 5 + 10 + 5
         expected_idle_time1 = 20 + 5
@@ -581,13 +581,13 @@ class TestTerminplannerAggregation(unittest.TestCase):
         expected = pd.DataFrame([{
             'date': day(num_days_from_start=6, hour=0),
             'image_device_id': 1,
-            'total_day_time': expected_total_day_time1,  # hours
+            'total_time': expected_total_time1,  # hours
             'active': expected_active_time1 / 60,  # fraction of hours
             'idle': expected_idle_time1 / 60,  # fraction of hours
             'buffer': expected_buffer_time1 / 60,  # fraction of hours
-            'active_pct': (expected_active_time1 / 60) / expected_total_day_time1,
-            'idle_pct': (expected_idle_time1 / 60) / expected_total_day_time1,
-            'buffer_pct': (expected_buffer_time1 / 60) / expected_total_day_time1
+            'active_pct': (expected_active_time1 / 60) / expected_total_time1,
+            'idle_pct': (expected_idle_time1 / 60) / expected_total_time1,
+            'buffer_pct': (expected_buffer_time1 / 60) / expected_total_time1
         }
         ])
 
@@ -599,7 +599,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
         stats = calc_daily_idle_time_stats(appts_and_gaps)
 
         result = stats[
-            ['date', 'image_device_id', 'total_day_time', 'active', 'idle', 'buffer', 'active_pct', 'idle_pct',
+            ['date', 'image_device_id', 'total_time', 'active', 'idle', 'buffer', 'active_pct', 'idle_pct',
              'buffer_pct']]
         pd.testing.assert_frame_equal(result, expected, check_like=True)
 
@@ -639,7 +639,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
             }
         ])
 
-        expected_total_day_time1 = 2.0 + (25 / 60)
+        expected_total_time1 = 2.0 + (25 / 60)
         expected_active_time1 = 35 + 60 + 30
         expected_buffer_time1 = 5 + 10
         expected_idle_time1 = 5
@@ -647,13 +647,13 @@ class TestTerminplannerAggregation(unittest.TestCase):
         expected = pd.DataFrame([{
             'date': day(num_days_from_start=6, hour=0),
             'image_device_id': 1,
-            'total_day_time': expected_total_day_time1,  # hours
+            'total_time': expected_total_time1,  # hours
             'active': expected_active_time1 / 60,  # fraction of hours
             'idle': expected_idle_time1 / 60,  # fraction of hours
             'buffer': expected_buffer_time1 / 60,  # fraction of hours
-            'active_pct': (expected_active_time1 / 60) / expected_total_day_time1,
-            'idle_pct': (expected_idle_time1 / 60) / expected_total_day_time1,
-            'buffer_pct': (expected_buffer_time1 / 60) / expected_total_day_time1
+            'active_pct': (expected_active_time1 / 60) / expected_total_time1,
+            'idle_pct': (expected_idle_time1 / 60) / expected_total_time1,
+            'buffer_pct': (expected_buffer_time1 / 60) / expected_total_time1
         }
         ])
 
@@ -665,7 +665,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
         stats = calc_daily_idle_time_stats(appts_and_gaps)
 
         result = stats[
-            ['date', 'image_device_id', 'total_day_time', 'active', 'idle', 'buffer', 'active_pct', 'idle_pct',
+            ['date', 'image_device_id', 'total_time', 'active', 'idle', 'buffer', 'active_pct', 'idle_pct',
              'buffer_pct']]
         pd.testing.assert_frame_equal(result, expected, check_like=True)
 
@@ -705,7 +705,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
             }
         ])
 
-        expected_total_day_time1 = 2.0 + (25 / 60)
+        expected_total_time1 = 2.0 + (25 / 60)
         expected_active_time1 = 35 + 70 - 5 + 30
         expected_buffer_time1 = 10
         expected_idle_time1 = 5
@@ -713,13 +713,13 @@ class TestTerminplannerAggregation(unittest.TestCase):
         expected = pd.DataFrame([{
             'date': day(num_days_from_start=6, hour=0),
             'image_device_id': 1,
-            'total_day_time': expected_total_day_time1,  # hours
+            'total_time': expected_total_time1,  # hours
             'active': expected_active_time1 / 60,  # fraction of hours
             'idle': expected_idle_time1 / 60,  # fraction of hours
             'buffer': expected_buffer_time1 / 60,  # fraction of hours
-            'active_pct': (expected_active_time1 / 60) / expected_total_day_time1,
-            'idle_pct': (expected_idle_time1 / 60) / expected_total_day_time1,
-            'buffer_pct': (expected_buffer_time1 / 60) / expected_total_day_time1
+            'active_pct': (expected_active_time1 / 60) / expected_total_time1,
+            'idle_pct': (expected_idle_time1 / 60) / expected_total_time1,
+            'buffer_pct': (expected_buffer_time1 / 60) / expected_total_time1
         }
         ])
 
@@ -730,7 +730,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
 
         stats = calc_daily_idle_time_stats(appts_and_gaps)
 
-        result = stats[['date', 'image_device_id', 'total_day_time', 'active', 'idle', 'buffer',
+        result = stats[['date', 'image_device_id', 'total_time', 'active', 'idle', 'buffer',
                         'active_pct', 'idle_pct', 'buffer_pct']]
         pd.testing.assert_frame_equal(result, expected, check_like=True)
 
@@ -770,7 +770,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
             }
         ])
 
-        expected_total_day_time = 2.0
+        expected_total_time = 2.0
         expected_active_time = 35 + 30
         expected_buffer_time = 10 + 10
         expected_idle_time = 35
@@ -778,13 +778,13 @@ class TestTerminplannerAggregation(unittest.TestCase):
         expected = pd.DataFrame([{
             'date': day(num_days_from_start=6, hour=0),
             'image_device_id': 1,
-            'total_day_time': expected_total_day_time,  # hours
+            'total_time': expected_total_time,  # hours
             'active': expected_active_time / 60,  # fraction of hours
             'idle': expected_idle_time / 60,  # fraction of hours
             'buffer': expected_buffer_time / 60,  # fraction of hours
-            'active_pct': (expected_active_time / 60) / expected_total_day_time,
-            'idle_pct': (expected_idle_time / 60) / expected_total_day_time,
-            'buffer_pct': (expected_buffer_time / 60) / expected_total_day_time
+            'active_pct': (expected_active_time / 60) / expected_total_time,
+            'idle_pct': (expected_idle_time / 60) / expected_total_time,
+            'buffer_pct': (expected_buffer_time / 60) / expected_total_time
         }])
 
         tp_agg = aggregate_terminplanner(terminplanner_dummy)
@@ -793,7 +793,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
         appts_and_gaps = calc_appts_and_gaps(idle_df)
 
         stats = calc_daily_idle_time_stats(appts_and_gaps)
-        result = stats[['date', 'image_device_id', 'total_day_time', 'active', 'idle', 'buffer',
+        result = stats[['date', 'image_device_id', 'total_time', 'active', 'idle', 'buffer',
                         'active_pct', 'idle_pct', 'buffer_pct']]
 
         pd.testing.assert_frame_equal(result, expected, check_like=True)
@@ -827,7 +827,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
             }
         ])
 
-        expected_total_day_time = 2.0
+        expected_total_time = 2.0
         expected_active_time = 35 + 30
         expected_buffer_time = 0
         expected_idle_time = 55
@@ -835,13 +835,13 @@ class TestTerminplannerAggregation(unittest.TestCase):
         expected = pd.DataFrame([{
             'date': day(num_days_from_start=6, hour=0),
             'image_device_id': 1,
-            'total_day_time': expected_total_day_time,  # hours
+            'total_time': expected_total_time,  # hours
             'active': expected_active_time / 60,  # fraction of hours
             'idle': expected_idle_time / 60,  # fraction of hours
             'buffer': expected_buffer_time / 60,  # fraction of hours
-            'active_pct': (expected_active_time / 60) / expected_total_day_time,
-            'idle_pct': (expected_idle_time / 60) / expected_total_day_time,
-            'buffer_pct': (expected_buffer_time / 60) / expected_total_day_time
+            'active_pct': (expected_active_time / 60) / expected_total_time,
+            'idle_pct': (expected_idle_time / 60) / expected_total_time,
+            'buffer_pct': (expected_buffer_time / 60) / expected_total_time
         }])
 
         tp_agg = aggregate_terminplanner(terminplanner_dummy)
@@ -850,7 +850,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
         appts_and_gaps = calc_appts_and_gaps(idle_df)
 
         stats = calc_daily_idle_time_stats(appts_and_gaps)
-        result = stats[['date', 'image_device_id', 'total_day_time', 'active', 'idle', 'buffer',
+        result = stats[['date', 'image_device_id', 'total_time', 'active', 'idle', 'buffer',
                         'active_pct', 'idle_pct', 'buffer_pct']]
 
         pd.testing.assert_frame_equal(result, expected, check_like=True)
