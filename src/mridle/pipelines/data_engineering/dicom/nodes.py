@@ -136,9 +136,8 @@ def integrate_dicom_data(slot_df: pd.DataFrame, dicom_times_df: pd.DataFrame) ->
 def fill_in_terminplanner_gaps(terminplanner_aggregated_df: pd.DataFrame) -> pd.DataFrame:
     """
     The terminplanner which was provided does not contain information for all date ranges in the DICOM data which we
-    have. Therefore we 'fill in' these gaps manually here, with the assumption that the terminplanner information
-    is the same (i.e. Tuesday is always from 07.00 to 18.00 in the provided terminplanner data, so we assume that
-    to be the case for those date ranges where we have no data.
+    have. Therefore we 'fill in' these gaps here, with the assumption that the terminplanner information
+    is the same for the period before the terminplanner information starts and for the period after it ends.
 
     Args:
         terminplanner_aggregated_df: Terminplanner data which was previously processed and aggregated to the day level
@@ -146,25 +145,22 @@ def fill_in_terminplanner_gaps(terminplanner_aggregated_df: pd.DataFrame) -> pd.
     Returns:
         The provided dataframe with rows added to fill in the date range gaps
     """
-    terminplanner_df = terminplanner_aggregated_df.copy()
+    tp = terminplanner_aggregated_df.copy()
 
-    new_rows = pd.DataFrame(
-        [[1, 'Monday', 'MR1 IDR (Montag)', '17.05.2020', '01.01.2055', datetime.time(7, 0), datetime.time(18, 0), 660],
-         [2, 'Monday', 'MR2 IDR (Montag)', '17.05.2020', '01.01.2055', datetime.time(7, 0), datetime.time(18, 0), 660],
-         [1, 'Tuesday', 'MR1 IDR (Dienstag)', '19.10.2020', '01.01.2055', datetime.time(7, 0), datetime.time(18, 0),
-          660],
-         [2, 'Tuesday', 'MR2 IDR (Dienstag)', '30.06.2020', '01.01.2055', datetime.time(7, 0), datetime.time(18, 0),
-          660],
-         [1, 'Wednesday', 'MR1 IDR (Mittwoch)', '19.10.2020', '01.01.2055', datetime.time(7, 0), datetime.time(18, 0),
-          660],
-         [1, 'Thursday', 'MR1 IDR (Donnerstag)', '30.06.2020', '01.01.2055', datetime.time(7, 0), datetime.time(20, 30),
-          805],
-         [2, 'Thursday', 'MR2 IDR (Donnerstag)', '31.10.2019', '01.01.2055', datetime.time(7, 0), datetime.time(20, 30),
-          805],
-         ], columns=terminplanner_aggregated_df.columns)
+    new_rows_begin = tp[tp['rank'] == 1].copy()
+    new_rows_begin['applicable_to'] = new_rows_begin['applicable_from'] - datetime.timedelta(days=1)
+    new_rows_begin['applicable_from'] = datetime.datetime(year=2014, month=1, day=1)
 
-    terminplanner_df = terminplanner_df.append(new_rows)
+    new_rows_end = tp[
+        (tp['rank_rev'] == 1) & (tp['applicable_to'] < datetime.datetime(year=2022, month=12, day=31))].copy()
+    new_rows_end['applicable_from'] = new_rows_end['applicable_to'] + datetime.timedelta(days=1)
+    new_rows_end['applicable_to'] = datetime.datetime(year=2022, month=12, day=31)
+
+    terminplanner_df = pd.concat([tp, new_rows_begin, new_rows_end], axis=0).sort_values(
+        ['TERMINRASTER_NAME', 'applicable_from'])
+    terminplanner_df = terminplanner_df.drop(columns=['rank', 'rank_rev'])
     terminplanner_df = terminplanner_df.reset_index(drop=True)
+
     return terminplanner_df
 
 
