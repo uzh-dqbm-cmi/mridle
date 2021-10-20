@@ -7,8 +7,8 @@ import random
 import altair as alt
 import seaborn as sns
 from copy import deepcopy
-from typing import Any, Dict, List
-from mridle.data_management import validate_against_dispo_data, jaccard_index
+from typing import Any, Dict, List, Set
+from mridle.pipelines.data_engineering.dispo.nodes import jaccard_index
 
 
 # ==================================================================
@@ -549,6 +549,55 @@ def plot_validation_experiment(df_ratio: pd.DataFrame) -> alt.Chart:
     )
 
     return stripplot
+
+
+def string_set(a_list):
+    return set([str(i) for i in a_list])
+
+
+def validate_against_dispo_data(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, day: int, month: int, year: int,
+                                slot_outcome: str, verbose: bool = False) -> Set[str]:
+
+    """
+    Identifies any appointment IDs that are in dispo_data or slot_df and not vice versa.
+    Args:
+        dispo_data: Dataframe with appointment data
+        slot_df: Dataframe with appointment data from extract
+        day: day numeric value
+        month: month numeric value
+        year: year numeric value
+        slot_outcome: string with value ['show', 'rescheduled', 'canceled'].
+            When `show` is selected, `inpatient` appointments are also included.
+        verbose: whether to make prints during the comparison
+    Returns:
+        dispo_patids: set of strings with patient IDs from dispo
+        slot_df_patids set of strings with patient IDs from extract
+    """
+    if slot_outcome not in ['show', 'rescheduled', 'canceled']:
+        print('invalid type')
+        return
+
+    selected_dispo_rows = dispo_data[(dispo_data['date'].dt.day == day)
+                                     & (dispo_data['date'].dt.month == month)
+                                     & (dispo_data['date'].dt.year == year)
+                                     & (dispo_data['slot_outcome'] == slot_outcome)
+                                     ]
+    selected_slot_df_rows = slot_df[(slot_df['start_time'].dt.day == day)
+                                    & (slot_df['start_time'].dt.month == month)
+                                    & (slot_df['start_time'].dt.year == year)
+                                    & (slot_df['slot_outcome'] == slot_outcome)
+                                    ]
+    dispo_patids = string_set(list(selected_dispo_rows['patient_id'].unique()))
+    slot_df_patids = string_set(list(selected_slot_df_rows['MRNCmpdId'].unique()))
+
+    if verbose:
+        print('{} Dispo Pat IDs: \n{}'.format(len(dispo_patids), dispo_patids))
+        print('{} Slot_df Pat IDs: \n{}'.format(len(slot_df_patids), slot_df_patids))
+        print()
+        print('In Dispo but not in Slot_df: {}'.format(dispo_patids.difference(slot_df_patids)))
+        print('In Slot_df but not in Dispo: {}'.format(slot_df_patids.difference(dispo_patids)))
+
+    return dispo_patids, slot_df_patids
 
 
 def plot_dispo_extract_slot_diffs(dispo_data: pd.DataFrame, slot_df: pd.DataFrame, slot_outcome: str):
