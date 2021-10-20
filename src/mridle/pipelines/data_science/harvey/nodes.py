@@ -32,6 +32,8 @@ def process_features_for_model(dataframe: pd.DataFrame) -> pd.DataFrame:
 
     dataframe['hour_sched'].fillna(dataframe['hour_sched'].median(), inplace=True)
 
+    dataframe = dataframe.dropna()
+
     return dataframe
 
 
