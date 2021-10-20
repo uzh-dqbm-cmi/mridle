@@ -51,9 +51,9 @@ terminplanner_aggregated_df:
   filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dicom/terminplanner_aggregated_df.parquet
   layer: intermediate
 
-terminplanner_aggregated_df:
+terminplanner_df:
   type: pandas.ParquetDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dicom/terminplanner_aggregated_df.parquet
+  filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dicom/terminplanner_df.parquet
   layer: intermediate
 
 appts_and_gaps:
