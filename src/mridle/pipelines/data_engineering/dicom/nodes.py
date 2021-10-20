@@ -253,8 +253,8 @@ def plot_idle_buffer_active_percentages(idle_stats: pd.DataFrame, use_percentage
     Plot the total hours spent active and idle for each day.
 
     Args:
-        idle_stats: result of `calc_daily_idle_time_stats`. Must contain a date column with name from ['date', 'month',
-         or 'year'].
+        idle_stats: result of `calc_daily_idle_time_stats`. Must contain exactly one date column with name from ['date',
+         'month', or 'year'].
         use_percentage: boolean indicating whether to plot the y-axis as a percentage of the total day, or using
          absolute time (hours).
 
@@ -269,6 +269,7 @@ def plot_idle_buffer_active_percentages(idle_stats: pd.DataFrame, use_percentage
         val_vars = ['active', 'idle', 'buffer']
         y_label = "Hours"
 
+    # determine the name of the time column in idle_stats (idle_stats should have exactly one of these options)
     date_col_options = ['date', 'month', 'year']
     for option in date_col_options:
         if option in idle_stats.columns:

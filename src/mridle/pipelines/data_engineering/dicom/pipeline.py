@@ -59,7 +59,19 @@ def create_pipeline(**kwargs):
                 func=plot_idle_buffer_active_percentages,
                 inputs="monthly_idle_stats",
                 outputs="monthly_idle_buffer_active_percentages_plot",
-                name="plot_idle_buffer_active_percentages"
+                name="plot_monthly_idle_buffer_active_percentages"
+            ),
+            node(
+                func=plot_idle_buffer_active_percentages,
+                inputs="yearly_idle_stats",
+                outputs="yearly_idle_buffer_active_percentages_plot",
+                name="plot_yearly_idle_buffer_active_percentages"
+            ),
+            node(
+                func=plot_idle_buffer_active_percentages,
+                inputs="daily_idle_stats",
+                outputs="daily_idle_buffer_active_percentages_plot",
+                name="plot_daily_idle_buffer_active_percentages"
             ),
             node(
                 func=generate_zebra_plots,

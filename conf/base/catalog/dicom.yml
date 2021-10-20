@@ -94,6 +94,16 @@ monthly_idle_buffer_active_percentages_plot:
   filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dicom/monthly_idle_buffer_active_percentages_plot.html
   layer: reporting
 
+yearly_idle_buffer_active_percentages_plot:
+  type: mridle.extras.datasets.altair_dataset.AltairDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dicom/yearly_idle_buffer_active_percentages_plot.html
+  layer: reporting
+
+daily_idle_buffer_active_percentages_plot:
+  type: mridle.extras.datasets.altair_dataset.AltairDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dicom/daily_idle_buffer_active_percentages_plot.html
+  layer: reporting
+
 full_zebra:
   type: mridle.extras.datasets.altair_dataset.AltairDataSet
   filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dicom/full_zebra.html
