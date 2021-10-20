@@ -30,8 +30,8 @@
 from typing import Dict
 
 from kedro.pipeline import Pipeline
-from mridle.pipelines.data_engineering import ris, dicom, dispo, descriptive_viz
-from mridle.pipelines.data_science import harvey, feature_engineering
+from mridle.pipelines.data_engineering import ris, dicom, dispo
+from mridle.pipelines.data_science import harvey, feature_engineering, descriptive_viz
 
 
 def register_pipelines() -> Dict[str, Pipeline]:
@@ -59,5 +59,4 @@ def register_pipelines() -> Dict[str, Pipeline]:
         "descriptive_viz": descriptive_viz_pipeline,
         "feature_engineering": feature_engineering_pipeline,
         "harvey": harvey_pipeline,
-
     }
