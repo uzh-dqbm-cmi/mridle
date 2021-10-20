@@ -282,7 +282,7 @@ def plot_idle_buffer_active_percentages(idle_stats: pd.DataFrame, use_percentage
     x_axis_formats = {
         'date': f"yearmonthdate({option})",
         'month': f"yearmonth({option})",
-        'year': f"year({option})",
+        'year': f"{option}:O",
     }
     x_axis_format = x_axis_formats[option]
 
