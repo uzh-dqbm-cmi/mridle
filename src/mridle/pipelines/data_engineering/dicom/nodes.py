@@ -158,8 +158,9 @@ def fill_in_terminplanner_gaps(terminplanner_aggregated_df: pd.DataFrame) -> pd.
     new_rows_begin['applicable_to'] = new_rows_begin['applicable_from'] - datetime.timedelta(days=1)
     new_rows_begin['applicable_from'] = datetime.datetime(year=2014, month=1, day=1)
 
-    new_rows_end = tp[
-        (tp['rank_rev'] == 1) & (tp['applicable_to'] < datetime.datetime(year=2022, month=12, day=31))].copy()
+    new_rows_end = tp[(tp['rank_rev'] == 1) &
+                      (tp['applicable_to'] < datetime.datetime(year=datetime.datetime.now().year + 3, month=12, day=31))
+                      ].copy()
     new_rows_end['applicable_from'] = new_rows_end['applicable_to'] + datetime.timedelta(days=1)
     new_rows_end['applicable_to'] = datetime.datetime(year=datetime.datetime.now().year + 3, month=12, day=31)
 
