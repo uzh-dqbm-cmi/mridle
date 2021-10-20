@@ -33,12 +33,12 @@ def create_pipeline(**kwargs):
             node(
                 func=aggregate_terminplanner,
                 inputs="raw_terminplanner_df",
-                outputs="terminplanner_df",
+                outputs="terminplanner_aggregated_df",
                 name="aggregate_terminplanner"
             ),
             node(
                 func=generate_idle_time_stats,
-                inputs=["dicom_times_df", "terminplanner_df"],
+                inputs=["dicom_times_df", "terminplanner_aggregated_df"],
                 outputs=["appts_and_gaps", "daily_idle_stats"],
                 name="generate_idle_time_stats"
             ),
