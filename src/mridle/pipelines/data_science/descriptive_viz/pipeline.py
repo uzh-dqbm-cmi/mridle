@@ -8,7 +8,8 @@ def create_pipeline(**kwargs):
         [
             node(
                 func=plot_dave_b,
-                inputs=["slot_df", "slot_w_dicom_df"],
+                inputs=["slot_df", "slot_w_dicom_df", "params:ris.dataset_valid_starting",
+                        "params:ris.dataset_valid_ending"],
                 outputs="dave_b",
                 name="plot_dave_b",
             ),

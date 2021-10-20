@@ -9,8 +9,8 @@ from mridle.utilities.plotting_utilities import DEFAULT_COLOR_MAP, DETAILED_COLO
 alt.data_transformers.disable_max_rows()
 
 
-def plot_dave_b(slot_df: pd.DataFrame, slot_w_dicom_df: pd.DataFrame, example_date: str = None,
-                start_date: str = '01/01/2015', end_date: str = '01/01/2020', anonymize: bool = True) -> alt.Chart:
+def plot_dave_b(slot_df: pd.DataFrame, slot_w_dicom_df: pd.DataFrame, start_date: str, end_date: str,
+                example_date: str = None, anonymize: bool = True) -> alt.Chart:
     """
     Create the Dave B figure, which consists of three subplots:
     - an example day (uses slot_w_dicom_df to show actual times, rather than scheduled)

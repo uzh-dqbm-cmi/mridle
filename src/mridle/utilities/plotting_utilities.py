@@ -15,6 +15,7 @@ from mridle.pipelines.data_engineering.dispo.nodes import jaccard_index
 # ====== ALTAIR FUNCTIONS ==========================================
 # ==================================================================
 
+# Use params:ris.dataset_valid_starting and params:ris.dataset_valid_ending instead
 PROJECT_START_DATE = '01/14/2019'
 PROJECT_END_DATE = '02/14/2019'
 
