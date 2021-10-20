@@ -4,6 +4,8 @@ import pandas as pd
 import random
 from mridle.utilities.plotting_utilities import DEFAULT_COLOR_MAP, DETAILED_COLOR_MAP, OUTCOME_STROKE_MAP
 
+alt.data_transformers.disable_max_rows()
+
 
 def plot_dave_b(slot_df: pd.DataFrame, slot_w_dicom_df: pd.DataFrame, example_date: str = None,
                 start_date: str = '01/01/2015', end_date: str = '01/01/2020', anonymize: bool = True) -> alt.Chart:
