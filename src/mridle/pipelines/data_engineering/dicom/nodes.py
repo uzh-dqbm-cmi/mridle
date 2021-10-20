@@ -170,51 +170,74 @@ def fill_in_terminplanner_gaps(terminplanner_aggregated_df: pd.DataFrame) -> pd.
     return terminplanner_df
 
 
-def generate_idle_time_stats(dicom_times_df: pd.DataFrame, terminplanner_aggregated_df: pd.DataFrame) -> (pd.DataFrame,
-                                                                                                          pd.DataFrame):
+def calc_idle_time(dicom_times_df: pd.DataFrame, terminplanner_aggregated_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Function to generate two datasets based off the cleaned Dicom data. Both datasets which are created are
-    explained in more detail in the relevant function docstrings
+    Calculate the idle time based on the dicom image data (when the machines are active) and the terminplanner (when the
+     machines are available for use).
 
     Args:
         dicom_times_df: Dicom extract aggregated to AccessionNumber/appointment level (resulting from
         the aggregate_dicom_images() function)
         terminplanner_aggregated_df: Aggregated terminplanner data (resulting from the agg_terminplanner() function)
 
-    Returns:
-        Two datasets which are later used for calculating metrics and plotting
+    Returns: a dataframe that has one row per appointment and one row per idle gap between appointments.
     """
     idle_df = calc_idle_time_gaps(dicom_times_df, terminplanner_aggregated_df, time_buffer_mins=5)
     appts_and_gaps = calc_appts_and_gaps(idle_df)
+    return appts_and_gaps
+
+
+def generate_idle_time_stats(appts_and_gaps: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
+    """
+    Calculate summaries of idle time at the daily, monthly, and annual level.
+
+    Args:
+        appts_and_gaps: a dataframe that has one row per appointment and one row per idle gap between appointments.
+
+    Returns:
+        Three datasets summarizing the idle time at the daily, monthly, and yearly level
+    """
     daily_idle_stats = calc_daily_idle_time_stats(appts_and_gaps)
 
-    return appts_and_gaps, daily_idle_stats
+    monthly_idle_stats = daily_idle_stats.copy()
+    monthly_idle_stats['month'] = monthly_idle_stats['date'].dt.to_period('M').dt.to_timestamp()
+
+    yearly_idle_stats = daily_idle_stats.copy()
+    yearly_idle_stats['year'] = yearly_idle_stats['date'].dt.year
+
+    agg_dict = {
+        'active': 'sum',
+        'buffer': 'sum',
+        'idle': 'sum',
+        'total_time': 'sum',
+    }
+
+    monthly_idle_stats = monthly_idle_stats.groupby(['month', 'image_device_id']).agg(agg_dict).reset_index()
+    monthly_idle_stats['active_pct'] = monthly_idle_stats['active'] / monthly_idle_stats['total_time']
+    monthly_idle_stats['buffer_pct'] = monthly_idle_stats['buffer'] / monthly_idle_stats['total_time']
+    monthly_idle_stats['idle_pct'] = monthly_idle_stats['idle'] / monthly_idle_stats['total_time']
+
+    yearly_idle_stats = yearly_idle_stats.groupby(['year', 'image_device_id']).agg(agg_dict).reset_index()
+    yearly_idle_stats['active_pct'] = yearly_idle_stats['active'] / yearly_idle_stats['total_time']
+    yearly_idle_stats['buffer_pct'] = yearly_idle_stats['buffer'] / yearly_idle_stats['total_time']
+    yearly_idle_stats['idle_pct'] = yearly_idle_stats['idle'] / yearly_idle_stats['total_time']
+
+    return daily_idle_stats, monthly_idle_stats, yearly_idle_stats
 
 
-def generate_idle_time_plots(appts_and_gaps: pd.DataFrame, daily_idle_stats: pd.DataFrame) -> (alt.Chart, alt.Chart,
-                                                                                               alt.Chart):
+def generate_zebra_plots(appts_and_gaps: pd.DataFrame) -> (alt.Chart, alt.Chart):
     """
     Function to trigger the generation of the plots which are based off all the data cleaning and prep in this
     pipeline
 
     Args:
         appts_and_gaps: Dataset created from calc_appts_and_gaps() function
-        daily_idle_stats: Dataset created from calc_daily_idle_stats() function
 
     Returns:
         Three plots, which are then saved in the 08_reporting folder as html files
     """
 
     alt.data_transformers.disable_max_rows()
-    appts_and_gaps['date'] = pd.to_datetime(appts_and_gaps['date'])
-    appts_and_gaps['start'] = pd.to_datetime(appts_and_gaps['start'])
-    appts_and_gaps['end'] = pd.to_datetime(appts_and_gaps['end'])
-    daily_idle_stats['start'] = pd.to_datetime(daily_idle_stats['start'])
-    daily_idle_stats['end'] = pd.to_datetime(daily_idle_stats['end'])
-
-    daily_idle_stats_mr1 = daily_idle_stats[daily_idle_stats['image_device_id'] == 1]
-    daily_idle_buffer_active_percentages_plot = plot_daily_idle_buffer_active_percentages(daily_idle_stats_mr1,
-                                                                                          use_percentage=True)
 
     appts_and_gaps_mr1 = appts_and_gaps[appts_and_gaps['image_device_id'] == 1]
     full_zebra = plot_daily_appt_idle_segments(appts_and_gaps_mr1, width=500, height=5000)
@@ -224,19 +247,18 @@ def generate_idle_time_plots(appts_and_gaps: pd.DataFrame, daily_idle_stats: pd.
 
     one_week_zebra = plot_daily_appt_idle_segments(one_week, bar_size=25, width=500, height=200)
 
-    return daily_idle_buffer_active_percentages_plot, full_zebra, one_week_zebra
+    return full_zebra, one_week_zebra
 
 
-# Helper functions
-def plot_daily_idle_buffer_active_percentages(daily_idle_stats: pd.DataFrame,
-                                              use_percentage: bool = False) -> alt.Chart:
+def plot_idle_buffer_active_percentages(idle_stats: pd.DataFrame, use_percentage: bool = True) -> alt.Chart:
     """
     Plot the total hours spent active and idle for each day.
 
     Args:
-        daily_idle_stats: result of `calc_daily_idle_time_stats`
+        idle_stats: result of `calc_daily_idle_time_stats`. Must contain exactly one date column with name from ['date',
+         'month', or 'year'].
         use_percentage: boolean indicating whether to plot the y-axis as a percentage of the total day, or using
-        absolute time (hours)
+         absolute time (hours).
 
     Returns: Figure where x-axis is date and y-axis is total hours. Each day-column is a stacked bar with total active,
      total idle, and total buffer hours for that day. The chart is faceted by image_device_id.
@@ -249,25 +271,40 @@ def plot_daily_idle_buffer_active_percentages(daily_idle_stats: pd.DataFrame,
         val_vars = ['active', 'idle', 'buffer']
         y_label = "Hours"
 
-    daily_between_times_melted = pd.melt(daily_idle_stats, id_vars=['date', 'image_device_id'],
-                                         value_vars=val_vars, var_name='Machine Status',
-                                         value_name='hours')
+    # determine the name of the time column in idle_stats (idle_stats should have exactly one of these options)
+    date_col_options = ['date', 'month', 'year']
+    for option in date_col_options:
+        if option in idle_stats.columns:
+            x_axis_col = option
+            break
+    else:
+        raise ValueError("No date col recognized in `idle_stats`; must contains one of the following: 'date', 'month',"
+                         " or 'year'")
 
-    daily_between_times_melted["Machine Status"].replace(
+    x_axis_formats = {
+        'date': f"yearmonthdate({option})",
+        'month': f"yearmonth({option})",
+        'year': f"{option}:O",
+    }
+    x_axis_format = x_axis_formats[option]
+
+    idle_stats_melted = pd.melt(idle_stats, id_vars=[x_axis_col, 'image_device_id'], value_vars=val_vars,
+                                var_name='Machine Status', value_name='hours')
+
+    idle_stats_melted["Machine Status"].replace(
         {val_vars[0]: 'Active', val_vars[1]: 'Idle', val_vars[2]: 'Buffer'}, inplace=True)
 
     domain = ['Active', 'Idle', 'Buffer']
     range_ = ['#0065af', '#fe8126', '#fda96b']
 
-    return_chart = alt.Chart(daily_between_times_melted).mark_bar().encode(
-        x=alt.X("date", axis=alt.Axis(title="Date")),
+    alt.data_transformers.disable_max_rows()
+    return_chart = alt.Chart(idle_stats_melted).mark_bar().encode(
+        x=alt.X(x_axis_format, axis=alt.Axis(title=x_axis_col.capitalize())),
         y=alt.Y('hours', axis=alt.Axis(title=y_label), scale=alt.Scale(domain=[0, 1])),
         color=alt.Color('Machine Status:N', scale=alt.Scale(domain=domain, range=range_)),
-        tooltip=['date', 'hours'],
-    ).properties(
-        width=1000
+        tooltip=[x_axis_col, 'hours'],
     ).facet(
-        column=alt.Row("image_device_id:N")
+        row=alt.Row("image_device_id:N")
     )
 
     return_chart = return_chart.configure_legend(
@@ -283,6 +320,7 @@ def plot_daily_idle_buffer_active_percentages(daily_idle_stats: pd.DataFrame,
     return return_chart
 
 
+# Helper functions
 def plot_daily_appt_idle_segments(appts_and_gaps: pd.DataFrame, height: int = 300, bar_size: int = 5,
                                   width: int = 300) -> alt.Chart:
     """
@@ -690,10 +728,12 @@ def add_buffer_cols(appt_row: pd.Series) -> pd.Series:
 def calc_daily_idle_time_stats(appts_and_gaps: pd.DataFrame) -> pd.DataFrame:
     """
     Transform a row-per-appointment dataframe into a row-per-day dataframe showing active and idle time per day.
+
     Args:
         appts_and_gaps: resulting df from calc_appts_and_gaps()
+
     Returns: Dataframe with columns ['date', 'image_device_id', 'idle' (float hours), 'buffer' (float hours),
-     'start' (time of start of the day), 'end' (time of end of the day), 'total_day_time' (float hours),
+     'start' (time of start of the day), 'end' (time of end of the day), 'total_time' (float hours),
      active' (float hours), 'active_pct', 'idle_pct', 'buffer_pct']
 
     """
@@ -709,17 +749,20 @@ def calc_daily_idle_time_stats(appts_and_gaps: pd.DataFrame) -> pd.DataFrame:
         'end': 'max'
     }).reset_index()
 
-    total_day_times['total_day_time'] = (total_day_times['end'] - total_day_times['start']) / one_hour
+    total_day_times['total_time'] = (total_day_times['end'] - total_day_times['start']) / one_hour
 
-    stats = daily_stats.pivot_table(columns='status', values='status_duration',
-                                    index=['date', 'image_device_id']).reset_index()
+    stats = daily_stats.pivot_table(columns='status', values='status_duration', index=['date', 'image_device_id']
+                                    ).reset_index()
     stats = stats.merge(total_day_times, on=['date', 'image_device_id'])
 
+    # cap the total_time to a max of 24 hours in case of outlier data
+    stats['total_time'] = np.where(stats['total_time'] > 24, 24, stats['total_time'])
+
     # We calculate active time this way as there might be overlaps in appts, so we don't want to doublecount
-    stats['active'] = stats['total_day_time'] - stats['buffer'] - stats['idle']
-    stats['active_pct'] = stats['active'] / stats['total_day_time']
-    stats['buffer_pct'] = stats['buffer'] / stats['total_day_time']
-    stats['idle_pct'] = stats['idle'] / stats['total_day_time']
+    stats['active'] = stats['total_time'] - stats['buffer'] - stats['idle']
+    stats['active_pct'] = stats['active'] / stats['total_time']
+    stats['buffer_pct'] = stats['buffer'] / stats['total_time']
+    stats['idle_pct'] = stats['idle'] / stats['total_time']
 
     return stats
 

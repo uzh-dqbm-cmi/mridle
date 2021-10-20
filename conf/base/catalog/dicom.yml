@@ -59,11 +59,44 @@ terminplanner_df:
 appts_and_gaps:
   type: pandas.CSVDataSet
   filepath: /data/mridle/data/kedro_data_catalog/03_primary/dicom/appts_and_gaps.csv
+  load_args:
+    parse_dates:
+      - date
+      - start
+      - end
   layer: primary
 
 daily_idle_stats:
   type: pandas.CSVDataSet
   filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dicom/daily_idle_stats.csv
+  load_args:
+    parse_dates:
+      - date
+      - start
+      - end
+  layer: reporting
+
+monthly_idle_stats:
+  type: pandas.CSVDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dicom/monthly_idle_stats.csv
+  load_args:
+    parse_dates:
+      - month
+  layer: reporting
+
+yearly_idle_stats:
+  type: pandas.CSVDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dicom/yearly_idle_stats.csv
+  layer: reporting
+
+monthly_idle_buffer_active_percentages_plot:
+  type: mridle.extras.datasets.altair_dataset.AltairDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dicom/monthly_idle_buffer_active_percentages_plot.html
+  layer: reporting
+
+yearly_idle_buffer_active_percentages_plot:
+  type: mridle.extras.datasets.altair_dataset.AltairDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/dicom/yearly_idle_buffer_active_percentages_plot.html
   layer: reporting
 
 daily_idle_buffer_active_percentages_plot:
