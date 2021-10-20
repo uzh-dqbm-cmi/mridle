@@ -34,6 +34,6 @@ no_show_heat_map:
     layer: reporting
 
 appt_noshow_tree_map:
-    type: mridle.extras.datasets.altair_dataset.PlotlyHTMLDataSet
+    type: mridle.extras.datasets.plotly_html_dataset.PlotlyHTMLDataSet
     filepath: /data/mridle/data/kedro_data_catalog/08_reporting/descriptive_viz/appt_noshow_tree_map.html
     layer: reporting
