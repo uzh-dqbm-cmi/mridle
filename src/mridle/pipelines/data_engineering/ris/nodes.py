@@ -221,7 +221,7 @@ def build_slot_df(input_status_df: pd.DataFrame, valid_start_date: str, valid_en
     slot_df = pd.concat([show_slot_df, no_show_slot_df], sort=False)
 
     # restrict to the valid date range
-    day_after_last_valid_date = pd.to_datetime(valid_end_date) + pd.timedelta(1, 'days')
+    day_after_last_valid_date = pd.to_datetime(valid_end_date) + pd.to_timedelta(1, 'days')
     slot_df = slot_df[slot_df['start_time'] >= valid_start_date]
     slot_df = slot_df[slot_df['start_time'] < day_after_last_valid_date]
 
