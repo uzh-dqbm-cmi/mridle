@@ -5,7 +5,7 @@ import pgeocode
 import datetime as dt
 
 
-def build_feature_set(status_df: pd.DataFrame) -> pd.DataFrame:
+def build_feature_set(status_df: pd.DataFrame, valid_start_date: str, valid_end_date: str) -> pd.DataFrame:
     """
     Builds a feature set that replicates the Harvey et al model as best we can.
     So far includes:
@@ -16,7 +16,11 @@ def build_feature_set(status_df: pd.DataFrame) -> pd.DataFrame:
         - distance_to_usz: distance from the patient's home address to the hospital, approximated from Post Codes
         - no_show_before: The number of no shows the patient has had up to the date of the appt
     Args:
-        status_df:
+        status_df: status_df
+        valid_start_date: The starting date of the valid slot data period (status_df contains status change data outside
+         the valid slot date range).
+        valid_end_date: The ending date of the valid slot data period (status_df contains status change data outside
+         the valid slot date range).
 
     Returns:
 
@@ -55,7 +59,7 @@ def build_feature_set(status_df: pd.DataFrame) -> pd.DataFrame:
         'date': 'last'
     }
 
-    slot_df = build_slot_df(status_df, agg_dict, include_id_cols=True)
+    slot_df = build_slot_df(status_df, valid_start_date, valid_end_date, agg_dict, include_id_cols=True)
     slot_df = feature_no_show_before(slot_df)
 
     return slot_df
