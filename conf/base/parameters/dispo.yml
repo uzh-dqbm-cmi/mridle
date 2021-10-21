@@ -1,9 +1,0 @@
-experiment_2:
-    # valid range is dataset_valid_starting ≤ x < dataset_valid_ending
-    dataset_valid_starting: '2020-09-28'
-    dataset_valid_ending: '2020-10-02'
-
-experiment_3:
-    # valid range is dataset_valid_starting ≤ x < dataset_valid_ending
-    dataset_valid_starting: '2021-14-12'
-    dataset_valid_ending: '2021-04-16'
