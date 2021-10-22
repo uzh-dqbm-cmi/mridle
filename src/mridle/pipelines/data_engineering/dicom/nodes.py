@@ -599,8 +599,6 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, tp_agg_df: pd.DataFrame, t
 
     idle_df['image_start'] = pd.to_datetime(idle_df['image_start'], errors='coerce')
     idle_df['image_end'] = pd.to_datetime(idle_df['image_end'], errors='coerce')
-    idle_df['day_start_tp'] = pd.to_datetime(idle_df['day_start_tp'], errors='coerce')
-    idle_df['day_end_tp'] = pd.to_datetime(idle_df['day_end_tp'], errors='coerce')
 
     idle_df['date'] = pd.to_datetime(idle_df['image_start'].dt.date)
     idle_df['day_of_week'] = idle_df['image_start'].dt.day_name()
@@ -610,6 +608,9 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, tp_agg_df: pd.DataFrame, t
     idle_df = idle_df[(idle_df['image_start'] >= idle_df["applicable_from"]) &
                       (idle_df['image_start'] <= idle_df["applicable_to"])]
     idle_df = idle_df.drop(['applicable_from', 'applicable_to'], axis=1)
+
+    idle_df['day_start_tp'] = pd.to_datetime(idle_df['day_start_tp'], errors='coerce')
+    idle_df['day_end_tp'] = pd.to_datetime(idle_df['day_end_tp'], errors='coerce')
 
     # Using terminplanner df, add flag for each appointment indicating whether it falls within the times outlined by the
     # terminplanner, and then limit our data to only those appts
