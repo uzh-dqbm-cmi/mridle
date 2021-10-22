@@ -147,8 +147,6 @@ def fill_in_terminplanner_gaps(terminplanner_aggregated_df: pd.DataFrame) -> pd.
     """
     tp = terminplanner_aggregated_df.copy()
 
-    tp['applicable_from'] = pd.to_datetime(tp['applicable_from'])
-    tp['applicable_to'] = pd.to_datetime(tp['applicable_to'])
     tp['rank'] = tp[['image_device_id', 'day_of_week', 'TERMINRASTER_NAME', 'applicable_from']].groupby(
         ['image_device_id', 'day_of_week', 'TERMINRASTER_NAME']).rank()
     tp['rank_rev'] = tp[['image_device_id', 'day_of_week', 'TERMINRASTER_NAME', 'applicable_from']].groupby(
