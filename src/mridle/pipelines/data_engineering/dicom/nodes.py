@@ -609,14 +609,14 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, tp_agg_df: pd.DataFrame, t
                       (idle_df['image_start'] <= idle_df["applicable_to"])]
     idle_df = idle_df.drop(['applicable_from', 'applicable_to'], axis=1)
 
-    idle_df['day_start_tp'] = pd.to_datetime(idle_df['day_start_tp'], errors='coerce')
-    idle_df['day_end_tp'] = pd.to_datetime(idle_df['day_end_tp'], errors='coerce')
+    idle_df['day_start_tp'] = pd.to_datetime(idle_df['day_start_tp'], errors='coerce').dt.time
+    idle_df['day_end_tp'] = pd.to_datetime(idle_df['day_end_tp'], errors='coerce').dt.time
 
     # Using terminplanner df, add flag for each appointment indicating whether it falls within the times outlined by the
     # terminplanner, and then limit our data to only those appts
     idle_df['within_day'] = np.where(
-        (idle_df['image_end'].dt.time > idle_df['day_start_tp'].dt.time) &
-        (idle_df['image_start'].dt.time < idle_df['day_end_tp'].dt.time),
+        (idle_df['image_end'].dt.time > idle_df['day_start_tp']) &
+        (idle_df['image_start'].dt.time < idle_df['day_end_tp']),
         1, 0)
 
     idle_df = idle_df[idle_df['within_day'] == 1]
