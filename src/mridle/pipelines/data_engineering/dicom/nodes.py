@@ -615,8 +615,8 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, tp_agg_df: pd.DataFrame, t
     # Using terminplanner df, add flag for each appointment indicating whether it falls within the times outlined by the
     # terminplanner, and then limit our data to only those appts
     idle_df['within_day'] = np.where(
-        (idle_df['image_end'].dt.time > idle_df['day_start_tp']) &
-        (idle_df['image_start'].dt.time < idle_df['day_end_tp']),
+        (idle_df['image_end'].dt.time > idle_df['day_start_tp'].dt.time) &
+        (idle_df['image_start'].dt.time < idle_df['day_end_tp'].dt.time),
         1, 0)
 
     idle_df = idle_df[idle_df['within_day'] == 1]
