@@ -147,6 +147,9 @@ def fill_in_terminplanner_gaps(terminplanner_aggregated_df: pd.DataFrame) -> pd.
     """
     tp = terminplanner_aggregated_df.copy()
 
+    tp['applicable_from'] = pd.to_datetime(tp['applicable_from'])
+    tp['applicable_to'] = pd.to_datetime(tp['applicable_to'])
+
     tp['rank'] = tp[['image_device_id', 'day_of_week', 'TERMINRASTER_NAME', 'applicable_from']].groupby(
         ['image_device_id', 'day_of_week', 'TERMINRASTER_NAME']).rank()
     tp['rank_rev'] = tp[['image_device_id', 'day_of_week', 'TERMINRASTER_NAME', 'applicable_from']].groupby(
@@ -542,6 +545,7 @@ def aggregate_terminplanner(terminplanner_df: pd.DataFrame) -> pd.DataFrame:
         for. A column containing the total number of minutes in the day is included as well.
     """
     tp_df = terminplanner_df.copy()
+
     tp_df['Termin'] = pd.to_datetime(tp_df['Termin'], format='%H:%M')
     tp_df['Terminbuch'] = tp_df['Terminbuch'].replace({'MR1': 1, 'MR2': 2})
     tp_df['Wochentag'] = tp_df['Wochentag'].replace({'MO': 'Monday',
