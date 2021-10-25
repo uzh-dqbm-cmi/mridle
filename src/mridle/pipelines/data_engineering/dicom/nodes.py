@@ -605,6 +605,7 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, tp_agg_df: pd.DataFrame, t
 
     idle_df['date'] = pd.to_datetime(idle_df['image_start'].dt.date)
     idle_df['day_of_week'] = idle_df['image_start'].dt.day_name()
+    idle_df = idle_df[idle_df['day_of_week'].isin(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])]
 
     # Join on terminplanner data
     idle_df = idle_df.merge(tp_agg_df, how='left', on=['day_of_week', 'image_device_id'])
