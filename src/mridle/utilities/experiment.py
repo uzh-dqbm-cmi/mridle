@@ -103,7 +103,7 @@ class ModelRun:
         if run_hyperparam_search:
             self.model = self.search_hyperparameters(self.model, self.hyperparams, self.x_train, self.y_train,
                                                      search_type=self.search_type, num_cv_folds=self.num_cv_folds,
-                                                     n_iters=self.n_iters, hyperopt_timeout=hyperopt_timeout,
+                                                     num_iters=self.num_iters, hyperopt_timeout=hyperopt_timeout,
                                                      hyperopt_trials=self.hyperopt_trials, scoring_fn=self.scoring_fn)
             if self.reduce_features:
                 self.rfecv = self.train_feature_reducer(self.model, self.x_train, self.y_train)
@@ -239,7 +239,7 @@ class ModelRun:
 
     @classmethod
     def search_hyperparameters(cls, model: Any, hyperparams: Dict[str, List], x_train: pd.DataFrame,
-                               y_train: List, scoring_fn: str, search_type: str, num_cv_folds: int, n_iter: int,
+                               y_train: List, scoring_fn: str, search_type: str, num_cv_folds: int, num_iters: int,
                                hyperopt_timeout: int, hyperopt_trials: Any) -> Any:
         """
         Run sklearn.model_selection.Randomized_SearchCV and return the best model.
@@ -252,7 +252,7 @@ class ModelRun:
             search_type: Type of search for hyperparameters. Choose between random, grid, and bayesian search. All
              search types include cross validation
             num_cv_folds: Number of cross validation folds to run.
-            n_iter: Number of iterations to run (only applicable for random search)
+            num_iters: Number of iterations to run (only applicable for random search)
             hyperopt_timeout: If running hyperopt search, the user can specify how long to run this for (in seconds).
             hyperopt_trials: If running hyperopt search, the Trials object holds the results of previous hyperparameter
              evaluations, and uses these to guide the future search.
@@ -261,7 +261,7 @@ class ModelRun:
 
         """
         if search_type == "random":
-            random_search = RandomizedSearchCV(estimator=model, param_distributions=hyperparams, n_iter=n_iter,
+            random_search = RandomizedSearchCV(estimator=model, param_distributions=hyperparams, n_iter=num_iters,
                                                cv=num_cv_folds, verbose=2, random_state=42, n_jobs=-1,
                                                scoring=scoring_fn)
             random_search.fit(x_train, y_train)
