@@ -793,8 +793,8 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'Terminbuch': 'MR1',
                 'Wochentag': 'MO',
                 'TERMINRASTER_NAME': 'not_required',
-                'gültig von': pd.to_datetime(day(-10), format='%d.%m.%Y'),
-                'gültig bis': pd.to_datetime(day(10), format='%d.%m.%Y'),
+                'gültig von': '2014.01.01', #pd.to_datetime(day(-10), format='%d.%m.%Y'),
+                'gültig bis': '2055.01.01', #pd.to_datetime(day(10), format='%d.%m.%Y'),
                 'Termin': '14:00',
                 'Dauer in Min.': 120
             }
