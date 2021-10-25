@@ -252,7 +252,7 @@ class ModelRun:
             search_type: Type of search for hyperparameters. Choose between random, grid, and bayesian search. All
              search types include cross validation
             num_cv_folds: Number of cross validation folds to run.
-            num_iters: Number of iterations to run (only applicable for random search)
+            num_iters: Number of iterations to run (only applicable for random and bayesian search)
             hyperopt_timeout: If running hyperopt search, the user can specify how long to run this for (in seconds).
             hyperopt_trials: If running hyperopt search, the Trials object holds the results of previous hyperparameter
              evaluations, and uses these to guide the future search.
@@ -273,7 +273,8 @@ class ModelRun:
             best_est = grid_search.best_estimator_
         elif search_type == "bayesian":
             best_est = cls.bayesian_param_search(model, hyperparams, x_train, y_train, scoring_fn=scoring_fn,
-                                                 trials=hyperopt_trials, timeout=hyperopt_timeout, nfolds=num_cv_folds)
+                                                 trials=hyperopt_trials, max_evals=num_iters, timeout=hyperopt_timeout,
+                                                 nfolds=num_cv_folds)
 
         else:
             raise NotImplementedError(
@@ -616,8 +617,8 @@ class PartitionedExperiment:
             hyperparams: Dictionary of hyperparamters to search for the best model.
             search_type: Type of search to do when searching for hyperparameters (grid, random, or bayesian)
             num_cv_folds: Number of cross validation folds to run in the hyperparameter search
-            num_iters: Number of iterations to run per folds in the hyperparameter search (only applicable for
-             search_type='random')
+            num_iters: Number of iterations to run per folds in the hyperparameter search (only applicable for random
+             and bayesian search)
             scoring_fn: the scoring function to use (can be from 'f1_macro', 'log_loss', or 'brier_score')
             n_partitions: Number of partitions to split the data on and run the experiment on.
             stratify_by_label: Whether to stratify the partitions by label (default), otherwise partition randomly.
