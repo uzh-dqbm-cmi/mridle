@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 from mridle.pipelines.data_engineering.dicom.nodes import calc_idle_time_gaps, calc_daily_idle_time_stats, \
-    calc_appts_and_gaps, aggregate_terminplanner
+    calc_appts_and_gaps, aggregate_terminplanner, fill_in_terminplanner_gaps
 
 
 def day(num_days_from_start, hour=9, minute=0):
@@ -43,6 +43,58 @@ class TestTerminplannerAggregation(unittest.TestCase):
 
         expected = pd.DataFrame([{
             'date': day(num_days_from_start=6, hour=0),
+            'image_device_id': 1,
+            'total_time': expected_total_time,  # hours
+            'active': expected_active_time / 60,  # fraction of hours
+            'idle': expected_idle_time / 60,  # fraction of hours
+            'buffer': expected_buffer_time / 60,  # fraction of hours
+            'active_pct': (expected_active_time / 60) / expected_total_time,
+            'idle_pct': (expected_idle_time / 60) / expected_total_time,
+            'buffer_pct': (expected_buffer_time / 60) / expected_total_time
+        }])
+
+        tp_agg = aggregate_terminplanner(terminplanner_dummy)
+        tp_agg = fill_in_terminplanner_gaps(tp_agg)
+
+        idle_df = calc_idle_time_gaps(dicom_data_dummy, tp_agg, time_buffer_mins=5)
+
+        appts_and_gaps = calc_appts_and_gaps(idle_df)
+
+        stats = calc_daily_idle_time_stats(appts_and_gaps)
+        result = stats[['date', 'image_device_id', 'total_time', 'active', 'idle', 'buffer',
+                        'active_pct', 'idle_pct', 'buffer_pct']]
+        pd.testing.assert_frame_equal(result, expected, check_like=True)
+
+    def test_one_appt_in_2017(self):
+        terminplanner_dummy = pd.DataFrame([
+            {
+                'Terminbuch': 'MR1',
+                'Wochentag': 'MO',
+                'TERMINRASTER_NAME': 'not_required',
+                'gültig von': pd.to_datetime(day(-600), format='%d.%m.%Y'),
+                'gültig bis': pd.to_datetime(day(-560), format='%d.%m.%Y'),
+                'Termin': '14:00',
+                'Dauer in Min.': 120
+            }
+        ])
+
+        dicom_data_dummy = pd.DataFrame([
+            {
+                'AccessionNumber': 1,
+                'StudyDescription': '-',
+                'image_device_id': 1,
+                'image_start': day(num_days_from_start=-568, hour=14, minute=30),
+                'image_end': day(num_days_from_start=-568, hour=15, minute=5)
+            }
+        ])
+
+        expected_total_time = 2.0
+        expected_active_time = 35
+        expected_buffer_time = 10
+        expected_idle_time = 75
+
+        expected = pd.DataFrame([{
+            'date': day(num_days_from_start=-568, hour=0),
             'image_device_id': 1,
             'total_time': expected_total_time,  # hours
             'active': expected_active_time / 60,  # fraction of hours
