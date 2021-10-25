@@ -6,7 +6,7 @@ from sklearn.ensemble import RandomForestClassifier
 
 
 def get_test_data_set():
-    column_names= ['A', 'B', 'C', 'D']
+    column_names = ['A', 'B', 'C', 'D']
     df = pd.DataFrame(np.random.randint(0, 100, size=(100, len(column_names))), columns=column_names)
     df['label'] = np.where(df[column_names[0]] > 50, 1, 0)
     return df
@@ -20,10 +20,11 @@ class TestExperiment(unittest.TestCase):
         self.test_df = self.df[60:]
 
     def test_base_ModelRun_integration_test(self):
-        exp = PartitionedExperiment(name='test', data_set=self.df, feature_subset = list('ABCD'),
+        exp = PartitionedExperiment(name='test', data_set=self.df, feature_subset=list('ABCD'),
                                     label_key='label', preprocessing_func=None,
                                     model_run_class=ModelRun, model=RandomForestClassifier(), hyperparams={},
-                                    verbose=True, search_type='random', scoring_fn='f1_score')
+                                    verbose=True, search_type='random', num_cv_folds=2, num_iter=2,
+                                    scoring_fn='f1_score')
         results = exp.run(run_hyperparam_search=False)
         print(results)
         print("Evaluation")
@@ -43,7 +44,8 @@ class TestExperiment(unittest.TestCase):
     #     exp = PartitionedExperiment(name='test', data_set=data_set, feature_subset=feature_subset, label_key=label_key,
     #                                 preprocessing_func=None, model_run_class=harvey_model_run,
     #                                 model=RandomForestClassifier(), hyperparams={},
-    #                                 verbose=True, search_type='random', scoring_fn='f1_score')
+    #                                 verbose=True, search_type='random', num_cv_folds=2, num_iter=2,
+    #                                 scoring_fn='f1_score')
     #     results = exp.run(run_hyperparam_search=False)
     #     print(results)
     #     print("Evaluation")
@@ -56,8 +58,8 @@ class TestExperiment(unittest.TestCase):
     def test_generate_file_name(self):
         model = RandomForestClassifier()
         harvey_model_run = ModelRun(train_set=self.train_df, test_set=self.test_df, label_key='label', hyperparams={},
-                                    model=model, preprocessing_func=None, search_type='random',
-                                    scoring_fn='f1_score')
+                                    model=model, preprocessing_func=None, search_type='random', num_cv_folds=2,
+                                    num_iter=2, scoring_fn='f1_score')
 
         file_name = harvey_model_run.generate_file_name()
         expected_file_name = '0000-00-00_00-00-00__RandomForestClassifier.pkl'
@@ -69,8 +71,8 @@ class TestExperiment(unittest.TestCase):
     def test_generate_file_name_with_descriptor(self):
         model = RandomForestClassifier()
         harvey_model_run = ModelRun(train_set=self.train_df, test_set=self.test_df, label_key='label', hyperparams={},
-                                    model=model, preprocessing_func=None, search_type='random',
-                                    scoring_fn='f1_score')
+                                    model=model, preprocessing_func=None, search_type='random', num_cv_folds=2,
+                                    num_iter=2, scoring_fn='f1_score')
 
         file_name = harvey_model_run.generate_file_name('5-features')
         expected_file_name = '0000-00-00_00-00-00__RandomForestClassifier__5-features.pkl'
@@ -82,8 +84,8 @@ class TestExperiment(unittest.TestCase):
     def test_generate_file_name_with_descriptor_with_spaces(self):
         model = RandomForestClassifier()
         harvey_model_run = ModelRun(train_set=self.train_df, test_set=self.test_df, label_key='label', hyperparams={},
-                                    model=model, preprocessing_func=None, search_type='random',
-                                    scoring_fn='f1_score')
+                                    model=model, preprocessing_func=None, search_type='random', num_cv_folds=2,
+                                    num_iter=2, scoring_fn='f1_score')
 
         file_name = harvey_model_run.generate_file_name('5 features')
         expected_file_name = '0000-00-00_00-00-00__RandomForestClassifier__5-features.pkl'
