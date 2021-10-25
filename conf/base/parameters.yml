@@ -52,7 +52,7 @@ models:
         search_type: random
         num_cv_folds: 5
         num_iters: 150
-        scoring_fn: f1_score
+        scoring_fn: f1_macro
         run_hyperparam_search: true
         features:
             - 'no_show_before'
