@@ -609,9 +609,6 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, tp_agg_df: pd.DataFrame, t
     idle_df['day_start_tp'] = pd.to_datetime(idle_df['day_start_tp'], format='%H:%M:%S').dt.time
     idle_df['day_end_tp'] = pd.to_datetime(idle_df['day_end_tp'], format='%H:%M:%S').dt.time
 
-    idle_df['day_start_tp'] = idle_df.apply(lambda x: datetime.datetime.combine(x['date'], x['day_start_tp']), axis=1)
-    idle_df['day_end_tp'] = idle_df.apply(lambda x: datetime.datetime.combine(x['date'], x['day_start_tp']), axis=1)
-
     idle_df = idle_df[(idle_df['image_start'] >= idle_df["applicable_from"]) &
                       (idle_df['image_start'] <= idle_df["applicable_to"])]
     idle_df = idle_df.drop(['applicable_from', 'applicable_to'], axis=1)
