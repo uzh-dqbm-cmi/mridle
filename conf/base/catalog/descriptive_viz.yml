@@ -1,0 +1,39 @@
+dave_b:
+  type: mridle.extras.datasets.altair_dataset.AltairDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/descriptive_viz/dave_b.html
+  layer: reporting
+
+no_show_by_day_of_week:
+    type: mridle.extras.datasets.altair_dataset.AltairDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/descriptive_viz/no_show_by_day_of_week.html
+    layer: reporting
+
+no_show_by_month:
+    type: mridle.extras.datasets.altair_dataset.AltairDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/descriptive_viz/no_show_by_month.html
+    layer: reporting
+
+no_show_by_hour_of_day:
+    type: mridle.extras.datasets.altair_dataset.AltairDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/descriptive_viz/no_show_by_hour_of_day.html
+    layer: reporting
+
+no_show_by_age:
+    type: mridle.extras.datasets.altair_dataset.AltairDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/descriptive_viz/no_show_by_age.html
+    layer: reporting
+
+appts_per_patient:
+    type: mridle.extras.datasets.altair_dataset.AltairDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/descriptive_viz/appts_per_patient.html
+    layer: reporting
+
+no_show_heat_map:
+    type: mridle.extras.datasets.altair_dataset.AltairDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/descriptive_viz/no_show_heat_map.html
+    layer: reporting
+
+appt_noshow_tree_map:
+    type: mridle.extras.datasets.plotly_html_dataset.PlotlyHTMLDataSet
+    filepath: /data/mridle/data/kedro_data_catalog/08_reporting/descriptive_viz/appt_noshow_tree_map.html
+    layer: reporting

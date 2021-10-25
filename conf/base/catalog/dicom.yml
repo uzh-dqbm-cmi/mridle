@@ -34,6 +34,10 @@ dicom_series_metadata:
 slot_w_dicom_df:
   type: pandas.CSVDataSet
   filepath: /data/mridle/data/kedro_data_catalog/03_primary/dicom/slot_w_dicom_df.csv
+  load_args:
+    parse_dates:
+      - start_time
+      - end_time
   layer: primary
 
 valid_dicom_ids_2014_2021:
