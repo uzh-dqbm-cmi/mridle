@@ -83,8 +83,8 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'AccessionNumber': 1,
                 'StudyDescription': '-',
                 'image_device_id': 1,
-                'image_start': day(num_days_from_start=-568, hour=14, minute=30),
-                'image_end': day(num_days_from_start=-568, hour=15, minute=5)
+                'image_start': day(num_days_from_start=-603, hour=14, minute=30),
+                'image_end': day(num_days_from_start=-603, hour=15, minute=5)
             }
         ])
 
@@ -94,7 +94,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
         expected_idle_time = 75
 
         expected = pd.DataFrame([{
-            'date': day(num_days_from_start=-568, hour=0),
+            'date': day(num_days_from_start=-603, hour=0),
             'image_device_id': 1,
             'total_time': expected_total_time,  # hours
             'active': expected_active_time / 60,  # fraction of hours
@@ -793,8 +793,8 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'Terminbuch': 'MR1',
                 'Wochentag': 'MO',
                 'TERMINRASTER_NAME': 'not_required',
-                'gültig von': '2014.01.01', #pd.to_datetime(day(-10), format='%d.%m.%Y'),
-                'gültig bis': '2055.01.01', #pd.to_datetime(day(10), format='%d.%m.%Y'),
+                'gültig von': '01.01.2014', #pd.to_datetime(day(-10), format='%d.%m.%Y'),
+                'gültig bis': '01.01.2055', #pd.to_datetime(day(10), format='%d.%m.%Y'),
                 'Termin': '14:00',
                 'Dauer in Min.': 120
             }
