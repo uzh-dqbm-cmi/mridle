@@ -19,8 +19,8 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'Terminbuch': 'MR1',
                 'Wochentag': 'MO',
                 'TERMINRASTER_NAME': 'not_required',
-                'gültig von': pd.to_datetime(day(-10), format='%d.%m.%Y'),
-                'gültig bis': pd.to_datetime(day(10), format='%d.%m.%Y'),
+                'gültig von': '01.01.2014',
+                'gültig bis': '01.01.2055',
                 'Termin': '14:00',
                 'Dauer in Min.': 120
             }
@@ -65,14 +65,14 @@ class TestTerminplannerAggregation(unittest.TestCase):
                         'active_pct', 'idle_pct', 'buffer_pct']]
         pd.testing.assert_frame_equal(result, expected, check_like=True)
 
-    def test_one_appt_in_2017(self):
+    def test_one_appt_outside_terminplanner(self):
         terminplanner_dummy = pd.DataFrame([
             {
                 'Terminbuch': 'MR1',
                 'Wochentag': 'MO',
                 'TERMINRASTER_NAME': 'not_required',
-                'gültig von': pd.to_datetime(day(-600), format='%d.%m.%Y'),
-                'gültig bis': pd.to_datetime(day(-560), format='%d.%m.%Y'),
+                'gültig von': '01.01.2019',
+                'gültig bis': '01.01.2055',
                 'Termin': '14:00',
                 'Dauer in Min.': 120
             }
@@ -122,8 +122,8 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'Terminbuch': 'MR1',
                 'Wochentag': 'MO',
                 'TERMINRASTER_NAME': 'not_required',
-                'gültig von': pd.to_datetime(day(-10), format='%d.%m.%Y'),
-                'gültig bis': pd.to_datetime(day(10), format='%d.%m.%Y'),
+                'gültig von': '01.01.2014',
+                'gültig bis': '01.01.2055',
                 'Termin': '14:00',
                 'Dauer in Min.': 120
             }
@@ -179,8 +179,8 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'Terminbuch': 'MR1',
                 'Wochentag': 'MO',
                 'TERMINRASTER_NAME': 'not_required',
-                'gültig von': pd.to_datetime(day(-10), format='%d.%m.%Y'),
-                'gültig bis': pd.to_datetime(day(10), format='%d.%m.%Y'),
+                'gültig von': '01.01.2014',
+                'gültig bis': '01.01.2055',
                 'Termin': '14:00',
                 'Dauer in Min.': 120
             },
@@ -188,8 +188,8 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'Terminbuch': 'MR2',
                 'Wochentag': 'MO',
                 'TERMINRASTER_NAME': 'not_required',
-                'gültig von': pd.to_datetime(day(-10), format='%d.%m.%Y'),
-                'gültig bis': pd.to_datetime(day(10), format='%d.%m.%Y'),
+                'gültig von': '01.01.2014',
+                'gültig bis': '01.01.2055',
                 'Termin': '14:00',
                 'Dauer in Min.': 60
             }
@@ -268,8 +268,8 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'Terminbuch': 'MR1',
                 'Wochentag': 'MO',
                 'TERMINRASTER_NAME': 'not_required',
-                'gültig von': pd.to_datetime(day(-10), format='%d.%m.%Y'),
-                'gültig bis': pd.to_datetime(day(10), format='%d.%m.%Y'),
+                'gültig von': '01.01.2014',
+                'gültig bis': '01.01.2055',
                 'Termin': '14:00',
                 'Dauer in Min.': 120
             }
@@ -332,8 +332,8 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'Terminbuch': 'MR1',
                 'Wochentag': 'MO',
                 'TERMINRASTER_NAME': 'not_required',
-                'gültig von': pd.to_datetime(day(-10), format='%d.%m.%Y'),
-                'gültig bis': pd.to_datetime(day(10), format='%d.%m.%Y'),
+                'gültig von': '01.01.2014',
+                'gültig bis': '01.01.2055',
                 'Termin': '14:00',
                 'Dauer in Min.': 120
             }
@@ -389,8 +389,8 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'Terminbuch': 'MR1',
                 'Wochentag': 'MO',
                 'TERMINRASTER_NAME': 'not_required',
-                'gültig von': pd.to_datetime(day(-10), format='%d.%m.%Y'),
-                'gültig bis': pd.to_datetime(day(10), format='%d.%m.%Y'),
+                'gültig von': '01.01.2014',
+                'gültig bis': '01.01.2055',
                 'Termin': '14:00',
                 'Dauer in Min.': 120
             }
@@ -447,8 +447,8 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'Terminbuch': 'MR1',
                 'Wochentag': 'MO',
                 'TERMINRASTER_NAME': 'not_required',
-                'gültig von': pd.to_datetime(day(-10), format='%d.%m.%Y'),
-                'gültig bis': pd.to_datetime(day(10), format='%d.%m.%Y'),
+                'gültig von': '01.01.2014',
+                'gültig bis': '01.01.2055',
                 'Termin': '14:00',
                 'Dauer in Min.': 120
             }
@@ -505,8 +505,8 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'Terminbuch': 'MR1',
                 'Wochentag': 'MO',
                 'TERMINRASTER_NAME': 'not_required',
-                'gültig von': pd.to_datetime(day(-10), format='%d.%m.%Y'),
-                'gültig bis': pd.to_datetime(day(10), format='%d.%m.%Y'),
+                'gültig von': '01.01.2014',
+                'gültig bis': '01.01.2055',
                 'Termin': '14:00',
                 'Dauer in Min.': 120
             },
@@ -514,8 +514,8 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'Terminbuch': 'MR1',
                 'Wochentag': 'DI',
                 'TERMINRASTER_NAME': 'not_required',
-                'gültig von': pd.to_datetime(day(-10), format='%d.%m.%Y'),
-                'gültig bis': pd.to_datetime(day(10), format='%d.%m.%Y'),
+                'gültig von': '01.01.2014',
+                'gültig bis': '01.01.2055',
                 'Termin': '14:00',
                 'Dauer in Min.': 60
             }
@@ -596,8 +596,8 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'Terminbuch': 'MR1',
                 'Wochentag': 'MO',
                 'TERMINRASTER_NAME': 'not_required',
-                'gültig von': pd.to_datetime(day(-10), format='%d.%m.%Y'),
-                'gültig bis': pd.to_datetime(day(10), format='%d.%m.%Y'),
+                'gültig von': '01.01.2014',
+                'gültig bis': '01.01.2055',
                 'Termin': '14:00',
                 'Dauer in Min.': 120
             }
@@ -662,8 +662,8 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'Terminbuch': 'MR1',
                 'Wochentag': 'MO',
                 'TERMINRASTER_NAME': 'not_required',
-                'gültig von': pd.to_datetime(day(-10), format='%d.%m.%Y'),
-                'gültig bis': pd.to_datetime(day(10), format='%d.%m.%Y'),
+                'gültig von': '01.01.2014',
+                'gültig bis': '01.01.2055',
                 'Termin': '14:00',
                 'Dauer in Min.': 120
             }
@@ -728,8 +728,8 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'Terminbuch': 'MR1',
                 'Wochentag': 'MO',
                 'TERMINRASTER_NAME': 'not_required',
-                'gültig von': pd.to_datetime(day(-10), format='%d.%m.%Y'),
-                'gültig bis': pd.to_datetime(day(10), format='%d.%m.%Y'),
+                'gültig von': '01.01.2014',
+                'gültig bis': '01.01.2055',
                 'Termin': '14:00',
                 'Dauer in Min.': 120
             }
@@ -793,8 +793,8 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'Terminbuch': 'MR1',
                 'Wochentag': 'MO',
                 'TERMINRASTER_NAME': 'not_required',
-                'gültig von': '01.01.2014', #pd.to_datetime(day(-10), format='%d.%m.%Y'),
-                'gültig bis': '01.01.2055', #pd.to_datetime(day(10), format='%d.%m.%Y'),
+                'gültig von': '01.01.2014',
+                'gültig bis': '01.01.2055',
                 'Termin': '14:00',
                 'Dauer in Min.': 120
             }
@@ -857,8 +857,8 @@ class TestTerminplannerAggregation(unittest.TestCase):
                 'Terminbuch': 'MR1',
                 'Wochentag': 'MO',
                 'TERMINRASTER_NAME': 'not_required',
-                'gültig von': pd.to_datetime(day(-10), format='%d.%m.%Y'),
-                'gültig bis': pd.to_datetime(day(10), format='%d.%m.%Y'),
+                'gültig von': '01.01.2014',
+                'gültig bis': '01.01.2055',
                 'Termin': '14:00',
                 'Dauer in Min.': 120
             }
