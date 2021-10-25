@@ -559,8 +559,9 @@ def aggregate_terminplanner(terminplanner_df: pd.DataFrame) -> pd.DataFrame:
     tp_df['Termin'] = tp_df['Termin'].dt.time
     tp_df['terminende'] = tp_df['terminende'].dt.time
 
-    tp_df['gültig von'] = tp_df['gültig von'].fillna('01.01.2014')
-    tp_df['gültig bis'] = tp_df['gültig bis'].fillna('31.12.{}'.format(int(datetime.datetime.now().year + 3)))
+    tp_df['gültig von'] = tp_df['gültig von'].fillna(pd.datetime('01.01.2014'))
+    tp_df['gültig bis'] = tp_df['gültig bis'].fillna(pd.datetime('31.12.{}'.format(int(datetime.datetime.now().year
+                                                                                       + 3))))
 
     tp_agg = tp_df.groupby(['Terminbuch', 'Wochentag', 'TERMINRASTER_NAME', 'gültig von', 'gültig bis']).agg({
         'Termin': 'min',
