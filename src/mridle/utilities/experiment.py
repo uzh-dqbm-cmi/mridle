@@ -103,7 +103,7 @@ class ModelRun:
         if run_hyperparam_search:
             self.model = self.search_hyperparameters(self.model, self.hyperparams, self.x_train, self.y_train,
                                                      search_type=self.search_type, num_cv_folds=self.num_cv_folds,
-                                                     n_iter=self.n_iter, hyperopt_timeout=hyperopt_timeout,
+                                                     n_iters=self.n_iters, hyperopt_timeout=hyperopt_timeout,
                                                      hyperopt_trials=self.hyperopt_trials, scoring_fn=self.scoring_fn)
             if self.reduce_features:
                 self.rfecv = self.train_feature_reducer(self.model, self.x_train, self.y_train)

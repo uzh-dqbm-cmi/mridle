@@ -53,7 +53,7 @@ models:
         num_cv_folds: 5
         num_iters: 150
         scoring_fn: f1_score
-        run_hyperparam_search: false
+        run_hyperparam_search: true
         features:
             - 'no_show_before'
             - 'no_show_before_sq'
