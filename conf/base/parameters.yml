@@ -12,6 +12,8 @@ models:
             C: [0, 1, 10]
             solver: ['liblinear', 'lbfgs']
         search_type: random
+        num_cv_folds: 5
+        num_iter: 150
         scoring_fn: f1_macro
         run_hyperparam_search: true
         features:
@@ -48,6 +50,8 @@ models:
             min_samples_leaf: [1, 2, 5, 10]
             bootstrap: [true, false]
         search_type: random
+        num_cv_folds: 5
+        num_iter: 150
         scoring_fn: f1_score
         run_hyperparam_search: false
         features:
