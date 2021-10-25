@@ -605,12 +605,13 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, tp_agg_df: pd.DataFrame, t
 
     # Join on terminplanner data
     idle_df = idle_df.merge(tp_agg_df, how='left', on=['day_of_week', 'image_device_id'])
-    idle_df = idle_df[(idle_df['image_start'] >= idle_df["applicable_from"]) &
-                      (idle_df['image_start'] <= idle_df["applicable_to"])]
-    idle_df = idle_df.drop(['applicable_from', 'applicable_to'], axis=1)
 
     idle_df['day_start_tp'] = idle_df.apply(lambda x: datetime.datetime.combine(x['date'], x['day_start_tp']), axis=1)
     idle_df['day_end_tp'] = idle_df.apply(lambda x: datetime.datetime.combine(x['date'], x['day_end_tp']), axis=1)
+
+    idle_df = idle_df[(idle_df['image_start'] >= idle_df["applicable_from"]) &
+                      (idle_df['image_start'] <= idle_df["applicable_to"])]
+    idle_df = idle_df.drop(['applicable_from', 'applicable_to'], axis=1)
 
     # Using terminplanner df, add flag for each appointment indicating whether it falls within the times outlined by the
     # terminplanner, and then limit our data to only those appts
@@ -621,7 +622,7 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, tp_agg_df: pd.DataFrame, t
 
     idle_df = idle_df[idle_df['within_day'] == 1]
 
-    # Add colunns indicating if the appointment was the first / last appointment for that day for that MR machine
+    # Add columns indicating if the appointment was the first / last appointment for that day for that MR machine
     idle_df['first_appt'] = idle_df.groupby(['date', 'image_device_id'])['image_start'].transform('rank',
                                                                                                   ascending=True)
     idle_df['first_appt'] = np.where(idle_df['first_appt'] == 1, 1, 0)

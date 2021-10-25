@@ -106,6 +106,7 @@ class TestTerminplannerAggregation(unittest.TestCase):
         }])
 
         tp_agg = aggregate_terminplanner(terminplanner_dummy)
+        tp_agg = fill_in_terminplanner_gaps(tp_agg)
         idle_df = calc_idle_time_gaps(dicom_data_dummy, tp_agg, time_buffer_mins=5)
 
         appts_and_gaps = calc_appts_and_gaps(idle_df)
