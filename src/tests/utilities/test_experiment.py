@@ -23,7 +23,7 @@ class TestExperiment(unittest.TestCase):
         exp = PartitionedExperiment(name='test', data_set=self.df, feature_subset=list('ABCD'),
                                     label_key='label', preprocessing_func=None,
                                     model_run_class=ModelRun, model=RandomForestClassifier(), hyperparams={},
-                                    verbose=True, search_type='random', num_cv_folds=2, num_iter=2,
+                                    verbose=True, search_type='random', num_cv_folds=2, num_iters=2,
                                     scoring_fn='f1_score')
         results = exp.run(run_hyperparam_search=False)
         print(results)
@@ -44,7 +44,7 @@ class TestExperiment(unittest.TestCase):
     #     exp = PartitionedExperiment(name='test', data_set=data_set, feature_subset=feature_subset, label_key=label_key,
     #                                 preprocessing_func=None, model_run_class=harvey_model_run,
     #                                 model=RandomForestClassifier(), hyperparams={},
-    #                                 verbose=True, search_type='random', num_cv_folds=2, num_iter=2,
+    #                                 verbose=True, search_type='random', num_cv_folds=2, num_iters=2,
     #                                 scoring_fn='f1_score')
     #     results = exp.run(run_hyperparam_search=False)
     #     print(results)
@@ -59,7 +59,7 @@ class TestExperiment(unittest.TestCase):
         model = RandomForestClassifier()
         harvey_model_run = ModelRun(train_set=self.train_df, test_set=self.test_df, label_key='label', hyperparams={},
                                     model=model, preprocessing_func=None, search_type='random', num_cv_folds=2,
-                                    num_iter=2, scoring_fn='f1_score')
+                                    num_iters=2, scoring_fn='f1_score')
 
         file_name = harvey_model_run.generate_file_name()
         expected_file_name = '0000-00-00_00-00-00__RandomForestClassifier.pkl'
@@ -72,7 +72,7 @@ class TestExperiment(unittest.TestCase):
         model = RandomForestClassifier()
         harvey_model_run = ModelRun(train_set=self.train_df, test_set=self.test_df, label_key='label', hyperparams={},
                                     model=model, preprocessing_func=None, search_type='random', num_cv_folds=2,
-                                    num_iter=2, scoring_fn='f1_score')
+                                    num_iters=2, scoring_fn='f1_score')
 
         file_name = harvey_model_run.generate_file_name('5-features')
         expected_file_name = '0000-00-00_00-00-00__RandomForestClassifier__5-features.pkl'
@@ -85,7 +85,7 @@ class TestExperiment(unittest.TestCase):
         model = RandomForestClassifier()
         harvey_model_run = ModelRun(train_set=self.train_df, test_set=self.test_df, label_key='label', hyperparams={},
                                     model=model, preprocessing_func=None, search_type='random', num_cv_folds=2,
-                                    num_iter=2, scoring_fn='f1_score')
+                                    num_iters=2, scoring_fn='f1_score')
 
         file_name = harvey_model_run.generate_file_name('5 features')
         expected_file_name = '0000-00-00_00-00-00__RandomForestClassifier__5-features.pkl'

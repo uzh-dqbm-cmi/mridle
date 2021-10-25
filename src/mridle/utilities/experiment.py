@@ -28,7 +28,7 @@ class ModelRun:
     """
 
     def __init__(self, train_set: Any, test_set: Any, label_key: str, model: Any, hyperparams: Dict, search_type: str,
-                 num_cv_folds: int, num_iter: int, scoring_fn: str, preprocessing_func: Callable,
+                 num_cv_folds: int, num_iters: int, scoring_fn: str, preprocessing_func: Callable,
                  feature_subset: List = None, reduce_features=False):
         """
         Create a ModelRun object.
@@ -43,7 +43,7 @@ class ModelRun:
             hyperparams: Dictionary of hyperparameter options to try with sklearn.model_selection.RandomizedSearchCV.
             search_type: Type of search to do when searching for hyperparameters (grid, random, or bayesian)
             num_cv_folds: Number of cross validation folds to run in the hyperparameter search
-            num_iter: Number of iterations to run per folds in the hyperparameter search (only applicable for
+            num_iters: Number of iterations to run per folds in the hyperparameter search (only applicable for
              search_type='random')
             scoring_fn: the scoring function to use (can be from 'f1_macro', 'log_loss', or 'brier_score')
             preprocessing_func: The function that was used to transform the raw_data into train_set. Is saved to pass to
@@ -63,7 +63,7 @@ class ModelRun:
         self.hyperopt_trials = Trials()
         self.search_type = search_type
         self.num_cv_folds = num_cv_folds
-        self.num_iter = num_iter
+        self.num_iters = num_iters
         self.scoring_fn = scoring_fn
 
         # properties that will be set during self.run()
@@ -601,7 +601,7 @@ class PartitionedExperiment:
 
     def __init__(self, name: str, data_set: Any, label_key: str, preprocessing_func: Callable,
                  model_run_class: ModelRun, model, hyperparams: Dict, search_type: str, num_cv_folds: int,
-                 num_iter: int, scoring_fn: str, n_partitions: int = 5, stratify_by_label: bool = True,
+                 num_iters: int, scoring_fn: str, n_partitions: int = 5, stratify_by_label: bool = True,
                  feature_subset=None, reduce_features=False, verbose=False):
         """
 
@@ -616,7 +616,7 @@ class PartitionedExperiment:
             hyperparams: Dictionary of hyperparamters to search for the best model.
             search_type: Type of search to do when searching for hyperparameters (grid, random, or bayesian)
             num_cv_folds: Number of cross validation folds to run in the hyperparameter search
-            num_iter: Number of iterations to run per folds in the hyperparameter search (only applicable for
+            num_iters: Number of iterations to run per folds in the hyperparameter search (only applicable for
              search_type='random')
             scoring_fn: the scoring function to use (can be from 'f1_macro', 'log_loss', or 'brier_score')
             n_partitions: Number of partitions to split the data on and run the experiment on.
@@ -643,7 +643,7 @@ class PartitionedExperiment:
         self.hyperopt_trials = Trials()
         self.search_type = search_type
         self.num_cv_folds = num_cv_folds
-        self.num_iter = num_iter
+        self.num_iters = num_iters
         self.scoring_fn = scoring_fn
 
         self.n_partitions = n_partitions
@@ -691,7 +691,7 @@ class PartitionedExperiment:
                                                                  run_hyperparam_search=run_hyperparam_search,
                                                                  search_type=self.search_type,
                                                                  num_cv_folds=self.num_cv_folds,
-                                                                 num_iter=self.num_iter,
+                                                                 num_iters=self.num_iters,
                                                                  scoring_fn=self.scoring_fn,
                                                                  feature_subset=self.feature_subset,
                                                                  reduce_features=self.reduce_features,
@@ -706,12 +706,12 @@ class PartitionedExperiment:
     def run_experiment_on_one_partition(cls, data_set: Dict, label_key: str, partition_ids: List[int],
                                         preprocessing_func: Callable, model_run_class: ModelRun, model,
                                         hyperparams: Dict, run_hyperparam_search: bool, search_type, scoring_fn: str,
-                                        num_cv_folds: int, num_iter: int, feature_subset: List[str],
+                                        num_cv_folds: int, num_iters: int, feature_subset: List[str],
                                         reduce_features: bool, hyperopt_timeout: int = 60):
         train_set, test_set = cls.materialize_partition(partition_ids, data_set)
         mr = model_run_class(train_set=train_set, test_set=test_set, label_key=label_key, model=model,
                              preprocessing_func=preprocessing_func, hyperparams=hyperparams, search_type=search_type,
-                             num_cv_folds=num_cv_folds, num_iter=num_iter, scoring_fn=scoring_fn,
+                             num_cv_folds=num_cv_folds, num_iters=num_iters, scoring_fn=scoring_fn,
                              feature_subset=feature_subset, reduce_features=reduce_features)
         mr.run(run_hyperparam_search=run_hyperparam_search, hyperopt_timeout=hyperopt_timeout)
         return mr
