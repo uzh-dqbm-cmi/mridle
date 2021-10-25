@@ -128,6 +128,14 @@ session.run(pipeline_name='harvey')
 session.run(ppipeline_name='harvey', from_nodes=['train_harvey_model')
 ```
 
+#### Update Project Dependencies
+Add requirements to `src/requirements.in` (not `requirements.txt`!)
+
+```bash
+kedro build-reqs
+pip install -r src/requirements.txt
+```
+
 ## Example Usage
 
 `status_df` contains the columns:
