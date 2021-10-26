@@ -391,7 +391,7 @@ def plot_numerical_feature_correlations(feature_df: pd.DataFrame) -> (alt.Chart,
         feature_df: dataframe of features
 
     Returns:
-        Histogram of correlation values
+        Histogram of correlation values and a dataframe containing these values
     """
     df_copy = feature_df.copy()
     df_copy = df_copy.drop(['FillerOrderNo', 'MRNCmpdId', 'NoShow'], axis=1)
@@ -425,7 +425,9 @@ def plot_numerical_feature_correlations(feature_df: pd.DataFrame) -> (alt.Chart,
     line = alt.Chart(correlation_list).mark_rule(color='black').encode(
         alt.X('zero')
     )
+    return_chart = (chart + line).properties(title='Distribution of correlations between feature pairs')
+
     correlation_list = correlation_list.sort_values('varcomb')
     correlation_list = correlation_list.drop('zero', axis=1)
 
-    return (chart + line).properties(title='Distribution of correlations between feature pairs'), correlation_list
+    return return_chart, correlation_list
