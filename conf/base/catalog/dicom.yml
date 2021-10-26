@@ -57,6 +57,7 @@ terminplanner_aggregated_df:
     parse_dates:
       - applicable_to
       - applicable_from
+    day first: true
   layer: intermediate
 
 
