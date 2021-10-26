@@ -376,3 +376,54 @@ def plot_appt_noshow_tree_map(df):
     fig.update_layout(margin=dict(t=0, l=0, r=0, b=0))  # noqa
 
     return fig
+
+
+def plot_numerical_feature_correlations(feature_df: pd.DataFrame) -> alt.Chart:
+    """
+    Calculates the correlation between the numerical features in the provided feature set (excluding the id columns,
+    the NoShow column, and the columns which are sin & cos transformations of the temporal variables (if applicable).
+    These latter columns are dropped since they will naturally be correlated with their original variables which are
+    contained in the same feature set.
+
+    These correlation values are then plotted in a histogram to visualise the amount of correlation between our features
+
+    Args:
+        feature_df: dataframe of features
+
+    Returns:
+        Histogram of correlation values
+    """
+    df_copy = feature_df.copy()
+    df_copy = df_copy.drop(['FillerOrderNo', 'MRNCmpdId', 'NoShow'], axis=1)
+    df_copy = df_copy.select_dtypes(include=[np.number])
+
+    # remove columns which are sin & cos transformations of hour, month, time columns
+    cols_to_drop = df_copy.columns[df_copy.columns.str.contains('_cos|_sin')]
+    df_copy = df_copy.drop(cols_to_drop, axis=1)
+
+    correlation_list = df_copy.corr().stack().reset_index().drop_duplicates()
+    correlation_list.columns = ['var1', 'var2', 'correlation']
+    correlation_list = correlation_list[correlation_list['var1'] != correlation_list['var2']]  # remove self-correlation
+
+    # Remove duplicated rows (i.e. the correlation list at this stage will include correlation between var1 and var2,
+    # as well as the correlation between var2 and var1 (the same value) so we keep just one of these
+    def order_and_combine_cols(row):
+        if row['var1'] < row['var2']:
+            return row['var1'] + ", " + row['var2']
+        else:
+            return row['var2'] + ", " + row['var1']
+
+    correlation_list['varcomb'] = correlation_list.apply(order_and_combine_cols, axis=1)
+    correlation_list = correlation_list[['correlation', 'varcomb']].drop_duplicates()
+
+    correlation_list['zero'] = 0  # Required for drawing vertical line at x=0 in altair chart
+
+    chart = alt.Chart(correlation_list).mark_bar().encode(
+        alt.X("correlation:Q", bin=True, title='Correlation measure'),
+        alt.Y('count()', title='Number of feature pairs')
+    )
+    line = alt.Chart(correlation_list).mark_rule(color='black').encode(
+        alt.X('zero')
+    )
+
+    return (chart + line).properties(title='Distribution of correlations between feature pairs')
