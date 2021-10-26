@@ -1,7 +1,7 @@
 ris:
     # valid range is dataset_valid_starting ≤ x ≤ dataset_valid_ending
-    dataset_valid_starting: '01/01/2015'
-    dataset_valid_ending: '12/31/2019'
+    dataset_valid_starting: '2015-01-01'
+    dataset_valid_ending: '2019-12-31'
 
 dispo:
     experiment_2:
@@ -11,7 +11,7 @@ dispo:
 
     experiment_3:
         # valid range is dataset_valid_starting ≤ x ≤ dataset_valid_ending
-        dataset_valid_starting: '2021-14-12'
+        dataset_valid_starting: '2021-04-12'
         dataset_valid_ending: '2021-04-16'
 
 harvey:
