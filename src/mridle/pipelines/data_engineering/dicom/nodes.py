@@ -136,9 +136,8 @@ def integrate_dicom_data(slot_df: pd.DataFrame, dicom_times_df: pd.DataFrame) ->
 def fill_in_terminplanner_gaps(terminplanner_aggregated_df: pd.DataFrame) -> pd.DataFrame:
     """
     The terminplanner which was provided does not contain information for all date ranges in the DICOM data which we
-    have. Therefore we 'fill in' these gaps manually here, with the assumption that the terminplanner information
-    is the same (i.e. Tuesday is always from 07.00 to 18.00 in the provided terminplanner data, so we assume that
-    to be the case for those date ranges where we have no data.
+    have. Therefore we 'fill in' these gaps here, with the assumption that the terminplanner information
+    is the same for the period before the terminplanner information starts and for the period after it ends.
 
     Args:
         terminplanner_aggregated_df: Terminplanner data which was previously processed and aggregated to the day level
@@ -146,25 +145,31 @@ def fill_in_terminplanner_gaps(terminplanner_aggregated_df: pd.DataFrame) -> pd.
     Returns:
         The provided dataframe with rows added to fill in the date range gaps
     """
-    terminplanner_df = terminplanner_aggregated_df.copy()
+    tp = terminplanner_aggregated_df.copy()
 
-    new_rows = pd.DataFrame(
-        [[1, 'Monday', 'MR1 IDR (Montag)', '17.05.2020', '01.01.2055', datetime.time(7, 0), datetime.time(18, 0), 660],
-         [2, 'Monday', 'MR2 IDR (Montag)', '17.05.2020', '01.01.2055', datetime.time(7, 0), datetime.time(18, 0), 660],
-         [1, 'Tuesday', 'MR1 IDR (Dienstag)', '19.10.2020', '01.01.2055', datetime.time(7, 0), datetime.time(18, 0),
-          660],
-         [2, 'Tuesday', 'MR2 IDR (Dienstag)', '30.06.2020', '01.01.2055', datetime.time(7, 0), datetime.time(18, 0),
-          660],
-         [1, 'Wednesday', 'MR1 IDR (Mittwoch)', '19.10.2020', '01.01.2055', datetime.time(7, 0), datetime.time(18, 0),
-          660],
-         [1, 'Thursday', 'MR1 IDR (Donnerstag)', '30.06.2020', '01.01.2055', datetime.time(7, 0), datetime.time(20, 30),
-          805],
-         [2, 'Thursday', 'MR2 IDR (Donnerstag)', '31.10.2019', '01.01.2055', datetime.time(7, 0), datetime.time(20, 30),
-          805],
-         ], columns=terminplanner_aggregated_df.columns)
+    # tp['applicable_from'] = pd.to_datetime(tp['applicable_from'])
+    # tp['applicable_to'] = pd.to_datetime(tp['applicable_to'])
 
-    terminplanner_df = terminplanner_df.append(new_rows)
+    tp['rank'] = tp[['image_device_id', 'day_of_week', 'TERMINRASTER_NAME', 'applicable_from']].groupby(
+        ['image_device_id', 'day_of_week', 'TERMINRASTER_NAME']).rank()
+    tp['rank_rev'] = tp[['image_device_id', 'day_of_week', 'TERMINRASTER_NAME', 'applicable_from']].groupby(
+        ['image_device_id', 'day_of_week', 'TERMINRASTER_NAME']).rank(ascending=False)
+
+    new_rows_begin = tp[tp['rank'] == 1].copy()
+    new_rows_begin['applicable_to'] = new_rows_begin['applicable_from'] - datetime.timedelta(days=1)
+    new_rows_begin['applicable_from'] = datetime.datetime(year=2014, month=1, day=1)
+
+    new_rows_end = tp[(tp['rank_rev'] == 1) &
+                      (tp['applicable_to'] < datetime.datetime(year=datetime.datetime.now().year + 3, month=12, day=31))
+                      ].copy()
+    new_rows_end['applicable_from'] = new_rows_end['applicable_to'] + datetime.timedelta(days=1)
+    new_rows_end['applicable_to'] = datetime.datetime(year=datetime.datetime.now().year + 3, month=12, day=31)
+
+    terminplanner_df = pd.concat([tp, new_rows_begin, new_rows_end], axis=0).sort_values(
+        ['TERMINRASTER_NAME', 'applicable_from'])
+    terminplanner_df = terminplanner_df.drop(columns=['rank', 'rank_rev'])
     terminplanner_df = terminplanner_df.reset_index(drop=True)
+
     return terminplanner_df
 
 
@@ -540,6 +545,7 @@ def aggregate_terminplanner(terminplanner_df: pd.DataFrame) -> pd.DataFrame:
         for. A column containing the total number of minutes in the day is included as well.
     """
     tp_df = terminplanner_df.copy()
+
     tp_df['Termin'] = pd.to_datetime(tp_df['Termin'], format='%H:%M')
     tp_df['Terminbuch'] = tp_df['Terminbuch'].replace({'MR1': 1, 'MR2': 2})
     tp_df['Wochentag'] = tp_df['Wochentag'].replace({'MO': 'Monday',
@@ -552,6 +558,13 @@ def aggregate_terminplanner(terminplanner_df: pd.DataFrame) -> pd.DataFrame:
     tp_df['terminende'] = tp_df['Termin'] + tp_df['Dauer in dt']
     tp_df['Termin'] = tp_df['Termin'].dt.time
     tp_df['terminende'] = tp_df['terminende'].dt.time
+
+    tp_df['gültig von'] = tp_df['gültig von'].fillna("01.01.2014")
+    tp_df['gültig bis'] = tp_df['gültig bis'].fillna("31.12.2055")
+
+    tp_df['gültig von'] = pd.to_datetime(tp_df['gültig von'], format='%d.%m.%Y')
+    tp_df['gültig bis'] = pd.to_datetime(tp_df['gültig bis'], format='%d.%m.%Y')
+
     tp_agg = tp_df.groupby(['Terminbuch', 'Wochentag', 'TERMINRASTER_NAME', 'gültig von', 'gültig bis']).agg({
         'Termin': 'min',
         'terminende': 'max',
@@ -592,9 +605,16 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, tp_agg_df: pd.DataFrame, t
 
     idle_df['date'] = pd.to_datetime(idle_df['image_start'].dt.date)
     idle_df['day_of_week'] = idle_df['image_start'].dt.day_name()
+    idle_df = idle_df[idle_df['day_of_week'].isin(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])]
 
     # Join on terminplanner data
     idle_df = idle_df.merge(tp_agg_df, how='left', on=['day_of_week', 'image_device_id'])
+
+    idle_df['day_start_tp'] = pd.to_datetime(idle_df['day_start_tp'], format='%H:%M:%S').dt.time
+    idle_df['day_end_tp'] = pd.to_datetime(idle_df['day_end_tp'], format='%H:%M:%S').dt.time
+    idle_df['day_start_tp'] = idle_df.apply(lambda x: datetime.datetime.combine(x['date'], x['day_start_tp']), axis=1)
+    idle_df['day_end_tp'] = idle_df.apply(lambda x: datetime.datetime.combine(x['date'], x['day_end_tp']), axis=1)
+
     idle_df = idle_df[(idle_df['image_start'] >= idle_df["applicable_from"]) &
                       (idle_df['image_start'] <= idle_df["applicable_to"])]
     idle_df = idle_df.drop(['applicable_from', 'applicable_to'], axis=1)
@@ -602,14 +622,11 @@ def calc_idle_time_gaps(dicom_times_df: pd.DataFrame, tp_agg_df: pd.DataFrame, t
     # Using terminplanner df, add flag for each appointment indicating whether it falls within the times outlined by the
     # terminplanner, and then limit our data to only those appts
     idle_df['within_day'] = np.where(
-        (idle_df['image_end'].dt.time > idle_df['day_start_tp']) &
-        (idle_df['image_start'].dt.time < idle_df['day_end_tp']),
+        (idle_df['image_end'] > idle_df['day_start_tp']) &
+        (idle_df['image_start'] < idle_df['day_end_tp']),
         1, 0)
 
     idle_df = idle_df[idle_df['within_day'] == 1]
-
-    idle_df['day_start_tp'] = idle_df.apply(lambda x: datetime.datetime.combine(x['date'], x['day_start_tp']), axis=1)
-    idle_df['day_end_tp'] = idle_df.apply(lambda x: datetime.datetime.combine(x['date'], x['day_end_tp']), axis=1)
 
     # Add columns indicating if the appointment was the first / last appointment for that day for that MR machine
     idle_df['first_appt'] = idle_df.groupby(['date', 'image_device_id'])['image_start'].transform('rank',
