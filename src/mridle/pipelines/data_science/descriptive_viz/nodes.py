@@ -378,7 +378,7 @@ def plot_appt_noshow_tree_map(df):
     return fig
 
 
-def plot_numerical_feature_correlations(feature_df: pd.DataFrame) -> alt.Chart:
+def plot_numerical_feature_correlations(feature_df: pd.DataFrame) -> (alt.Chart, pd.DataFrame):
     """
     Calculates the correlation between the numerical features in the provided feature set (excluding the id columns,
     the NoShow column, and the columns which are sin & cos transformations of the temporal variables (if applicable).
@@ -425,5 +425,7 @@ def plot_numerical_feature_correlations(feature_df: pd.DataFrame) -> alt.Chart:
     line = alt.Chart(correlation_list).mark_rule(color='black').encode(
         alt.X('zero')
     )
+    correlation_list = correlation_list.sort_values('varcomb')
+    correlation_list = correlation_list.drop('zero', axis=1)
 
     return (chart + line).properties(title='Distribution of correlations between feature pairs'), correlation_list
