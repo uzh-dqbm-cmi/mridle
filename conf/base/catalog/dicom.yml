@@ -59,7 +59,6 @@ terminplanner_aggregated_df:
       - applicable_from
   layer: intermediate
 
-
 terminplanner_df:
   type: pandas.ParquetDataSet
   filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dicom/terminplanner_df.parquet
