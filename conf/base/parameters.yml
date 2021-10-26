@@ -12,6 +12,8 @@ models:
             C: [0, 1, 10]
             solver: ['liblinear', 'lbfgs']
         search_type: random
+        num_cv_folds: 5
+        num_iters: 150
         scoring_fn: f1_macro
         run_hyperparam_search: true
         features:
@@ -19,14 +21,14 @@ models:
             - 'no_show_before_sq'
             - 'sched_days_advanced'
             - 'hour_sched'
-            # - 'distance_to_usz'
+            - 'distance_to_usz'
             - 'age'
-            # - 'close_to_usz'
+            - 'close_to_usz'
             - 'male'
             - 'female'
             - 'age_sq'
-            # - 'sched_days_advanced_sq'
-            # - 'distance_to_usz_sq'
+            - 'sched_days_advanced_sq'
+            - 'distance_to_usz_sq'
             - 'sched_2_days'
             - 'age_20_60'
 
@@ -48,20 +50,22 @@ models:
             min_samples_leaf: [1, 2, 5, 10]
             bootstrap: [true, false]
         search_type: random
-        scoring_fn: f1_score
-        run_hyperparam_search: false
+        num_cv_folds: 5
+        num_iters: 150
+        scoring_fn: f1_macro
+        run_hyperparam_search: true
         features:
             - 'no_show_before'
             - 'no_show_before_sq'
             - 'sched_days_advanced'
             - 'hour_sched'
-            # - 'distance_to_usz'
+            - 'distance_to_usz'
             - 'age'
-            # - 'close_to_usz'
+            - 'close_to_usz'
             - 'male'
             - 'female'
             - 'age_sq'
-            # - 'sched_days_advanced_sq'
-            # - 'distance_to_usz_sq'
+            - 'sched_days_advanced_sq'
+            - 'distance_to_usz_sq'
             - 'sched_2_days'
             - 'age_20_60'
