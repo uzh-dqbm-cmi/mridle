@@ -43,6 +43,7 @@ def train_harvey_model_logistic_reg(features_df: pd.DataFrame, params: Dict) -> 
                                 model_run_class=ModelRun, model=model, preprocessing_func=None,
                                 label_key=params['label_key'], hyperparams=params['hyperparameters'],
                                 verbose=params['verbose'], search_type=params['search_type'],
+                                num_cv_folds=params['num_cv_folds'], num_iters=params['num_iters'],
                                 scoring_fn=params['scoring_fn'])
     results = exp.run(run_hyperparam_search=params['run_hyperparam_search'])
     return exp, results
@@ -73,7 +74,8 @@ def train_harvey_model_random_forest(features_df: pd.DataFrame, params: Dict) ->
     exp = PartitionedExperiment(name=params['name'], data_set=features_df, feature_subset=params['features'],
                                 model_run_class=ModelRun, model=model, preprocessing_func=None,
                                 label_key=params['label_key'], hyperparams=hyperparams, verbose=params['verbose'],
-                                search_type=params['search_type'], scoring_fn=params['scoring_fn'])
+                                search_type=params['search_type'], num_cv_folds=params['num_cv_folds'],
+                                num_iters=params['num_iters'], scoring_fn=params['scoring_fn'])
     results = exp.run(run_hyperparam_search=params['run_hyperparam_search'])
     return exp, results
 

@@ -28,7 +28,8 @@ class ModelRun:
     """
 
     def __init__(self, train_set: Any, test_set: Any, label_key: str, model: Any, hyperparams: Dict, search_type: str,
-                 scoring_fn: str, preprocessing_func: Callable, feature_subset: List = None, reduce_features=False):
+                 num_cv_folds: int, num_iters: int, scoring_fn: str, preprocessing_func: Callable,
+                 feature_subset: List = None, reduce_features=False):
         """
         Create a ModelRun object.
 
@@ -41,6 +42,9 @@ class ModelRun:
             model:
             hyperparams: Dictionary of hyperparameter options to try with sklearn.model_selection.RandomizedSearchCV.
             search_type: Type of search to do when searching for hyperparameters (grid, random, or bayesian)
+            num_cv_folds: Number of cross validation folds to run in the hyperparameter search
+            num_iters: Number of iterations to run per folds in the hyperparameter search (only applicable for
+             search_type='random')
             scoring_fn: the scoring function to use (can be from 'f1_macro', 'log_loss', or 'brier_score')
             preprocessing_func: The function that was used to transform the raw_data into train_set. Is saved to pass to
              Predictor to maintain and end-to-end record of the the history of data the model was trained on.
@@ -58,6 +62,8 @@ class ModelRun:
         self.reduce_features = reduce_features
         self.hyperopt_trials = Trials()
         self.search_type = search_type
+        self.num_cv_folds = num_cv_folds
+        self.num_iters = num_iters
         self.scoring_fn = scoring_fn
 
         # properties that will be set during self.run()
@@ -96,7 +102,8 @@ class ModelRun:
         # TODO: refactor this section. LKK note: this many if/elses is no good at all!
         if run_hyperparam_search:
             self.model = self.search_hyperparameters(self.model, self.hyperparams, self.x_train, self.y_train,
-                                                     search_type=self.search_type, hyperopt_timeout=hyperopt_timeout,
+                                                     search_type=self.search_type, num_cv_folds=self.num_cv_folds,
+                                                     num_iters=self.num_iters, hyperopt_timeout=hyperopt_timeout,
                                                      hyperopt_trials=self.hyperopt_trials, scoring_fn=self.scoring_fn)
             if self.reduce_features:
                 self.rfecv = self.train_feature_reducer(self.model, self.x_train, self.y_train)
@@ -232,8 +239,8 @@ class ModelRun:
 
     @classmethod
     def search_hyperparameters(cls, model: Any, hyperparams: Dict[str, List], x_train: pd.DataFrame,
-                               y_train: List, scoring_fn: str, search_type: str, hyperopt_timeout: int,
-                               hyperopt_trials: Any) -> Any:
+                               y_train: List, scoring_fn: str, search_type: str, num_cv_folds: int, num_iters: int,
+                               hyperopt_timeout: int, hyperopt_trials: Any) -> Any:
         """
         Run sklearn.model_selection.Randomized_SearchCV and return the best model.
         Args:
@@ -243,27 +250,31 @@ class ModelRun:
             y_train: Training data labels.
             scoring_fn: the scoring function to use (can be from 'f1_macro', 'log_loss', or 'brier_score')
             search_type: Type of search for hyperparameters. Choose between random, grid, and bayesian search. All
-            search types include cross validation
+             search types include cross validation
+            num_cv_folds: Number of cross validation folds to run.
+            num_iters: Number of iterations to run (only applicable for random and bayesian search)
             hyperopt_timeout: If running hyperopt search, the user can specify how long to run this for (in seconds).
             hyperopt_trials: If running hyperopt search, the Trials object holds the results of previous hyperparameter
-            evaluations, and uses these to guide the future search.
+             evaluations, and uses these to guide the future search.
 
         Returns: The best model.
 
         """
         if search_type == "random":
-            random_search = RandomizedSearchCV(estimator=model, param_distributions=hyperparams, n_iter=10, cv=5,
-                                               verbose=2, random_state=42, n_jobs=-1, scoring=scoring_fn)
+            random_search = RandomizedSearchCV(estimator=model, param_distributions=hyperparams, n_iter=num_iters,
+                                               cv=num_cv_folds, verbose=2, random_state=42, n_jobs=-1,
+                                               scoring=scoring_fn)
             random_search.fit(x_train, y_train)
             best_est = random_search.best_estimator_
         elif search_type == "grid":
-            grid_search = GridSearchCV(estimator=model, param_grid=hyperparams, cv=3, verbose=2,
+            grid_search = GridSearchCV(estimator=model, param_grid=hyperparams, cv=num_cv_folds, verbose=2,
                                        n_jobs=-1, scoring=scoring_fn)
             grid_search.fit(x_train, y_train)
             best_est = grid_search.best_estimator_
         elif search_type == "bayesian":
             best_est = cls.bayesian_param_search(model, hyperparams, x_train, y_train, scoring_fn=scoring_fn,
-                                                 trials=hyperopt_trials, timeout=hyperopt_timeout, nfolds=5)
+                                                 trials=hyperopt_trials, max_evals=num_iters, timeout=hyperopt_timeout,
+                                                 nfolds=num_cv_folds)
 
         else:
             raise NotImplementedError(
@@ -590,8 +601,8 @@ class PartitionedExperiment:
     """
 
     def __init__(self, name: str, data_set: Any, label_key: str, preprocessing_func: Callable,
-                 model_run_class: ModelRun, model, hyperparams: Dict, search_type: str,
-                 scoring_fn: str, n_partitions: int = 5, stratify_by_label: bool = True,
+                 model_run_class: ModelRun, model, hyperparams: Dict, search_type: str, num_cv_folds: int,
+                 num_iters: int, scoring_fn: str, n_partitions: int = 5, stratify_by_label: bool = True,
                  feature_subset=None, reduce_features=False, verbose=False):
         """
 
@@ -605,6 +616,9 @@ class PartitionedExperiment:
             model: A model with a fit() method.
             hyperparams: Dictionary of hyperparamters to search for the best model.
             search_type: Type of search to do when searching for hyperparameters (grid, random, or bayesian)
+            num_cv_folds: Number of cross validation folds to run in the hyperparameter search
+            num_iters: Number of iterations to run per folds in the hyperparameter search (only applicable for random
+             and bayesian search)
             scoring_fn: the scoring function to use (can be from 'f1_macro', 'log_loss', or 'brier_score')
             n_partitions: Number of partitions to split the data on and run the experiment on.
             stratify_by_label: Whether to stratify the partitions by label (default), otherwise partition randomly.
@@ -629,6 +643,8 @@ class PartitionedExperiment:
         self.reduce_features = reduce_features
         self.hyperopt_trials = Trials()
         self.search_type = search_type
+        self.num_cv_folds = num_cv_folds
+        self.num_iters = num_iters
         self.scoring_fn = scoring_fn
 
         self.n_partitions = n_partitions
@@ -675,6 +691,8 @@ class PartitionedExperiment:
                                                                  hyperparams=self.hyperparams,
                                                                  run_hyperparam_search=run_hyperparam_search,
                                                                  search_type=self.search_type,
+                                                                 num_cv_folds=self.num_cv_folds,
+                                                                 num_iters=self.num_iters,
                                                                  scoring_fn=self.scoring_fn,
                                                                  feature_subset=self.feature_subset,
                                                                  reduce_features=self.reduce_features,
@@ -689,11 +707,13 @@ class PartitionedExperiment:
     def run_experiment_on_one_partition(cls, data_set: Dict, label_key: str, partition_ids: List[int],
                                         preprocessing_func: Callable, model_run_class: ModelRun, model,
                                         hyperparams: Dict, run_hyperparam_search: bool, search_type, scoring_fn: str,
-                                        feature_subset: List[str], reduce_features: bool, hyperopt_timeout: int = 60):
+                                        num_cv_folds: int, num_iters: int, feature_subset: List[str],
+                                        reduce_features: bool, hyperopt_timeout: int = 60):
         train_set, test_set = cls.materialize_partition(partition_ids, data_set)
         mr = model_run_class(train_set=train_set, test_set=test_set, label_key=label_key, model=model,
                              preprocessing_func=preprocessing_func, hyperparams=hyperparams, search_type=search_type,
-                             scoring_fn=scoring_fn, feature_subset=feature_subset, reduce_features=reduce_features)
+                             num_cv_folds=num_cv_folds, num_iters=num_iters, scoring_fn=scoring_fn,
+                             feature_subset=feature_subset, reduce_features=reduce_features)
         mr.run(run_hyperparam_search=run_hyperparam_search, hyperopt_timeout=hyperopt_timeout)
         return mr
 
