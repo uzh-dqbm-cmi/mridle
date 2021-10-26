@@ -47,12 +47,16 @@ valid_dicom_ids_2014_2021:
 
 raw_terminplanner_df:
   type: pandas.ExcelDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/01_raw/dicom/terminplanner/210311_MR1_MR2_Terminslots.xlsx
+  filepath: /data/mridle/data/kedro_data_catalog/01_raw/dicom/terminplanner/211020_MR1_MR2_Terminslots.xlsx
   layer: raw
 
 terminplanner_aggregated_df:
-  type: pandas.ParquetDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dicom/terminplanner_aggregated_df.parquet
+  type: pandas.CSVDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/dicom/terminplanner_aggregated_df.csv
+  load_args:
+    parse_dates:
+      - applicable_to
+      - applicable_from
   layer: intermediate
 
 terminplanner_df:
