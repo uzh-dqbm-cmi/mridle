@@ -62,6 +62,5 @@ def create_pipeline(**kwargs):
                 outputs="numerical_feature_correlations",
                 name="plot_numerical_feature_correlations",
             )
-
         ]
     )
