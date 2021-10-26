@@ -51,8 +51,8 @@ raw_terminplanner_df:
   layer: raw
   load_args:
     parse_dates:
-      - 'gültig von'
-      - 'gültig bis'
+      - gültig von
+      - gültig bis
      dayfirst: true
 
 terminplanner_aggregated_df:
