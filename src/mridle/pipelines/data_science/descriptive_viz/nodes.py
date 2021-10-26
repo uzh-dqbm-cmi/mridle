@@ -426,4 +426,4 @@ def plot_numerical_feature_correlations(feature_df: pd.DataFrame) -> alt.Chart:
         alt.X('zero')
     )
 
-    return (chart + line).properties(title='Distribution of correlations between feature pairs')
+    return (chart + line).properties(title='Distribution of correlations between feature pairs'), correlation_list

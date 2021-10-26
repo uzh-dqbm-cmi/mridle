@@ -59,7 +59,7 @@ def create_pipeline(**kwargs):
             node(
                 func=plot_numerical_feature_correlations,
                 inputs="master_feature_set",
-                outputs="numerical_feature_correlations",
+                outputs=["numerical_feature_correlations", "correlation_list"],
                 name="plot_numerical_feature_correlations",
             )
         ]
