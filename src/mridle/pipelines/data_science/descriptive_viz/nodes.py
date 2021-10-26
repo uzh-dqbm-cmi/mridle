@@ -34,7 +34,7 @@ def plot_dave_b(slot_df: pd.DataFrame, slot_w_dicom_df: pd.DataFrame, start_date
         # choose a random date
         random_row = slot_w_dicom_df[(~slot_w_dicom_df['start_time'].isna())
                                      & (slot_w_dicom_df['start_time'] > start_date)
-                                     & (slot_w_dicom_df['end_time'] > end_date)
+                                     & (slot_w_dicom_df['end_time'] < end_date)
                                      ].sample(1)
         example_date = random_row['start_time'].dt.floor('d').iloc[0]
 
