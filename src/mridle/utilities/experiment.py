@@ -337,7 +337,7 @@ class ModelRun:
             model: the model
             x_train: training data
             y_train: training data labels
-            scoring_fn: the scoring function to use (can be from 'f1_macro', 'log_loss', or 'brier_score')
+            scoring_fn: the scoring function to use (can be from 'f1_macro', 'log_loss', 'auprc', or 'brier_score')
             ids: list of ints, the same length as x_train, which holds information on which CV fold each row should be
             assigned to
             nfolds: number of folds to use in cross validation
