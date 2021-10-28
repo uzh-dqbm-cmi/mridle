@@ -9,7 +9,7 @@ from sklearn.model_selection import RandomizedSearchCV, GridSearchCV, Stratified
 from typing import Any, Dict, List, Tuple, Callable
 from hyperopt import fmin, tpe, Trials, space_eval
 from functools import partial
-from sklearn.metrics import brier_score_loss, log_loss, f1_score
+from sklearn.metrics import brier_score_loss, log_loss, f1_score, precision_recall_curve, auc
 
 
 class ModelRun:
@@ -369,11 +369,14 @@ class ModelRun:
             elif scoring_fn == 'brier_score':
                 probs = model.predict_proba(x_test_cv)[:, 1]
                 loss = brier_score_loss(y_test_cv, probs)
+            elif scoring_fn == 'auprc':
+                probs = model.predict_proba(x_test_cv)[:, 1]
+                precision, recall, thresholds = precision_recall_curve(y_test_cv, probs)
+                loss = -auc(recall, precision)
             else:
                 raise NotImplementedError(
-                    'scoring_fn should be one of ''f1_macro'', ''log_loss'', or ''brier_score''. ''{}'' given'.format(
-                        scoring_fn
-                    ))
+                    'scoring_fn should be one of ''f1_macro'', ''log_loss'', ''auprc'', or ''brier_score''. ' +
+                    '{} given'.format(scoring_fn))
 
             cv_results.append(loss)
 
