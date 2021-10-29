@@ -321,22 +321,56 @@ def feature_modality(slot_df: pd.DataFrame, group_categories_less_than: int = No
     return df_remap
 
 
-def model_preprocessing(df):
-    df_copy = df.copy()
+def feature_time_of_day(slot_df):
+    """
+    Categorises the 'hour_sched' column into buckets.
 
-    df_copy['week'] = df_copy['date'].dt.isocalendar().week
-    df_copy['year'] = df_copy['date'].dt.isocalendar().year
+    Args:
+        slot_df: A row-per-appointment dataframe.
 
+    Returns: A row-per-appointment dataframe with additional column 'time_of_day'.
+
+    """
+
+    df_copy = slot_df.copy()
     df_copy['time_of_day'] = pd.cut(df_copy['hour_sched'], bins=[-1, 9, 12, 14, 17, 100],
                                     labels=['early_morning', 'late_morning', 'lunchtime', 'afternoon', 'evening'])
+    return df_copy
+
+
+def feature_cyclical_hour(slot_df):
+    """
+    Creates cyclical features out of the hour_sched column.
+
+    Args:
+        slot_df: A row-per-appointment dataframe.
+
+    Returns: A row-per-appointment dataframe with 2 additional columns: 'hour_sin' and 'hour_cos'.
+
+    """
+
+    df_copy = slot_df.copy()
 
     df_copy['hour_sin'] = np.sin(df_copy['hour_sched'] * (2. * np.pi / 24))
     df_copy['hour_cos'] = np.cos(df_copy['hour_sched'] * (2. * np.pi / 24))
-    df_copy['day_of_week_sin'] = np.sin(df_copy['day_of_week'] * (2. * np.pi / 5))  # 5 or 7??
-    df_copy['day_of_week_cos'] = np.cos(df_copy['day_of_week'] * (2. * np.pi / 5))  # 5 or 7??
+    return df_copy
+
+
+def feature_cyclical_month(slot_df):
+    """
+    Creates cyclical features out of the month column.
+
+    Args:
+        slot_df: A row-per-appointment dataframe.
+
+    Returns: A row-per-appointment dataframe with 2 additional columns: 'month_sin' and 'month_cos'.
+
+    """
+
+    df_copy = slot_df.copy()
+
     df_copy['month_sin'] = np.sin((df_copy['month'] - 1) * (2. * np.pi / 12))
     df_copy['month_cos'] = np.cos((df_copy['month'] - 1) * (2. * np.pi / 12))
-
     return df_copy
 
 
