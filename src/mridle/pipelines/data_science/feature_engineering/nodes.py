@@ -58,6 +58,9 @@ def build_feature_set(status_df: pd.DataFrame) -> pd.DataFrame:
 
     slot_df = build_slot_df(status_df, agg_dict, include_id_cols=True)
     slot_df = feature_no_show_before(slot_df)
+    slot_df = feature_cyclical_hour(slot_df)
+    slot_df = feature_cyclical_day_of_week(slot_df)
+    slot_df = feature_cyclical_month(slot_df)
 
     return slot_df
 
