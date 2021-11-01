@@ -83,7 +83,7 @@ def identify_end_times(row: pd.DataFrame) -> dt.datetime:
 
 def feature_month(status_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Append the day_of_week feature to the dataframe.
+    Append the month feature to the dataframe.
 
     Args:
         status_df: A row-per-status-change dataframe.
@@ -353,6 +353,24 @@ def feature_cyclical_hour(slot_df):
 
     df_copy['hour_sin'] = np.sin(df_copy['hour_sched'] * (2. * np.pi / 24))
     df_copy['hour_cos'] = np.cos(df_copy['hour_sched'] * (2. * np.pi / 24))
+    return df_copy
+
+
+def feature_cyclical_day_of_week(slot_df):
+    """
+    Creates cyclical features out of the day_of_week column.
+
+    Args:
+        slot_df: A row-per-appointment dataframe.
+
+    Returns: A row-per-appointment dataframe with 2 additional columns: 'day_of_week_sin' and 'day_of_weekcos'.
+
+    """
+
+    df_copy = slot_df.copy()
+
+    df_copy['day_of_week_sin'] = np.sin(df_copy['day_of_week'] * (2. * np.pi / 5))
+    df_copy['day_of_week_cos'] = np.cos(df_copy['day_of_week'] * (2. * np.pi / 5))
     return df_copy
 
 
