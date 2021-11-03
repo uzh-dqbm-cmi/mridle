@@ -27,6 +27,20 @@ class DataSet:
     def y(self) -> pd.Series:
         return self.data[self.target]
 
+    def to_dict(self):
+        d = {
+            'data': self.data.to_dict(),  # TODO: I feel like I've had problems with this before
+            'features': self.features_list,
+            'target': self.target,
+        }
+        return d
+
+    @classmethod
+    def from_dict(cls, d):
+        data = pd.DataFrame(d['data'])
+        config = d
+        return cls(data, config)
+
     @staticmethod
     def validate_config(config, data):
         """Make sure the config aligns with the data (referenced columns exist)."""
@@ -53,8 +67,12 @@ class PartitionedStratifier:
     def __init__(self, config: Dict):
         self.validate_config(config)
         self.n_partitions = config['n_partitions']
-        self.partition_idxs = None
-        self.data_set = None
+        self.partition_idxs = config.get('partition_idxs', None)
+        if 'data_set' in config:
+            data_set_dict = config['data_set']
+            self.data_set = DataSet.from_dict(data_set_dict)
+        else:
+            self.data_set = None
 
     def __iter__(self):
         self.n = 0
@@ -74,6 +92,19 @@ class PartitionedStratifier:
             return return_value
         else:
             raise StopIteration
+
+    def to_dict(self):
+        d = {
+            'n_partitions': self.n_partitions,
+            'partition_idxs': self.partition_idxs,
+            'data_set': self.data_set.to_dict()
+
+        }
+        return d
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(d)
 
     def load_data(self, data_set: DataSet):
         self.data_set = data_set
@@ -221,25 +252,35 @@ class Experiment:
             else:
                 predictor = self.trainer.fit(x_train, y_train)
             self.partition_predictors.append(predictor)
-            partition_evaluation = evaluate(predictor, self.metrics, x_test, y_test)
+            partition_evaluation = self.evaluate(predictor, self.metrics, x_test, y_test)
             self.partition_evaluations.append(partition_evaluation)
-        self.evaluation = summarize_evaluations(self.partition_evaluations)
+        self.evaluation = self.summarize_evaluations(self.partition_evaluations)
         return self.evaluation
 
+    def to_dict(self):
+        d = {
+            'stratifier': self.stratifier.to_dict(),
+            'evaluation': self.evaluation.to_dict(),
+        }
+        return d
 
-def evaluate(predictor: Predictor, metrics: List[Metric], x, y) -> Dict[str, Union[int, float]]:
-    results = {}
-    for metric in metrics:
-        val = metric.calculate(predictor, x, y)
-        results[metric.name] = val
-    return results
+    @staticmethod
+    def evaluate(predictor: Predictor, metrics: List[Metric], x, y_true) -> Dict[str, Union[int, float]]:
+        results = {}
+        for metric in metrics:
+            y_pred_proba = predictor.predict_proba(x)
+            val = metric.calculate(y_true, y_pred_proba)
+            results[metric.name] = val
+        return results
 
-
-def summarize_evaluations(partition_evaluations: List[Dict[str, Union[int, float]]]):
-    for i, eval_dict in enumerate(partition_evaluations):
-        eval_dict['partition'] = i
-    evaluation = pd.DataFrame(partition_evaluations)
-    return evaluation
+    @staticmethod
+    def summarize_evaluations(partition_evaluations: List[Dict[str, Union[int, float]]]):
+        for i, eval_dict in enumerate(partition_evaluations):
+            eval_dict['partition'] = i
+        evaluation_df = pd.DataFrame(partition_evaluations)
+        col_order = ['partition'] + [col for col in evaluation_df.columns if col != 'partition']
+        evaluation_df = evaluation_df[col_order]
+        return evaluation_df
 
 
 # === EXAMPLE ===
@@ -270,7 +311,7 @@ architecture = RandomForestClassifier()
 trainer = Trainer(architecture)
 tuner = Tuner({})
 
-metrics = [F1_Macro_Metric(), AUPRC_Metric(), AUROC_Metric(), LogLoss_Metric()]
+metrics = [F1_Macro_Metric(cutoff=0.5), AUPRC_Metric(), AUROC_Metric(), LogLoss_Metric()]
 
 # TODO: just make Tuner a subclass of Trainer, so Experiment only gets 1?
 # TODO: They're just objects with a .fit() method as far as Experiment is concerned
