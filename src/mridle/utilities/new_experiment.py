@@ -133,8 +133,8 @@ class Trainer:
     def __init__(self, model):
         self.model = model
 
-    def fit(self, x_train, y_train) -> Predictor:
-        return self.model.fit(x_train, y_train)
+    def fit(self, x, y) -> Predictor:
+        return self.model.fit(x, y)
 
 
 class Tuner:
@@ -142,8 +142,8 @@ class Tuner:
     def __init__(self, config: Dict):
         self.config = config
 
-    def fit(self, trainer: Trainer, x_train, y_train) -> Predictor:
-        return trainer.fit(x_train, y_train)
+    def fit(self, trainer: Trainer, x, y) -> Predictor:
+        return trainer.fit(x, y)
 
 
 class Metric:
