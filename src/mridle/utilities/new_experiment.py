@@ -153,6 +153,13 @@ class PartitionedLabelStratifier(Stratifier):
         return partitions
 
 
+class Architecture(ABC):
+
+    @abstractmethod
+    def fit(self, X):
+        pass
+
+
 class Predictor:
 
     def __init__(self, model=None):
@@ -165,30 +172,45 @@ class Predictor:
         return self.model.predict_proba(x)
 
 
-class Trainer:
-
-    def __init__(self, model, config: Dict):
-        self.model = model
-        self.config = config
-
-    def fit(self, x, y) -> Predictor:
-        return self.model.fit(x, y)
-
-
-class SciKitLearnTrainer(Trainer):
-
-    def get_params(self, deep=True):
-        return self.model.get_params(deep=deep)
-
-
 class Tuner(ABC):
 
     def __init__(self, config: Dict):
         self.config = config
 
     @abstractmethod
-    def fit(self, trainer: Trainer, x, y) -> Predictor:
+    def fit(self, architecture: Architecture, x, y) -> Predictor:
         pass
+
+
+class Trainer:
+
+    def __init__(self, architecture, config: Dict, tuner: Tuner = None):
+        self.architecture = architecture
+        self.config = config
+        self.tuner = tuner
+
+    def fit(self, x, y) -> Predictor:
+        if self.tuner:
+            trained_model = self.tuner.fit(self.architecture, x, y)
+        else:
+            trained_model = self.architecture.fit(x, y)
+        return Predictor(trained_model)
+
+
+class SkorchTrainer(Trainer):
+
+    def fit(self, x, y) -> Predictor:
+        y = self.transform_y(y)
+        if self.tuner:
+            trained_model = self.tuner.fit(self.architecture, x, y)
+
+        else:
+            trained_model = self.architecture.fit(x, y)
+        return Predictor(trained_model)
+
+    def transform_y(self, y):
+        # TODO MARK
+        return y
 
 
 class RandomSearchTuner(Tuner):
@@ -199,11 +221,12 @@ class RandomSearchTuner(Tuner):
         self.num_iters = config['num_iters']
         self.num_cv_folds = config['num_cv_folds']
         self.scoring_function = config['scoring_function']
+        self.verbose = config['verbose']
 
-    def fit(self, trainer: Trainer, x, y) -> Predictor:
-        random_search = RandomizedSearchCV(estimator=trainer, param_distributions=self.hyperparameters,
-                                           n_iter=self.num_iters, cv=self.num_cv_folds, verbose=2, random_state=42,
-                                           n_jobs=-1, scoring=self.scoring_function)
+    def fit(self, architecture, x, y) -> Predictor:
+        random_search = RandomizedSearchCV(estimator=architecture, param_distributions=self.hyperparameters,
+                                           n_iter=self.num_iters, cv=self.num_cv_folds, verbose=self.verbose,
+                                           random_state=42, n_jobs=-1, scoring=self.scoring_function)
         random_search.fit(x, y)
         best_est = random_search.best_estimator_
         return best_est
@@ -283,13 +306,12 @@ class Experiment:
     """
 
     def __init__(self, data_set: DataSet, stratifier: PartitionedLabelStratifier, trainer: Trainer,
-                 metrics: List[Metric], tuner: Tuner = None):
+                 metrics: List[Metric]):
         self.data_set = data_set
         self.stratifier = stratifier
         self.stratifier.load_data(self.data_set)
         self.trainer = trainer
         self.metrics = metrics
-        self.tuner = tuner
 
         self.partition_predictors = []
         self.partition_evaluations = []
@@ -297,10 +319,7 @@ class Experiment:
 
     def go(self):
         for x_train, y_train, x_test, y_test in self.stratifier:
-            if self.tuner:
-                predictor = self.tuner.fit(self.trainer, x_train, y_train)
-            else:
-                predictor = self.trainer.fit(x_train, y_train)
+            predictor = self.trainer.fit(x_train, y_train)
             self.partition_predictors.append(predictor)
             partition_evaluation = self.evaluate(predictor, self.metrics, x_test, y_test)
             self.partition_evaluations.append(partition_evaluation)
@@ -352,7 +371,9 @@ def ex():
         'Stratifier': {
             'n_partitions': 5,
         },
-        'Trainer': {},
+        'Trainer': {
+            # 'epochs': 10,
+        },
         'Tuner': {
             'hyperparameters': {
                 'n_estimators': range(200, 2000, 10),
@@ -365,18 +386,18 @@ def ex():
             'num_cv_folds': 3,
             'num_iters': 5,
             'scoring_function': 'f1_macro',
+            'verbose': 1,
         },
     }
     data_set = DataSet(df, config['DataSet'])
     stratifier = PartitionedLabelStratifier(config['Stratifier'])
-    # architecture = RandomForestClassifier()
-    # trainer = SciKitLearnTrainer(architecture, config['Trainer'])
-    trainer = RandomForestClassifier()
+    architecture = RandomForestClassifier()
     tuner = RandomSearchTuner(config['Tuner'])
+    trainer = Trainer(architecture, config['Trainer'], tuner)
+    # trainer = RandomForestClassifier()
+
     metrics = [F1_Macro(classification_cutoff=0.5), AUPRC(), AUROC(), LogLoss()]
 
-    # TODO: just make Tuner a subclass of Trainer, so Experiment only gets 1?
-    # TODO: They're just objects with a .fit() method as far as Experiment is concerned
-    exp = Experiment(data_set=data_set, stratifier=stratifier, trainer=trainer, metrics=metrics, tuner=tuner)
+    exp = Experiment(data_set=data_set, stratifier=stratifier, trainer=trainer, metrics=metrics)
     results = exp.go()
     print(results)
