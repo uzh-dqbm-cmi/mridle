@@ -167,20 +167,46 @@ class Predictor:
 
 class Trainer:
 
-    def __init__(self, model):
+    def __init__(self, model, config: Dict):
         self.model = model
+        self.config = config
 
     def fit(self, x, y) -> Predictor:
         return self.model.fit(x, y)
 
 
-class Tuner:
+class SciKitLearnTrainer(Trainer):
+
+    def get_params(self, deep=True):
+        return self.model.get_params(deep=deep)
+
+
+class Tuner(ABC):
 
     def __init__(self, config: Dict):
         self.config = config
 
+    @abstractmethod
     def fit(self, trainer: Trainer, x, y) -> Predictor:
-        return trainer.fit(x, y)
+        pass
+
+
+class RandomSearchTuner(Tuner):
+
+    def __init__(self, config: Dict):
+        super().__init__(config)
+        self.hyperparameters = config['hyperparameters']
+        self.num_iters = config['num_iters']
+        self.num_cv_folds = config['num_cv_folds']
+        self.scoring_function = config['scoring_function']
+
+    def fit(self, trainer: Trainer, x, y) -> Predictor:
+        random_search = RandomizedSearchCV(estimator=trainer, param_distributions=self.hyperparameters,
+                                           n_iter=self.num_iters, cv=self.num_cv_folds, verbose=2, random_state=42,
+                                           n_jobs=-1, scoring=self.scoring_function)
+        random_search.fit(x, y)
+        best_est = random_search.best_estimator_
+        return best_est
 
 
 class Metric(ABC):
@@ -312,29 +338,41 @@ def ex():
     df = pd.read_csv('https://raw.githubusercontent.com/mwaskom/seaborn-data/master/titanic.csv')
     df = df.dropna().copy()
 
-    data_set_config = {
-        'features': [
-            'pclass',
-            'age',
-            'adult_male',
-            'sibsp',
-            'parch'
-        ],
-        'target': 'survived',
+    config = {
+        'DataSet': {
+            'features': [
+                'pclass',
+                'age',
+                'adult_male',
+                'sibsp',
+                'parch'
+            ],
+            'target': 'survived',
+        },
+        'Stratifier': {
+            'n_partitions': 5,
+        },
+        'Trainer': {},
+        'Tuner': {
+            'hyperparameters': {
+                'n_estimators': range(200, 2000, 10),
+                'max_features': ['auto', 'sqrt'],
+                'max_depth': range(10, 110, 11),
+                'min_samples_split': [2, 4, 6, 8, 10],
+                'min_samples_leaf': [1, 2, 5, 10],
+                'bootstrap': [True, False],
+            },
+            'num_cv_folds': 3,
+            'num_iters': 5,
+            'scoring_function': 'f1_macro',
+        },
     }
-    data_set = DataSet(df, data_set_config)
-
-    data_set.x
-
-    stratifier_config = {
-        'n_partitions': 5,
-    }
-    stratifier = PartitionedLabelStratifier(stratifier_config)
-
-    architecture = RandomForestClassifier()
-    trainer = Trainer(architecture)
-    tuner = Tuner({})
-
+    data_set = DataSet(df, config['DataSet'])
+    stratifier = PartitionedLabelStratifier(config['Stratifier'])
+    # architecture = RandomForestClassifier()
+    # trainer = SciKitLearnTrainer(architecture, config['Trainer'])
+    trainer = RandomForestClassifier()
+    tuner = RandomSearchTuner(config['Tuner'])
     metrics = [F1_Macro(classification_cutoff=0.5), AUPRC(), AUROC(), LogLoss()]
 
     # TODO: just make Tuner a subclass of Trainer, so Experiment only gets 1?
