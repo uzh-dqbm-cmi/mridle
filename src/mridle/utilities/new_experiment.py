@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV, StratifiedKFold  # noqa
-from sklearn.metrics import brier_score_loss, log_loss, f1_score  # noqa
+from sklearn.metrics import brier_score_loss, log_loss, f1_score, precision_recall_curve, auc, roc_auc_score # noqa
 from sklearn.ensemble import RandomForestClassifier
 from typing import Dict, List, Tuple, Union
 
@@ -163,6 +163,37 @@ class F1_Macro_Metric(Metric):
         return metric
 
 
+class AUPRC_Metric(Metric):
+
+    name = 'auprc'
+
+    def calculate(self, model: Model, x, y_true):
+        y_pred = model.predict_proba(x)[:, 1]
+        precision, recall, thresholds = precision_recall_curve(y_true, y_pred)
+        metric = auc(recall, precision)
+        return metric
+
+
+class AUROC_Metric(Metric):
+
+    name = 'auroc'
+
+    def calculate(self, model: Model, x, y_true):
+        y_pred = model.predict_proba(x)[:, 1]
+        metric = roc_auc_score(y_true, y_pred)
+        return metric
+
+
+class LogLoss_Metric(Metric):
+
+    name = 'log_loss'
+
+    def calculate(self, model: Model, x, y_true):
+        y_pred = model.predict_proba(x)[:, 1]
+        metric = log_loss(y_true, y_pred)
+        return metric
+
+
 class ExperimentOrchestrator:
     """
     Orchestrate a machine learning experiment, including training and evaluation.
@@ -183,6 +214,7 @@ class ExperimentOrchestrator:
 
     def go(self):
         for x_train, y_train, x_test, y_test in self.stratifier:
+            print(x_train.head(), x_test.head())
             if self.tuner:
                 model = self.tuner.fit(self.model_trainer, x_train, y_train)
             else:
@@ -224,6 +256,8 @@ data_set_config = {
 }
 data_set = DataSet(df, data_set_config)
 
+data_set.x
+
 stratifier_config = {
     'n_partitions': 5,
 }
@@ -233,7 +267,7 @@ model = RandomForestClassifier()
 model_trainer = ModelTrainer(model)
 tuner = Tuner({})
 
-metrics = [F1_Macro_Metric()]
+metrics = [F1_Macro_Metric(), AUPRC_Metric(), AUROC_Metric(), LogLoss_Metric()]
 
 exp = ExperimentOrchestrator(data_set=data_set, stratifier=stratifier, model_trainer=model_trainer, metrics=metrics,
                              tuner=None)
