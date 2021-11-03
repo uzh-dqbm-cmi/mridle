@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV, StratifiedKFold  # noqa
@@ -177,52 +178,70 @@ class Tuner:
         return trainer.fit(x, y)
 
 
-class Metric:
+class Metric(ABC):
 
     name = 'Metric'
 
-    def calculate(self, predictor: Predictor, x, y_true):
-        y_pred = predictor.predict(x)
-        return y_pred == y_true
+    def __init__(self, classification_cutoff: float = 0.5):
+        self.classification_cutoff = classification_cutoff
+
+    @abstractmethod
+    def calculate(self, y_true, y_pred_proba):
+        pass
+
+    def convert_proba_to_class(self, y_pred_proba: np.ndarray):
+        """
+        Convert a probabilty array to a classification based on the classification cutoff. If an array with two columns
+         is passed (two class classification), the output is reduced to a single Series.
+
+        Args:
+            y_pred_proba: Probabilities for the classification classes.
+
+        Returns: Series of 0s and 1s.
+        """
+        if y_pred_proba.shape[1] == 2:
+            y_pred_proba = y_pred_proba[:, 1]
+        classification = np.where(y_pred_proba > self.classification_cutoff, 1, 0)
+        return classification
 
 
-class F1_Macro_Metric(Metric):
+class F1_Macro(Metric):
 
     name = 'f1_macro'
 
-    def calculate(self, predictor: Predictor, x, y_true):
-        y_pred = predictor.predict(x)
+    def calculate(self, y_true, y_pred_proba):
+        y_pred = self.convert_proba_to_class(y_pred_proba)
         metric = f1_score(y_true, y_pred, average='macro')
         return metric
 
 
-class AUPRC_Metric(Metric):
+class AUPRC(Metric):
 
     name = 'auprc'
 
-    def calculate(self, predictor: Predictor, x, y_true):
-        y_pred = predictor.predict_proba(x)[:, 1]
+    def calculate(self, y_true, y_pred_proba):
+        y_pred = y_pred_proba[:, 1]
         precision, recall, thresholds = precision_recall_curve(y_true, y_pred)
         metric = auc(recall, precision)
         return metric
 
 
-class AUROC_Metric(Metric):
+class AUROC(Metric):
 
     name = 'auroc'
 
-    def calculate(self, predictor: Predictor, x, y_true):
-        y_pred = predictor.predict_proba(x)[:, 1]
+    def calculate(self, y_true, y_pred_proba):
+        y_pred = y_pred_proba[:, 1]
         metric = roc_auc_score(y_true, y_pred)
         return metric
 
 
-class LogLoss_Metric(Metric):
+class LogLoss(Metric):
 
     name = 'log_loss'
 
-    def calculate(self, predictor: Predictor, x, y_true):
-        y_pred = predictor.predict_proba(x)[:, 1]
+    def calculate(self, y_true, y_pred_proba):
+        y_pred = y_pred_proba[:, 1]
         metric = log_loss(y_true, y_pred)
         return metric
 
@@ -284,37 +303,37 @@ class Experiment:
 
 
 # === EXAMPLE ===
+def ex():
+    df = pd.read_csv('https://raw.githubusercontent.com/mwaskom/seaborn-data/master/titanic.csv')
+    df = df.dropna().copy()
 
-df = pd.read_csv('https://raw.githubusercontent.com/mwaskom/seaborn-data/master/titanic.csv')
-df = df.dropna().copy()
+    data_set_config = {
+        'features': [
+            'pclass',
+            'age',
+            'adult_male',
+            'sibsp',
+            'parch'
+        ],
+        'target': 'survived',
+    }
+    data_set = DataSet(df, data_set_config)
 
-data_set_config = {
-    'features': [
-        'pclass',
-        'age',
-        'adult_male',
-        'sibsp',
-        'parch'
-    ],
-    'target': 'survived',
-}
-data_set = DataSet(df, data_set_config)
+    data_set.x
 
-data_set.x
+    stratifier_config = {
+        'n_partitions': 5,
+    }
+    stratifier = PartitionedStratifier(stratifier_config)
 
-stratifier_config = {
-    'n_partitions': 5,
-}
-stratifier = PartitionedStratifier(stratifier_config)
+    architecture = RandomForestClassifier()
+    trainer = Trainer(architecture)
+    tuner = Tuner({})
 
-architecture = RandomForestClassifier()
-trainer = Trainer(architecture)
-tuner = Tuner({})
+    metrics = [F1_Macro(classification_cutoff=0.5), AUPRC(), AUROC(), LogLoss()]
 
-metrics = [F1_Macro_Metric(cutoff=0.5), AUPRC_Metric(), AUROC_Metric(), LogLoss_Metric()]
-
-# TODO: just make Tuner a subclass of Trainer, so Experiment only gets 1?
-# TODO: They're just objects with a .fit() method as far as Experiment is concerned
-exp = Experiment(data_set=data_set, stratifier=stratifier, trainer=trainer, metrics=metrics, tuner=None)
-results = exp.go()
-print(results)
+    # TODO: just make Tuner a subclass of Trainer, so Experiment only gets 1?
+    # TODO: They're just objects with a .fit() method as far as Experiment is concerned
+    exp = Experiment(data_set=data_set, stratifier=stratifier, trainer=trainer, metrics=metrics, tuner=tuner)
+    results = exp.go()
+    print(results)
