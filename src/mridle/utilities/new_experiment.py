@@ -14,7 +14,7 @@ class DataSet:
     """
 
     def __init__(self, data: pd.DataFrame, config: Dict):
-        self._validate(config, data)
+        self.validate_config(config, data)
         self.data = data
         self.features_list = config['features']
         self.target = config['target']
@@ -27,7 +27,8 @@ class DataSet:
     def y(self) -> pd.Series:
         return self.data[self.target]
 
-    def _validate(self, config, data):
+    @staticmethod
+    def validate_config(config, data):
         """Make sure the config aligns with the data (referenced columns exist)."""
         for key in ['features', 'target']:
             if key not in config:
@@ -50,7 +51,7 @@ class PartitionedStratifier:
     """
 
     def __init__(self, config: Dict):
-        self._validate(config)
+        self.validate_config(config)
         self.n_partitions = config['n_partitions']
         self.partition_idxs = None
         self.data_set = None
@@ -107,14 +108,15 @@ class PartitionedStratifier:
         y_test = self.data_set.y.iloc[test_partition_ids]
         return X_train, y_train, X_test, y_test
 
-    def _validate(self, config):
+    @staticmethod
+    def validate_config(config):
         for key in ['n_partitions', ]:
             if key not in config:
                 raise ValueError(f"DataSet config must contain entry '{key}'.")
         return True
 
 
-class Model:
+class Predictor:
 
     def __init__(self, model=None):
         self.model = model
@@ -126,12 +128,12 @@ class Model:
         return self.model.predict_proba(x)
 
 
-class ModelTrainer:
+class Trainer:
 
     def __init__(self, model):
         self.model = model
 
-    def fit(self, x_train, y_train) -> Model:
+    def fit(self, x_train, y_train) -> Predictor:
         return self.model.fit(x_train, y_train)
 
 
@@ -140,16 +142,16 @@ class Tuner:
     def __init__(self, config: Dict):
         self.config = config
 
-    def fit(self, model_trainer: ModelTrainer, x_train, y_train) -> Model:
-        return model_trainer.fit(x_train, y_train)
+    def fit(self, trainer: Trainer, x_train, y_train) -> Predictor:
+        return trainer.fit(x_train, y_train)
 
 
 class Metric:
 
     name = 'Metric'
 
-    def calculate(self, model: Model, x, y_true):
-        y_pred = model_trainer.predict(x)
+    def calculate(self, predictor: Predictor, x, y_true):
+        y_pred = predictor.predict(x)
         return y_pred == y_true
 
 
@@ -157,47 +159,47 @@ class F1_Macro_Metric(Metric):
 
     name = 'f1_macro'
 
-    def calculate(self, model: Model, x, y_true):
-        y_pred = model.predict(x)
+    def calculate(self, predictor: Predictor, x, y_true):
+        y_pred = predictor.predict(x)
         metric = f1_score(y_true, y_pred, average='macro')
         return metric
 
 
-class ExperimentOrchestrator:
+class Experiment:
     """
     Orchestrate a machine learning experiment, including training and evaluation.
     """
 
-    def __init__(self, data_set: DataSet, stratifier: PartitionedStratifier, model_trainer: ModelTrainer,
-                 metrics: List[Metric], tuner: Tuner = None):
+    def __init__(self, data_set: DataSet, stratifier: PartitionedStratifier, trainer: Trainer, metrics: List[Metric],
+                 tuner: Tuner = None):
         self.data_set = data_set
         self.stratifier = stratifier
         self.stratifier.load_data(self.data_set)
-        self.model_trainer = model_trainer
+        self.trainer = trainer
         self.metrics = metrics
         self.tuner = tuner
 
-        self.partition_models = []
+        self.partition_predictors = []
         self.partition_evaluations = []
         self.evaluation = None
 
     def go(self):
         for x_train, y_train, x_test, y_test in self.stratifier:
             if self.tuner:
-                model = self.tuner.fit(self.model_trainer, x_train, y_train)
+                predictor = self.tuner.fit(self.trainer, x_train, y_train)
             else:
-                model = self.model_trainer.fit(x_train, y_train)
-            self.partition_models.append(model)
-            partition_evaluation = evaluate(model, self.metrics, x_test, y_test)
+                predictor = self.trainer.fit(x_train, y_train)
+            self.partition_predictors.append(predictor)
+            partition_evaluation = evaluate(predictor, self.metrics, x_test, y_test)
             self.partition_evaluations.append(partition_evaluation)
         self.evaluation = summarize_evaluations(self.partition_evaluations)
         return self.evaluation
 
 
-def evaluate(model: Model, metrics: List[Metric], x, y) -> Dict[str, Union[int, float]]:
+def evaluate(predictor: Predictor, metrics: List[Metric], x, y) -> Dict[str, Union[int, float]]:
     results = {}
     for metric in metrics:
-        val = metric.calculate(model, x, y)
+        val = metric.calculate(predictor, x, y)
         results[metric.name] = val
     return results
 
@@ -229,13 +231,14 @@ stratifier_config = {
 }
 stratifier = PartitionedStratifier(stratifier_config)
 
-model = RandomForestClassifier()
-model_trainer = ModelTrainer(model)
+architecture = RandomForestClassifier()
+trainer = Trainer(architecture)
 tuner = Tuner({})
 
 metrics = [F1_Macro_Metric()]
 
-exp = ExperimentOrchestrator(data_set=data_set, stratifier=stratifier, model_trainer=model_trainer, metrics=metrics,
-                             tuner=None)
+# TODO: just make Tuner a subclass of Trainer, so Experiment only gets 1?
+# TODO: They're just objects with a .fit() method as far as Experiment is concerned
+exp = Experiment(data_set=data_set, stratifier=stratifier, trainer=trainer, metrics=metrics, tuner=None)
 results = exp.go()
 print(results)
