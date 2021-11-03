@@ -59,10 +59,10 @@ class DataSet:
         return True
 
 
-class PartitionedStratifier:
+class Stratifier(ABC):
     """
     Yield data partitions.
-    # TODO: create subclasses LabelStratifier, TrainTestSplitStratifier, RandomStratifier
+    # TODO: create subclasses TrainTestSplitStratifier, RandomStratifier
     """
 
     def __init__(self, config: Dict):
@@ -98,8 +98,7 @@ class PartitionedStratifier:
         d = {
             'n_partitions': self.n_partitions,
             'partition_idxs': self.partition_idxs,
-            'data_set': self.data_set.to_dict()
-
+            'data_set': self.data_set.to_dict(),
         }
         return d
 
@@ -109,19 +108,11 @@ class PartitionedStratifier:
 
     def load_data(self, data_set: DataSet):
         self.data_set = data_set
-        self.partition_idxs = self.partition_data_stratified(self.data_set.y, self.n_partitions)
+        self.partition_idxs = self.partition_data(self.data_set)
 
-    @classmethod
-    def partition_data_stratified(cls, label_list: pd.Series, n_partitions: int) -> \
-            List[Tuple[List[int], List[int]]]:
-        """Randomly shuffle and split the doc_list into n roughly equal lists, stratified by label."""
-        skf = StratifiedKFold(n_splits=n_partitions, random_state=42, shuffle=True)
-        x = np.zeros(len(label_list))  # split takes a X argument for backwards compatibility and is not used
-        partition_indexes = skf.split(x, label_list)
-        partitions = []
-        for p_id, p in enumerate(partition_indexes):
-            partitions.append(p)
-        return partitions
+    @abstractmethod
+    def partition_data(self, data_set: DataSet) -> List[Tuple[List[int], List[int]]]:
+        pass
 
     def materialize_partition(self, partition_id) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]:
         """
@@ -144,8 +135,22 @@ class PartitionedStratifier:
     def validate_config(config):
         for key in ['n_partitions', ]:
             if key not in config:
-                raise ValueError(f"DataSet config must contain entry '{key}'.")
+                raise ValueError(f"PartitionedLabelStratifier config must contain entry '{key}'.")
         return True
+
+
+class PartitionedLabelStratifier(Stratifier):
+
+    def partition_data(self, data_set: DataSet) -> List[Tuple[List[int], List[int]]]:
+        """Randomly shuffle and split the doc_list into n_partitions roughly equal lists, stratified by label."""
+        label_list = data_set.y
+        skf = StratifiedKFold(n_splits=self.n_partitions, random_state=42, shuffle=True)
+        x = np.zeros(len(label_list))  # split takes a X argument for backwards compatibility and is not used
+        partition_indexes = skf.split(x, label_list)
+        partitions = []
+        for p_id, p in enumerate(partition_indexes):
+            partitions.append(p)
+        return partitions
 
 
 class Predictor:
@@ -251,8 +256,8 @@ class Experiment:
     Orchestrate a machine learning experiment, including training and evaluation.
     """
 
-    def __init__(self, data_set: DataSet, stratifier: PartitionedStratifier, trainer: Trainer, metrics: List[Metric],
-                 tuner: Tuner = None):
+    def __init__(self, data_set: DataSet, stratifier: PartitionedLabelStratifier, trainer: Trainer,
+                 metrics: List[Metric], tuner: Tuner = None):
         self.data_set = data_set
         self.stratifier = stratifier
         self.stratifier.load_data(self.data_set)
@@ -324,7 +329,7 @@ def ex():
     stratifier_config = {
         'n_partitions': 5,
     }
-    stratifier = PartitionedStratifier(stratifier_config)
+    stratifier = PartitionedLabelStratifier(stratifier_config)
 
     architecture = RandomForestClassifier()
     trainer = Trainer(architecture)
