@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV, StratifiedKFold  # noqa
-from sklearn.metrics import brier_score_loss, log_loss, f1_score  # noqa
+from sklearn.metrics import brier_score_loss, log_loss, f1_score, precision_recall_curve, auc, roc_auc_score # noqa
 from sklearn.ensemble import RandomForestClassifier
 from typing import Dict, List, Tuple, Union
 
@@ -165,6 +165,37 @@ class F1_Macro_Metric(Metric):
         return metric
 
 
+class AUPRC_Metric(Metric):
+
+    name = 'auprc'
+
+    def calculate(self, predictor: Predictor, x, y_true):
+        y_pred = predictor.predict_proba(x)[:, 1]
+        precision, recall, thresholds = precision_recall_curve(y_true, y_pred)
+        metric = auc(recall, precision)
+        return metric
+
+
+class AUROC_Metric(Metric):
+
+    name = 'auroc'
+
+    def calculate(self, predictor: Predictor, x, y_true):
+        y_pred = predictor.predict_proba(x)[:, 1]
+        metric = roc_auc_score(y_true, y_pred)
+        return metric
+
+
+class LogLoss_Metric(Metric):
+
+    name = 'log_loss'
+
+    def calculate(self, predictor: Predictor, x, y_true):
+        y_pred = predictor.predict_proba(x)[:, 1]
+        metric = log_loss(y_true, y_pred)
+        return metric
+
+
 class Experiment:
     """
     Orchestrate a machine learning experiment, including training and evaluation.
@@ -213,18 +244,22 @@ def summarize_evaluations(partition_evaluations: List[Dict[str, Union[int, float
 
 # === EXAMPLE ===
 
-df = pd.read_csv('https://raw.githubusercontent.com/mwaskom/seaborn-data/master/iris.csv')
+df = pd.read_csv('https://raw.githubusercontent.com/mwaskom/seaborn-data/master/titanic.csv')
+df = df.dropna().copy()
 
 data_set_config = {
     'features': [
-        'sepal_length',
-        'sepal_width',
-        'petal_length',
-        'petal_width',
+        'pclass',
+        'age',
+        'adult_male',
+        'sibsp',
+        'parch'
     ],
-    'target': 'species',
+    'target': 'survived',
 }
 data_set = DataSet(df, data_set_config)
+
+data_set.x
 
 stratifier_config = {
     'n_partitions': 5,
@@ -235,7 +270,7 @@ architecture = RandomForestClassifier()
 trainer = Trainer(architecture)
 tuner = Tuner({})
 
-metrics = [F1_Macro_Metric()]
+metrics = [F1_Macro_Metric(), AUPRC_Metric(), AUROC_Metric(), LogLoss_Metric()]
 
 # TODO: just make Tuner a subclass of Trainer, so Experiment only gets 1?
 # TODO: They're just objects with a .fit() method as far as Experiment is concerned
