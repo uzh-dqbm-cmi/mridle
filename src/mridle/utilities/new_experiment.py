@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV, StratifiedKFold  # noqa
@@ -27,6 +28,20 @@ class DataSet:
     def y(self) -> pd.Series:
         return self.data[self.target]
 
+    def to_dict(self):
+        d = {
+            'data': self.data.to_dict(),  # TODO: I feel like I've had problems with this before
+            'features': self.features_list,
+            'target': self.target,
+        }
+        return d
+
+    @classmethod
+    def from_dict(cls, d):
+        data = pd.DataFrame(d['data'])
+        config = d
+        return cls(data, config)
+
     @staticmethod
     def validate_config(config, data):
         """Make sure the config aligns with the data (referenced columns exist)."""
@@ -44,17 +59,21 @@ class DataSet:
         return True
 
 
-class PartitionedStratifier:
+class Stratifier(ABC):
     """
     Yield data partitions.
-    # TODO: create subclasses LabelStratifier, TrainTestSplitStratifier, RandomStratifier
+    # TODO: create subclasses TrainTestSplitStratifier, RandomStratifier
     """
 
     def __init__(self, config: Dict):
         self.validate_config(config)
         self.n_partitions = config['n_partitions']
-        self.partition_idxs = None
-        self.data_set = None
+        self.partition_idxs = config.get('partition_idxs', None)
+        if 'data_set' in config:
+            data_set_dict = config['data_set']
+            self.data_set = DataSet.from_dict(data_set_dict)
+        else:
+            self.data_set = None
 
     def __iter__(self):
         self.n = 0
@@ -75,21 +94,25 @@ class PartitionedStratifier:
         else:
             raise StopIteration
 
-    def load_data(self, data_set: DataSet):
-        self.data_set = data_set
-        self.partition_idxs = self.partition_data_stratified(self.data_set.y, self.n_partitions)
+    def to_dict(self):
+        d = {
+            'n_partitions': self.n_partitions,
+            'partition_idxs': self.partition_idxs,
+            'data_set': self.data_set.to_dict(),
+        }
+        return d
 
     @classmethod
-    def partition_data_stratified(cls, label_list: pd.Series, n_partitions: int) -> \
-            List[Tuple[List[int], List[int]]]:
-        """Randomly shuffle and split the doc_list into n roughly equal lists, stratified by label."""
-        skf = StratifiedKFold(n_splits=n_partitions, random_state=42, shuffle=True)
-        x = np.zeros(len(label_list))  # split takes a X argument for backwards compatibility and is not used
-        partition_indexes = skf.split(x, label_list)
-        partitions = []
-        for p_id, p in enumerate(partition_indexes):
-            partitions.append(p)
-        return partitions
+    def from_dict(cls, d):
+        return cls(d)
+
+    def load_data(self, data_set: DataSet):
+        self.data_set = data_set
+        self.partition_idxs = self.partition_data(self.data_set)
+
+    @abstractmethod
+    def partition_data(self, data_set: DataSet) -> List[Tuple[List[int], List[int]]]:
+        pass
 
     def materialize_partition(self, partition_id) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]:
         """
@@ -112,8 +135,22 @@ class PartitionedStratifier:
     def validate_config(config):
         for key in ['n_partitions', ]:
             if key not in config:
-                raise ValueError(f"DataSet config must contain entry '{key}'.")
+                raise ValueError(f"PartitionedLabelStratifier config must contain entry '{key}'.")
         return True
+
+
+class PartitionedLabelStratifier(Stratifier):
+
+    def partition_data(self, data_set: DataSet) -> List[Tuple[List[int], List[int]]]:
+        """Randomly shuffle and split the doc_list into n_partitions roughly equal lists, stratified by label."""
+        label_list = data_set.y
+        skf = StratifiedKFold(n_splits=self.n_partitions, random_state=42, shuffle=True)
+        x = np.zeros(len(label_list))  # split takes a X argument for backwards compatibility and is not used
+        partition_indexes = skf.split(x, label_list)
+        partitions = []
+        for p_id, p in enumerate(partition_indexes):
+            partitions.append(p)
+        return partitions
 
 
 class Predictor:
@@ -130,68 +167,112 @@ class Predictor:
 
 class Trainer:
 
-    def __init__(self, model):
+    def __init__(self, model, config: Dict):
         self.model = model
+        self.config = config
 
-    def fit(self, x_train, y_train) -> Predictor:
-        return self.model.fit(x_train, y_train)
+    def fit(self, x, y) -> Predictor:
+        return self.model.fit(x, y)
 
 
-class Tuner:
+class SciKitLearnTrainer(Trainer):
+
+    def get_params(self, deep=True):
+        return self.model.get_params(deep=deep)
+
+
+class Tuner(ABC):
 
     def __init__(self, config: Dict):
         self.config = config
 
-    def fit(self, trainer: Trainer, x_train, y_train) -> Predictor:
-        return trainer.fit(x_train, y_train)
+    @abstractmethod
+    def fit(self, trainer: Trainer, x, y) -> Predictor:
+        pass
 
 
-class Metric:
+class RandomSearchTuner(Tuner):
+
+    def __init__(self, config: Dict):
+        super().__init__(config)
+        self.hyperparameters = config['hyperparameters']
+        self.num_iters = config['num_iters']
+        self.num_cv_folds = config['num_cv_folds']
+        self.scoring_function = config['scoring_function']
+
+    def fit(self, trainer: Trainer, x, y) -> Predictor:
+        random_search = RandomizedSearchCV(estimator=trainer, param_distributions=self.hyperparameters,
+                                           n_iter=self.num_iters, cv=self.num_cv_folds, verbose=2, random_state=42,
+                                           n_jobs=-1, scoring=self.scoring_function)
+        random_search.fit(x, y)
+        best_est = random_search.best_estimator_
+        return best_est
+
+
+class Metric(ABC):
 
     name = 'Metric'
 
-    def calculate(self, predictor: Predictor, x, y_true):
-        y_pred = predictor.predict(x)
-        return y_pred == y_true
+    def __init__(self, classification_cutoff: float = 0.5):
+        self.classification_cutoff = classification_cutoff
+
+    @abstractmethod
+    def calculate(self, y_true, y_pred_proba):
+        pass
+
+    def convert_proba_to_class(self, y_pred_proba: np.ndarray):
+        """
+        Convert a probabilty array to a classification based on the classification cutoff. If an array with two columns
+         is passed (two class classification), the output is reduced to a single Series.
+
+        Args:
+            y_pred_proba: Probabilities for the classification classes.
+
+        Returns: Series of 0s and 1s.
+        """
+        if y_pred_proba.shape[1] == 2:
+            y_pred_proba = y_pred_proba[:, 1]
+        classification = np.where(y_pred_proba > self.classification_cutoff, 1, 0)
+        return classification
 
 
-class F1_Macro_Metric(Metric):
+class F1_Macro(Metric):
 
     name = 'f1_macro'
 
-    def calculate(self, predictor: Predictor, x, y_true):
-        y_pred = predictor.predict(x)
+    def calculate(self, y_true, y_pred_proba):
+        y_pred = self.convert_proba_to_class(y_pred_proba)
         metric = f1_score(y_true, y_pred, average='macro')
         return metric
 
 
-class AUPRC_Metric(Metric):
+class AUPRC(Metric):
 
     name = 'auprc'
 
-    def calculate(self, predictor: Predictor, x, y_true):
-        y_pred = predictor.predict_proba(x)[:, 1]
+    def calculate(self, y_true, y_pred_proba):
+        y_pred = y_pred_proba[:, 1]
         precision, recall, thresholds = precision_recall_curve(y_true, y_pred)
         metric = auc(recall, precision)
         return metric
 
 
-class AUROC_Metric(Metric):
+class AUROC(Metric):
 
     name = 'auroc'
 
-    def calculate(self, predictor: Predictor, x, y_true):
-        y_pred = predictor.predict_proba(x)[:, 1]
+    def calculate(self, y_true, y_pred_proba):
+        y_pred = y_pred_proba[:, 1]
         metric = roc_auc_score(y_true, y_pred)
         return metric
 
 
-class LogLoss_Metric(Metric):
+class LogLoss(Metric):
 
     name = 'log_loss'
 
-    def calculate(self, predictor: Predictor, x, y_true):
-        y_pred = predictor.predict_proba(x)[:, 1]
+    def calculate(self, y_true, y_pred_proba):
+        y_pred = y_pred_proba[:, 1]
         metric = log_loss(y_true, y_pred)
         return metric
 
@@ -201,8 +282,8 @@ class Experiment:
     Orchestrate a machine learning experiment, including training and evaluation.
     """
 
-    def __init__(self, data_set: DataSet, stratifier: PartitionedStratifier, trainer: Trainer, metrics: List[Metric],
-                 tuner: Tuner = None):
+    def __init__(self, data_set: DataSet, stratifier: PartitionedLabelStratifier, trainer: Trainer,
+                 metrics: List[Metric], tuner: Tuner = None):
         self.data_set = data_set
         self.stratifier = stratifier
         self.stratifier.load_data(self.data_set)
@@ -222,59 +303,81 @@ class Experiment:
             else:
                 predictor = self.trainer.fit(x_train, y_train)
             self.partition_predictors.append(predictor)
-            partition_evaluation = evaluate(predictor, self.metrics, x_test, y_test)
+            partition_evaluation = self.evaluate(predictor, self.metrics, x_test, y_test)
             self.partition_evaluations.append(partition_evaluation)
-        self.evaluation = summarize_evaluations(self.partition_evaluations)
+        self.evaluation = self.summarize_evaluations(self.partition_evaluations)
         return self.evaluation
 
+    def to_dict(self):
+        d = {
+            'stratifier': self.stratifier.to_dict(),
+            'evaluation': self.evaluation.to_dict(),
+        }
+        return d
 
-def evaluate(predictor: Predictor, metrics: List[Metric], x, y) -> Dict[str, Union[int, float]]:
-    results = {}
-    for metric in metrics:
-        val = metric.calculate(predictor, x, y)
-        results[metric.name] = val
-    return results
+    @staticmethod
+    def evaluate(predictor: Predictor, metrics: List[Metric], x, y_true) -> Dict[str, Union[int, float]]:
+        results = {}
+        for metric in metrics:
+            y_pred_proba = predictor.predict_proba(x)
+            val = metric.calculate(y_true, y_pred_proba)
+            results[metric.name] = val
+        return results
 
-
-def summarize_evaluations(partition_evaluations: List[Dict[str, Union[int, float]]]):
-    for i, eval_dict in enumerate(partition_evaluations):
-        eval_dict['partition'] = i
-    evaluation = pd.DataFrame(partition_evaluations)
-    return evaluation
+    @staticmethod
+    def summarize_evaluations(partition_evaluations: List[Dict[str, Union[int, float]]]):
+        for i, eval_dict in enumerate(partition_evaluations):
+            eval_dict['partition'] = i
+        evaluation_df = pd.DataFrame(partition_evaluations)
+        col_order = ['partition'] + [col for col in evaluation_df.columns if col != 'partition']
+        evaluation_df = evaluation_df[col_order]
+        return evaluation_df
 
 
 # === EXAMPLE ===
+def ex():
+    df = pd.read_csv('https://raw.githubusercontent.com/mwaskom/seaborn-data/master/titanic.csv')
+    df = df.dropna().copy()
 
-df = pd.read_csv('https://raw.githubusercontent.com/mwaskom/seaborn-data/master/titanic.csv')
-df = df.dropna().copy()
+    config = {
+        'DataSet': {
+            'features': [
+                'pclass',
+                'age',
+                'adult_male',
+                'sibsp',
+                'parch'
+            ],
+            'target': 'survived',
+        },
+        'Stratifier': {
+            'n_partitions': 5,
+        },
+        'Trainer': {},
+        'Tuner': {
+            'hyperparameters': {
+                'n_estimators': range(200, 2000, 10),
+                'max_features': ['auto', 'sqrt'],
+                'max_depth': range(10, 110, 11),
+                'min_samples_split': [2, 4, 6, 8, 10],
+                'min_samples_leaf': [1, 2, 5, 10],
+                'bootstrap': [True, False],
+            },
+            'num_cv_folds': 3,
+            'num_iters': 5,
+            'scoring_function': 'f1_macro',
+        },
+    }
+    data_set = DataSet(df, config['DataSet'])
+    stratifier = PartitionedLabelStratifier(config['Stratifier'])
+    # architecture = RandomForestClassifier()
+    # trainer = SciKitLearnTrainer(architecture, config['Trainer'])
+    trainer = RandomForestClassifier()
+    tuner = RandomSearchTuner(config['Tuner'])
+    metrics = [F1_Macro(classification_cutoff=0.5), AUPRC(), AUROC(), LogLoss()]
 
-data_set_config = {
-    'features': [
-        'pclass',
-        'age',
-        'adult_male',
-        'sibsp',
-        'parch'
-    ],
-    'target': 'survived',
-}
-data_set = DataSet(df, data_set_config)
-
-data_set.x
-
-stratifier_config = {
-    'n_partitions': 5,
-}
-stratifier = PartitionedStratifier(stratifier_config)
-
-architecture = RandomForestClassifier()
-trainer = Trainer(architecture)
-tuner = Tuner({})
-
-metrics = [F1_Macro_Metric(), AUPRC_Metric(), AUROC_Metric(), LogLoss_Metric()]
-
-# TODO: just make Tuner a subclass of Trainer, so Experiment only gets 1?
-# TODO: They're just objects with a .fit() method as far as Experiment is concerned
-exp = Experiment(data_set=data_set, stratifier=stratifier, trainer=trainer, metrics=metrics, tuner=None)
-results = exp.go()
-print(results)
+    # TODO: just make Tuner a subclass of Trainer, so Experiment only gets 1?
+    # TODO: They're just objects with a .fit() method as far as Experiment is concerned
+    exp = Experiment(data_set=data_set, stratifier=stratifier, trainer=trainer, metrics=metrics, tuner=tuner)
+    results = exp.go()
+    print(results)
