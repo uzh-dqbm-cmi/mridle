@@ -216,6 +216,7 @@ class Experiment:
 
     def go(self):
         for x_train, y_train, x_test, y_test in self.stratifier:
+            print(len(y_train), len(y_test))
             if self.tuner:
                 predictor = self.tuner.fit(self.trainer, x_train, y_train)
             else:
