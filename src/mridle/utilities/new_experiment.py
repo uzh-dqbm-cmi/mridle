@@ -62,7 +62,6 @@ class DataSet:
 class Stratifier(ABC):
     """
     Yield data partitions.
-    # TODO: create subclasses TrainTestSplitStratifier, RandomStratifier
     """
 
     def __init__(self, config: Dict):
@@ -169,7 +168,12 @@ class Predictor:
         return self.model.predict(x)
 
     def predict_proba(self, x):
-        return self.model.predict_proba(x)
+        """Enforce returning only a single series."""
+        y_pred_proba = self.model.predict_proba(x)
+        if y_pred_proba.shape[1] == 2:
+            y_pred_proba = y_pred_proba[:, 1]
+
+        return y_pred_proba
 
 
 class Tuner(ABC):
@@ -253,8 +257,6 @@ class Metric(ABC):
 
         Returns: Series of 0s and 1s.
         """
-        if y_pred_proba.shape[1] == 2:
-            y_pred_proba = y_pred_proba[:, 1]
         classification = np.where(y_pred_proba > self.classification_cutoff, 1, 0)
         return classification
 
@@ -274,7 +276,7 @@ class AUPRC(Metric):
     name = 'auprc'
 
     def calculate(self, y_true, y_pred_proba):
-        y_pred = y_pred_proba[:, 1]
+        y_pred = y_pred_proba
         precision, recall, thresholds = precision_recall_curve(y_true, y_pred)
         metric = auc(recall, precision)
         return metric
@@ -285,7 +287,7 @@ class AUROC(Metric):
     name = 'auroc'
 
     def calculate(self, y_true, y_pred_proba):
-        y_pred = y_pred_proba[:, 1]
+        y_pred = y_pred_proba
         metric = roc_auc_score(y_true, y_pred)
         return metric
 
@@ -295,7 +297,7 @@ class LogLoss(Metric):
     name = 'log_loss'
 
     def calculate(self, y_true, y_pred_proba):
-        y_pred = y_pred_proba[:, 1]
+        y_pred = y_pred_proba
         metric = log_loss(y_true, y_pred)
         return metric
 
