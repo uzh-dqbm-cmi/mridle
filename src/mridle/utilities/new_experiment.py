@@ -216,7 +216,6 @@ class Experiment:
 
     def go(self):
         for x_train, y_train, x_test, y_test in self.stratifier:
-            print(x_train.head(), x_test.head())
             if self.tuner:
                 predictor = self.tuner.fit(self.trainer, x_train, y_train)
             else:
@@ -245,16 +244,18 @@ def summarize_evaluations(partition_evaluations: List[Dict[str, Union[int, float
 
 # === EXAMPLE ===
 
-df = pd.read_csv('https://raw.githubusercontent.com/mwaskom/seaborn-data/master/iris.csv')
+df = pd.read_csv('https://raw.githubusercontent.com/mwaskom/seaborn-data/master/titanic.csv')
+df = df.dropna().copy()
 
 data_set_config = {
     'features': [
-        'sepal_length',
-        'sepal_width',
-        'petal_length',
-        'petal_width',
+        'pclass',
+        'age',
+        'adult_male',
+        'sibsp',
+        'parch'
     ],
-    'target': 'species',
+    'target': 'survived',
 }
 data_set = DataSet(df, data_set_config)
 
