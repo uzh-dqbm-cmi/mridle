@@ -4,6 +4,7 @@ import numpy as np
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV, StratifiedKFold  # noqa
 from sklearn.metrics import brier_score_loss, log_loss, f1_score, precision_recall_curve, auc, roc_auc_score # noqa
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import LabelEncoder
 from typing import Dict, List, Tuple, Union
 
 
@@ -223,13 +224,14 @@ class SkorchTrainer(Trainer):
         y = self.transform_y(y)
         if self.tuner:
             trained_model = self.tuner.fit(self.architecture, x, y)
-
         else:
             trained_model = self.architecture.fit(x, y)
         return Predictor(trained_model)
 
     def transform_y(self, y):
-        # TODO MARK
+        y = LabelEncoder().fit_transform(y)
+        y = y.astype('float32')
+        y = y.reshape((len(y), 1))
         return y
 
 
