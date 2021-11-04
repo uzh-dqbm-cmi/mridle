@@ -388,6 +388,7 @@ class ExperimentConfigurator:
         },
         'Stratifier': {
             'PartitionedLabelStratifier': PartitionedLabelStratifier,
+            'TrainTestStratifier': TrainTestStratifier,
         },
         'Architecture': {
             'RandomForestClassifier': RandomForestClassifier,
@@ -595,7 +596,7 @@ def ex():
     trainer = Trainer(architecture, config['Trainer'], tuner)
     # trainer = RandomForestClassifier()
 
-    metrics = [F1_Macro(classification_cutoff=0.5), AUPRC(), AUROC(), LogLoss()]
+    metrics = [F1_Macro({'classification_cutoff': 0.5}), AUPRC(), AUROC(), LogLoss()]
 
     exp = Experiment(data_set=data_set, stratifier=stratifier, trainer=trainer, metrics=metrics)
     results = exp.go()
