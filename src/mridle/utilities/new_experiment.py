@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV, StratifiedKFold  # noqa
 from sklearn.metrics import brier_score_loss, log_loss, f1_score, precision_recall_curve, auc, roc_auc_score # noqa
 from sklearn.ensemble import RandomForestClassifier
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Type, Union
 
 
 class DataSet:
@@ -240,8 +240,12 @@ class Metric(ABC):
 
     name = 'Metric'
 
-    def __init__(self, classification_cutoff: float = 0.5):
-        self.classification_cutoff = classification_cutoff
+    def __init__(self, config: Dict):
+        self.config = config
+        if self.config is None:
+            self.config = {}
+
+        self.classification_cutoff = self.config.get('classification_cutoff', 0.5)
 
     @abstractmethod
     def calculate(self, y_true, y_pred_proba):
@@ -307,7 +311,7 @@ class Experiment:
     Orchestrate a machine learning experiment, including training and evaluation.
     """
 
-    def __init__(self, data_set: DataSet, stratifier: PartitionedLabelStratifier, trainer: Trainer,
+    def __init__(self, data_set: DataSet, stratifier: Stratifier, trainer: Trainer,
                  metrics: List[Metric]):
         self.data_set = data_set
         self.stratifier = stratifier
@@ -353,8 +357,182 @@ class Experiment:
         evaluation_df = evaluation_df[col_order]
         return evaluation_df
 
+    @classmethod
+    def configure(cls, config: Dict, data: pd.DataFrame) -> 'Experiment':
+        return ExperimentConfigurator.configure(config=config, data=data)
+
+
+class ExperimentConfigurator:
+
+    component_flavors = {
+        'DataSet': {
+            'DataSet': DataSet,
+        },
+        'Stratifier': {
+            'PartitionedLabelStratifier': PartitionedLabelStratifier,
+        },
+        'Architecture': {
+            'RandomForestClassifier': RandomForestClassifier,
+        },
+        'Trainer': {
+            'Trainer': Trainer,
+            'SkorchTrainer': SkorchTrainer,
+        },
+        'Tuner': {
+            'RandomSearchTuner': RandomSearchTuner,
+        },
+        'Metric': {
+            'F1_Macro': F1_Macro,
+            'AUPRC': AUPRC,
+            'AUROC': AUROC,
+            'LogLoss': LogLoss,
+        }
+    }
+
+    @classmethod
+    def configure(cls, config: Dict, data: pd.DataFrame) -> Experiment:
+        data_set = cls.configure_data_set(data=data, config=config['DataSet'])
+        stratifier = cls.configure_stratifier(config['Stratifier'])
+        trainer = cls.configure_trainer(config['Architecture'], config['Trainer'], config.get('Tuner', None))
+        metrics = cls.configure_metrics(config['Metric'])
+        exp = Experiment(data_set=data_set, stratifier=stratifier, trainer=trainer, metrics=metrics)
+        return exp
+
+    @classmethod
+    def configure_data_set(cls, data: pd.DataFrame, config: Dict) -> DataSet:
+        data_set_cls = cls.select_data_set(config['flavor'])
+        data_set = data_set_cls(data=data, config=config['config'])
+        return data_set
+
+    @classmethod
+    def configure_stratifier(cls, config: Dict) -> Stratifier:
+        stratifier_cls = cls.select_stratifier(config['flavor'])
+        stratifier = stratifier_cls(config=config['config'])
+        return stratifier
+
+    @classmethod
+    def configure_trainer(cls, architecture_config: Dict, trainer_config: Dict, tuner_config: Dict = None) -> Trainer:
+        architecture_cls = cls.select_architecture(architecture_config['flavor'])
+        # TODO does this expansion work?
+        architecture = architecture_cls(**architecture_config.get('config', {}))
+
+        if tuner_config:
+            tuner_cls = cls.select_tuner(tuner_config['flavor'])
+            tuner = tuner_cls(config=tuner_config.get('config', None))
+        else:
+            tuner = None
+
+        trainer_cls = cls.select_trainer(trainer_config['flavor'])
+        trainer = trainer_cls(architecture=architecture, config=trainer_config['config'], tuner=tuner)
+        return trainer
+
+    @classmethod
+    def configure_metrics(cls, config: List[Dict]) -> List[Metric]:
+        metrics = []
+        for m in config:
+            metric_cls = cls.select_metric(m['flavor'])
+            metric = metric_cls(config=m.get('config', None))
+            metrics.append(metric)
+        return metrics
+
+    @classmethod
+    def select_component(cls, flavor: str, component_type: str) -> Union[Type[DataSet], Type[Stratifier], Type[Trainer],
+                                                                         Type[Tuner], Type[Metric]]:
+        component_flavors = cls.component_flavors[component_type]
+        if flavor in component_flavors:
+            return component_flavors[flavor]
+        else:
+            raise ValueError(f"{component_type} '{flavor}' not recognized")
+
+    @classmethod
+    def select_data_set(cls, flavor) -> Type[DataSet]:
+        return cls.select_component(flavor, component_type='DataSet')
+
+    @classmethod
+    def select_stratifier(cls, flavor) -> Type[Stratifier]:
+        return cls.select_component(flavor, component_type='Stratifier')
+
+    @classmethod
+    def select_architecture(cls, flavor):
+        return cls.select_component(flavor, component_type='Architecture')
+
+    @classmethod
+    def select_trainer(cls, flavor) -> Type[Trainer]:
+        return cls.select_component(flavor, component_type='Trainer')
+
+    @classmethod
+    def select_tuner(cls, flavor) -> Type[Tuner]:
+        return cls.select_component(flavor, component_type='Tuner')
+
+    @classmethod
+    def select_metric(cls, flavor) -> Type[Metric]:
+        return cls.select_component(flavor, component_type='Metric')
+
 
 # === EXAMPLE ===
+def test_config():
+    df = pd.read_csv('https://raw.githubusercontent.com/mwaskom/seaborn-data/master/titanic.csv')
+    df = df.dropna().copy()
+
+    exp_config = {
+        'DataSet': {
+            'flavor': 'DataSet',
+            'config': {
+                'features': [
+                    'pclass',
+                    'age',
+                    'adult_male',
+                    'sibsp',
+                    'parch'
+                ],
+                'target': 'survived',
+            },
+        },
+        'Stratifier': {
+            'flavor': 'PartitionedLabelStratifier',
+            'config': {
+                'n_partitions': 5,
+            },
+        },
+        'Architecture': {
+            'flavor': 'RandomForestClassifier'
+        },
+        'Trainer': {
+            'flavor': 'Trainer',
+            'config': {
+                # 'epochs': 10,
+            }
+        },
+        'Tuner': {
+            'flavor': 'RandomSearchTuner',
+            'config': {
+                'hyperparameters': {
+                    'n_estimators': range(200, 2000, 10),
+                    'max_features': ['auto', 'sqrt'],
+                    'max_depth': range(10, 110, 11),
+                    'min_samples_split': [2, 4, 6, 8, 10],
+                    'min_samples_leaf': [1, 2, 5, 10],
+                    'bootstrap': [True, False],
+                },
+                'num_cv_folds': 3,
+                'num_iters': 5,
+                'scoring_function': 'f1_macro',
+                'verbose': 1,
+            },
+        },
+        'Metric': [
+            {'flavor': 'F1_Macro', 'config': {'classification_cutoff': 0.5}},
+            {'flavor': 'AUPRC'},
+            {'flavor': 'AUROC'},
+            {'flavor': 'LogLoss'},
+        ]
+    }
+
+    exp = ExperimentConfigurator.configure(config=exp_config, data=df)
+    results = exp.go()
+    print(results)
+
+
 def ex():
     df = pd.read_csv('https://raw.githubusercontent.com/mwaskom/seaborn-data/master/titanic.csv')
     df = df.dropna().copy()
