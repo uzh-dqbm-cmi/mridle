@@ -4,6 +4,7 @@ import numpy as np
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV, StratifiedKFold  # noqa
 from sklearn.metrics import brier_score_loss, log_loss, f1_score, precision_recall_curve, auc, roc_auc_score # noqa
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import LabelEncoder
 from typing import Dict, List, Tuple, Type, Union
 
 
@@ -67,6 +68,9 @@ class Stratifier(ABC):
     def __init__(self, config: Dict):
         self.validate_config(config)
         self.n_partitions = config['n_partitions']
+        if 'test_split_size' in config:
+            self.test_split_size = config['test_split_size']
+
         self.partition_idxs = config.get('partition_idxs', None)
         if 'data_set' in config:
             data_set_dict = config['data_set']
@@ -152,6 +156,19 @@ class PartitionedLabelStratifier(Stratifier):
         return partitions
 
 
+class TrainTestStratifier(Stratifier):
+
+    def partition_data(self, data_set: DataSet) -> List[Tuple[List[int], List[int]]]:
+        """Split data once into train and test sets. Percentage of data in test set supplied as argument."""
+        df_len = len(data_set.x.index)
+        perm = np.random.permutation(df_len)
+        train_end = int((1-self.test_split_size) * df_len)
+        train_idx = perm[:train_end]
+        test_idx = perm[train_end:]
+        partitions = [(train_idx, test_idx)]
+        return partitions
+
+
 class Architecture(ABC):
 
     @abstractmethod
@@ -207,13 +224,14 @@ class SkorchTrainer(Trainer):
         y = self.transform_y(y)
         if self.tuner:
             trained_model = self.tuner.fit(self.architecture, x, y)
-
         else:
             trained_model = self.architecture.fit(x, y)
         return Predictor(trained_model)
 
     def transform_y(self, y):
-        # TODO MARK
+        y = LabelEncoder().fit_transform(y)
+        y = y.astype('float32')
+        y = y.reshape((len(y), 1))
         return y
 
 
@@ -549,7 +567,8 @@ def ex():
             'target': 'survived',
         },
         'Stratifier': {
-            'n_partitions': 5,
+            'n_partitions': 1,
+            'test_split_size': 0.2
         },
         'Trainer': {
             # 'epochs': 10,
@@ -570,7 +589,7 @@ def ex():
         },
     }
     data_set = DataSet(df, config['DataSet'])
-    stratifier = PartitionedLabelStratifier(config['Stratifier'])
+    stratifier = TrainTestStratifier(config['Stratifier'])
     architecture = RandomForestClassifier()
     tuner = RandomSearchTuner(config['Tuner'])
     trainer = Trainer(architecture, config['Trainer'], tuner)
@@ -581,3 +600,6 @@ def ex():
     exp = Experiment(data_set=data_set, stratifier=stratifier, trainer=trainer, metrics=metrics)
     results = exp.go()
     print(results)
+
+
+ex()
