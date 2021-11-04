@@ -67,6 +67,9 @@ class Stratifier(ABC):
     def __init__(self, config: Dict):
         self.validate_config(config)
         self.n_partitions = config['n_partitions']
+        if 'test_split_size' in config:
+            self.test_split_size = config['test_split_size']
+
         self.partition_idxs = config.get('partition_idxs', None)
         if 'data_set' in config:
             data_set_dict = config['data_set']
@@ -123,6 +126,7 @@ class Stratifier(ABC):
 
         Returns: X_train, y_train, X_test, y_test
         """
+        print(partition_id, self.partition_idxs[partition_id])
         train_partition_ids, test_partition_ids = self.partition_idxs[partition_id]
         X_train = self.data_set.x.iloc[train_partition_ids]
         y_train = self.data_set.y.iloc[train_partition_ids]
@@ -149,6 +153,22 @@ class PartitionedLabelStratifier(Stratifier):
         partitions = []
         for p_id, p in enumerate(partition_indexes):
             partitions.append(p)
+        return partitions
+
+
+class TrainTestStratifier(Stratifier):
+
+    def partition_data(self, data_set: DataSet) -> Tuple[List[int], List[int]]:
+        """Split data once into train and test sets. Percentage of data in test set supplied as argument."""
+        seed = 0
+        np.random.seed(seed)
+
+        perm = np.random.permutation(len(data_set.y))
+        df_len = len(data_set.x.index)
+        train_end = int((1-self.test_split_size) * df_len)
+        train_idx = perm[:train_end]
+        test_idx = perm[train_end:]
+        partitions = [(train_idx, test_idx)]
         return partitions
 
 
@@ -371,7 +391,8 @@ def ex():
             'target': 'survived',
         },
         'Stratifier': {
-            'n_partitions': 5,
+            'n_partitions': 1,
+            'test_split_size': 0.2
         },
         'Trainer': {
             # 'epochs': 10,
@@ -392,7 +413,7 @@ def ex():
         },
     }
     data_set = DataSet(df, config['DataSet'])
-    stratifier = PartitionedLabelStratifier(config['Stratifier'])
+    stratifier = TrainTestStratifier(config['Stratifier'])
     architecture = RandomForestClassifier()
     tuner = RandomSearchTuner(config['Tuner'])
     trainer = Trainer(architecture, config['Trainer'], tuner)
@@ -403,3 +424,6 @@ def ex():
     exp = Experiment(data_set=data_set, stratifier=stratifier, trainer=trainer, metrics=metrics)
     results = exp.go()
     print(results)
+
+
+ex()
