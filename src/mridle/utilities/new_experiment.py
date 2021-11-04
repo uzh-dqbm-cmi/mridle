@@ -491,6 +491,7 @@ class ExperimentConfigurator:
         },
         'Tuner': {
             'RandomSearchTuner': RandomSearchTuner,
+            'BayesianTuner': BayesianTuner,
         },
         'Metric': {
             'F1_Macro': F1_Macro,
