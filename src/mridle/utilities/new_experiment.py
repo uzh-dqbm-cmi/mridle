@@ -126,7 +126,6 @@ class Stratifier(ABC):
 
         Returns: X_train, y_train, X_test, y_test
         """
-        print(partition_id, self.partition_idxs[partition_id])
         train_partition_ids, test_partition_ids = self.partition_idxs[partition_id]
         X_train = self.data_set.x.iloc[train_partition_ids]
         y_train = self.data_set.y.iloc[train_partition_ids]
@@ -158,13 +157,10 @@ class PartitionedLabelStratifier(Stratifier):
 
 class TrainTestStratifier(Stratifier):
 
-    def partition_data(self, data_set: DataSet) -> Tuple[List[int], List[int]]:
+    def partition_data(self, data_set: DataSet) -> List[Tuple[List[int], List[int]]]:
         """Split data once into train and test sets. Percentage of data in test set supplied as argument."""
-        seed = 0
-        np.random.seed(seed)
-
-        perm = np.random.permutation(len(data_set.y))
         df_len = len(data_set.x.index)
+        perm = np.random.permutation(df_len)
         train_end = int((1-self.test_split_size) * df_len)
         train_idx = perm[:train_end]
         test_idx = perm[train_end:]
