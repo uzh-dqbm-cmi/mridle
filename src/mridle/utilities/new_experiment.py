@@ -70,8 +70,6 @@ class Stratifier(ABC):
     def __init__(self, config: Dict):
         self.validate_config(config)
         self.n_partitions = config['n_partitions']
-        if 'test_split_size' in config:
-            self.test_split_size = config['test_split_size']
 
         self.partition_idxs = config.get('partition_idxs', None)
         if 'data_set' in config:
@@ -159,6 +157,10 @@ class PartitionedLabelStratifier(Stratifier):
 
 
 class TrainTestStratifier(Stratifier):
+
+    def __init__(self, config: Dict):
+        super().__init__(config)
+        self.test_split_size = config['test_split_size']
 
     def partition_data(self, data_set: DataSet) -> List[Tuple[List[int], List[int]]]:
         """Split data once into train and test sets. Percentage of data in test set supplied as argument."""
@@ -350,7 +352,7 @@ class Metric(ABC):
 
     name = 'Metric'
 
-    def __init__(self, config: Dict):
+    def __init__(self, config: Dict = None):
         self.config = config
         if self.config is None:
             self.config = {}
@@ -688,7 +690,7 @@ def ex():
     trainer = Trainer(architecture, config['Trainer'], tuner)
     # trainer = RandomForestClassifier()
 
-    metrics = [F1_Macro({'classification_cutoff': 0.5}), AUPRC(), AUROC(), LogLoss()]
+    metrics = [F1_Macro(config={'classification_cutoff': 0.5}), AUPRC(), AUROC(), LogLoss()]
 
     exp = Experiment(data_set=data_set, stratifier=stratifier, trainer=trainer, metrics=metrics)
     results = exp.go()
