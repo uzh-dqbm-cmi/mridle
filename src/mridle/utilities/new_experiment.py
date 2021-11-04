@@ -6,6 +6,8 @@ from sklearn.metrics import brier_score_loss, log_loss, f1_score, precision_reca
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
 from typing import Dict, List, Tuple, Union
+from hyperopt import fmin, tpe, Trials, space_eval, hp
+from functools import partial
 
 
 class DataSet:
@@ -203,6 +205,115 @@ class Tuner(ABC):
         pass
 
 
+class RandomSearchTuner(Tuner):
+
+    def __init__(self, config: Dict):
+        super().__init__(config)
+        self.hyperparameters = config['hyperparameters']
+        self.num_iters = config['num_iters']
+        self.num_cv_folds = config['num_cv_folds']
+        self.scoring_function = config['scoring_function']
+        self.verbose = config['verbose']
+
+    def fit(self, architecture, x, y) -> Predictor:
+        random_search = RandomizedSearchCV(estimator=architecture, param_distributions=self.hyperparameters,
+                                           n_iter=self.num_iters, cv=self.num_cv_folds, verbose=self.verbose,
+                                           random_state=42, n_jobs=-1, scoring=self.scoring_function)
+        random_search.fit(x, y)
+        best_est = random_search.best_estimator_
+        return best_est
+
+
+class BayesianTuner(Tuner):
+
+    def __init__(self, config: Dict):
+        super().__init__(config)
+        self.hyperparameters = config['hyperparameters']
+        self.num_iters = config['num_iters']
+        self.num_cv_folds = config['num_cv_folds']
+        self.scoring_function = config['scoring_function']
+        self.verbose = config['verbose']
+        self.timeout = config['hyperopt_timeout']
+
+    def fit(self, architecture, x, y) -> Predictor:
+        cv_ids = list(range(self.num_cv_folds)) * np.floor((len(x) / self.num_cv_folds)).astype(int)
+        cv_ids.extend(list(range(len(x) % self.num_cv_folds)))
+        cv_ids = np.random.permutation(cv_ids)
+
+        best_rf = fmin(partial(self.hyperopt_objective, model=architecture, x_train=x, y_train=y,
+                               scoring_fn=self.scoring_function, ids=cv_ids, nfolds=self.num_cv_folds,
+                               verbose=self.verbose),
+                       self.hyperparameters, algo=tpe.suggest, timeout=self.timeout, max_evals=self.num_iters,
+                       trials=Trials())
+        best_params = space_eval(self.hyperparameters, best_rf)
+        model = architecture.set_params(**best_params)
+        best_est = model.fit(x, y)
+
+        return best_est
+
+    @classmethod
+    def hyperopt_objective(cls, params, model, x_train, y_train, scoring_fn: str, ids: List[int], nfolds, verbose):
+        """
+        Objective to minimise. For use with the hyperopt package, which performs Bayesian hyperparameter searches.
+        This takes in the model, data, and a list of parameter values that should be used for calculating the loss
+
+        Args:
+            params: the parameter set to test and calculate the cross validated loss for
+            model: the model
+            x_train: training data
+            y_train: training data labels
+            scoring_fn: the scoring function to use (can be from 'f1_macro', 'log_loss', 'auprc', or 'brier_score')
+            ids: list of ints, the same length as x_train, which holds information on which CV fold each row should be
+            assigned to
+            nfolds: number of folds to use in cross validation
+            print_result: boolean, giving user preference of whether to print information as the trials are being run
+
+        Returns:
+            Loss associated with the given parameters, which is to be minimised over time.
+
+        """
+
+        model = model
+        model = model.set_params(**params)
+
+        cv_results = []
+        for k in range(nfolds):
+            x_train_cv = x_train[ids != k]
+            y_train_cv = y_train[ids != k]
+            x_test_cv = x_train[ids == k]
+            y_test_cv = y_train[ids == k]
+
+            model = model.fit(x_train_cv, y_train_cv)
+
+            if scoring_fn == 'f1_macro':
+                preds = model.predict(x_test_cv)
+                loss = -1 * f1_score(y_test_cv, preds, average='macro')
+            elif scoring_fn == 'log_loss':
+                probs = model.predict_proba(x_test_cv)[:, 1]
+                loss = log_loss(y_test_cv, probs)
+            elif scoring_fn == 'brier_score':
+                probs = model.predict_proba(x_test_cv)[:, 1]
+                loss = brier_score_loss(y_test_cv, probs)
+            elif scoring_fn == 'auprc':
+                loss = -AUPRC().calculate(y_test_cv, model.predict_proba(x_test_cv)[:, 1])
+                # probs = model.predict_proba(x_test_cv)[:, 1]
+                # precision, recall, thresholds = precision_recall_curve(y_test_cv, probs)
+                # loss = -auc(recall, precision)
+            else:
+                raise NotImplementedError(
+                    'scoring_fn should be one of ''f1_macro'', ''log_loss'', ''auprc'', or ''brier_score''. ' +
+                    '{} given'.format(scoring_fn))
+
+            cv_results.append(loss)
+
+        to_minimise = np.mean(cv_results)
+        if verbose:
+            print(params)
+            print('Loss: {}'.format(to_minimise))
+
+        return to_minimise
+
+
 class Trainer:
 
     def __init__(self, architecture, config: Dict, tuner: Tuner = None):
@@ -233,25 +344,6 @@ class SkorchTrainer(Trainer):
         y = y.astype('float32')
         y = y.reshape((len(y), 1))
         return y
-
-
-class RandomSearchTuner(Tuner):
-
-    def __init__(self, config: Dict):
-        super().__init__(config)
-        self.hyperparameters = config['hyperparameters']
-        self.num_iters = config['num_iters']
-        self.num_cv_folds = config['num_cv_folds']
-        self.scoring_function = config['scoring_function']
-        self.verbose = config['verbose']
-
-    def fit(self, architecture, x, y) -> Predictor:
-        random_search = RandomizedSearchCV(estimator=architecture, param_distributions=self.hyperparameters,
-                                           n_iter=self.num_iters, cv=self.num_cv_folds, verbose=self.verbose,
-                                           random_state=42, n_jobs=-1, scoring=self.scoring_function)
-        random_search.fit(x, y)
-        best_est = random_search.best_estimator_
-        return best_est
 
 
 class Metric(ABC):
@@ -397,23 +489,22 @@ def ex():
         },
         'Tuner': {
             'hyperparameters': {
-                'n_estimators': range(200, 2000, 10),
-                'max_features': ['auto', 'sqrt'],
-                'max_depth': range(10, 110, 11),
-                'min_samples_split': [2, 4, 6, 8, 10],
-                'min_samples_leaf': [1, 2, 5, 10],
-                'bootstrap': [True, False],
+                'n_estimators': hp.choice('n_estimators', [10, 100, 200]),
+                'max_depth': hp.choice('max_depth', [2, 4, 10, 50, 100, None]),
+                'min_samples_split': hp.choice('min_samples_split', [2, 4, 6, 8, 10]),
+                'min_samples_leaf': hp.choice('min_samples_leaf', [1, 2, 5, 10]),
             },
             'num_cv_folds': 3,
-            'num_iters': 5,
-            'scoring_function': 'f1_macro',
+            'num_iters': 100,
+            'scoring_function': 'auprc',
             'verbose': 1,
+            'hyperopt_timeout': 5 * 60
         },
     }
     data_set = DataSet(df, config['DataSet'])
     stratifier = TrainTestStratifier(config['Stratifier'])
     architecture = RandomForestClassifier()
-    tuner = RandomSearchTuner(config['Tuner'])
+    tuner = BayesianTuner(config['Tuner'])
     trainer = Trainer(architecture, config['Trainer'], tuner)
     # trainer = RandomForestClassifier()
 
