@@ -1,15 +1,21 @@
 import pandas as pd
 from typing import Dict
+from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
 
 
-class DataSet:
+class DataSet(ConfigurableComponent):
     """
     A dataset class config dictionary contains the following configurable elements:
     - features: name of the features to be used in building the features tensor
     - targets: name of the features to be used in building the targets tensor
     """
 
-    def __init__(self, data: pd.DataFrame, config: Dict):
+    registered_flavors = {
+
+    }
+
+    def __init__(self, config: Dict, data: pd.DataFrame):
+        super().__init__(config)
         self.validate_config(config, data)
         self.data = data
         self.features_list = config['features']
@@ -22,20 +28,6 @@ class DataSet:
     @property
     def y(self) -> pd.Series:
         return self.data[self.target]
-
-    def to_dict(self):
-        d = {
-            'data': self.data.to_dict(),  # TODO: I feel like I've had problems with this before
-            'features': self.features_list,
-            'target': self.target,
-        }
-        return d
-
-    @classmethod
-    def from_dict(cls, d):
-        data = pd.DataFrame(d['data'])
-        config = d
-        return cls(data, config)
 
     @staticmethod
     def validate_config(config, data):
@@ -52,3 +44,50 @@ class DataSet:
             raise ValueError(f"Target column {config['target']} not found in dataset.")
 
         return True
+
+
+class DataSetInterface(ComponentInterface):
+
+    registered_flavors = {
+        'DataSet': DataSet,
+    }
+
+    @classmethod
+    def to_dict(self, component) -> Dict:
+        d = super().to_dict(component)
+        d['data'] = component.data.to_dict(),  # TODO: I feel like I've had problems with this before
+        return d
+
+    @classmethod
+    def configure(cls, d: Dict, **kwargs) -> DataSet:
+        for required_key in ['flavor', 'config']:
+            if required_key not in d:
+                raise ValueError(f"Component dictionary must contain key '{required_key}'.")
+
+        data = kwargs['data']
+
+        flavor_cls = cls.select_flavor(d['flavor'])
+        flavor_instance = flavor_cls(config=d['config'], data=data)
+        return flavor_instance
+
+    @classmethod
+    def from_dict(cls, d: Dict) -> DataSet:
+        """
+        Instantiate a component from a {'flavor: ..., 'config': {}} dictionary.
+
+        Args:
+            d: A dictionary with the keys 'flavor' describing the class name of the component to be insantiated, and
+             key 'config' containting the object's config dictionary. d may also contain other keys, which must be added
+             to the object by the subclass-ed method.
+
+        Returns:
+
+        """
+        for required_key in ['flavor', 'config', 'data']:
+            if required_key not in d:
+                raise ValueError(f"Component dictionary must contain key '{required_key}'.")
+
+        flavor_cls = cls.select_flavor(d['flavor'])
+        data = pd.DataFrame(d['data'])
+        flavor_instance = flavor_cls(config=d['config'], data=data)
+        return flavor_instance

@@ -1,31 +1,40 @@
-from abc import abstractmethod
-from sklearn.base import BaseEstimator
-from sklearn.ensemble import RandomForestClassifier
-from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
-from typing import Dict
+from abc import ABC
+from typing import Dict, Type
 
 
-class Architecture(ConfigurableComponent):
+class ConfigurableComponent(ABC):
 
-    def __init__(self, config):
-        super().__init__(config)
+    def __init__(self, config: Dict = None):
+        self.config = config
+        if self.config is None:
+            self.config = {}
 
-    @abstractmethod
-    def fit(self, x, y):
-        pass
+    # TODO - how to allow for different args in subclasses?
+    # @classmethod
+    # def validate_config(cls, config: Dict) -> bool:
+    #     return True
 
 
-class ArchitectureInterface(ComponentInterface):
+class ComponentInterface:
 
-    registered_flavors = {
-        'RandomForestClassifier': RandomForestClassifier,  # TODO enable auto-loading from sklearn
-    }
+    registered_flavors = {}
 
-    # TODO: make not duplicate method!
+    @classmethod
+    def to_dict(cls, component) -> Dict:
+        d = {
+            'flavor': type(component).__name__,
+            'config': component.config,
+        }
+        return d
+
+    # TODO it's dumb that these two base methods are the same!
+    #  But need subclass to be able to override from_dict with additional info that is added post-initializatsion,
+    #  without changing configure(), and need to be able to override configure with extra args to pass to constructor
+    #  without overriding to_dict()
     @classmethod
     def configure(cls, d: Dict, **kwargs) -> ConfigurableComponent:
         """
-        Instantiate a component from a {'flavor: ..., 'config': {}} dictionary.
+        Instantiate a component from a dictionary.
 
         Args:
             d: A dictionary with the keys 'flavor' describing the class name of the component to be insantiated, and
@@ -40,13 +49,13 @@ class ArchitectureInterface(ComponentInterface):
                 raise ValueError(f"Component dictionary must contain key '{required_key}'.")
 
         flavor_cls = cls.select_flavor(d['flavor'])
-        flavor_instance = flavor_cls(**d.get('config', {}))
+        flavor_instance = flavor_cls(config=d['config'])
         return flavor_instance
 
     @classmethod
     def from_dict(cls, d: Dict) -> ConfigurableComponent:
         """
-        Instantiate a component from a {'flavor: ..., 'config': {}} dictionary.
+        Instantiate a component from a dictionary.
 
         Args:
             d: A dictionary with the keys 'flavor' describing the class name of the component to be insantiated, and
@@ -61,20 +70,12 @@ class ArchitectureInterface(ComponentInterface):
                 raise ValueError(f"Component dictionary must contain key '{required_key}'.")
 
         flavor_cls = cls.select_flavor(d['flavor'])
-        flavor_instance = flavor_cls(**d.get('config', {}))
+        flavor_instance = flavor_cls(config=d['config'])
         return flavor_instance
 
     @classmethod
-    def to_dict(cls, component) -> Dict:
-        if isinstance(component, BaseEstimator):
-            return cls.sklearn_to_dict(component)
+    def select_flavor(cls, flavor: str) -> Type[ConfigurableComponent]:
+        if flavor in cls.registered_flavors:
+            return cls.registered_flavors[flavor]
         else:
-            return super().to_dict(component)
-
-    @staticmethod
-    def sklearn_to_dict(estimator) -> Dict:
-        d = {
-            'flavor': type(estimator).__name__,
-            'config': estimator.get_params(),
-        }
-        return d
+            raise ValueError(f"{cls.__name__} '{flavor}' not recognized")

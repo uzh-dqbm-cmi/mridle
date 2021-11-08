@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from functools import partial
 from hyperopt import fmin, tpe, Trials, space_eval
 import numpy as np
@@ -6,14 +6,15 @@ from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import brier_score_loss, log_loss, f1_score
 from typing import Dict, List
 from .architecture import Architecture
+from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
 from .predictor import Predictor
 from .metric import AUPRC
 
 
-class Tuner(ABC):
+class Tuner(ConfigurableComponent):
 
     def __init__(self, config: Dict):
-        self.config = config
+        super().__init__(config)
 
     @abstractmethod
     def fit(self, architecture: Architecture, x, y) -> Predictor:
@@ -127,3 +128,11 @@ class BayesianTuner(Tuner):
             print('Loss: {}'.format(to_minimise))
 
         return to_minimise
+
+
+class TunerInterface(ComponentInterface):
+
+    registered_flavors = {
+        'RandomSearchTuner': RandomSearchTuner,
+        'BayesianTuner': BayesianTuner,
+    }

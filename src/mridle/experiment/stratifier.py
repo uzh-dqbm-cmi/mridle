@@ -1,17 +1,19 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import StratifiedKFold
 from typing import Dict, List, Tuple
+from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
 from .dataset import DataSet
 
 
-class Stratifier(ABC):
+class Stratifier(ConfigurableComponent):
     """
     Yield data partitions.
     """
 
     def __init__(self, config: Dict):
+        super().__init__(config)
         self.validate_config(config)
         self.n_partitions = config['n_partitions']
 
@@ -42,16 +44,9 @@ class Stratifier(ABC):
             raise StopIteration
 
     def to_dict(self):
-        d = {
-            'n_partitions': self.n_partitions,
-            'partition_idxs': self.partition_idxs,
-            'data_set': self.data_set.to_dict(),
-        }
+        d = super().to_dict()
+        d['partition_idxs'] = self.partition_idxs
         return d
-
-    @classmethod
-    def from_dict(cls, d):
-        return cls(d)
 
     def load_data(self, data_set: DataSet):
         self.data_set = data_set
@@ -114,3 +109,17 @@ class TrainTestStratifier(Stratifier):
         test_idx = perm[train_end:]
         partitions = [(train_idx, test_idx)]
         return partitions
+
+
+class StratifierInterface(ComponentInterface):
+
+    registered_flavors = {
+        'PartitionedLabelStratifier': PartitionedLabelStratifier,
+        'TrainTestStratifier': TrainTestStratifier,
+    }
+
+    @classmethod
+    def from_dict(cls, d: Dict) -> Stratifier:
+        stratifier = super().from_dict(d)
+        stratifier.partition_idxs = d['partition_idxs']
+        return stratifier

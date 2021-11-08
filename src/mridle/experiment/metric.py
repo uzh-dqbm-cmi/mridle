@@ -1,18 +1,16 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 import numpy as np
 from sklearn.metrics import log_loss, f1_score, precision_recall_curve, auc, roc_auc_score
-from typing import Dict
+from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
+from typing import Dict, List
 
 
-class Metric(ABC):
+class Metric(ConfigurableComponent):
 
     name = 'Metric'
 
     def __init__(self, config: Dict = None):
-        self.config = config
-        if self.config is None:
-            self.config = {}
-
+        super().__init__(config)
         self.classification_cutoff = self.config.get('classification_cutoff', 0.5)
 
     @abstractmethod
@@ -72,3 +70,38 @@ class LogLoss(Metric):
         y_pred = y_pred_proba
         metric = log_loss(y_true, y_pred)
         return metric
+
+
+class MetricInterface(ComponentInterface):
+
+    registered_flavors = {
+        'F1_Macro': F1_Macro,
+        'AUPRC': AUPRC,
+        'AUROC': AUROC,
+        'LogLoss': LogLoss,
+    }
+
+    @classmethod
+    def to_dict(cls, component: List[Metric]) -> List[Dict]:
+        list_of_dicts = []
+        for metric in component:
+            m_dict = super().to_dict(metric)
+            list_of_dicts.append(m_dict)
+        return list_of_dicts
+
+    # TODO fix duplicate methods!!
+    @classmethod
+    def configure(cls, components: List[Dict], **kwargs) -> List[Metric]:
+        metrics = []
+        for m in components:
+            metric = super().from_dict(m)
+            metrics.append(metric)
+        return metrics
+
+    @classmethod
+    def from_dict(cls, components: List[Dict]) -> List[Metric]:
+        metrics = []
+        for m in components:
+            metric = super().from_dict(m)
+            metrics.append(metric)
+        return metrics
