@@ -9,6 +9,11 @@ from .predictor import Predictor
 class Trainer(ConfigurableComponent):
 
     def __init__(self, config: Dict, architecture: Architecture, tuner: Tuner = None):
+        if not isinstance(config, dict):
+            if isinstance(architecture, dict) or isinstance(tuner, dict):
+                raise ValueError('It looks like the order of the arguments to `Trainer` is swapped. Please use'
+                                 ' `Trainer(config, architecture, tuner)`.')
+            raise ValueError('The first argument to DataSet must be a dictionary.')
         super().__init__(config)
         self.architecture = architecture
         self.tuner = tuner
@@ -46,26 +51,8 @@ class TrainerInterface(ComponentInterface):
         'SkorchTrainer': SkorchTrainer,
     }
 
-    # @classmethod
-    # def to_dict(self, component) -> Dict:
-    #     d = super().to_dict(component)
-    #     return d
-
     @classmethod
-    def configure(cls, d: Dict, **kwargs) -> Trainer:
-        for required_key in ['flavor', 'config']:
-            if required_key not in d:
-                raise ValueError(f"Component dictionary must contain key '{required_key}'.")
-
-        architecture = kwargs['architecture']
-        tuner = kwargs['tuner']
-
-        flavor_cls = cls.select_flavor(d['flavor'])
-        flavor_instance = flavor_cls(config=d['config'], architecture=architecture, tuner=tuner)
-        return flavor_instance
-
-    @classmethod
-    def from_dict(cls, d: Dict) -> Trainer:
+    def deserialize(cls, d: Dict) -> Trainer:
         """
         Instantiate a component from a {'flavor: ..., 'config': {}} dictionary.
 
@@ -78,14 +65,12 @@ class TrainerInterface(ComponentInterface):
 
         """
         trainer_config = d['Trainer']
-        for required_key in ['flavor', 'config']:
-            if required_key not in trainer_config:
-                raise ValueError(f"Component dictionary must contain key '{required_key}'.")
+        trainer_config = cls.validate_serialization_config(trainer_config)
 
         flavor_cls = cls.select_flavor(trainer_config['flavor'])
-        architecture = ArchitectureInterface.from_dict(d['Architecture'])
+        architecture = ArchitectureInterface.deserialize(d['Architecture'])
         if 'Tuner' in d:
-            tuner = TunerInterface.from_dict(d['Tuner'])
+            tuner = TunerInterface.deserialize(d['Tuner'])
         else:
             tuner = None
         flavor_instance = flavor_cls(config=trainer_config['config'], architecture=architecture, tuner=tuner)

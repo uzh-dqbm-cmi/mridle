@@ -82,10 +82,10 @@ class MetricInterface(ComponentInterface):
     }
 
     @classmethod
-    def to_dict(cls, component: List[Metric]) -> List[Dict]:
+    def serialize(cls, component: List[Metric]) -> List[Dict]:
         list_of_dicts = []
         for metric in component:
-            m_dict = super().to_dict(metric)
+            m_dict = super().serialize(metric)
             list_of_dicts.append(m_dict)
         return list_of_dicts
 
@@ -94,14 +94,14 @@ class MetricInterface(ComponentInterface):
     def configure(cls, components: List[Dict], **kwargs) -> List[Metric]:
         metrics = []
         for m in components:
-            metric = super().from_dict(m)
+            metric = super().configure(m)
             metrics.append(metric)
         return metrics
 
     @classmethod
-    def from_dict(cls, components: List[Dict]) -> List[Metric]:
+    def deserialize(cls, components: List[Dict]) -> List[Metric]:
         metrics = []
         for m in components:
-            metric = super().from_dict(m)
+            metric = super().deserialize(m)
             metrics.append(metric)
         return metrics

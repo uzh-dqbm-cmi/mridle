@@ -35,16 +35,13 @@ class ArchitectureInterface(ComponentInterface):
         Returns:
 
         """
-        for required_key in ['flavor', 'config']:
-            if required_key not in d:
-                raise ValueError(f"Component dictionary must contain key '{required_key}'.")
-
+        d = cls.validate_config(d)
         flavor_cls = cls.select_flavor(d['flavor'])
-        flavor_instance = flavor_cls(**d.get('config', {}))
+        flavor_instance = flavor_cls(**d['config'])
         return flavor_instance
 
     @classmethod
-    def from_dict(cls, d: Dict) -> ConfigurableComponent:
+    def deserialize(cls, d: Dict) -> ConfigurableComponent:
         """
         Instantiate a component from a {'flavor: ..., 'config': {}} dictionary.
 
@@ -56,20 +53,17 @@ class ArchitectureInterface(ComponentInterface):
         Returns:
 
         """
-        for required_key in ['flavor', 'config']:
-            if required_key not in d:
-                raise ValueError(f"Component dictionary must contain key '{required_key}'.")
-
+        d = cls.validate_config(d)
         flavor_cls = cls.select_flavor(d['flavor'])
         flavor_instance = flavor_cls(**d.get('config', {}))
         return flavor_instance
 
     @classmethod
-    def to_dict(cls, component) -> Dict:
+    def serialize(cls, component) -> Dict:
         if isinstance(component, BaseEstimator):
             return cls.sklearn_to_dict(component)
         else:
-            return super().to_dict(component)
+            return super().serialize(component)
 
     @staticmethod
     def sklearn_to_dict(estimator) -> Dict:

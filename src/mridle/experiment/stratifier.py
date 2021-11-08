@@ -2,9 +2,9 @@ from abc import abstractmethod
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import StratifiedKFold
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
-from .dataset import DataSet
+from .dataset import DataSet, DataSetInterface
 
 
 class Stratifier(ConfigurableComponent):
@@ -12,17 +12,19 @@ class Stratifier(ConfigurableComponent):
     Yield data partitions.
     """
 
-    def __init__(self, config: Dict):
+    def __init__(self, config: Dict, data_set=None, partition_idxs=None):
         super().__init__(config)
         self.validate_config(config)
         self.n_partitions = config['n_partitions']
 
-        self.partition_idxs = config.get('partition_idxs', None)
-        if 'data_set' in config:
-            data_set_dict = config['data_set']
-            self.data_set = DataSet.from_dict(data_set_dict)
+        if data_set is not None and partition_idxs is not None:
+            self.partition_idxs = partition_idxs
+            self.data_set = data_set
+        elif data_set is None and partition_idxs is None:
+            pass
         else:
-            self.data_set = None
+            raise ValueError(f"{type(self).__name__} received one but not both of data_set and partition_idxs. It is"
+                             f" only valid to pass one or both.")
 
     def __iter__(self):
         self.n = 0
@@ -118,8 +120,31 @@ class StratifierInterface(ComponentInterface):
         'TrainTestStratifier': TrainTestStratifier,
     }
 
+    config_schema = {
+        'flavor': {
+            'type': 'string',
+        },
+        'config': {
+            'type': 'dict',
+            'default': dict(),
+        },
+    }
+    serialization_schema = {
+        'partition_idxs': {'required': False, }
+    }
+
     @classmethod
-    def from_dict(cls, d: Dict) -> Stratifier:
-        stratifier = super().from_dict(d)
-        stratifier.partition_idxs = d['partition_idxs']
-        return stratifier
+    def deserialize(cls, d: Dict) -> Stratifier:
+        stratifier_config = d['Stratifier']
+        stratifier_config = cls.validate_serialization_config(stratifier_config)
+
+        flavor_cls = cls.select_flavor(stratifier_config['flavor'])
+        data_set = DataSetInterface.deserialize(d['DataSet'])
+        partition_idxs = stratifier_config['partition_idxs']
+        flavor_instance = flavor_cls(config=stratifier_config['config'], data_set=data_set,
+                                     partition_idxs=partition_idxs)
+        return flavor_instance
+
+    @classmethod
+    def additional_info_for_serialization(cls, stratifier: Stratifier) -> Dict[str, Any]:
+        return {'partition_idxs': stratifier.partition_idxs}

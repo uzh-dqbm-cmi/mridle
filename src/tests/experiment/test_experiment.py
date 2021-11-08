@@ -97,9 +97,9 @@ class TestExperiment(unittest.TestCase):
             self.assertTrue(isinstance(metric, Metric))
             self.assertEqual(metric.config, self.configuration['Metrics'][i]['config'])
 
-    def test_to_dict(self):
+    def test_serialize(self):
         exp = Experiment.configure(config=self.configuration, data=self.df)
-        exp_dict = exp.to_dict()
+        exp_dict = exp.serialize()
         for expected_key in ['metadata', 'components']:
             self.assertTrue(expected_key in exp_dict)
 
@@ -123,8 +123,36 @@ class TestExperiment(unittest.TestCase):
                 for key in ['flavor', 'config']:
                     self.assertEqual(component_dict[key], orig_component_dict[key])
 
-    def rebuild_from_dict(self):
-        pass
+    def test_deserialize(self):
+        exp = Experiment.configure(config=self.configuration, data=self.df)
+        exp_dict = exp.serialize()
+        exp_deserialized = Experiment.deserialize(exp_dict)
+
+        self.assertEqual(type(exp_deserialized.dataset), type(exp.dataset))
+        pd.testing.assert_frame_equal(exp_deserialized.dataset.data, exp.dataset.data)
+
+        self.assertEqual(type(exp_deserialized.stratifier), type(exp.stratifier))
+        self.assertEqual(exp_deserialized.stratifier.config, exp.stratifier.config)
+        for p, partition in enumerate(exp.stratifier.partition_idxs):
+            for d, indx in enumerate(partition):
+                for i, v in enumerate(indx):
+                    self.assertEqual(exp_deserialized.stratifier.partition_idxs[p][d][i],
+                                     exp.stratifier.partition_idxs[p][d][i])
+
+        self.assertEqual(type(exp_deserialized.trainer), type(exp.trainer))
+        self.assertEqual(exp_deserialized.trainer.config, exp.trainer.config)
+
+        # TODO architecture
+
+        self.assertEqual(type(exp_deserialized.trainer.tuner), type(exp.trainer.tuner))
+        self.assertEqual(exp_deserialized.trainer.tuner.config, exp.trainer.tuner.config)
+
+        for i, metric in enumerate(exp.metrics):
+            self.assertEqual(type(exp_deserialized.metrics[i]), type(exp.metrics[i]))
+            self.assertEqual(exp_deserialized.metrics[i].config, exp.metrics[i].config)
+
+        self.assertEqual(exp_deserialized.run_date, exp.run_date)
+
 
     # def test_base_ModelRun_integration_test(self):
     #     exp = PartitionedExperiment(name='test', data_set=self.df, feature_subset=list('ABCD'),

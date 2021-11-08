@@ -64,12 +64,12 @@ class Experiment:
     def configure(cls, config: Dict, data: pd.DataFrame) -> 'Experiment':
         return ExperimentInterface.configure(config=config, data=data)
 
-    def to_dict(self) -> Dict:
-        return ExperimentInterface.to_dict(self)
+    def serialize(self) -> Dict:
+        return ExperimentInterface.serialize(self)
 
     @classmethod
-    def load_from_dict(cls, d) -> 'Experiment':
-        pass
+    def deserialize(cls, d) -> 'Experiment':
+        return ExperimentInterface.deserialize(d)
 
 
 class ExperimentInterface:
@@ -101,7 +101,7 @@ class ExperimentInterface:
         return exp
 
     @classmethod
-    def from_dict(cls, config: Dict) -> Experiment:
+    def deserialize(cls, config: Dict) -> Experiment:
         """
         Re-instantiate a experiment object from a dictionary.
 
@@ -112,31 +112,32 @@ class ExperimentInterface:
 
         """
         components = config['components']
-        data_set = DataSetInterface.from_dict(components['DataSet'])
-        stratifier = StratifierInterface.from_dict(components['Stratifier'])
-        trainer_dict = {key: components[key] for key in components if key in ['Trainer', 'Architecture, Tuner']}
-        trainer = TrainerInterface.from_dict(trainer_dict)
-        metrics = MetricInterface.from_dict(components['Metrics'])
+        data_set = DataSetInterface.deserialize(components['DataSet'])
+        stratifier_dict = {key: components[key] for key in components if key in ['Stratifier', 'DataSet']}
+        stratifier = StratifierInterface.deserialize(stratifier_dict)
+        trainer_dict = {key: components[key] for key in components if key in ['Trainer', 'Architecture', 'Tuner']}
+        trainer = TrainerInterface.deserialize(trainer_dict)
+        metrics = MetricInterface.deserialize(components['Metrics'])
         exp = Experiment(data_set=data_set, stratifier=stratifier, trainer=trainer, metrics=metrics)
-        # TODO: set metadata
+        exp.run_date = config['metadata']['run_date']
         return exp
 
     @classmethod
-    def to_dict(cls, experiment: Experiment) -> Dict:
+    def serialize(cls, experiment: Experiment) -> Dict:
         d = {
             'metadata': {
-                'name': 'name',
-                'rundate': experiment.run_date,
+                # 'name': 'name',  # TODO
+                'run_date': experiment.run_date,
             },
             'components': {
-                'DataSet': DataSetInterface.to_dict(experiment.dataset),
-                'Stratifier': StratifierInterface.to_dict(experiment.stratifier),
-                'Architecture': ArchitectureInterface.to_dict(experiment.trainer.architecture),  # TODO ??
-                'Trainer': TrainerInterface.to_dict(experiment.trainer),
-                'Tuner': TunerInterface.to_dict(experiment.trainer.tuner),  # TODO ??
-                'Metrics': MetricInterface.to_dict(experiment.metrics),
+                'DataSet': DataSetInterface.serialize(experiment.dataset),
+                'Stratifier': StratifierInterface.serialize(experiment.stratifier),
+                'Architecture': ArchitectureInterface.serialize(experiment.trainer.architecture),  # TODO ??
+                'Trainer': TrainerInterface.serialize(experiment.trainer),
+                'Tuner': TunerInterface.serialize(experiment.trainer.tuner),  # TODO ??
+                'Metrics': MetricInterface.serialize(experiment.metrics),
                 'Predictors': experiment.partition_predictors,
-                # 'Evaluation': self.evaluation.to_dict(),  # TODO
+                # 'Evaluation': self.evaluation.serialize(),  # TODO
             },
         }
         return d

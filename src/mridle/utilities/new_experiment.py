@@ -59,7 +59,7 @@ def test_config():
                 'verbose': 1,
             },
         },
-        'Metric': [
+        'Metrics': [
             {'flavor': 'F1_Macro', 'config': {'classification_cutoff': 0.5}},
             {'flavor': 'AUPRC'},
             {'flavor': 'AUROC'},
@@ -108,11 +108,11 @@ def ex():
             'hyperopt_timeout': 5 * 60
         },
     }
-    data_set = DataSet(df, config['DataSet'])
+    data_set = DataSet(config['DataSet'], data=df)
     stratifier = TrainTestStratifier(config['Stratifier'])
     architecture = RandomForestClassifier()
     tuner = BayesianTuner(config['Tuner'])
-    trainer = Trainer(architecture, config['Trainer'], tuner)
+    trainer = Trainer(config['Trainer'], architecture, tuner)
     # trainer = RandomForestClassifier()
 
     metrics = [F1_Macro(config={'classification_cutoff': 0.5}), AUPRC(), AUROC(), LogLoss()]

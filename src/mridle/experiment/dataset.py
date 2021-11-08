@@ -1,5 +1,5 @@
 import pandas as pd
-from typing import Dict
+from typing import Any, Dict
 from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
 
 
@@ -15,6 +15,11 @@ class DataSet(ConfigurableComponent):
     }
 
     def __init__(self, config: Dict, data: pd.DataFrame):
+        if not isinstance(config, dict):
+            if isinstance(data, dict):
+                raise ValueError('It looks like the order of the arguments to `DataSet` is swapped. Please use'
+                                 ' `DataSet(config, data)`.')
+            raise ValueError('The first argument to DataSet must be a dictionary.')
         super().__init__(config)
         self.validate_config(config, data)
         self.data = data
@@ -52,42 +57,18 @@ class DataSetInterface(ComponentInterface):
         'DataSet': DataSet,
     }
 
-    @classmethod
-    def to_dict(self, component) -> Dict:
-        d = super().to_dict(component)
-        d['data'] = component.data.to_dict(),  # TODO: I feel like I've had problems with this before
-        return d
+    serialization_schema = {
+        'data': {
+            'required': False,
+        }
+    }
 
     @classmethod
-    def configure(cls, d: Dict, **kwargs) -> DataSet:
-        for required_key in ['flavor', 'config']:
-            if required_key not in d:
-                raise ValueError(f"Component dictionary must contain key '{required_key}'.")
-
-        data = kwargs['data']
-
-        flavor_cls = cls.select_flavor(d['flavor'])
-        flavor_instance = flavor_cls(config=d['config'], data=data)
-        return flavor_instance
+    def additional_info_for_serialization(cls, dataset: DataSet) -> Dict[str, Any]:
+        data = dataset.data.to_dict()  # TODO: I feel like I've had problems with this before
+        return {'data': data}
 
     @classmethod
-    def from_dict(cls, d: Dict) -> DataSet:
-        """
-        Instantiate a component from a {'flavor: ..., 'config': {}} dictionary.
-
-        Args:
-            d: A dictionary with the keys 'flavor' describing the class name of the component to be insantiated, and
-             key 'config' containting the object's config dictionary. d may also contain other keys, which must be added
-             to the object by the subclass-ed method.
-
-        Returns:
-
-        """
-        for required_key in ['flavor', 'config', 'data']:
-            if required_key not in d:
-                raise ValueError(f"Component dictionary must contain key '{required_key}'.")
-
-        flavor_cls = cls.select_flavor(d['flavor'])
-        data = pd.DataFrame(d['data'])
-        flavor_instance = flavor_cls(config=d['config'], data=data)
-        return flavor_instance
+    def additional_info_for_deserialization(cls, d: Dict) -> Dict[str, Any]:
+        df = pd.DataFrame(d['data'])
+        return {'data': df}
