@@ -42,7 +42,7 @@ class Experiment:
             partition_evaluation = self.evaluate(predictor, self.metrics, x_test, y_test)
             self.partition_evaluations.append(partition_evaluation)
         self.evaluation = self.summarize_evaluations(self.partition_evaluations)
-        self.full_model = self.trainer.fit(self.dataset.x, self.dataset.y)
+        # self.full_model = self.trainer.fit(self.dataset.x, self.dataset.y)
         return self.evaluation
 
     @staticmethod
