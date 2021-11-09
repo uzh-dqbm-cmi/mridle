@@ -114,7 +114,7 @@ class BayesianTuner(Tuner):
                 loss = -AUROC().calculate(y_test_cv, y_proba_preds)
             else:
                 raise NotImplementedError(
-                    'scoring_fn should be one of ''f1_macro'', ''log_loss'', ''auprc'', or ''brier_score''. ' +
+                    'scoring_fn should be one of ''f1_macro'', ''log_loss'', ''auprc'', ''auroc''or ''brier_score''. ' +
                     '{} given'.format(scoring_fn))
 
             cv_results.append(loss)
