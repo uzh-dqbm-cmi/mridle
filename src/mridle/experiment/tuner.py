@@ -100,16 +100,18 @@ class BayesianTuner(Tuner):
 
             model_copy = model_copy.fit(x_train_cv, y_train_cv)
 
+            y_proba_preds = model_copy.predict_proba(x_test_cv)[:, 1]
+
             if scoring_fn == 'f1_macro':
-                loss = F1_Macro().calculate(y_test_cv, model_copy.predict_proba(x_test_cv)[:, 1])
+                loss = -F1_Macro().calculate(y_test_cv, y_proba_preds)
             elif scoring_fn == 'log_loss':
-                loss = LogLoss().calculate(y_test_cv, model_copy.predict_proba(x_test_cv)[:, 1])
+                loss = LogLoss().calculate(y_test_cv, y_proba_preds)
             elif scoring_fn == 'brier_score':
-                loss = BrierScore().calculate(y_test_cv, model_copy.predict_proba(x_test_cv)[:, 1])
+                loss = BrierScore().calculate(y_test_cv, y_proba_preds)
             elif scoring_fn == 'auprc':
-                loss = -AUPRC().calculate(y_test_cv, model_copy.predict_proba(x_test_cv)[:, 1])
+                loss = -AUPRC().calculate(y_test_cv, y_proba_preds)
             elif scoring_fn == 'auroc':
-                loss = -AUROC().calculate(y_test_cv, model_copy.predict_proba(x_test_cv)[:, 1])
+                loss = -AUROC().calculate(y_test_cv, y_proba_preds)
             else:
                 raise NotImplementedError(
                     'scoring_fn should be one of ''f1_macro'', ''log_loss'', ''auprc'', or ''brier_score''. ' +
