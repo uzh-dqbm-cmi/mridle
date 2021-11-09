@@ -7,7 +7,6 @@ from typing import Dict, List
 from .architecture import Architecture
 from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
 from .metric import AUPRC, LogLoss, F1_Macro, AUROC, BrierScore
-from copy import deepcopy
 
 
 class Tuner(ConfigurableComponent):
@@ -61,8 +60,7 @@ class BayesianTuner(Tuner):
                        self.hyperparameters, algo=tpe.suggest, timeout=self.timeout, max_evals=self.num_iters,
                        trials=Trials())
         best_params = space_eval(self.hyperparameters, best_rf)
-        tuned_architecture = deepcopy(architecture)
-        tuned_architecture = tuned_architecture.set_params(**best_params)
+        tuned_architecture = architecture.set_params(**best_params)
         best_est = tuned_architecture.fit(x, y)
 
         return best_est
