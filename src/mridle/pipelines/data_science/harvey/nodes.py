@@ -1,10 +1,6 @@
 import altair as alt
 import pandas as pd
-import numpy as np
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from mridle.utilities.experiment import PartitionedExperiment, ModelRun
-from typing import Dict, Tuple
+from typing import Dict
 
 
 def process_features_for_model(dataframe: pd.DataFrame) -> pd.DataFrame:
@@ -37,53 +33,9 @@ def process_features_for_model(dataframe: pd.DataFrame) -> pd.DataFrame:
     return dataframe
 
 
-def train_harvey_model_logistic_reg(features_df: pd.DataFrame, params: Dict) -> Tuple[PartitionedExperiment, Dict]:
-    model = LogisticRegression()
-    exp = PartitionedExperiment(name=params['name'], data_set=features_df, feature_subset=params['features'],
-                                model_run_class=ModelRun, model=model, preprocessing_func=None,
-                                label_key=params['label_key'], hyperparams=params['hyperparameters'],
-                                verbose=params['verbose'], search_type=params['search_type'],
-                                num_cv_folds=params['num_cv_folds'], num_iters=params['num_iters'],
-                                scoring_fn=params['scoring_fn'])
-    results = exp.run(run_hyperparam_search=params['run_hyperparam_search'])
-    return exp, results
-
-
-def train_harvey_model_random_forest(features_df: pd.DataFrame, params: Dict) -> Tuple[PartitionedExperiment, Dict]:
-    model = RandomForestClassifier()
-
-    hp_config = params['hyperparameters']
-    # Number of treas in random forest
-    n_estimators = [int(x) for x in np.linspace(**hp_config['n_estimators'])]
-    # Number of features to consider in splits
-    max_features = hp_config['max_features']
-    # Maximum number of levels in tree
-    max_depth = [int(x) for x in np.linspace(**hp_config['max_depth'])]
-    max_depth.append(None)
-    # Min num of samples needed to split a node
-    min_samples_split = hp_config['min_samples_split']
-    # min num of samples needed at each leaf node
-    min_samples_leaf = hp_config['min_samples_leaf']
-    # bootstrap
-    bootstrap = hp_config['bootstrap']
-
-    hyperparams = {'n_estimators': n_estimators, 'max_features': max_features, 'max_depth': max_depth,
-                   'min_samples_split': min_samples_split, 'min_samples_leaf': min_samples_leaf,
-                   'bootstrap': bootstrap}
-
-    exp = PartitionedExperiment(name=params['name'], data_set=features_df, feature_subset=params['features'],
-                                model_run_class=ModelRun, model=model, preprocessing_func=None,
-                                label_key=params['label_key'], hyperparams=hyperparams, verbose=params['verbose'],
-                                search_type=params['search_type'], num_cv_folds=params['num_cv_folds'],
-                                num_iters=params['num_iters'], scoring_fn=params['scoring_fn'])
-    results = exp.run(run_hyperparam_search=params['run_hyperparam_search'])
-    return exp, results
-
-
-def plot_harvey_metrics(model_results: Dict[str, Dict]) -> alt.Chart:
+def plot_harvey_metrics(model_results: Dict[str, pd.DataFrame]) -> alt.Chart:
     all_results = pd.DataFrame()
-    for model_name, results in model_results.items():
-        results_df = pd.DataFrame(results)
+    for model_name, results_df in model_results.items():
         results_df = pd.melt(results_df, var_name='metric')
         results_df['model'] = model_name
         all_results = pd.concat([all_results, results_df])

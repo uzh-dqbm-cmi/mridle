@@ -1,6 +1,7 @@
 altair
 altair_saver
 black==21.5b1
+cerberus
 datatc
 dynaconf==3.1.5
 flake8>=3.7.9, <4.0
