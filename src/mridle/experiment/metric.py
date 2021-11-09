@@ -1,6 +1,6 @@
 from abc import abstractmethod
 import numpy as np
-from sklearn.metrics import log_loss, f1_score, precision_recall_curve, auc, roc_auc_score
+from sklearn.metrics import log_loss, f1_score, precision_recall_curve, auc, roc_auc_score, brier_score_loss
 from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
 from typing import Dict, List
 
@@ -38,6 +38,16 @@ class F1_Macro(Metric):
     def calculate(self, y_true, y_pred_proba):
         y_pred = self.convert_proba_to_class(y_pred_proba)
         metric = f1_score(y_true, y_pred, average='macro')
+        return metric
+
+
+class BrierScore(Metric):
+
+    name = 'f1_macro'
+
+    def calculate(self, y_true, y_pred_proba):
+        y_pred = y_pred_proba
+        metric = brier_score_loss(y_true, y_pred)
         return metric
 
 

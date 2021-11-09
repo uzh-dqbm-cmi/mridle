@@ -3,11 +3,10 @@ from functools import partial
 from hyperopt import fmin, tpe, Trials, space_eval
 import numpy as np
 from sklearn.model_selection import RandomizedSearchCV
-from sklearn.metrics import brier_score_loss, log_loss, f1_score
 from typing import Dict, List
 from .architecture import Architecture
 from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
-from .metric import AUPRC
+from .metric import AUPRC, LogLoss, F1_Macro, AUROC, BrierScore
 
 
 class Tuner(ConfigurableComponent):
@@ -101,19 +100,24 @@ class BayesianTuner(Tuner):
             model = model.fit(x_train_cv, y_train_cv)
 
             if scoring_fn == 'f1_macro':
-                preds = model.predict(x_test_cv)
-                loss = -1 * f1_score(y_test_cv, preds, average='macro')
+                # preds = model.predict(x_test_cv)
+                # loss = -1 * f1_score(y_test_cv, preds, average='macro')
+                loss = F1_Macro().calculate(y_test_cv, model.predict_proba(x_test_cv)[:, 1])
             elif scoring_fn == 'log_loss':
-                probs = model.predict_proba(x_test_cv)[:, 1]
-                loss = log_loss(y_test_cv, probs)
+                # probs = model.predict_proba(x_test_cv)[:, 1]
+                # loss = log_loss(y_test_cv, probs)
+                loss = LogLoss().calculate(y_test_cv, model.predict_proba(x_test_cv)[:, 1])
             elif scoring_fn == 'brier_score':
-                probs = model.predict_proba(x_test_cv)[:, 1]
-                loss = brier_score_loss(y_test_cv, probs)
+                # probs = model.predict_proba(x_test_cv)[:, 1]
+                # loss = brier_score_loss(y_test_cv, probs)
+                loss = BrierScore().calculate(y_test_cv, model.predict_proba(x_test_cv)[:, 1])
             elif scoring_fn == 'auprc':
                 loss = -AUPRC().calculate(y_test_cv, model.predict_proba(x_test_cv)[:, 1])
                 # probs = model.predict_proba(x_test_cv)[:, 1]
                 # precision, recall, thresholds = precision_recall_curve(y_test_cv, probs)
                 # loss = -auc(recall, precision)
+            elif scoring_fn == 'auroc':
+                loss = -AUROC().calculate(y_test_cv, model.predict_proba(x_test_cv)[:, 1])
             else:
                 raise NotImplementedError(
                     'scoring_fn should be one of ''f1_macro'', ''log_loss'', ''auprc'', or ''brier_score''. ' +
