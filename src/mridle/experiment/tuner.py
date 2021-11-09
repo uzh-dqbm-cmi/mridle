@@ -28,7 +28,7 @@ class RandomSearchTuner(Tuner):
         self.num_iters = config['num_iters']
         self.num_cv_folds = config['num_cv_folds']
         self.scoring_function = config['scoring_function']
-        self.verbose = config['verbose']
+        self.verbose = config.get('verbose', False)
 
     def fit(self, architecture, x, y) -> Architecture:
         random_search = RandomizedSearchCV(estimator=architecture, param_distributions=self.hyperparameters,

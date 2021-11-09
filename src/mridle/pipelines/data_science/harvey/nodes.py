@@ -36,7 +36,7 @@ def process_features_for_model(dataframe: pd.DataFrame) -> pd.DataFrame:
 def plot_harvey_metrics(model_results: Dict[str, pd.DataFrame]) -> alt.Chart:
     all_results = pd.DataFrame()
     for model_name, results_df in model_results.items():
-        results_df = pd.melt(results_df, var_name='metric')
+        results_df = pd.melt(results_df, var_name='metric', id_vars=['partition'])
         results_df['model'] = model_name
         all_results = pd.concat([all_results, results_df])
 
