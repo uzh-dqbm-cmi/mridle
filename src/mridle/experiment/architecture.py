@@ -21,7 +21,6 @@ class ArchitectureInterface(ComponentInterface):
         'RandomForestClassifier': RandomForestClassifier,  # TODO enable auto-loading from sklearn
     }
 
-    # TODO: make not duplicate method!
     @classmethod
     def configure(cls, d: Dict, **kwargs) -> ConfigurableComponent:
         """
@@ -55,7 +54,8 @@ class ArchitectureInterface(ComponentInterface):
         """
         d = cls.validate_config(d)
         flavor_cls = cls.select_flavor(d['flavor'])
-        flavor_instance = flavor_cls(**d.get('config', {}))
+        kwargs = cls.additional_info_for_deserialization(d)
+        flavor_instance = flavor_cls(**d['config'], **kwargs)
         return flavor_instance
 
     @classmethod

@@ -7,7 +7,6 @@ from sklearn.metrics import brier_score_loss, log_loss, f1_score
 from typing import Dict, List
 from .architecture import Architecture
 from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
-from .predictor import Predictor
 from .metric import AUPRC
 
 
@@ -17,7 +16,7 @@ class Tuner(ConfigurableComponent):
         super().__init__(config)
 
     @abstractmethod
-    def fit(self, architecture: Architecture, x, y) -> Predictor:
+    def fit(self, architecture: Architecture, x, y) -> Architecture:
         pass
 
 
@@ -31,7 +30,7 @@ class RandomSearchTuner(Tuner):
         self.scoring_function = config['scoring_function']
         self.verbose = config['verbose']
 
-    def fit(self, architecture, x, y) -> Predictor:
+    def fit(self, architecture, x, y) -> Architecture:
         random_search = RandomizedSearchCV(estimator=architecture, param_distributions=self.hyperparameters,
                                            n_iter=self.num_iters, cv=self.num_cv_folds, verbose=self.verbose,
                                            random_state=42, n_jobs=-1, scoring=self.scoring_function)
@@ -51,7 +50,7 @@ class BayesianTuner(Tuner):
         self.verbose = config['verbose']
         self.timeout = config['hyperopt_timeout']
 
-    def fit(self, architecture, x, y) -> Predictor:
+    def fit(self, architecture, x, y) -> Architecture:
         cv_ids = list(range(self.num_cv_folds)) * np.floor((len(x) / self.num_cv_folds)).astype(int)
         cv_ids.extend(list(range(len(x) % self.num_cv_folds)))
         cv_ids = np.random.permutation(cv_ids)
@@ -82,7 +81,7 @@ class BayesianTuner(Tuner):
             ids: list of ints, the same length as x_train, which holds information on which CV fold each row should be
             assigned to
             nfolds: number of folds to use in cross validation
-            print_result: boolean, giving user preference of whether to print information as the trials are being run
+            verbose: boolean, giving user preference of whether to print information as the trials are being run
 
         Returns:
             Loss associated with the given parameters, which is to be minimised over time.

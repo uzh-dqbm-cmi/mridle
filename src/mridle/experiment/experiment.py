@@ -23,7 +23,8 @@ class Experiment:
                  metrics: List[Metric]):
         self.dataset = data_set
         self.stratifier = stratifier
-        self.stratifier.load_data(self.dataset)
+        if stratifier.data_set is None:
+            self.stratifier.load_data(self.dataset)
         self.trainer = trainer
         self.metrics = metrics
 
@@ -119,7 +120,11 @@ class ExperimentInterface:
         trainer = TrainerInterface.deserialize(trainer_dict)
         metrics = MetricInterface.deserialize(components['Metrics'])
         exp = Experiment(data_set=data_set, stratifier=stratifier, trainer=trainer, metrics=metrics)
+
         exp.run_date = config['metadata']['run_date']
+
+        exp.partition_predictors = config['results']['Predictors']
+        exp.evaluation = pd.DataFrame(config['results']['Evaluation'])
         return exp
 
     @classmethod
@@ -132,12 +137,14 @@ class ExperimentInterface:
             'components': {
                 'DataSet': DataSetInterface.serialize(experiment.dataset),
                 'Stratifier': StratifierInterface.serialize(experiment.stratifier),
-                'Architecture': ArchitectureInterface.serialize(experiment.trainer.architecture),  # TODO ??
+                'Architecture': ArchitectureInterface.serialize(experiment.trainer.architecture),
                 'Trainer': TrainerInterface.serialize(experiment.trainer),
-                'Tuner': TunerInterface.serialize(experiment.trainer.tuner),  # TODO ??
+                'Tuner': TunerInterface.serialize(experiment.trainer.tuner),
                 'Metrics': MetricInterface.serialize(experiment.metrics),
-                'Predictors': experiment.partition_predictors,
-                # 'Evaluation': self.evaluation.serialize(),  # TODO
             },
+            'results': {
+                'Predictors': experiment.partition_predictors,
+                'Evaluation': experiment.evaluation.to_dict(),
+            }
         }
         return d

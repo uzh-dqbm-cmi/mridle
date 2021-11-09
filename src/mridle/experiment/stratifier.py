@@ -15,13 +15,13 @@ class Stratifier(ConfigurableComponent):
     def __init__(self, config: Dict, data_set=None, partition_idxs=None):
         super().__init__(config)
         self.validate_config(config)
-        self.n_partitions = config['n_partitions']
 
         if data_set is not None and partition_idxs is not None:
             self.partition_idxs = partition_idxs
             self.data_set = data_set
         elif data_set is None and partition_idxs is None:
-            pass
+            self.partition_idxs = None
+            self.data_set = None
         else:
             raise ValueError(f"{type(self).__name__} received one but not both of data_set and partition_idxs. It is"
                              f" only valid to pass one or both.")
@@ -45,14 +45,13 @@ class Stratifier(ConfigurableComponent):
         else:
             raise StopIteration
 
-    def to_dict(self):
-        d = super().to_dict()
-        d['partition_idxs'] = self.partition_idxs
-        return d
-
     def load_data(self, data_set: DataSet):
         self.data_set = data_set
         self.partition_idxs = self.partition_data(self.data_set)
+
+    @property
+    def n_partitions(self):
+        return len(self.partition_idxs)
 
     @abstractmethod
     def partition_data(self, data_set: DataSet) -> List[Tuple[List[int], List[int]]]:
@@ -76,9 +75,6 @@ class Stratifier(ConfigurableComponent):
 
     @staticmethod
     def validate_config(config):
-        for key in ['n_partitions', ]:
-            if key not in config:
-                raise ValueError(f"PartitionedLabelStratifier config must contain entry '{key}'.")
         return True
 
 
@@ -87,7 +83,7 @@ class PartitionedLabelStratifier(Stratifier):
     def partition_data(self, data_set: DataSet) -> List[Tuple[List[int], List[int]]]:
         """Randomly shuffle and split the doc_list into n_partitions roughly equal lists, stratified by label."""
         label_list = data_set.y
-        skf = StratifiedKFold(n_splits=self.n_partitions, random_state=42, shuffle=True)
+        skf = StratifiedKFold(n_splits=self.config['n_partitions'], random_state=42, shuffle=True)
         x = np.zeros(len(label_list))  # split takes a X argument for backwards compatibility and is not used
         partition_indexes = skf.split(x, label_list)
         partitions = []
@@ -95,11 +91,18 @@ class PartitionedLabelStratifier(Stratifier):
             partitions.append(p)
         return partitions
 
+    @classmethod
+    def validate_config(cls, config):
+        for key in ['n_partitions', ]:
+            if key not in config:
+                raise ValueError(f"{cls.__name__} config must contain entry '{key}'.")
+        return True
+
 
 class TrainTestStratifier(Stratifier):
 
-    def __init__(self, config: Dict):
-        super().__init__(config)
+    def __init__(self, config: Dict, data_set=None, partition_idxs=None):
+        super().__init__(config, data_set, partition_idxs)
         self.test_split_size = config['test_split_size']
 
     def partition_data(self, data_set: DataSet) -> List[Tuple[List[int], List[int]]]:
@@ -112,6 +115,13 @@ class TrainTestStratifier(Stratifier):
         partitions = [(train_idx, test_idx)]
         return partitions
 
+    @classmethod
+    def validate_config(cls, config):
+        for key in ['test_split_size', ]:
+            if key not in config:
+                raise ValueError(f"{cls.__name__} config must contain entry '{key}'.")
+        return True
+
 
 class StratifierInterface(ComponentInterface):
 
@@ -120,15 +130,6 @@ class StratifierInterface(ComponentInterface):
         'TrainTestStratifier': TrainTestStratifier,
     }
 
-    config_schema = {
-        'flavor': {
-            'type': 'string',
-        },
-        'config': {
-            'type': 'dict',
-            'default': dict(),
-        },
-    }
     serialization_schema = {
         'partition_idxs': {'required': False, }
     }

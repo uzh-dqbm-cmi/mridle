@@ -89,12 +89,11 @@ class MetricInterface(ComponentInterface):
             list_of_dicts.append(m_dict)
         return list_of_dicts
 
-    # TODO fix duplicate methods!!
     @classmethod
     def configure(cls, components: List[Dict], **kwargs) -> List[Metric]:
         metrics = []
         for m in components:
-            metric = super().configure(m)
+            metric = super().configure(m, **kwargs)
             metrics.append(metric)
         return metrics
 
