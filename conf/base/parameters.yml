@@ -28,7 +28,7 @@ models:
         Stratifier:
             flavor: PartitionedLabelStratifier
             config:
-                n_partitions: 5
+                n_partitions: 3  # 5
         Architecture:
             flavor: LogisticRegression
         Trainer:
@@ -41,11 +41,11 @@ models:
                     C: [0, 1, 10]
                     solver: ['liblinear', 'lbfgs']
                 search_type: random
-                num_cv_folds: 5
-                num_iters: 150
-                scoring_fn: f1_macro
+                num_cv_folds: 2  # 5
+                num_iters: 2  # 150
+                scoring_function: f1_macro
 #                run_hyperparam_search: true
-        Metric:
+        Metrics:
             - flavor: F1_Macro
               config:
                   classification_cutoff: 0.5
@@ -78,7 +78,7 @@ models:
         Stratifier:
             flavor: PartitionedLabelStratifier
             config:
-                n_partitions: 5
+                n_partitions: 2  # 5
         Architecture:
             flavor: RandomForestClassifier
         Trainer:
@@ -102,11 +102,11 @@ models:
                     min_samples_leaf: [1, 2, 5, 10]
                     bootstrap: [true, false]
                 search_type: random
-                num_cv_folds: 5
-                num_iters: 150
-                scoring_fn: f1_macro
+                num_cv_folds: 2  # 5
+                num_iters: 2  # 150
+                scoring_function: f1_macro
 #            run_hyperparam_search: true
-        Metric:
+        Metrics:
             - flavor: F1_Macro
               config:
                   classification_cutoff: 0.5
