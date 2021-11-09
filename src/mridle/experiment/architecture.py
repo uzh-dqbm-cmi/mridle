@@ -1,6 +1,8 @@
 from abc import abstractmethod
 from sklearn.base import BaseEstimator
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+
 from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
 from typing import Dict
 
@@ -19,6 +21,7 @@ class ArchitectureInterface(ComponentInterface):
 
     registered_flavors = {
         'RandomForestClassifier': RandomForestClassifier,  # TODO enable auto-loading from sklearn
+        'LogisticRegression': LogisticRegression,
     }
 
     @classmethod
