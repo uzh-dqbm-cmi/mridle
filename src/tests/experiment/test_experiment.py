@@ -13,7 +13,7 @@ from copy import deepcopy
 
 def get_test_data_set():
     column_names = ['A', 'B', 'C', 'D']
-    df = pd.DataFrame(np.random.randint(0, 100, size=(1000, len(column_names))), columns=column_names)
+    df = pd.DataFrame(np.random.randint(0, 100, size=(100, len(column_names))), columns=column_names)
     df['label'] = np.where(df[column_names[0]] > 50, 1, 0)
     return df
 

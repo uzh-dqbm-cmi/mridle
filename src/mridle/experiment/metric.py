@@ -86,6 +86,7 @@ class MetricInterface(ComponentInterface):
 
     registered_flavors = {
         'F1_Macro': F1_Macro,
+        'BrierScore': BrierScore,
         'AUPRC': AUPRC,
         'AUROC': AUROC,
         'LogLoss': LogLoss,

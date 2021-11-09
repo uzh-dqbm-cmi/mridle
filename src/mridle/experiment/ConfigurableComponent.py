@@ -38,9 +38,7 @@ class ComponentInterface:
             'config': component.config,
         }
         more_info = cls.additional_info_for_serialization(component)
-        for key in more_info:
-            d[key] = more_info[key]
-
+        d = {**d, **more_info}
         cls.validate_serialization_config(d)
         return d
 
@@ -57,10 +55,6 @@ class ComponentInterface:
         """
         return {}
 
-    # TODO it's dumb that these two base methods are the same!
-    #  But need subclass to be able to override deserialize with additional info that is added post-initializatsion,
-    #  without changing configure(), and need to be able to override configure with extra args to pass to constructor
-    #  without overriding serialize()
     @classmethod
     def configure(cls, d: Dict, **kwargs) -> ConfigurableComponent:
         """

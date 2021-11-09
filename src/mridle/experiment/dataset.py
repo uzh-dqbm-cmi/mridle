@@ -10,10 +10,6 @@ class DataSet(ConfigurableComponent):
     - targets: name of the features to be used in building the targets tensor
     """
 
-    registered_flavors = {
-
-    }
-
     def __init__(self, config: Dict, data: pd.DataFrame):
         if not isinstance(config, dict):
             if isinstance(data, dict):

@@ -1,3 +1,4 @@
+from copy import deepcopy
 from sklearn.preprocessing import LabelEncoder
 from typing import Dict
 from .architecture import Architecture, ArchitectureInterface
@@ -19,21 +20,36 @@ class Trainer(ConfigurableComponent):
         self.tuner = tuner
 
     def fit(self, x, y) -> Predictor:
+        architecture = self.get_architecture()
         if self.tuner:
-            trained_model = self.tuner.fit(self.architecture, x, y)
+            trained_model = self.tuner.fit(architecture, x, y)
         else:
-            trained_model = self.architecture.fit(x, y)
+            trained_model = architecture.fit(x, y)
         return Predictor(trained_model)
+
+    def get_architecture(self) -> Architecture:
+        """
+        Instantiate a new copy of an untrained architecture.
+
+         Using this method rather than referencing `self.architecture` ensures that a single `Trainer` object can be
+          used to train and yield multiple architectures, without overwriting the origianl (by reference).
+
+        Returns: A new architecture object
+
+        """
+        fresh_architecture = deepcopy(self.architecture)
+        return fresh_architecture
 
 
 class SkorchTrainer(Trainer):
 
     def fit(self, x, y) -> Predictor:
+        architecture = self.get_architecture()
         y = self.transform_y(y)
         if self.tuner:
-            trained_model = self.tuner.fit(self.architecture, x, y)
+            trained_model = self.tuner.fit(architecture, x, y)
         else:
-            trained_model = self.architecture.fit(x, y)
+            trained_model = architecture.fit(x, y)
         return Predictor(trained_model)
 
     @staticmethod
