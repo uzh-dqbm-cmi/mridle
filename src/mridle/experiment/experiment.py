@@ -37,11 +37,14 @@ class Experiment:
     def go(self):
         self.run_date = datetime.datetime.now()
         for x_train, y_train, x_test, y_test in self.stratifier:
+            print('Running partition...')
             predictor = self.trainer.fit(x_train, y_train)
             self.partition_predictors.append(predictor)
             partition_evaluation = self.evaluate(predictor, self.metrics, x_test, y_test)
             self.partition_evaluations.append(partition_evaluation)
         self.evaluation = self.summarize_evaluations(self.partition_evaluations)
+
+        print('Fitting final model...')
         self.full_model = self.trainer.fit(self.dataset.x, self.dataset.y)
         return self.evaluation
 

@@ -7,6 +7,7 @@ from typing import Dict, List
 from .architecture import Architecture
 from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
 from .metric import AUPRC, LogLoss, F1_Macro, AUROC, BrierScore
+from copy import deepcopy
 
 
 class Tuner(ConfigurableComponent):
@@ -27,7 +28,7 @@ class RandomSearchTuner(Tuner):
         self.num_iters = config['num_iters']
         self.num_cv_folds = config['num_cv_folds']
         self.scoring_function = config['scoring_function']
-        self.verbose = config['verbose']
+        self.verbose = config.get('verbose', False)
 
     def fit(self, architecture, x, y) -> Architecture:
         random_search = RandomizedSearchCV(estimator=architecture, param_distributions=self.hyperparameters,
@@ -60,8 +61,9 @@ class BayesianTuner(Tuner):
                        self.hyperparameters, algo=tpe.suggest, timeout=self.timeout, max_evals=self.num_iters,
                        trials=Trials())
         best_params = space_eval(self.hyperparameters, best_rf)
-        model = architecture.set_params(**best_params)
-        best_est = model.fit(x, y)
+        tuned_architecture = deepcopy(architecture)
+        tuned_architecture = tuned_architecture.set_params(**best_params)
+        best_est = tuned_architecture.fit(x, y)
 
         return best_est
 
@@ -87,8 +89,7 @@ class BayesianTuner(Tuner):
 
         """
 
-        model = model
-        model = model.set_params(**params)
+        model_copy = model.set_params(**params)
 
         cv_results = []
         for k in range(nfolds):
@@ -97,30 +98,23 @@ class BayesianTuner(Tuner):
             x_test_cv = x_train[ids == k]
             y_test_cv = y_train[ids == k]
 
-            model = model.fit(x_train_cv, y_train_cv)
+            model_copy = model_copy.fit(x_train_cv, y_train_cv)
+
+            y_proba_preds = model_copy.predict_proba(x_test_cv)[:, 1]
 
             if scoring_fn == 'f1_macro':
-                # preds = model.predict(x_test_cv)
-                # loss = -1 * f1_score(y_test_cv, preds, average='macro')
-                loss = F1_Macro().calculate(y_test_cv, model.predict_proba(x_test_cv)[:, 1])
+                loss = -F1_Macro().calculate(y_test_cv, y_proba_preds)
             elif scoring_fn == 'log_loss':
-                # probs = model.predict_proba(x_test_cv)[:, 1]
-                # loss = log_loss(y_test_cv, probs)
-                loss = LogLoss().calculate(y_test_cv, model.predict_proba(x_test_cv)[:, 1])
+                loss = LogLoss().calculate(y_test_cv, y_proba_preds)
             elif scoring_fn == 'brier_score':
-                # probs = model.predict_proba(x_test_cv)[:, 1]
-                # loss = brier_score_loss(y_test_cv, probs)
-                loss = BrierScore().calculate(y_test_cv, model.predict_proba(x_test_cv)[:, 1])
+                loss = BrierScore().calculate(y_test_cv, y_proba_preds)
             elif scoring_fn == 'auprc':
-                loss = -AUPRC().calculate(y_test_cv, model.predict_proba(x_test_cv)[:, 1])
-                # probs = model.predict_proba(x_test_cv)[:, 1]
-                # precision, recall, thresholds = precision_recall_curve(y_test_cv, probs)
-                # loss = -auc(recall, precision)
+                loss = -AUPRC().calculate(y_test_cv, y_proba_preds)
             elif scoring_fn == 'auroc':
-                loss = -AUROC().calculate(y_test_cv, model.predict_proba(x_test_cv)[:, 1])
+                loss = -AUROC().calculate(y_test_cv, y_proba_preds)
             else:
                 raise NotImplementedError(
-                    'scoring_fn should be one of ''f1_macro'', ''log_loss'', ''auprc'', or ''brier_score''. ' +
+                    'scoring_fn should be one of ''f1_macro'', ''log_loss'', ''auprc'', ''auroc''or ''brier_score''. ' +
                     '{} given'.format(scoring_fn))
 
             cv_results.append(loss)

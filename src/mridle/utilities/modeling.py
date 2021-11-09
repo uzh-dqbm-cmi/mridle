@@ -15,7 +15,7 @@ def parse_hyperparams(hyperparams: Dict) -> Dict:
 
 def run_experiment(features_df: pd.DataFrame, params: Dict) -> Tuple[Dict, pd.DataFrame]:
     if 'Tuner' in params:
-        params['Tuner']['hyperparameters'] = parse_hyperparams(params['Tuner']['hyperparameters'])
+        params['Tuner']['config']['hyperparameters'] = parse_hyperparams(params['Tuner']['config']['hyperparameters'])
 
     exp = Experiment.configure(params, features_df)
     exp.go()
