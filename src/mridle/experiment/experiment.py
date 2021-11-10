@@ -100,7 +100,7 @@ class ExperimentInterface:
         data_set = DataSetInterface.configure(config['DataSet'], data=data)
         stratifier = StratifierInterface.configure(config['Stratifier'])
         architecture = ArchitectureInterface.configure(config['Architecture'])
-        tuner = TunerInterface.configure(config['Tuner'])
+        tuner = TunerInterface.configure(config['Tuner']) if 'Tuner' in config else None
         trainer = TrainerInterface.configure(config['Trainer'], architecture=architecture, tuner=tuner)
         metrics = MetricInterface.configure(config['Metrics'])
         exp = Experiment(data_set=data_set, stratifier=stratifier, trainer=trainer, metrics=metrics)
@@ -144,7 +144,6 @@ class ExperimentInterface:
                 'Stratifier': StratifierInterface.serialize(experiment.stratifier),
                 'Architecture': ArchitectureInterface.serialize(experiment.trainer.architecture),
                 'Trainer': TrainerInterface.serialize(experiment.trainer),
-                'Tuner': TunerInterface.serialize(experiment.trainer.tuner),
                 'Metrics': MetricInterface.serialize(experiment.metrics),
             },
             'results': {
@@ -152,4 +151,7 @@ class ExperimentInterface:
                 'Evaluation': experiment.evaluation.to_dict(),
             }
         }
+        # optional components
+        if experiment.trainer.tuner:
+            d['components']['Tuner'] = TunerInterface.serialize(experiment.trainer.tuner)
         return d

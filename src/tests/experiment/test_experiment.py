@@ -72,6 +72,35 @@ class TestExperiment(unittest.TestCase):
                 {'flavor': 'LogLoss', 'config': {}},
             ]
         }
+        self.configuration_without_tuner = {
+            'DataSet': {
+                'flavor': 'DataSet',
+                'config': {
+                    'features': ['A', 'B', 'C', 'D'],
+                    'target': 'label',
+                },
+            },
+            'Stratifier': {
+                'flavor': 'TrainTestStratifier',
+                'config': {
+                    'test_split_size': 0.3,
+                },
+            },
+            'Architecture': {
+                'flavor': 'RandomForestClassifier',
+                'config': {}
+            },
+            'Trainer': {
+                'flavor': 'Trainer',
+                'config': {}
+            },
+            'Metrics': [
+                {'flavor': 'F1_Macro', 'config': {'classification_cutoff': 0.5}},
+                {'flavor': 'AUPRC', 'config': {}},
+                {'flavor': 'AUROC', 'config': {}},
+                {'flavor': 'LogLoss', 'config': {}},
+            ]
+        }
 
     def test_configure(self):
         exp = Experiment.configure(config=self.configuration, data=self.df)
@@ -157,6 +186,16 @@ class TestExperiment(unittest.TestCase):
         # Metadata
         self.assertEqual(exp_deserialized.run_date, exp.run_date)
 
+    def test_serialize_deserialize_without_Tuner(self):
+        exp = Experiment.configure(config=self.configuration_without_tuner, data=self.df)
+        exp_dict = exp.serialize()
+
+        self.assertTrue('Tuner' not in exp_dict['components'])
+        exp_deserialized = Experiment.deserialize(exp_dict)
+
+        # Tuner
+        self.assertIsNone(exp_deserialized.trainer.tuner)
+
     def test_deserialize_after_go(self):
         exp = Experiment.configure(config=self.configuration, data=self.df)
         exp.go()
@@ -210,18 +249,3 @@ class TestExperiment(unittest.TestCase):
             y_pred = exp.partition_predictors[partition_idx].predict(x_test)
             y_pred_des = exp_deserialized.partition_predictors[partition_idx].predict(x_test_des)
             np.testing.assert_almost_equal(y_pred_des, y_pred)
-
-    # def test_base_ModelRun_integration_test(self):
-    #     exp = PartitionedExperiment(name='test', data_set=self.df, feature_subset=list('ABCD'),
-    #                                 label_key='label', preprocessing_func=None,
-    #                                 model_run_class=ModelRun, model=RandomForestClassifier(), hyperparams={},
-    #                                 verbose=True, search_type='random', num_cv_folds=2, num_iters=2,
-    #                                 scoring_fn='f1_score')
-    #     results = exp.run(run_hyperparam_search=False)
-    #     print(results)
-    #     print("Evaluation")
-    #     print(exp.show_evaluation())
-    #     print("Feature Importances")
-    #     print(exp.show_feature_importances())
-    #
-    #     self.assertTrue(results is not None)
