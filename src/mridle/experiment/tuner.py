@@ -58,7 +58,7 @@ class BayesianTuner(Tuner):
                                scoring_fn=self.scoring_function, ids=cv_ids, nfolds=self.num_cv_folds,
                                verbose=self.verbose),
                        self.hyperparameters, algo=tpe.suggest, timeout=self.timeout, max_evals=self.num_iters,
-                       trials=Trials())
+                       trials=Trials(), verbose=self.verbose)
         best_params = space_eval(self.hyperparameters, best_rf)
         tuned_architecture = architecture.set_params(**best_params)
         best_est = tuned_architecture.fit(x, y)
