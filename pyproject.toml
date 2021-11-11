@@ -14,4 +14,4 @@ known_third_party = "kedro"
 [tool.pytest.ini_options]
 addopts = """
 --cov-report term-missing \
---cov src/mridle_kedro -ra"""
+--cov src/mridle -ra"""
