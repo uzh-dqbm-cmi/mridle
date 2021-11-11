@@ -4,6 +4,7 @@ import numpy as np
 from mridle.experiment.experiment import Experiment
 from mridle.experiment.dataset import DataSet
 from mridle.experiment.stratifier import TrainTestStratifier
+from mridle.experiment.architecture import ArchitectureInterface
 from mridle.experiment.trainer import Trainer
 from mridle.experiment.tuner import RandomSearchTuner
 from mridle.experiment.metric import Metric
@@ -244,3 +245,94 @@ class TestExperiment(unittest.TestCase):
             y_pred = exp.partition_predictors[partition_idx].predict(x_test)
             y_pred_des = exp_deserialized.partition_predictors[partition_idx].predict(x_test_des)
             np.testing.assert_almost_equal(y_pred_des, y_pred)
+
+    @staticmethod
+    def configure(d):
+        from sklearn.pipeline import Pipeline
+        step_list = []
+        for step in d['config']['steps']:
+            step_obj = ArchitectureInterface.configure(step)
+        return Pipeline(step_list)
+
+    def test_pipeline_configure(self):
+        config = {
+            'flavor': 'sklearn.pipeline.Pipeline',
+            'config': {
+                'steps': [
+                    {
+                        'flavor': 'sklearn.preprocessing.StandardScaler',
+                        'config': {
+                            'with_mean': True,
+                        }
+                    },
+                    {
+                        'flavor': 'sklearn.svm.SVC',
+                        'config': {
+
+                        }
+                    },
+                ],
+            },
+        }
+        pipe = ArchitectureInterface.configure(config)
+
+    def test_nested_pipeline_configure(self):
+        one_pipe_config = {
+            'flavor': 'sklearn.compose.ColumnTransformer',
+            'config': {
+                'name': 'cyc',
+                'steps': [
+                    {
+                        'flavor': 'sklearn.preprocessing.StandardScaler',
+                        'config': {
+                            'with_mean': True,
+                        },
+                    },
+                    {
+                        'flavor': 'sklearn.svm.SVC',
+                        'config': {
+
+                        },
+                    },
+                ],
+                'args': [
+                    {
+                        'columns': [],
+                    },
+                ],
+            },
+        }
+        nested_config = {
+            'flavor': 'sklearn.pipeline.Pipeline',
+            'config': {
+                'steps':
+                    [
+                        one_pipe_config,
+                    ],
+            },
+        }
+        pipe = ArchitectureInterface.configure(nested_config)
+
+    # def test_parse_pipeline_params(self):
+    #     from sklearn.svm import SVC
+    #     from sklearn.preprocessing import StandardScaler
+    #     from sklearn.pipeline import Pipeline
+    #     pipe = Pipeline([('scaler', StandardScaler()), ('svc', SVC())])
+    #
+    #
+    #
+    #     params = {
+    #         'memory': None,
+    #         'steps': [('standardscaler', StandardScaler()), ('gaussiannb', GaussianNB())],
+    #         'verbose': False,
+    #         'standardscaler': StandardScaler(),
+    #         'gaussiannb': GaussianNB(),
+    #         'standardscaler__copy': True,
+    #         'standardscaler__with_mean': True,
+    #         'standardscaler__with_std': True,
+    #         'gaussiannb__priors': None,
+    #         'gaussiannb__var_smoothing': 1e-09
+    #     }
+    #
+    #     for object in params['steps']:
+    #         object_params =

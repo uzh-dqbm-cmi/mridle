@@ -1,5 +1,6 @@
 from abc import ABC
 from cerberus import Validator
+import importlib
 from typing import Any, Dict, Type
 
 
@@ -105,8 +106,19 @@ class ComponentInterface:
     def select_flavor(cls, flavor: str) -> Type[ConfigurableComponent]:
         if flavor in cls.registered_flavors:
             return cls.registered_flavors[flavor]
+        elif '.' in flavor:
+            try:
+                library_path = flavor.split('.')
+                library = '.'.join(library_path[0:-1])
+                flavor_class = library_path[-1]
+                model = getattr(importlib.import_module(library), flavor_class)
+                return model
+            except ImportError:
+                raise ValueError(f"{cls.__name__} '{flavor}' appears to be a reference to a library, but was not"
+                                 f" importable.")
         else:
-            raise ValueError(f"{cls.__name__} '{flavor}' not recognized")
+            raise ValueError(f"{cls.__name__} '{flavor}' is not among the registered flavors and does not appear to be"
+                             f" a reference to a library.")
 
     @classmethod
     def validate_config(cls, d: Dict) -> Dict:

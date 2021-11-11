@@ -3,6 +3,7 @@ from sklearn.base import BaseEstimator
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
 from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
 from typing import Dict
 
@@ -22,7 +23,7 @@ class ArchitectureInterface(ComponentInterface):
     registered_flavors = {
         'RandomForestClassifier': RandomForestClassifier,  # TODO enable auto-loading from sklearn
         'LogisticRegression': LogisticRegression,
-        'Pipeline': Pipeline
+        'Pipeline': Pipeline,
     }
 
     @classmethod
@@ -40,7 +41,12 @@ class ArchitectureInterface(ComponentInterface):
         """
         d = cls.validate_config(d)
         flavor_cls = cls.select_flavor(d['flavor'])
-        flavor_instance = flavor_cls(**d['config'])
+        if flavor_cls == Pipeline:
+            flavor_instance = cls.configure_pipeline(d)
+        elif flavor_cls == ColumnTransformer:
+            flavor_instance = cls.configure_column_transformer(d)
+        else:
+            flavor_instance = flavor_cls(**d['config'])
         return flavor_instance
 
     @classmethod
@@ -76,3 +82,28 @@ class ArchitectureInterface(ComponentInterface):
             'config': estimator.get_params(),
         }
         return d
+
+    @staticmethod
+    def configure_pipeline(d):
+        step_list = []
+        if 'steps' not in d['config']:
+            raise ValueError(f"Pipeline config must contain entry for `steps`, found {list(d['config'].keys())}")
+        for step in d['config']['steps']:
+            step_obj = ArchitectureInterface.configure(step)
+            step_name = step['config'].get('name', step['flavor'])
+            step_tuple = (step_name, step_obj)
+            step_list.append(step_tuple)
+        return Pipeline(step_list)
+
+    @staticmethod
+    def configure_column_transformer(d):
+        step_list = []
+        if 'steps' not in d['config']:
+            raise ValueError(f"Pipeline config must contain entry for `steps`, found {list(d['config'].keys())}")
+        for step in d['config']['steps']:
+            step_obj = ArchitectureInterface.configure(step)
+            step_name = step['config'].get('name', step['flavor'])
+            step_args = step['config'].get('args', None)
+            step_tuple = (step_name, step_obj, step_args)
+            step_list.append(step_tuple)
+        return ColumnTransformer(step_list)
