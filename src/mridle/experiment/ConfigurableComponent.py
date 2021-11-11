@@ -10,11 +10,6 @@ class ConfigurableComponent(ABC):
         if self.config is None:
             self.config = {}
 
-    # TODO - how to allow for different args in subclasses?
-    # @classmethod
-    # def validate_config(cls, config: Dict) -> bool:
-    #     return True
-
 
 class ComponentInterface:
 

@@ -73,10 +73,6 @@ class Stratifier(ConfigurableComponent):
         y_test = self.data_set.y.iloc[test_partition_ids]
         return x_train, y_train, x_test, y_test
 
-    @staticmethod
-    def validate_config(config):
-        return True
-
 
 class PartitionedLabelStratifier(Stratifier):
 

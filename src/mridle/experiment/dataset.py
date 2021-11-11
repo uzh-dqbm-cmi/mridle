@@ -7,7 +7,7 @@ class DataSet(ConfigurableComponent):
     """
     A dataset class config dictionary contains the following configurable elements:
     - features: name of the features to be used in building the features tensor
-    - targets: name of the features to be used in building the targets tensor
+    - target: name to be used in building the target tensor
     """
 
     def __init__(self, config: Dict, data: pd.DataFrame):

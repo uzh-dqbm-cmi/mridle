@@ -8,7 +8,6 @@ from mridle.experiment.trainer import Trainer
 from mridle.experiment.tuner import RandomSearchTuner
 from mridle.experiment.metric import Metric
 from sklearn.ensemble import RandomForestClassifier
-from copy import deepcopy
 
 
 def get_test_data_set():
@@ -17,10 +16,6 @@ def get_test_data_set():
     df['label'] = np.where(df[column_names[0]] > 50, 1, 0)
     return df
 
-
-# class TestDataSet(unittest.TestCase):
-#
-#     def
 
 class TestExperiment(unittest.TestCase):
 
