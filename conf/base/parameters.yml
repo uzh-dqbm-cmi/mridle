@@ -113,3 +113,56 @@ models:
             - flavor: AUPRC
             - flavor: AUROC
             - flavor: LogLoss
+
+    harvey_random_forest_hp:
+        name: harvey_random_forest_hp
+        verbose: false
+        DataSet:
+            flavor: DataSet
+            config:
+                features:
+                    - 'no_show_before'
+                    - 'no_show_before_sq'
+                    - 'sched_days_advanced'
+                    - 'hour_sched'
+                    - 'distance_to_usz'
+                    - 'age'
+                    - 'close_to_usz'
+                    - 'male'
+                    - 'female'
+                    - 'age_sq'
+                    - 'sched_days_advanced_sq'
+                    - 'distance_to_usz_sq'
+                    - 'sched_2_days'
+                    - 'age_20_60'
+                target: NoShow
+        Stratifier:
+            flavor: PartitionedLabelStratifier
+            config:
+                n_partitions: 2  # 5
+        Architecture:
+            flavor: RandomForestClassifier
+        Trainer:
+            flavor: Trainer
+        Tuner:
+            flavor: BayesianTuner
+            config:
+                hyperparameters:
+                    n_estimators:
+                        parse_hp_choice:
+                            choice_list: [10, 100, 400]
+                    max_depth:
+                        parse_hp_choice:
+                            choice_list: [2, 4, 10]
+                search_type: bayesian
+                num_cv_folds: 2  # 5
+                num_iters: 2  # 150
+                scoring_function: f1_macro
+#            run_hyperparam_search: true
+        Metrics:
+            - flavor: F1_Macro
+              config:
+                  classification_cutoff: 0.5
+            - flavor: AUPRC
+            - flavor: AUROC
+            - flavor: LogLoss

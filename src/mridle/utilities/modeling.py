@@ -15,8 +15,7 @@ def parse_hyperparams(hyperparams: Dict) -> Dict:
                 # parse_hp_choice
                 #   name: 'num_estimators'
                 #   choice_list: [10, 100, 400]
-                hyperparams[entry] = hp.choice(hyperparams[entry]['parse_np_linspace']['name'],
-                                               hyperparams[entry]['parse_np_linspace']['choice_list'])
+                hyperparams[entry] = hp.choice(entry, hyperparams[entry]['parse_hp_choice']['choice_list'])
 
     return hyperparams
 
