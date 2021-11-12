@@ -156,9 +156,10 @@ models:
                             choice_list: [2, 4, 10]
                 search_type: bayesian
                 num_cv_folds: 2  # 5
-                num_iters: 2  # 150
+                num_iters: 10  # 150
                 scoring_function: f1_macro
                 verbose: 0
+                hyperopt_timeout: 1000000
 #            run_hyperparam_search: true
         Metrics:
             - flavor: F1_Macro
