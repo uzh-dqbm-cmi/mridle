@@ -139,7 +139,7 @@ models:
         Stratifier:
             flavor: PartitionedLabelStratifier
             config:
-                n_partitions: 2  # 5
+                n_partitions: 5  # 5
         Architecture:
             flavor: RandomForestClassifier
         Trainer:
@@ -153,11 +153,15 @@ models:
                             choice_list: [10, 100, 400]
                     max_depth:
                         parse_hp_choice:
-                            choice_list: [2, 4, 10]
+                            choice_list: [2, 4, 10, 50, 100]
+                    min_samples_split:
+                        parse_hp_uniformint:
+                            start: 2
+                            end: 10
                 search_type: bayesian
-                num_cv_folds: 2  # 5
-                num_iters: 10  # 150
-                scoring_function: f1_macro
+                num_cv_folds: 5  # 5
+                num_iters: 100  # 150
+                scoring_function: auprc
                 verbose: 0
                 hyperopt_timeout: 1000000
 #            run_hyperparam_search: true
