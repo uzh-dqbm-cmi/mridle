@@ -142,8 +142,6 @@ models:
                 n_partitions: 5  # 5
         Architecture:
             flavor: RandomForestClassifier
-                config:
-                    class_weight: 'balanced'
         Trainer:
             flavor: Trainer
         Tuner:
