@@ -158,6 +158,7 @@ models:
                 num_cv_folds: 2  # 5
                 num_iters: 2  # 150
                 scoring_function: f1_macro
+                verbose: 0
 #            run_hyperparam_search: true
         Metrics:
             - flavor: F1_Macro
