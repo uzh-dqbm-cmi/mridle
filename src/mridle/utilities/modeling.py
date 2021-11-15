@@ -29,15 +29,15 @@ def parse_hyperparams(hyperparams: Dict) -> Dict:
                 else:
                     raise ValueError('parse_hp_uniform requires ''start'' and ''end'' as parameters in the config file')
 
-            elif solo_key == 'parse_hp_quniform':  # Uniform over integers within range
+            elif solo_key == 'parse_hp_uniformint':  # Uniform over integers within range
                 # parse_hp_quniform
                 #   start: 10
                 #   end: 20
                 if all(x in hyperparams[entry][solo_key] for x in ['start', 'end']):
-                    hyperparams[entry] = hp.quniform(entry, hyperparams[entry][solo_key]['start'],
-                                                     hyperparams[entry][solo_key]['end'])
+                    hyperparams[entry] = hp.uniformint(entry, hyperparams[entry][solo_key]['start'],
+                                                       hyperparams[entry][solo_key]['end'])
                 else:
-                    raise ValueError('parse_hp_quniform requires ''start'' and ''end'' as parameters in the config '
+                    raise ValueError('parse_hp_uniformint requires ''start'' and ''end'' as parameters in the config '
                                      'file')
 
             elif solo_key == 'parse_hp_loguniform':
