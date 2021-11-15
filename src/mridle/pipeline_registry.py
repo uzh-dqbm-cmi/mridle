@@ -31,7 +31,7 @@ from typing import Dict
 
 from kedro.pipeline import Pipeline
 from mridle.pipelines.data_engineering import ris, dicom, dispo
-from mridle.pipelines.data_science import harvey, feature_engineering, descriptive_viz
+from mridle.pipelines.data_science import harvey, feature_engineering, descriptive_viz, random_forest
 
 
 def register_pipelines() -> Dict[str, Pipeline]:
@@ -47,7 +47,7 @@ def register_pipelines() -> Dict[str, Pipeline]:
     descriptive_viz_pipeline = descriptive_viz.create_pipeline()
     feature_engineering_pipeline = feature_engineering.create_pipeline()
     harvey_pipeline = harvey.create_pipeline()
-
+    random_forest_pipeline = random_forest.create_pipeline()
     return {
 
         "__default__": ris_pipeline + feature_engineering_pipeline + harvey_pipeline,
@@ -59,4 +59,5 @@ def register_pipelines() -> Dict[str, Pipeline]:
         "descriptive_viz": descriptive_viz_pipeline,
         "feature_engineering": feature_engineering_pipeline,
         "harvey": harvey_pipeline,
+        "random_forest": random_forest_pipeline,
     }
