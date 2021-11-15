@@ -13,11 +13,6 @@ harvey_model_random_forest:
   filepath: /data/mridle/data/kedro_data_catalog/06_models/harvey/harvey_model_random_forest.pkl
   layer: models
 
-harvey_model_random_forest_hp:
-  type: pickle.PickleDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/06_models/harvey/harvey_model_random_forest_hp.pkl
-  layer: models
-
 harvey_model_results_logistic_reg:
   type: pandas.CSVDataSet
   filepath: /data/mridle/data/kedro_data_catalog/07_model_output/harvey/harvey_model_results_logistic_reg.csv
@@ -26,11 +21,6 @@ harvey_model_results_logistic_reg:
 harvey_model_results_random_forest:
   type: pandas.CSVDataSet
   filepath: /data/mridle/data/kedro_data_catalog/07_model_output/harvey/harvey_model_results_random_forest.csv
-  layer: model output
-
-harvey_model_results_random_forest_hp:
-  type: pandas.CSVDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/07_model_output/harvey/harvey_model_results_random_forest_hp.csv
   layer: model output
 
 harvey_models_results_dict:

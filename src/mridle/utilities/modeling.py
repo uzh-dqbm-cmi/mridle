@@ -14,19 +14,42 @@ def parse_hyperparams(hyperparams: Dict) -> Dict:
             elif solo_key == 'parse_hp_choice':
                 # parse_hp_choice
                 #   choice_list: [10, 100, 400]
-                hyperparams[entry] = hp.choice(entry, hyperparams[entry][solo_key]['choice_list'])
-            elif solo_key == 'parse_hp_uniform':
+                if 'choice_list' in hyperparams[entry][solo_key]:
+                    hyperparams[entry] = hp.choice(entry, hyperparams[entry][solo_key]['choice_list'])
+                else:
+                    raise ValueError('parse_hp_choice requires ''choice_list'' as a parameter in the config file')
+
+            elif solo_key == 'parse_hp_uniform':  # Uniform within range
                 # parse_hp_uniform
                 #   start: 10
                 #   end: 20
-                hyperparams[entry] = hp.uniform(entry, hyperparams[entry][solo_key]['start'],
-                                                hyperparams[entry][solo_key]['end'])
-            elif solo_key == 'parse_hp_uniformint':
-                # parse_hp_uniform
+                if all(x in hyperparams[entry][solo_key] for x in ['start', 'end']):
+                    hyperparams[entry] = hp.uniform(entry, hyperparams[entry][solo_key]['start'],
+                                                    hyperparams[entry][solo_key]['end'])
+                else:
+                    raise ValueError('parse_hp_uniform requires ''start'' and ''end'' as parameters in the config file')
+
+            elif solo_key == 'parse_hp_quniform':  # Uniform over integers within range
+                # parse_hp_quniform
                 #   start: 10
                 #   end: 20
-                hyperparams[entry] = hp.uniformint(entry, hyperparams[entry][solo_key]['start'],
-                                                   hyperparams[entry][solo_key]['end'])
+                if all(x in hyperparams[entry][solo_key] for x in ['start', 'end']):
+                    hyperparams[entry] = hp.quniform(entry, hyperparams[entry][solo_key]['start'],
+                                                     hyperparams[entry][solo_key]['end'])
+                else:
+                    raise ValueError('parse_hp_quniform requires ''start'' and ''end'' as parameters in the config '
+                                     'file')
+
+            elif solo_key == 'parse_hp_loguniform':
+                # parse_hp_loguniform
+                #   start: 0
+                #   end: 1
+                if all(x in hyperparams[entry][solo_key] for x in ['start', 'end']):
+                    hyperparams[entry] = hp.loguniform(entry, hyperparams[entry][solo_key]['start'],
+                                                       hyperparams[entry][solo_key]['end'])
+                else:
+                    raise ValueError('parse_hp_loguniform requires ''start'' and ''end'' as parameters in '
+                                     'the config file')
 
     return hyperparams
 
