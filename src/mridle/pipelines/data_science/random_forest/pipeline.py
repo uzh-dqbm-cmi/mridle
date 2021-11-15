@@ -7,7 +7,7 @@ def create_pipeline(**kwargs):
         [
             node(
                 func=run_experiment,
-                inputs=["random_forest_model_input", "params:models.random_forest"],
+                inputs=["master_feature_set", "params:models.random_forest"],
                 outputs=["random_forest_model", "random_forest_model_results"],
                 name="train_harvey_model_random_forest"
             )
