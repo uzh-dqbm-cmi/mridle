@@ -159,7 +159,7 @@ models:
                 num_iters: 2  # 150
                 scoring_function: f1_macro
                 verbose: 0
-                timeout: 10000000
+                hyperopt_timeout: 10000000
         #            run_hyperparam_search: true
         Metrics:
             - flavor: F1_Macro
