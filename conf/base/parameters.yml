@@ -157,7 +157,6 @@ models:
                     min_samples_split:
                         parse_hp_uniformint:
                             start: 2
-                            end: 10
                 search_type: bayesian
                 num_cv_folds: 5  # 5
                 num_iters: 100  # 150
