@@ -26,6 +26,12 @@ def create_pipeline(**kwargs):
                 name="train_harvey_model_random_forest"
             ),
             node(
+                func=run_experiment,
+                inputs=["harvey_model_input", "params:models.harvey_random_forest_hp"],
+                outputs=["harvey_model_random_forest_hp", "harvey_model_results_random_forest_hp"],
+                name="train_harvey_model_random_forest_hp"
+            ),
+            node(
                 func=lambda lr, rf: {'Logistic Regression': lr, 'Random Forest': rf, },
                 inputs=['harvey_model_results_logistic_reg', 'harvey_model_results_random_forest'],
                 outputs='harvey_models_results_dict',
