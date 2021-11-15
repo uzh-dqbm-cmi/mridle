@@ -125,12 +125,12 @@ models:
                     - 'sched_days_advanced'
                     - 'month'
                     - 'age'
-                    - 'modality'
-                    - 'sex'
+                    #- 'modality'
+                    #- 'sex'
                     - 'hour_sched'
                     - 'distance_to_usz'
-                    - 'day_of_week_str'
-                    - 'marital'
+                    #- 'day_of_week_str'
+                    #- 'marital'
                 target: NoShow
         Stratifier:
             flavor: PartitionedLabelStratifier
