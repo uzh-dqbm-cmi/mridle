@@ -149,11 +149,11 @@ models:
                     n_estimators:
                         parse_hp_uniformint:
                             start: 10
-                            stop: 800
+                            end: 800
                     max_depth:
                         parse_hp_uniformint:
                             start: 2
-                            stop: 100
+                            end: 100
                 search_type: bayesian
                 num_cv_folds: 5  # 5
                 num_iters: 2  # 150
