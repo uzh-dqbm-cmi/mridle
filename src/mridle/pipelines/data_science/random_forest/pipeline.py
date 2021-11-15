@@ -8,14 +8,8 @@ def create_pipeline(**kwargs):
             node(
                 func=run_experiment,
                 inputs=["random_forest_model_input", "params:models.random_forest"],
-                outputs=["harvey_model_random_forest", "harvey_model_results_random_forest"],
+                outputs=["random_forest_model", "random_forest_model_results"],
                 name="train_harvey_model_random_forest"
-            ),
-            node(
-                func=lambda lr, rf: {'Logistic Regression': lr, 'Random Forest': rf, },
-                inputs=['harvey_model_results_logistic_reg', 'harvey_model_results_random_forest'],
-                outputs='harvey_models_results_dict',
-                name='build_harvey_models_results_dict'
-            ),
+            )
         ]
     )

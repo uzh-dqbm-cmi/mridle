@@ -115,7 +115,7 @@ models:
             - flavor: LogLoss
 
     random_forest:
-        name: harvey_random_forest
+        name: random_forest
         verbose: false
         DataSet:
             flavor: DataSet
@@ -138,6 +138,8 @@ models:
                 n_partitions: 5
         Architecture:
             flavor: RandomForestClassifier
+            config:
+                class_weight: 'balanced'
         Trainer:
             flavor: Trainer
         Tuner:
@@ -145,21 +147,15 @@ models:
             config:
                 hyperparameters:
                     n_estimators:
-                        parse_np_linspace:
-                            start: 200
-                            stop: 2000
-                            num: 10
-                    max_features: [ 'auto', 'sqrt' ]
-                    max_depth:
-                        parse_np_linspace:
+                        parse_hp_uniformint:
                             start: 10
-                            stop: 110
-                            num: 11
-                    min_samples_split: [ 2, 4, 6, 8, 10 ]
-                    min_samples_leaf: [ 1, 2, 5, 10 ]
-                    bootstrap: [ true, false ]
-                search_type: random
-                num_cv_folds: 2  # 5
+                            stop: 800
+                    max_depth:
+                        parse_hp_uniformint:
+                            start: 2
+                            stop: 100
+                search_type: bayesian
+                num_cv_folds: 5  # 5
                 num_iters: 2  # 150
                 scoring_function: f1_macro
         #            run_hyperparam_search: true
