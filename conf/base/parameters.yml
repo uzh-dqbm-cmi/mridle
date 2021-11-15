@@ -155,7 +155,7 @@ models:
                         parse_hp_choice:
                             choice_list: [2, 4, 10, 50, 100]
                     min_samples_split:
-                        parse_hp_uniformint:
+                        parse_hp_quniform:
                             start: 2
                             end: 10
                 search_type: bayesian
