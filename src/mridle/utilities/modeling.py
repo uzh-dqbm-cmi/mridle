@@ -17,7 +17,7 @@ def parse_hyperparams(hyperparams: Dict) -> Dict:
                 if 'choice_list' in hyperparams[entry][solo_key]:
                     hyperparams[entry] = hp.choice(entry, hyperparams[entry][solo_key]['choice_list'])
                 else:
-                    raise ValueError('parse_hp_choice requires ''choice_list'' as a parameter in the config file')
+                    raise ValueError('parse_hp_choice requires `choice_list` as a parameter in the config file')
 
             elif solo_key == 'parse_hp_uniform':  # Uniform within range
                 # parse_hp_uniform
@@ -27,7 +27,7 @@ def parse_hyperparams(hyperparams: Dict) -> Dict:
                     hyperparams[entry] = hp.uniform(entry, hyperparams[entry][solo_key]['start'],
                                                     hyperparams[entry][solo_key]['end'])
                 else:
-                    raise ValueError('parse_hp_uniform requires ''start'' and ''end'' as parameters in the config file')
+                    raise ValueError('parse_hp_uniform requires `start` and `end` as parameters in the config file')
 
             elif solo_key == 'parse_hp_uniformint':  # Uniform over integers within range
                 # parse_hp_quniform
@@ -37,8 +37,7 @@ def parse_hyperparams(hyperparams: Dict) -> Dict:
                     hyperparams[entry] = hp.uniformint(entry, hyperparams[entry][solo_key]['start'],
                                                        hyperparams[entry][solo_key]['end'])
                 else:
-                    raise ValueError('parse_hp_uniformint requires ''start'' and ''end'' as parameters in the config '
-                                     'file')
+                    raise ValueError('parse_hp_uniformint requires `start` and `end` as parameters in the config file')
 
             elif solo_key == 'parse_hp_loguniform':
                 # parse_hp_loguniform
@@ -48,8 +47,7 @@ def parse_hyperparams(hyperparams: Dict) -> Dict:
                     hyperparams[entry] = hp.loguniform(entry, hyperparams[entry][solo_key]['start'],
                                                        hyperparams[entry][solo_key]['end'])
                 else:
-                    raise ValueError('parse_hp_loguniform requires ''start'' and ''end'' as parameters in '
-                                     'the config file')
+                    raise ValueError('parse_hp_loguniform requires `start` and `end` as parameters in the config file')
 
     return hyperparams
 
