@@ -124,7 +124,7 @@ models:
                     #- 'no_show_before'
                     #- 'sched_days_advanced'
                     - 'month'
-                    - 'age'
+                    #- 'age'
                     #- 'modality'
                     #- 'sex'
                     - 'hour_sched'
