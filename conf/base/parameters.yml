@@ -192,7 +192,7 @@ models:
             config:
                 n_partitions: 5
         Architecture:
-            flavor: sklearn.pipeline.Pipeline
+            flavor: Pipeline
             config:
                 steps:
                     - name: 'scaler'
