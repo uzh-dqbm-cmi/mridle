@@ -41,6 +41,7 @@ class ArchitectureInterface(ComponentInterface):
 
         """
         d = cls.validate_config(d)
+        print(d)
         flavor_cls = cls.select_flavor(d['flavor'])
         flavor_instance = flavor_cls(**d['config'])
         return flavor_instance
