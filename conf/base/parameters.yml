@@ -199,14 +199,14 @@ models:
                       flavor: sklearn.preprocessing.StandardScaler
                       config:
                         with_mean: True
-                        args:
-                            columns: [ 'no_show_before', 'sched_days_advanced', 'age', 'hour_sched', 'distance_to_usz']
+                      args:
+                        columns: [ 'no_show_before', 'sched_days_advanced', 'age', 'hour_sched', 'distance_to_usz']
                     - name: 'onehot'
                       flavor: sklearn.preprocessing.OneHotEncoder
                       config:
                         handle_unknown: 'ignore'
-                        args:
-                            columns: ['marital', 'modality', 'sex', 'day_of_week_str']
+                      args:
+                        columns: ['marital', 'modality', 'sex', 'day_of_week_str']
                     - name: 'classifier'
                       flavor: XGBClassifier
                       config:
