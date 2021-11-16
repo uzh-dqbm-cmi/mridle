@@ -60,7 +60,6 @@ class ArchitectureInterface(ComponentInterface):
 
         """
         d = cls.validate_config(d)
-        print(d)
         flavor_cls = cls.select_flavor(d['flavor'])
         if flavor_cls == Pipeline:
             flavor_instance = cls.configure_pipeline(d)
