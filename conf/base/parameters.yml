@@ -194,7 +194,7 @@ models:
         Architecture:
             flavor: XGBClassifier
             config:
-                eval_metric: 'log_loss'
+                eval_metric: 'logloss'
                 use_label_encoder: False
         Trainer:
             flavor: Trainer
