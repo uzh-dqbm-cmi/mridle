@@ -4,6 +4,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
+import xgboost as xgb
 from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
 from typing import Any, Dict, List, Tuple
 
@@ -23,6 +24,7 @@ class ArchitectureInterface(ComponentInterface):
     registered_flavors = {
         'RandomForestClassifier': RandomForestClassifier,  # TODO enable auto-loading from sklearn
         'LogisticRegression': LogisticRegression,
+        'XGBClassifier': xgb.XGBClassifier,
         'Pipeline': Pipeline,
     }
 
