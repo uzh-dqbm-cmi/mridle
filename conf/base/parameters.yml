@@ -178,14 +178,14 @@ models:
                 features:
                     - 'no_show_before'
                     - 'sched_days_advanced'
-                    - 'month'
+                    #- 'month'
                     - 'age'
-                    #- 'modality'
-                    #- 'sex'
+                    - 'modality'
+                    - 'sex'
                     - 'hour_sched'
                     - 'distance_to_usz'
-                    #- 'day_of_week_str'
-                    #- 'marital'
+                    - 'day_of_week_str'
+                    - 'marital'
                 target: NoShow
         Stratifier:
             flavor: PartitionedLabelStratifier
@@ -199,10 +199,14 @@ models:
                       flavor: sklearn.preprocessing.StandardScaler
                       config:
                         with_mean: True
+                        args:
+                            columns: [ 'no_show_before', 'sched_days_advanced', 'age', 'hour_sched', 'distance_to_usz']
                     - name: 'onehot'
                       flavor: sklearn.preprocessing.OneHotEncoder
                       config:
                         handle_unknown: 'ignore'
+                        args:
+                            columns: ['marital', 'modality', 'sex', 'day_of_week_str']
                     - name: 'classifier'
                       flavor: XGBClassifier
                       config:
