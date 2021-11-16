@@ -195,7 +195,7 @@ models:
             flavor: Pipeline
             config:
                 steps:
-                  - flavor: ColumnTransformer
+                  - flavor: sklearn.compose.ColumnTransformer
                     name: 'preprocessing'
                     config:
                         steps:
