@@ -195,23 +195,27 @@ models:
             flavor: Pipeline
             config:
                 steps:
-                    - name: 'scaler'
-                      flavor: sklearn.preprocessing.StandardScaler
+                    - flavor: ColumnTransformer
+                      name: 'preprocessing'
                       config:
-                        with_mean: True
-                      args:
-                        columns: [ 'no_show_before', 'sched_days_advanced', 'age', 'hour_sched', 'distance_to_usz']
-                    - name: 'onehot'
-                      flavor: sklearn.preprocessing.OneHotEncoder
-                      config:
-                        handle_unknown: 'ignore'
-                      args:
-                        columns: ['marital', 'modality', 'sex', 'day_of_week_str']
-                    - name: 'classifier'
-                      flavor: XGBClassifier
-                      config:
-                        eval_metric: 'logloss'
-                        use_label_encoder: False
+                          steps:
+                            - name: 'scaler'
+                              flavor: sklearn.preprocessing.StandardScaler
+                              config:
+                                  with_mean: True
+                              args:
+                                  columns: ['no_show_before', 'sched_days_advanced', 'age', 'hour_sched', 'distance_to_usz']
+                            - name: 'onehot'
+                              flavor: sklearn.preprocessing.OneHotEncoder
+                              config:
+                                  handle_unknown: 'ignore'
+                              args:
+                                  columns: [ 'marital', 'modality', 'sex', 'day_of_week_str' ]
+                      - flavor: XGBClassifier
+                        name: 'classifier'
+                        config:
+                          eval_metric: 'logloss'
+                          use_label_encoder: False
         Trainer:
             flavor: Trainer
         Tuner:
