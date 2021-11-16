@@ -196,18 +196,18 @@ models:
             config:
                 steps:
                     - name: 'scaler'
-                        flavor: sklearn.preprocessing.StandardScaler
-                        config:
-                            with_mean: True
+                      flavor: sklearn.preprocessing.StandardScaler
+                      config:
+                        with_mean: True
                     - name: 'onehot'
-                        flavor: sklearn.preprocessing.OneHotEncoder
-                        config:
-                            handle_unknown: 'ignore'
+                      flavor: sklearn.preprocessing.OneHotEncoder
+                      config:
+                        handle_unknown: 'ignore'
                     - name: 'classifier'
-                        flavor: XGBClassifier
-                        config:
-                            eval_metric: 'logloss'
-                            use_label_encoder: False
+                      flavor: XGBClassifier
+                      config:
+                        eval_metric: 'logloss'
+                        use_label_encoder: False
         Trainer:
             flavor: Trainer
         Tuner:
