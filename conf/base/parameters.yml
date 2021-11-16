@@ -194,7 +194,7 @@ models:
         Architecture:
             flavor: Pipeline
             config:
-                - steps:
+                steps:
                     - name: 'scaler'
                       flavor: sklearn.preprocessing.StandardScaler
                       config:
@@ -207,7 +207,6 @@ models:
                         handle_unknown: 'ignore'
                       args:
                         columns: ['marital', 'modality', 'sex', 'day_of_week_str']
-                - steps:
                     - name: 'classifier'
                       flavor: XGBClassifier
                       config:
