@@ -156,7 +156,63 @@ models:
                             end: 100
                 search_type: bayesian
                 num_cv_folds: 5  # 5
-                num_iters: 50  # 150
+                num_iters: 2  # 150
+                scoring_function: log_loss
+                verbose: 0
+                hyperopt_timeout: 10000000
+        #            run_hyperparam_search: true
+        Metrics:
+            - flavor: F1_Macro
+              config:
+                  classification_cutoff: 0.5
+            - flavor: AUPRC
+            - flavor: AUROC
+            - flavor: LogLoss
+
+    xgboost:
+        name: xgboost
+        verbose: false
+        DataSet:
+            flavor: DataSet
+            config:
+                features:
+                    - 'no_show_before'
+                    - 'sched_days_advanced'
+                    - 'month'
+                    - 'age'
+                    #- 'modality'
+                    #- 'sex'
+                    - 'hour_sched'
+                    - 'distance_to_usz'
+                    #- 'day_of_week_str'
+                    #- 'marital'
+                target: NoShow
+        Stratifier:
+            flavor: PartitionedLabelStratifier
+            config:
+                n_partitions: 5
+        Architecture:
+            flavor: XGBClassifier
+            config:
+                eval_metric: 'log_loss'
+                use_label_encoder: False
+        Trainer:
+            flavor: Trainer
+        Tuner:
+            flavor: BayesianTuner
+            config:
+                hyperparameters:
+                    n_estimators:
+                        parse_hp_uniformint:
+                            start: 10
+                            end: 800
+                    max_depth:
+                        parse_hp_uniformint:
+                            start: 2
+                            end: 100
+                search_type: bayesian
+                num_cv_folds: 5  # 5
+                num_iters: 2  # 150
                 scoring_function: log_loss
                 verbose: 0
                 hyperopt_timeout: 10000000

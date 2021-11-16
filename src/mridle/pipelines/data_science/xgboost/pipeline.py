@@ -10,14 +10,14 @@ def create_pipeline(**kwargs):
                 func=process_features_for_model,
                 inputs=["master_feature_set"],
                 outputs="model_input",
-                name="process_features_for_random_forest_model"
+                name="process_features_for_xgboost_model"
             ),
 
             node(
                 func=run_experiment,
-                inputs=["model_input", "params:models.random_forest"],
-                outputs=["random_forest_model", "random_forest_model_results"],
-                name="train_random_forest_model"
+                inputs=["model_input", "params:models.xgboost"],
+                outputs=["xgboost_model", "xgboost_model_results"],
+                name="train_xgboost_model"
             )
         ]
     )
