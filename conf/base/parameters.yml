@@ -138,37 +138,37 @@ models:
                 n_partitions: 5
         Architecture:
             flavor: Pipeline
-                config:
-                    steps:
-                          - flavor: sklearn.compose.ColumnTransformer
-                              name: 'preprocessing'
+            config:
+                steps:
+                  - flavor: sklearn.compose.ColumnTransformer
+                    name: 'preprocessing'
+                    config:
+                        steps:
+                            - name: 'scaler'
+                              flavor: sklearn.preprocessing.StandardScaler
                               config:
-                                  steps:
-                                      - name: 'scaler'
-                                        flavor: sklearn.preprocessing.StandardScaler
-                                        config:
-                                            with_mean: True
-                                        args:
-                                            columns:
-                                                - 'no_show_before'
-                                                - 'sched_days_advanced'
-                                                - 'age'
-                                                - 'hour_sched'
-                                                - 'distance_to_usz'
-                                      - name: 'onehot'
-                                        flavor: sklearn.preprocessing.OneHotEncoder
-                                        config:
-                                            handle_unknown: 'ignore'
-                                        args:
-                                            columns:
-                                                - 'marital'
-                                                - 'modality'
-                                                - 'sex'
-                                                - 'day_of_week_str'
-                                  - flavor: RandomForestClassifier
-                                    name: 'classifier'
-                                    config:
-                                        class_weight: 'balanced'
+                                with_mean: True
+                              args:
+                                columns:
+                                    - 'no_show_before'
+                                    - 'sched_days_advanced'
+                                    - 'age'
+                                    - 'hour_sched'
+                                    - 'distance_to_usz'
+                            - name: 'onehot'
+                              flavor: sklearn.preprocessing.OneHotEncoder
+                              config:
+                                  handle_unknown: 'ignore'
+                              args:
+                                  columns:
+                                      - 'marital'
+                                      - 'modality'
+                                      - 'sex'
+                                      - 'day_of_week_str'
+                  - flavor: RandomForestClassifier
+                    name: 'classifier'
+                    config:
+                        class_weight: 'balanced'
             #flavor: RandomForestClassifier
             #config:
             #    class_weight: 'balanced'
