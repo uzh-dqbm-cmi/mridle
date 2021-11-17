@@ -187,7 +187,7 @@ models:
                         parse_hp_uniformint:
                             start: 2
                             end: 20
-                    classifier_max_features:
+                    classifier__max_features:
                         parse_hp_choice:
                             choice_list:
                                 - 'auto'
