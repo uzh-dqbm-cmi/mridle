@@ -7,6 +7,7 @@ from typing import Dict, List
 from .architecture import Architecture
 from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
 from .metric import AUPRC, LogLoss, F1_Macro, AUROC, BrierScore
+import datetime
 
 
 class Tuner(ConfigurableComponent):
@@ -50,6 +51,7 @@ class BayesianTuner(Tuner):
         self.timeout = config['hyperopt_timeout']
 
     def fit(self, architecture, x, y) -> Architecture:
+
         cv_ids = list(range(self.num_cv_folds)) * np.floor((len(x) / self.num_cv_folds)).astype(int)
         cv_ids.extend(list(range(len(x) % self.num_cv_folds)))
         cv_ids = np.random.permutation(cv_ids)
@@ -86,6 +88,8 @@ class BayesianTuner(Tuner):
             Loss associated with the given parameters, which is to be minimised over time.
 
         """
+        print("Starting hyperopt loop {}".format(datetime.datetime.now()))
+        print("hyperparams {}".format(params))
 
         model_copy = model.set_params(**params)
 
@@ -116,6 +120,7 @@ class BayesianTuner(Tuner):
                     '{} given'.format(scoring_fn))
 
             cv_results.append(loss)
+        print("Finishing hyperopt loop {}".format(datetime.datetime.now()))
 
         to_minimise = np.mean(cv_results)
         if verbose:
