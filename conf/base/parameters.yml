@@ -170,6 +170,7 @@ models:
                     config:
                         class_weight: 'balanced'
                         n_estimators: 400
+                        random_state: 94
             #flavor: RandomForestClassifier
             #config:
             #    class_weight: 'balanced'
@@ -182,17 +183,17 @@ models:
                     classifier__max_depth:
                         parse_hp_uniformint:
                             start: 2
-                            end: 100
-                    classifier__min_samples_split:
-                        parse_hp_uniformint:
-                            start: 2
                             end: 20
-                    classifier__max_features:
-                        parse_hp_choice:
-                            choice_list:
-                                - 'auto'
-                                - 'sqrt'
-                                - 'log2'
+#                    classifier__min_samples_split:
+#                        parse_hp_uniformint:
+#                            start: 2
+#                            end: 20
+#                    classifier__max_features:
+#                        parse_hp_choice:
+#                            choice_list:
+#                                - 'auto'
+#                                - 'sqrt'
+#                                - 'log2'
                 search_type: bayesian
                 num_cv_folds: 5  # 5
                 num_iters: 50  # 150
