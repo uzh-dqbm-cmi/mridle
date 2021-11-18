@@ -32,7 +32,7 @@ class Experiment:
         self.partition_predictors = []
         self.partition_evaluations = []
         self.evaluation = pd.DataFrame()
-        self.full_model = None
+        self.final_predictor = None
 
     def go(self):
         self.run_date = datetime.datetime.now()
@@ -45,7 +45,7 @@ class Experiment:
         self.evaluation = self.summarize_evaluations(self.partition_evaluations)
 
         print('Fitting final model...')
-        self.full_model = self.trainer.fit(self.dataset.x, self.dataset.y)
+        self.final_predictor = self.trainer.fit(self.dataset.x, self.dataset.y)
         return self.evaluation
 
     @staticmethod
@@ -128,8 +128,9 @@ class ExperimentInterface:
 
         exp.run_date = config['metadata']['run_date']
 
-        exp.partition_predictors = config['results']['Predictors']
-        exp.evaluation = pd.DataFrame(config['results']['Evaluation'])
+        exp.partition_predictors = config['results']['partition_predictors']
+        exp.evaluation = pd.DataFrame(config['results']['evaluation'])
+        exp.final_predictor = config['results']['final_predictor']
         return exp
 
     @classmethod
@@ -147,8 +148,9 @@ class ExperimentInterface:
                 'Metrics': MetricInterface.serialize(experiment.metrics),
             },
             'results': {
-                'Predictors': experiment.partition_predictors,
-                'Evaluation': experiment.evaluation.to_dict(),
+                'partition_predictors': experiment.partition_predictors,
+                'evaluation': experiment.evaluation.to_dict(),
+                'final_predictor': experiment.final_predictor,
             }
         }
         # optional components
