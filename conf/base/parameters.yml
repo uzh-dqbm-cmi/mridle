@@ -114,6 +114,87 @@ models:
             - flavor: AUROC
             - flavor: LogLoss
 
+    logistic_regression:
+        name: logistic_regression
+        verbose: false
+        DataSet:
+            flavor: DataSet
+            config:
+                features:
+                    - 'no_show_before'
+                    - 'sched_days_advanced'
+                    #- 'month'
+                    - 'age'
+                    - 'modality'
+                    - 'sex'
+                    - 'hour_sched'
+                    - 'distance_to_usz'
+                    - 'day_of_week_str'
+                    - 'marital'
+                target: NoShow
+        Stratifier:
+            flavor: PartitionedLabelStratifier
+            config:
+                n_partitions: 5
+        Architecture:
+            flavor: Pipeline
+            config:
+                steps:
+                  - flavor: sklearn.compose.ColumnTransformer
+                    name: 'preprocessing'
+                    config:
+                        steps:
+                            - name: 'scaler'
+                              flavor: sklearn.preprocessing.StandardScaler
+                              config:
+                                with_mean: True
+                              args:
+                                columns:
+                                    - 'no_show_before'
+                                    - 'sched_days_advanced'
+                                    - 'age'
+                                    - 'hour_sched'
+                                    - 'distance_to_usz'
+                            - name: 'onehot'
+                              flavor: sklearn.preprocessing.OneHotEncoder
+                              config:
+                                  handle_unknown: 'ignore'
+                              args:
+                                  columns:
+                                      - 'marital'
+                                      - 'modality'
+                                      - 'sex'
+                                      - 'day_of_week_str'
+                  - flavor: LogisticRegression
+                    name: 'classifier'
+                    config:
+                        penalty: 'L1'
+                        solver: 'liblinear'
+                        class_weight: 'balanced'
+        Trainer:
+            flavor: Trainer
+        Tuner:
+            flavor: BayesianTuner
+            config:
+                hyperparameters:
+                    classifier__C:
+                        parse_hp_uniform:
+                            start: 0
+                            end: 10
+                search_type: bayesian
+                num_cv_folds: 5
+                num_iters: 50
+                scoring_function: log_loss
+                verbose: 0
+                hyperopt_timeout: 10000000
+        Metrics:
+            - flavor: F1_Macro
+              config:
+                  classification_cutoff: 0.5
+            - flavor: AUPRC
+            - flavor: AUROC
+            - flavor: LogLoss
+
     random_forest:
         name: random_forest
         verbose: false
