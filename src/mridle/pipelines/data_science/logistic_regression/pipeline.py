@@ -9,7 +9,7 @@ def create_pipeline(**kwargs):
             node(
                 func=remove_na,
                 inputs=["master_feature_set"],
-                outputs=["input_feature_set"],
+                outputs="input_feature_set",
                 name="remove_na"
             ),
             node(
