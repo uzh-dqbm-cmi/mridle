@@ -1,13 +1,14 @@
 import unittest
 import pandas as pd
 import numpy as np
+from sklearn.ensemble import RandomForestClassifier
 from mridle.experiment.experiment import Experiment
 from mridle.experiment.dataset import DataSet
 from mridle.experiment.stratifier import TrainTestStratifier
 from mridle.experiment.trainer import Trainer
 from mridle.experiment.tuner import RandomSearchTuner
 from mridle.experiment.metric import Metric
-from sklearn.ensemble import RandomForestClassifier
+from mridle.experiment.predictor import Predictor
 
 
 def get_test_data_set():
@@ -121,10 +122,10 @@ class TestExperiment(unittest.TestCase):
             self.assertTrue(isinstance(metric, Metric))
             self.assertEqual(metric.config, self.configuration['Metrics'][i]['config'])
 
-    def test_serialize(self):
+    def test_serialize_before_go(self):
         exp = Experiment.configure(config=self.configuration, data=self.df)
         exp_dict = exp.serialize()
-        for expected_key in ['metadata', 'components']:
+        for expected_key in ['metadata', 'components', 'results']:
             self.assertTrue(expected_key in exp_dict)
 
         for component in ['DataSet', 'Stratifier', 'Architecture', 'Trainer', 'Tuner', 'Metrics']:
@@ -141,6 +142,17 @@ class TestExperiment(unittest.TestCase):
             else:
                 for key in ['flavor', 'config']:
                     self.assertEqual(component_dict[key], orig_component_dict[key])
+
+        # results
+        self.assertTrue('partition_predictors' in exp_dict['results'].keys())
+        self.assertTrue(isinstance(exp_dict['results']['partition_predictors'], list))
+        self.assertTrue(all([isinstance(p, Predictor) for p in exp_dict['results']['partition_predictors']]))
+
+        self.assertTrue('evaluation' in exp_dict['results'].keys())
+        self.assertTrue(isinstance(exp_dict['results']['evaluation'], dict))
+
+        self.assertTrue('final_predictor' in exp_dict['results'].keys())
+        self.assertIsNone(exp_dict['results']['final_predictor'])
 
     def test_deserialize(self):
         exp = Experiment.configure(config=self.configuration, data=self.df)
@@ -234,7 +246,7 @@ class TestExperiment(unittest.TestCase):
         # Evaluation
         pd.testing.assert_frame_equal(exp_deserialized.evaluation, exp.evaluation)
 
-        # Predictors
+        # Partition Predictors
         # assert that for every partition, the predictors predict the same values
         for partition_idx in range(exp.stratifier.n_partitions):
             x_train, y_train, x_test, y_test = exp.stratifier.materialize_partition(partition_idx)
@@ -244,3 +256,14 @@ class TestExperiment(unittest.TestCase):
             y_pred = exp.partition_predictors[partition_idx].predict(x_test)
             y_pred_des = exp_deserialized.partition_predictors[partition_idx].predict(x_test_des)
             np.testing.assert_almost_equal(y_pred_des, y_pred)
+
+        # Final Predictor
+        self.assertTrue(isinstance(exp.final_predictor, Predictor))
+        # assert same predictions on sample partition
+        x_train, y_train, x_test, y_test = exp.stratifier.materialize_partition(0)
+        x_train_des, y_train_des, x_test_des, y_test_des = exp.stratifier.materialize_partition(0)
+        # before checking the predictors, make sure the X they're predicting on is the same.
+        pd.testing.assert_frame_equal(x_test_des, x_test)
+        y_pred = exp.final_predictor.predict(x_test)
+        y_pred_des = exp_deserialized.final_predictor.predict(x_test_des)
+        np.testing.assert_almost_equal(y_pred_des, y_pred)
