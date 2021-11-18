@@ -168,7 +168,7 @@ models:
                   - flavor: LogisticRegression
                     name: 'classifier'
                     config:
-                        penalty: 'L1'
+                        penalty: 'l1'
                         solver: 'liblinear'
                         class_weight: 'balanced'
         Trainer:
