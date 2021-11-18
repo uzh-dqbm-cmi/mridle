@@ -50,7 +50,6 @@ class BayesianTuner(Tuner):
         self.timeout = config['hyperopt_timeout']
 
     def fit(self, architecture, x, y) -> Architecture:
-
         cv_ids = list(range(self.num_cv_folds)) * np.floor((len(x) / self.num_cv_folds)).astype(int)
         cv_ids.extend(list(range(len(x) % self.num_cv_folds)))
         cv_ids = np.random.permutation(cv_ids)
