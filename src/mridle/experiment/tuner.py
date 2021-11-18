@@ -7,7 +7,6 @@ from typing import Dict, List
 from .architecture import Architecture
 from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
 from .metric import AUPRC, LogLoss, F1_Macro, AUROC, BrierScore
-import datetime
 
 
 class Tuner(ConfigurableComponent):
@@ -88,8 +87,6 @@ class BayesianTuner(Tuner):
             Loss associated with the given parameters, which is to be minimised over time.
 
         """
-        print("Starting hyperopt loop {}".format(datetime.datetime.now()))
-        print("hyperparams {}".format(params))
 
         model_copy = model.set_params(**params)
 
@@ -120,7 +117,6 @@ class BayesianTuner(Tuner):
                     '{} given'.format(scoring_fn))
 
             cv_results.append(loss)
-        print("Finishing hyperopt loop {}".format(datetime.datetime.now()))
 
         to_minimise = np.mean(cv_results)
         if verbose:
