@@ -185,18 +185,18 @@ models:
                         parse_hp_uniformint:
                             start: 2
                             end: 20
-#                    classifier__min_samples_split:
-#                        parse_hp_uniformint:
-#                            start: 2
-#                            end: 20
-#                    classifier__max_features:
-#                        parse_hp_choice:
-#                            choice_list:
-#                                - 'auto'
-#                                - 'sqrt'
-#                                - 'log2'
+                    classifier__min_samples_split:
+                        parse_hp_uniformint:
+                            start: 2
+                            end: 20
+                    classifier__max_features:
+                        parse_hp_choice:
+                            choice_list:
+                                - 'auto'
+                                - 'sqrt'
+                                - 'log2'
                 search_type: bayesian
-                num_cv_folds: 5  # 5
+                num_cv_folds: 5
                 num_iters: 50  # 150
                 scoring_function: log_loss
                 verbose: 0
@@ -275,13 +275,13 @@ models:
                     classifier__n_estimators:
                         parse_hp_uniformint:
                             start: 10
-                            end: 800
+                            end: 400
                     classifier__max_depth:
                         parse_hp_uniformint:
                             start: 2
-                            end: 100
+                            end: 20
                 search_type: bayesian
-                num_cv_folds: 5  # 5
+                num_cv_folds: 5
                 num_iters: 50  # 150
                 scoring_function: log_loss
                 verbose: 0
