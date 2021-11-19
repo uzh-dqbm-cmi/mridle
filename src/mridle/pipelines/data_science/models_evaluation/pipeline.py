@@ -7,7 +7,7 @@ def create_pipeline(**kwargs):
         [
             node(
                 func=create_evaluation_table,
-                inputs=["harvey_model_logistic_reg", "harvey_model_random_forest", "logistic_regression_model",
+                inputs=["logistic_regression_model",
                         "random_forest_model", "xgboost_model", "validation_data"],
                 outputs="evaluation_table",
                 name="create_evaluation_table"
