@@ -103,4 +103,19 @@ def create_model_precision_comparison_plot(evaluation_table_df: pd.DataFrame) ->
         color='Model'
     ).properties(width=500)
 
-    return model_precision_comparison_plot
+    # Add horizontal line to chart, showing the precision which would be achieved through random guessing
+    no_show_rate = evaluation_table_df.loc[0, '# Actual No Shows'] / evaluation_table_df.loc[0, 'Total number of appts']
+
+    line = pd.DataFrame({
+        '# No-show predictions per week': [0, 100],
+        'PPV / Precision': [no_show_rate, no_show_rate],
+        'Model': ['Baseline (Random Guessing)', 'Baseline (Random Guessing)']
+    })
+
+    line_plot = alt.Chart(line).mark_line(size=2).encode(
+        x='# No-show predictions per week',
+        y='PPV / Precision',
+        color='Model'
+    )
+
+    return model_precision_comparison_plot + line_plot
