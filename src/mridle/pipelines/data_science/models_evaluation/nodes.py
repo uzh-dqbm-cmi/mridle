@@ -22,7 +22,7 @@ def create_evaluation_table(logistic_regression_model, random_forest_model,
 
         experiment = Experiment.deserialize(serialised_m)
 
-        preds_prob = experiment.model.predict_proba(val_dataset.x)
+        preds_prob = experiment.final_predictor.predict_proba(val_dataset.x)
 
         preds_prob_sorted = np.sort(preds_prob)[::-1]
 
