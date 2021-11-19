@@ -7,7 +7,7 @@ def create_pipeline(**kwargs):
         [
             node(
                 func=run_experiment,
-                inputs=["master_feature_set", "params:models.xgboost"],
+                inputs=["train_data", "params:models.xgboost"],
                 outputs=["xgboost_model", "xgboost_model_results"],
                 name="train_xgboost_model"
             )

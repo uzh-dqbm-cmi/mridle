@@ -7,7 +7,7 @@ def create_pipeline(**kwargs):
         [
             node(
                 func=run_experiment,
-                inputs=["master_feature_set_na_removed", "params:models.logistic_regression"],
+                inputs=["train_data", "params:models.logistic_regression"],
                 outputs=["logistic_regression_model", "logistic_regression_model_results"],
                 name="train_logistic_regression_model"
             )
