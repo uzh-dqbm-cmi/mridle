@@ -95,12 +95,12 @@ def create_model_precision_comparison_plot(evaluation_table_df: pd.DataFrame) ->
     """
     model_precision_comparison_plot = alt.Chart(evaluation_table_df[['# No-show predictions per week',
                                                                      'PPV / Precision',
-                                                                     'model_name'
+                                                                     'Model'
                                                                      ]]
                                                 ).mark_circle(size=60, opacity=1).encode(
         x='# No-show predictions per week',
         y=alt.Y('PPV / Precision', scale=alt.Scale(domain=(0, 1))),
-        color='model_name'
+        color='Model'
     ).properties(width=500)
 
     return model_precision_comparison_plot
