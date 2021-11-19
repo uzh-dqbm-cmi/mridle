@@ -3,6 +3,11 @@ master_feature_set:
   filepath: /data/mridle/data/kedro_data_catalog/04_feature/master_feature_set.parquet
   layer: feature
 
+master_feature_set_na_removed:
+  type: pandas.ParquetDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/04_feature/master_feature_set_na_removed.parquet
+  layer: feature
+
 train_data:
   type: pandas.ParquetDataSet
   filepath: /data/mridle/data/kedro_data_catalog/05_model_input/train_data.parquet
