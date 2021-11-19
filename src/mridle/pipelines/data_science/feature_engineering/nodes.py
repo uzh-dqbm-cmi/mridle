@@ -4,6 +4,7 @@ from mridle.pipelines.data_engineering.ris.nodes import build_slot_df
 import pgeocode
 import datetime as dt
 import re
+from sklearn.model_selection import train_test_split
 
 
 def build_feature_set(status_df: pd.DataFrame) -> pd.DataFrame:
@@ -63,6 +64,11 @@ def build_feature_set(status_df: pd.DataFrame) -> pd.DataFrame:
     slot_df = feature_cyclical_month(slot_df)
 
     return slot_df
+
+
+def train_val_split(df: pd.DataFrame):
+    test_data, validation_data = train_test_split(df, test_size=0.2, random_state=94)
+    return test_data, validation_data
 
 
 # Feature engineering functions
