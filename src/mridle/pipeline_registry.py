@@ -32,7 +32,7 @@ from typing import Dict
 from kedro.pipeline import Pipeline
 from mridle.pipelines.data_engineering import ris, dicom, dispo
 from mridle.pipelines.data_science import harvey, feature_engineering, descriptive_viz, random_forest, xgboost, \
-    logistic_regression
+    logistic_regression, models_evaluation
 
 
 def register_pipelines() -> Dict[str, Pipeline]:
@@ -51,6 +51,7 @@ def register_pipelines() -> Dict[str, Pipeline]:
     logistic_regression_pipeline = logistic_regression.create_pipeline()
     random_forest_pipeline = random_forest.create_pipeline()
     xgboost_pipeline = xgboost.create_pipeline()
+    models_evaluation_pipeline = models_evaluation.create_pipeline()
 
     return {
 
@@ -66,5 +67,6 @@ def register_pipelines() -> Dict[str, Pipeline]:
         "logistic_regression": logistic_regression_pipeline,
         "random_forest": random_forest_pipeline,
         "xgboost": xgboost_pipeline,
+        "models_evaluation": models_evaluation_pipeline,
 
     }
