@@ -2,14 +2,15 @@ import pandas as pd
 import altair as alt
 from mridle.experiment.dataset import DataSet
 from mridle.experiment.experiment import Experiment
+from mridle.pipelines.data_science.harvey.nodes import process_features_for_model
 from sklearn.metrics import f1_score, confusion_matrix, brier_score_loss
 import numpy as np
 
 
-def create_evaluation_table(logistic_regression_model, random_forest_model,
+def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic_regression_model, random_forest_model,
                             xgboost_model, validation_data):
 
-    serialised_models = [  # ('Harvey LogReg', harvey_model_log_reg), ('Harvey RandomForest', harvey_random_forest),
+    serialised_models = [('Harvey LogReg', harvey_model_log_reg), ('Harvey RandomForest', harvey_random_forest),
                          ('Logistic Regression', logistic_regression_model), ('RandomForest', random_forest_model),
                          ('XGBoost', xgboost_model)]
 
@@ -17,8 +18,12 @@ def create_evaluation_table(logistic_regression_model, random_forest_model,
     avg_appts_per_week = 166  # taken from aggregation of df_features_original data for the year 2017 (in notebook 52)
 
     for (model_name, serialised_m) in serialised_models:
+        model_validation_data = validation_data.copy()
 
-        val_dataset = DataSet(serialised_m['components']['DataSet']['config'], validation_data)
+        if 'Harvey' in model_name:
+            model_validation_data = process_features_for_model(model_validation_data)
+
+        val_dataset = DataSet(serialised_m['components']['DataSet']['config'], model_validation_data)
 
         experiment = Experiment.deserialize(serialised_m)
 

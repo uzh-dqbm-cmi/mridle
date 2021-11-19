@@ -9,7 +9,6 @@ def process_features_for_model(dataframe: pd.DataFrame) -> pd.DataFrame:
 
     Args:
         dataframe: dataframe obtained from feature generation
-        parameters: parameters dictionary, namely which features to include
 
     Returns: modified dataframe specific for this model
     """
