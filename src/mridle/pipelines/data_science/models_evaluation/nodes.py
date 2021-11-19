@@ -6,10 +6,10 @@ from sklearn.metrics import f1_score, confusion_matrix, brier_score_loss
 import numpy as np
 
 
-def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic_regression_model, random_forest_model,
+def create_evaluation_table(logistic_regression_model, random_forest_model,
                             xgboost_model, validation_data):
 
-    serialised_models = [('Harvey LogReg', harvey_model_log_reg), ('Harvey RandomForest', harvey_random_forest),
+    serialised_models = [  # ('Harvey LogReg', harvey_model_log_reg), ('Harvey RandomForest', harvey_random_forest),
                          ('Logistic Regression', logistic_regression_model), ('RandomForest', random_forest_model),
                          ('XGBoost', xgboost_model)]
 
