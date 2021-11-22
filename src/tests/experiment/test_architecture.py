@@ -6,6 +6,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
+from torch import nn
+import torch
+from skorch import NeuralNet
 from mridle.experiment.architecture import ArchitectureInterface
 
 
@@ -283,3 +286,45 @@ class TestArchitectureInterface(unittest.TestCase):
         recreated_pipe_result = recreated_pipe.predict(x)
 
         np.testing.assert_array_almost_equal(recreated_pipe_result, original_pipe_result)
+
+    def test_skorch_serialize(self):
+        net = NeuralNet(
+            MLP(input_layer_size=10, hidden_layer_size=20, dropout_p=0),
+            criterion=nn.BCELoss,
+            # criterion__weight=torch.tensor(0.17),
+            lr=0.01,
+            optimizer=torch.optim.SGD,
+            batch_size=32,
+            max_epochs=100,
+            verbose=0,
+            # Shuffle training data on each epoch
+            iterator_train__shuffle=True,
+        )
+        serialization = ArchitectureInterface.serialize(net)
+
+    def test_skorch_deserialize(self):
+        skorch_config = {
+            'flavor': 'skorch.NeuralNet',
+            'config': {
+                'lr': 0.01,
+                'batch_size': 32,
+                'max_epochs': 100,
+                'verbose': 0,
+                'iterator_train__shuffle': True,
+            },
+            'args': {
+                'module': {
+                    'flavor': 'mridle.experiment.architectures.MLP.MLP',
+                    'config': {
+                        'input_layer_size': n_cols,
+                        'hidden_layer_size': 20
+                        'dropout_p': 0},
+                },
+                'criterion': {
+                    'flavor': 'nn.BCELoss',
+                },
+                'optimizer': {
+                    'flavor': 'torch.optim.SGD',
+                }
+            },
+        }
