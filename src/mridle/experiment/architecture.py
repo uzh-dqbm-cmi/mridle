@@ -122,12 +122,12 @@ class ArchitectureInterface(ComponentInterface):
 class SKLearnEstimatorInterface(ArchitectureInterface):
 
     @classmethod
-    def configure(cls, d: Dict, **kwargs) -> sklearn.base.BaseEstimator:
+    def configure(cls, d: Dict, **kwargs) -> BaseEstimator:
         flavor_cls = cls.select_flavor(d['flavor'])
         return flavor_cls(**d['config'])
 
     @classmethod
-    def deserialize(cls, d: Dict) -> sklearn.base.BaseEstimator:
+    def deserialize(cls, d: Dict) -> BaseEstimator:
         return cls.configure(d)
 
     @classmethod

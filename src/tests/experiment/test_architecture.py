@@ -317,6 +317,91 @@ class TestArchitectureInterface(unittest.TestCase):
 
         np.testing.assert_array_almost_equal(recreated_pipe_result, original_pipe_result)
 
+    def test_skorch_within_pipeline(self):
+        column_names = ['A', 'B', 'C', 'D']
+        df = pd.DataFrame(np.random.randint(0, 100, size=(100, len(column_names))), columns=column_names)
+        df['E'] = random.choices(['one', 'two', 'three'], k=100)
+        df['label'] = np.where(df[column_names[0]] > 50, 1, 0)
+
+        categorical_columns = ['E']
+        numerical_columns = ['A', 'B', 'C', 'D']
+
+        categorical_encoder = OneHotEncoder(handle_unknown='ignore')
+
+        numerical_pipe = Pipeline([  # 0b
+            ('scaler', StandardScaler())  # 0ba
+        ])
+
+        preprocessing = ColumnTransformer(  # 0
+            [('cat', categorical_encoder, categorical_columns),  # 0a
+             ('num', numerical_pipe, numerical_columns)  # 0b
+             ]
+        )
+
+        net = NeuralNet(  # 2
+            MLP(input_layer_size=4, hidden_layer_size=20, dropout_p=0),
+            criterion=nn.BCELoss,
+            # criterion__weight=torch.tensor(0.17),
+            lr=0.01,
+            optimizer=torch.optim.SGD,
+            batch_size=32,
+            max_epochs=100,
+            verbose=0,
+            # Shuffle training data on each epoch
+            iterator_train__shuffle=True,
+        )
+
+        func_transformer = FunctionTransformer(tofloat32, accept_sparse=True)  # 1
+
+        nn_pipe = Pipeline([
+            ('preprocess', preprocessing),    # 0
+            ('tofloat32', func_transformer),  # 1
+            ('classifier', net)               # 2
+        ])
+
+        serialization = ArchitectureInterface.serialize(nn_pipe)
+        recreated_pipe = ArchitectureInterface.deserialize(serialization)
+
+        self.assertEqual(type(recreated_pipe), Pipeline)
+        self.assertEqual(len(recreated_pipe.steps), 3)
+
+        step_0_name, step_0_obj = recreated_pipe.steps[0]
+        self.assertEqual(step_0_name, 'preprocess')
+        self.assertEqual(type(step_0_obj), ColumnTransformer)
+
+        step_0a_name, step_0a_obj, step_0a_cols = step_0_obj.transformers[0]
+        self.assertEqual(step_0a_name, 'cat')
+        self.assertEqual(type(step_0a_obj), OneHotEncoder)
+        self.assertEqual(step_0a_cols, categorical_columns)
+        self.assertEqual(step_0a_obj.get_params(), categorical_encoder.get_params())
+
+        step_0b_name, step_0b_obj, step_0b_cols = step_0_obj.transformers[1]
+        self.assertEqual(step_0b_name, 'num')
+        self.assertEqual(type(step_0b_obj), Pipeline)
+        self.assertEqual(step_0b_cols, numerical_columns)
+
+        step_0ba_name, step_0ba_obj = step_0b_obj.steps[0]
+        self.assertEqual(step_0ba_name, 'scaler')
+        self.assertEqual(type(step_0ba_obj), StandardScaler)
+
+        step_1_name, step_1_obj = recreated_pipe.steps[1]
+        self.assertEqual(step_1_name, 'tofloat32')
+        self.assertEqual(type(step_1_obj), FunctionTransformer)
+        self.assertEqual(step_1_obj.get_params(), func_transformer.get_params())
+
+        step_2_name, step_2_obj = recreated_pipe.steps[2]
+        self.assertEqual(step_2_name, 'classifier')
+        self.assertEqual(type(step_2_obj), NeuralNet)
+
+        step_2_params = step_2_obj.get_params()
+        net_params = net.get_params()
+
+        # only check parameters with core data types- ignore NeuralNet parameters of type `object` and `class`
+        core_types = (str, int, float, bool, dict)
+        step_2_filtered_params = {k: v for k, v in step_2_params.items() if isinstance(v, core_types)}
+        net_filtered_params = {k: v for k, v in net_params.items() if isinstance(v, core_types)}
+        self.assertEqual(step_2_filtered_params, net_filtered_params)
+
 
 class TestSkorchNeuralNetInterface(unittest.TestCase):
 
