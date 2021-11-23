@@ -12,6 +12,14 @@ from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
 from typing import Any, Dict, List, Tuple, Type, Union
 
 
+def get_instance_import_path(f) -> Dict:
+    return f.__module__ + '.' + type(f).__name__
+
+
+def get_func_or_class_import_path(f) -> Dict:
+    return f.__module__ + '.' + f.__name__
+
+
 class Architecture(ConfigurableComponent):
 
     def __init__(self, config):
@@ -71,21 +79,14 @@ class ArchitectureInterface(ComponentInterface):
 
         if d.get('instantiate', True) is False:
             return flavor_cls
-
-        elif flavor_cls == Pipeline:
-            flavor_instance = cls.configure_pipeline(d)
-        elif flavor_cls == ColumnTransformer:
-            flavor_instance = cls.configure_column_transformer(d)
-        elif flavor_cls == skorch.NeuralNet:
-            flavor_instance = cls.configure_skorch_neural_net(d)
-        elif flavor_cls == FunctionTransformer:
-            flavor_instance = cls.configure_function_transformer(d)
+        elif ArchitectureInterfaceFactory.recognizes_flavor(flavor_cls):
+            interface = ArchitectureInterfaceFactory.select_from_flavor(flavor_cls)
+            return interface.configure(d)
         else:
-            flavor_instance = flavor_cls(**d['config'])
-        return flavor_instance
+            return flavor_cls(**d['config'])
 
     @classmethod
-    def deserialize(cls, d: Dict) -> ConfigurableComponent:
+    def deserialize(cls, d: Dict) -> Union[ConfigurableComponent, Type[ConfigurableComponent]]:
         """
         Instantiate a component from a {'flavor: ..., 'config': {}} dictionary.
 
@@ -100,78 +101,50 @@ class ArchitectureInterface(ComponentInterface):
         d = cls.validate_config(d)
         flavor_cls = cls.select_flavor(d['flavor'])
         kwargs = cls.additional_info_for_deserialization(d)
-        if flavor_cls == Pipeline:
-            flavor_instance = cls.configure_pipeline(d)
-        elif flavor_cls == ColumnTransformer:
-            flavor_instance = cls.configure_column_transformer(d)
+
+        if d.get('instantiate', True) is False:
+            return flavor_cls
+        elif ArchitectureInterfaceFactory.recognizes_flavor(flavor_cls):
+            interface = ArchitectureInterfaceFactory.select_from_flavor(flavor_cls)
+            return interface.deserialize(d)
         else:
-            flavor_instance = flavor_cls(**d['config'], **kwargs)
-        return flavor_instance
+            return flavor_cls(**d['config'], **kwargs)
 
     @classmethod
     def serialize(cls, component) -> Dict:
-        if isinstance(component, Tuple):
-            if isinstance(component[1], ColumnTransformer):
-                return cls.serialize_column_transformer(component)
-            else:
-                return cls.serialize_pipeline_step(component)
-        elif isinstance(component, Pipeline):
-            return cls.serialize_pipeline(component)
-        elif isinstance(component, FunctionTransformer):
-            return cls.serialize_function_transformer(component)
-        elif isinstance(component, skorch.NeuralNet):
-            return cls.serialize_skorch_neural_net(component)
-        elif isinstance(component, BaseEstimator):
-            return cls.serialize_sklearn_estimator(component)
-        else:
+        interface = ArchitectureInterfaceFactory.select_from_component(component)
+        if interface is None:
             return super().serialize(component)
+        else:
+            return interface.serialize(component)
+
+
+class SKLearnEstimatorInterface(ArchitectureInterface):
 
     @classmethod
-    def serialize_sklearn_estimator(cls, estimator) -> Dict:
+    def configure(cls, d: Dict, **kwargs) -> sklearn.base.BaseEstimator:
+        flavor_cls = cls.select_flavor(d['flavor'])
+        return flavor_cls(**d['config'])
+
+    @classmethod
+    def deserialize(cls, d: Dict) -> sklearn.base.BaseEstimator:
+        return cls.configure(d)
+
+    @classmethod
+    def serialize(cls, estimator) -> Dict:
         params = estimator.get_params()
         params = {k: params[k] for k in params.keys() if type(params[k]) != type}
         d = {
-            'flavor': cls.get_instance_import_path(estimator),
+            'flavor': get_instance_import_path(estimator),
             'config': params,
         }
         return d
 
-    @staticmethod
-    def get_instance_import_path(f) -> Dict:
-        return f.__module__ + '.' + type(f).__name__
 
-    @staticmethod
-    def get_func_or_class_import_path(f) -> Dict:
-        return f.__module__ + '.' + f.__name__
+class PipelineInterface(ArchitectureInterface):
 
-    @staticmethod
-    def serialize_pipeline_step(step_tuple: Tuple[str, Any]) -> Dict:
-        name, estimator = step_tuple
-        d = ArchitectureInterface.serialize(estimator)
-        d['name'] = name
-        # d = {
-        #     'flavor': estimator.__module__ + '.' + type(estimator).__name__,
-        #     'name': name,
-        #     'config': estimator.get_params(),
-        # }
-        return d
-
-    @staticmethod
-    def serialize_column_transformer_step(step_tuple: Tuple[str, Any, List[str]]) -> Dict:
-        name, estimator, columns = step_tuple
-        d = ArchitectureInterface.serialize(estimator)
-        d['name'] = name
-        d['args'] = {'columns': columns}
-        # d = {
-        #     'flavor': estimator.__module__ + '.' + type(estimator).__name__,
-        #     'name': name,
-        #     'args': {'columns': columns},
-        #     'config': estimator.get_params(),
-        # }
-        return d
-
-    @staticmethod
-    def configure_pipeline(d):
+    @classmethod
+    def configure(cls, d: Dict, **kwargs) -> Pipeline:
         step_list = []
         if 'steps' not in d['config']:
             raise ValueError(f"Pipeline config must contain entry for `steps`, found {list(d['config'].keys())}")
@@ -183,11 +156,15 @@ class ArchitectureInterface(ComponentInterface):
         pipeline_obj = Pipeline(step_list)
         return pipeline_obj
 
-    @staticmethod
-    def serialize_pipeline(pipeline) -> Dict:
+    @classmethod
+    def deserialize(cls, d: Dict) -> Pipeline:
+        return cls.configure(d)
+
+    @classmethod
+    def serialize(cls, pipeline: Pipeline) -> Dict:
         steps = []
         for step in pipeline.steps:
-            serialized_step = ArchitectureInterface.serialize(step)
+            serialized_step = cls.serialize_pipeline_step(step)
             steps.append(serialized_step)
         d = {
             'flavor': 'sklearn.pipeline.Pipeline',
@@ -198,26 +175,18 @@ class ArchitectureInterface(ComponentInterface):
         print(d)
         return d
 
-    @staticmethod
-    def serialize_column_transformer(step_tuple) -> Dict:
-        print('inside serialize_column_transformer')
-        name, column_transformer = step_tuple
-        steps = []
-        for step in column_transformer.transformers:
-            serialized_step = ArchitectureInterface.serialize_column_transformer_step(step)
-            steps.append(serialized_step)
-        d = {
-            'flavor': 'sklearn.compose.ColumnTransformer',
-            'name': name,
-            'config': {
-                'steps': steps
-            }
-        }
-        print(d)
+    @classmethod
+    def serialize_pipeline_step(cls, step_tuple: Tuple[str, Any]) -> Dict:
+        name, estimator = step_tuple
+        d = ArchitectureInterface.serialize(estimator)
+        d['name'] = name
         return d
 
-    @staticmethod
-    def configure_column_transformer(d):
+
+class ColumnTransformerInterface(ArchitectureInterface):
+
+    @classmethod
+    def configure(cls, d: Dict, **kwargs) -> ColumnTransformer:
         step_list = []
         if 'steps' not in d['config']:
             raise ValueError(f"Pipeline config must contain entry for `steps`, found {list(d['config'].keys())}")
@@ -229,8 +198,69 @@ class ArchitectureInterface(ComponentInterface):
             step_list.append(step_tuple)
         return ColumnTransformer(step_list)
 
-    @staticmethod
-    def configure_skorch_neural_net(d):
+    @classmethod
+    def deserialize(cls, d: Dict) -> ColumnTransformer:
+        return cls.configure(d)
+
+    @classmethod
+    def serialize(cls, column_transformer: ColumnTransformer) -> Dict:
+        steps = []
+        for step in column_transformer.transformers:
+            serialized_step = cls.serialize_column_transformer_step(step)
+            steps.append(serialized_step)
+        d = {
+            'flavor': 'sklearn.compose.ColumnTransformer',
+            'config': {
+                'steps': steps
+            }
+        }
+        print(d)
+        return d
+
+    @classmethod
+    def serialize_column_transformer_step(cls, step_tuple: Tuple[str, Any, List[str]]) -> Dict:
+        name, estimator, columns = step_tuple
+        d = ArchitectureInterface.serialize(estimator)
+        d['name'] = name
+        d['args'] = {'columns': columns}
+        return d
+
+
+class FunctionTransformerInterface(ArchitectureInterface):
+
+    @classmethod
+    def configure(cls, d: Dict, **kwargs) -> FunctionTransformer:
+        if 'function' not in d['args']:
+            raise ValueError("FunctionTransformer must contain an entry for 'function' in 'args'.")
+        func = ArchitectureInterface.configure(d['args']['function'])
+        return FunctionTransformer(func, **d['config'])
+
+    @classmethod
+    def deserialize(cls, d: Dict) -> FunctionTransformer:
+        return cls.configure(d)
+
+    @classmethod
+    def serialize(cls, func_transformer: FunctionTransformer) -> Dict:
+        params = func_transformer.get_params()
+        del params['func']
+        d = {
+            'flavor': 'sklearn.preprocessing.FunctionTransformer',
+            'args': {
+                'function':
+                    {
+                        'flavor': get_func_or_class_import_path(func_transformer.func),
+                        'instantiate': False,
+                    },
+            },
+            'config': params
+        }
+        return d
+
+
+class SkorchNeuralNetInterface(ArchitectureInterface):
+
+    @classmethod
+    def configure(cls, d: Dict, **kwargs) -> skorch.NeuralNet:
         arg_objects = {}
         for arg_name in d['args']:
             arg_obj = ArchitectureInterface.configure(d['args'][arg_name])
@@ -238,7 +268,11 @@ class ArchitectureInterface(ComponentInterface):
         return skorch.NeuralNet(**arg_objects, **d['config'])
 
     @classmethod
-    def serialize_skorch_neural_net(cls, net: skorch.NeuralNet) -> Dict:
+    def deserialize(cls, d: Dict) -> skorch.NeuralNet:
+        return cls.configure(d)
+
+    @classmethod
+    def serialize(cls, net: skorch.NeuralNet) -> Dict:
         params = net.get_params()
         exclude = ['module', 'criterion', 'optimizer', 'iterator_train', 'iterator_valid', 'dataset', 'train_split',
                    'callbacks', '_kwargs']
@@ -251,41 +285,48 @@ class ArchitectureInterface(ComponentInterface):
             'config': filtered_params,
             'args': {
                 'module': {
-                    'flavor': cls.get_instance_import_path(net.module),
+                    'flavor': get_instance_import_path(net.module),
                     'config': net.module.get_params(),
                 },
                 'criterion': {
-                    'flavor': cls.get_func_or_class_import_path(net.criterion),
+                    'flavor': get_func_or_class_import_path(net.criterion),
                     'instantiate': False,
                 },
                 'optimizer': {
-                    'flavor': cls.get_func_or_class_import_path(net.optimizer),
+                    'flavor': get_func_or_class_import_path(net.optimizer),
                     'instantiate': False,
                 }
             },
         }
         return d
 
-    @staticmethod
-    def configure_function_transformer(d):
-        if 'function' not in d['args']:
-            raise ValueError("FunctionTransformer must contain an entry for 'function' in 'args'.")
-        func = ArchitectureInterface.configure(d['args']['function'])
-        return FunctionTransformer(func, **d['config'])
+
+class ArchitectureInterfaceFactory:
+    interfaces = {
+        Pipeline: PipelineInterface,
+        ColumnTransformer: ColumnTransformerInterface,
+        skorch.NeuralNet: SkorchNeuralNetInterface,
+        FunctionTransformer: FunctionTransformerInterface,
+        BaseEstimator: SKLearnEstimatorInterface,
+    }
 
     @classmethod
-    def serialize_function_transformer(cls, func_transformer):
-        params = func_transformer.get_params()
-        del params['func']
-        d = {
-            'flavor': 'sklearn.preprocessing.FunctionTransformer',
-            'args': {
-                'function':
-                    {
-                        'flavor': cls.get_func_or_class_import_path(func_transformer.func),
-                        'instantiate': False,
-                    },
-            },
-            'config': params
-        }
-        return d
+    def recognizes_flavor(cls, flavor_cls) -> bool:
+        """Determine whether the InterfaceFactory knows which interface to use for a flavor."""
+        return flavor_cls in cls.interfaces
+
+    @classmethod
+    def select_from_flavor(cls, flavor_cls: Type[Union[Pipeline, ColumnTransformer, skorch.NeuralNet,
+                                                       FunctionTransformer]]) -> Union[ArchitectureInterface, None]:
+        """Based on a flavor type, determine which interface to use to configure/deserialize it."""
+        if flavor_cls in cls.interfaces:
+            return cls.interfaces[flavor_cls]
+        return None
+
+    @classmethod
+    def select_from_component(cls, component: Any):
+        """Based on a component, determine which interface to use to serialize it."""
+        for flavor in cls.interfaces:
+            if isinstance(component, flavor):
+                return cls.interfaces[flavor]
+        return None

@@ -13,7 +13,9 @@ from sklearn.preprocessing import FunctionTransformer
 from torch import nn
 import torch
 from skorch import NeuralNet
-from mridle.experiment.architecture import ArchitectureInterface
+from mridle.experiment.architecture import ArchitectureInterface, PipelineInterface, ColumnTransformerInterface,\
+    FunctionTransformerInterface, SkorchNeuralNetInterface
+from mridle.experiment.architecture import get_instance_import_path, get_func_or_class_import_path
 from mridle.experiment.architectures.MLP import MLP
 from mridle.utilities.data_processing import tofloat32
 
@@ -23,6 +25,28 @@ def get_test_data_set():
     df = pd.DataFrame(np.random.randint(0, 100, size=(100, len(column_names))), columns=column_names)
     df['label'] = np.where(df[column_names[0]] > 50, 1, 0)
     return df
+
+
+class TestGetFuncOrClassImportPath(unittest.TestCase):
+
+    def test_get_func_import_path(self):
+        result = get_func_or_class_import_path(tofloat32)
+        expected_result = 'mridle.utilities.data_processing.tofloat32'
+        self.assertEqual(result, expected_result)
+
+    def test_get_class_import_path(self):
+        result = get_func_or_class_import_path(torch.optim.SGD)
+        expected_result = 'torch.optim.sgd.SGD'
+        self.assertEqual(result, expected_result)
+
+
+class TestGetInstanceImportPath(unittest.TestCase):
+
+    def test_get_instance_import_path(self):
+        mlp_instance = MLP(10)
+        result = get_instance_import_path(mlp_instance)
+        expected_result = 'mridle.experiment.architectures.MLP.MLP'
+        self.assertEqual(result, expected_result)
 
 
 class TestArchitectureInterface(unittest.TestCase):
@@ -293,7 +317,10 @@ class TestArchitectureInterface(unittest.TestCase):
 
         np.testing.assert_array_almost_equal(recreated_pipe_result, original_pipe_result)
 
-    def test_skorch_configure(self):
+
+class TestSkorchNeuralNetInterface(unittest.TestCase):
+
+    def test_configure(self):
         skorch_config = {
             'flavor': 'skorch.NeuralNet',
             'config': {
@@ -321,14 +348,14 @@ class TestArchitectureInterface(unittest.TestCase):
                 }
             },
         }
-        configured_net = ArchitectureInterface.configure(skorch_config)
+        configured_net = SkorchNeuralNetInterface.configure(skorch_config)
         self.assertTrue(isinstance(configured_net, skorch.NeuralNet))
         self.assertTrue(isinstance(configured_net.module, MLP))
         self.assertTrue(configured_net.criterion, torch.nn.BCELoss)
         self.assertTrue(configured_net.optimizer, torch.optim.SGD)
         self.assertEqual(configured_net.batch_size, skorch_config['config']['batch_size'])
 
-    def test_skorch_serialize(self):
+    def test_serialize(self):
         net = NeuralNet(
             MLP(input_layer_size=10, hidden_layer_size=20, dropout_p=0),
             criterion=nn.BCELoss,
@@ -366,14 +393,36 @@ class TestArchitectureInterface(unittest.TestCase):
                 }
             },
         }
-        serialized_net = ArchitectureInterface.serialize(net)
+        serialized_net = SkorchNeuralNetInterface.serialize(net)
         self.assertEqual(serialized_net['flavor'], expected_config['flavor'])
         self.assertEqual(serialized_net['args'], expected_config['args'])
         # check that all specific config params are there, but ignore extra params
         for key in expected_config['config']:
             self.assertEqual(serialized_net['config'][key], expected_config['config'][key])
 
-    def test_function_transformer_configure(self):
+    def test_serialize_deserialize(self):
+        net = NeuralNet(
+            MLP(input_layer_size=10, hidden_layer_size=20, dropout_p=0),
+            criterion=nn.BCELoss,
+            lr=0.01,
+            optimizer=torch.optim.SGD,
+            batch_size=32,
+            max_epochs=100,
+            verbose=0,
+            iterator_train__shuffle=True,
+        )
+        serialized_net = SkorchNeuralNetInterface.serialize(net)
+        configured_net = SkorchNeuralNetInterface.deserialize(serialized_net)
+        self.assertTrue(isinstance(configured_net, skorch.NeuralNet))
+        self.assertTrue(isinstance(configured_net.module, MLP))
+        self.assertTrue(configured_net.criterion, torch.nn.BCELoss)
+        self.assertTrue(configured_net.optimizer, torch.optim.SGD)
+        self.assertEqual(configured_net.batch_size, 32)
+
+
+class TestFunctionTransformerInterface(unittest.TestCase):
+
+    def test_configure(self):
         config = {
             'flavor': 'sklearn.preprocessing.FunctionTransformer',
             'args': {
@@ -387,22 +436,12 @@ class TestArchitectureInterface(unittest.TestCase):
                 'accept_sparse': True
             }
         }
-        configured_func_transformer = ArchitectureInterface.configure(config)
+        configured_func_transformer = FunctionTransformerInterface.configure(config)
         self.assertEqual(configured_func_transformer.func, tofloat32)
         params = configured_func_transformer.get_params()
         self.assertEqual(params['accept_sparse'], config['config']['accept_sparse'])
 
-    def test_get_importable_function_name(self):
-        result = ArchitectureInterface.get_func_or_class_import_path(tofloat32)
-        expected_result = 'mridle.utilities.data_processing.tofloat32'
-        self.assertEqual(result, expected_result)
-
-    def test_get_importable_class_name(self):
-        result = ArchitectureInterface.get_func_or_class_import_path(torch.optim.SGD)
-        expected_result = 'torch.optim.SGD'
-        self.assertEqual(result, expected_result)
-
-    def test_function_transformer_serialize(self):
+    def test_serialize(self):
         transformer = FunctionTransformer(tofloat32, accept_sparse=True)
         expected_config = {
             'flavor': 'sklearn.preprocessing.FunctionTransformer',
@@ -417,9 +456,17 @@ class TestArchitectureInterface(unittest.TestCase):
                 'accept_sparse': True
             }
         }
-        serialized_func_transformer = ArchitectureInterface.serialize(transformer)
+        serialized_func_transformer = FunctionTransformerInterface.serialize(transformer)
         self.assertEqual(serialized_func_transformer['flavor'], expected_config['flavor'])
         self.assertEqual(serialized_func_transformer['args'], expected_config['args'])
         # check that all specific config params are there, but ignore extra params
         for key in expected_config['config']:
             self.assertEqual(serialized_func_transformer['config'][key], expected_config['config'][key])
+
+    def test_serialize_deserialize(self):
+        transformer = FunctionTransformer(tofloat32, accept_sparse=True)
+        serialized_func_transformer = FunctionTransformerInterface.serialize(transformer)
+        configured_func_transformer = FunctionTransformerInterface.deserialize(serialized_func_transformer)
+        self.assertEqual(configured_func_transformer.func, tofloat32)
+        params = configured_func_transformer.get_params()
+        self.assertEqual(params['accept_sparse'], True)
