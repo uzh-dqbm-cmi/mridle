@@ -43,6 +43,8 @@ def build_feature_set(status_df: pd.DataFrame) -> pd.DataFrame:
         'NoShow': 'min',
         'hour_sched': 'first',
         'sched_days_advanced': 'first',
+        'sched_days_advanced_sq': 'first',
+        'sched_2_days': 'first',
         'modality': 'last',
         'insurance_class': 'last',
         'day_of_week': 'last',
@@ -50,9 +52,13 @@ def build_feature_set(status_df: pd.DataFrame) -> pd.DataFrame:
         'month': 'last',
         'sex': 'last',
         'age': 'last',
+        'age_sq': 'last',
+        'age_20_60': 'last',
         'marital': 'last',
         'post_code': 'last',
         'distance_to_usz': 'last',
+        'distance_to_usz_sq': 'last',
+        'close_to_usz': 'last',
         'slot_outcome': 'last',
         'date': 'last'
     }
