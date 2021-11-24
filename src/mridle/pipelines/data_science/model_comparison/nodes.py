@@ -2,7 +2,6 @@ import pandas as pd
 import altair as alt
 from mridle.experiment.dataset import DataSet
 from mridle.experiment.experiment import Experiment
-from mridle.pipelines.data_science.harvey.nodes import process_features_for_model
 from sklearn.metrics import f1_score, confusion_matrix, brier_score_loss, roc_curve, precision_recall_curve, auc
 import numpy as np
 
@@ -19,9 +18,6 @@ def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic
 
     for (model_name, serialised_m) in serialised_models:
         model_validation_data = validation_data.copy()
-
-        if 'Harvey' in model_name:
-            model_validation_data = process_features_for_model(model_validation_data)
 
         val_dataset = DataSet(serialised_m['components']['DataSet']['config'], model_validation_data)
 
@@ -139,9 +135,6 @@ def plot_pr_roc_curve_comparison(harvey_model_log_reg, harvey_random_forest, log
 
     for (model_name, serialised_m) in serialised_models:
         model_validation_data = validation_data.copy()
-
-        if 'Harvey' in model_name:
-            model_validation_data = process_features_for_model(model_validation_data)
 
         val_dataset = DataSet(serialised_m['components']['DataSet']['config'], model_validation_data)
 
