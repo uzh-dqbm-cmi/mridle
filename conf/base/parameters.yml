@@ -427,9 +427,7 @@ models:
                   - flavor: sklearn.preprocessing.FunctionTransformer
                     name: 'tofloat'
                     args:
-                        function:
-                            name: 'tofloat_func'
-                            flavor: mridle.utilities.data_processing.tofloat32
+                        function: mridle.utilities.data_processing.tofloat32
                     config:
                         accept_sparse: True
                   - flavor: skorch.NeuralNet
