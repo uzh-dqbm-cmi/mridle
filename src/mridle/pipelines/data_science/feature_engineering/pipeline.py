@@ -19,7 +19,7 @@ def create_pipeline(**kwargs):
             ),
             node(
                 func=train_val_split,
-                inputs="master_feature_set_na_removed",
+                inputs=["master_feature_set_na_removed", "params:train_val_split"],
                 outputs=["train_data", "validation_data"],
                 name="train_val_split"
             )

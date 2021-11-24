@@ -5,6 +5,7 @@ import pgeocode
 import datetime as dt
 import re
 from sklearn.model_selection import train_test_split
+from typing import Dict
 
 
 def build_feature_set(status_df: pd.DataFrame) -> pd.DataFrame:
@@ -89,8 +90,8 @@ def remove_na(dataframe: pd.DataFrame) -> pd.DataFrame:
     return dataframe
 
 
-def train_val_split(df: pd.DataFrame):
-    test_data, validation_data = train_test_split(df, test_size=0.2, random_state=94)
+def train_val_split(df: pd.DataFrame, params: Dict):
+    test_data, validation_data = train_test_split(df, test_size=params['test_size'], random_state=94)
     return test_data, validation_data
 
 
@@ -176,7 +177,8 @@ def identify_sched_events(row: pd.DataFrame) -> dt.datetime:
 
 def feature_days_scheduled_in_advance(status_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Append the features 'sched_days_advanced' (int), 'sched_days_advanced_sq' (int) and 'sched_2_days' (bool) to the dataframe.
+    Append the features 'sched_days_advanced' (int), 'sched_days_advanced_sq' (int) and 'sched_2_days' (bool) to the
+    dataframe.
 
     Works by:
         1. Identify status changes that represent scheduling events
@@ -271,7 +273,9 @@ def feature_post_code(status_df: pd.DataFrame) -> pd.DataFrame:
 
 def feature_distance_to_usz(status_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Calculate distance between the patient's home post code and the post code of the hospital.
+    Calculate distance between the patient's home post code and the post code of the hospital. After calculating this,
+    add a feature which is the distance_squared (used in harvey models) and then a boolean indicating whether the
+    patient is 'close' to the hospital
 
     Args:
         status_df: A row-per-status-change dataframe.
@@ -300,7 +304,7 @@ def feature_no_show_before(slot_df: pd.DataFrame) -> pd.DataFrame:
     Args:
         slot_df: A row-per-appointment dataframe.
 
-    Returns: A row-per-appointment dataframe with additional column 'no_show_before'.
+    Returns: A row-per-appointment dataframe with additional columns 'no_show_before', 'no_show_before_sq'.
 
     """
     slot_df_ordered = slot_df.sort_values('date')

@@ -55,9 +55,11 @@ def register_pipelines() -> Dict[str, Pipeline]:
 
     return {
 
-        "__default__": ris_pipeline + feature_engineering_pipeline + harvey_pipeline,
+        "__default__": ris_pipeline + feature_engineering_pipeline + harvey_pipeline + logistic_regression_pipeline +
+        random_forest_pipeline + xgboost_pipeline + model_comparison_pipeline,
         "all": ris_pipeline + dicom_pipeline + dispo_pipeline + descriptive_viz_pipeline +
-        feature_engineering_pipeline + harvey_pipeline,
+        feature_engineering_pipeline + harvey_pipeline + logistic_regression_pipeline +
+        random_forest_pipeline + xgboost_pipeline + model_comparison_pipeline,
         "ris": ris_pipeline,
         "dicom": dicom_pipeline,
         "dispo": dispo_pipeline,
