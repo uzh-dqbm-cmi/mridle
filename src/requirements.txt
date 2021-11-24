@@ -30,8 +30,6 @@ appnope==0.1.2
     # via
     #   ipykernel
     #   ipython
-argcomplete==1.12.3
-    # via ipykernel
 argon2-cffi==21.1.0
     # via
     #   jupyter-server
@@ -126,16 +124,6 @@ idna==2.10
     # via
     #   anyio
     #   requests
-importlib-metadata==4.8.2
-    # via
-    #   argcomplete
-    #   flake8
-    #   fsspec
-    #   ipykernel
-    #   jsonschema
-    #   pluggy
-    #   pytest
-    #   sqlalchemy
 iniconfig==1.1.1
     # via pytest
 ipykernel==6.4.1
@@ -291,6 +279,7 @@ numpy==1.21.2
     #   scikit-learn
     #   scipy
     #   seaborn
+    #   skorch
     #   xgboost
 openpyxl==3.0.9
     # via -r /Users/laurakinkead/Documents/githubs/mridle/src/requirements.in
@@ -418,12 +407,15 @@ requests==2.25.1
     #   pgeocode
     #   requests-unixsocket
 scikit-learn==0.24.2
-    # via sklearn
+    # via
+    #   sklearn
+    #   skorch
 scipy==1.7.1
     # via
     #   hyperopt
     #   scikit-learn
     #   seaborn
+    #   skorch
     #   xgboost
 seaborn==0.11.2
     # via -r /Users/laurakinkead/Documents/githubs/mridle/src/requirements.in
@@ -446,6 +438,8 @@ six==1.16.0
     #   python-dateutil
 sklearn==0.0
     # via -r /Users/laurakinkead/Documents/githubs/mridle/src/requirements.in
+skorch==0.11.0
+    # via -r /Users/laurakinkead/Documents/githubs/mridle/src/requirements.in
 smmap==4.0.0
     # via gitdb
 sniffio==1.2.0
@@ -456,6 +450,8 @@ starlette==0.14.2
     # via fastapi
 sympy==1.8
     # via -r /Users/laurakinkead/Documents/githubs/mridle/src/requirements.in
+tabulate==0.8.9
+    # via skorch
 tenacity==8.0.1
     # via plotly
 terminado==0.12.1
@@ -478,6 +474,8 @@ toolz==0.11.1
     # via altair
 toposort==1.6
     # via kedro
+torch==1.10.0
+    # via -r /Users/laurakinkead/Documents/githubs/mridle/src/requirements.in
 tornado==6.1
     # via
     #   altair-data-server
@@ -488,7 +486,9 @@ tornado==6.1
     #   notebook
     #   terminado
 tqdm==4.62.2
-    # via hyperopt
+    # via
+    #   hyperopt
+    #   skorch
 traitlets==5.1.0
     # via
     #   ipykernel
@@ -503,17 +503,10 @@ traitlets==5.1.0
     #   nbformat
     #   notebook
     #   qtconsole
-typed-ast==1.4.3
-    # via black
 typing-extensions==3.10.0.2
     # via
-    #   anyio
-    #   arrow
-    #   black
-    #   gitpython
-    #   importlib-metadata
     #   pydantic
-    #   uvicorn
+    #   torch
 urllib3==1.26.6
     # via
     #   requests
@@ -541,8 +534,6 @@ xlrd==1.2.0
     #   kedro
 xlsxwriter==1.4.5
     # via kedro
-zipp==3.6.0
-    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
