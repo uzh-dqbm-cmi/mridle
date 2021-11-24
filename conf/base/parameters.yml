@@ -430,6 +430,7 @@ models:
                         function:
                             name: 'tofloat_func'
                             flavor: mridle.utilities.data_processing.tofloat32
+                            instantiate: False
                     config:
                         accept_sparse: True
                   - flavor: skorch.NeuralNet
