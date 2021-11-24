@@ -176,7 +176,8 @@ def identify_sched_events(row: pd.DataFrame) -> dt.datetime:
 
 def feature_days_scheduled_in_advance(status_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Append the sched_days_advanced feature to the dataframe.
+    Append the 'sched_days_advanced', 'sched_days_advanced_sq' and 'sched_2_days' features to the dataframe.
+
     Works by:
         1. Identify status changes that represent scheduling events
         2. Shift scheduling events forward 1, so that each row has the previous scheduling event.
@@ -189,7 +190,8 @@ def feature_days_scheduled_in_advance(status_df: pd.DataFrame) -> pd.DataFrame:
     Args:
         status_df: A row-per-status-change dataframe.
 
-    Returns: A row-per-status-change dataframe with additional column 'sched_days_advanced'.
+    Returns: A row-per-status-change dataframe with additional columns 'sched_days_advanced', 'sched_days_advanced_sq'
+    and 'sched_2_days'.
     """
     status_df['sched_days_advanced'] = status_df.apply(identify_sched_events, axis=1)
     status_df['sched_days_advanced'] = status_df.groupby('FillerOrderNo')['sched_days_advanced'].shift(1).fillna(
