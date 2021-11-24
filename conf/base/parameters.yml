@@ -33,17 +33,6 @@ models:
             flavor: Pipeline
             config:
                 steps:
-                  - flavor: sklearn.compose.ColumnTransformer
-                    name: 'preprocessing'
-                    config:
-                        steps:
-                            - name: 'onehot'
-                              flavor: sklearn.preprocessing.OneHotEncoder
-                              config:
-                                  handle_unknown: 'ignore'
-                              args:
-                                  columns:
-                                      - 'sex'
                   - flavor: LogisticRegression
                     name: 'classifier'
         Trainer:
@@ -52,9 +41,9 @@ models:
             flavor: RandomSearchTuner
             config:
                 hyperparameters:
-                    penalty: ['l1', 'l2', 'elasticnet', 'none']
-                    C: [0, 1, 10]
-                    solver: ['liblinear', 'lbfgs']
+                    classifier__penalty: ['l1', 'l2', 'elasticnet', 'none']
+                    classifier__C: [0, 1, 10]
+                    classifier__solver: ['liblinear', 'lbfgs']
                 search_type: random
                 num_cv_folds: 2  # 5
                 num_iters: 2  # 150
@@ -98,17 +87,6 @@ models:
             flavor: Pipeline
             config:
                 steps:
-                  - flavor: sklearn.compose.ColumnTransformer
-                    name: 'preprocessing'
-                    config:
-                        steps:
-                            - name: 'onehot'
-                              flavor: sklearn.preprocessing.OneHotEncoder
-                              config:
-                                  handle_unknown: 'ignore'
-                              args:
-                                  columns:
-                                      - 'sex'
                   - flavor: RandomForestClassifier
                     name: 'classifier'
         Trainer:
@@ -117,20 +95,20 @@ models:
             flavor: RandomSearchTuner
             config:
                 hyperparameters:
-                    n_estimators:
+                    classifier__n_estimators:
                         parse_np_linspace:
                             start: 200
                             stop: 2000
                             num: 10
-                    max_features: ['auto', 'sqrt']
-                    max_depth:
+                    classifier__max_features: ['auto', 'sqrt']
+                    classifier__max_depth:
                         parse_np_linspace:
                             start: 10
                             stop: 110
                             num: 11
-                    min_samples_split: [2, 4, 6, 8, 10]
-                    min_samples_leaf: [1, 2, 5, 10]
-                    bootstrap: [true, false]
+                    classifier__min_samples_split: [2, 4, 6, 8, 10]
+                    classifier__min_samples_leaf: [1, 2, 5, 10]
+                    classifier__bootstrap: [true, false]
                 search_type: random
                 num_cv_folds: 2  # 5
                 num_iters: 2  # 150

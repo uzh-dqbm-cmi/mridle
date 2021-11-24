@@ -51,6 +51,8 @@ def build_feature_set(status_df: pd.DataFrame) -> pd.DataFrame:
         'day_of_week_str': 'last',
         'month': 'last',
         'sex': 'last',
+        'male': 'last',
+        'female': 'last',
         'age': 'last',
         'age_sq': 'last',
         'age_20_60': 'last',
@@ -215,6 +217,8 @@ def feature_sex(status_df: pd.DataFrame) -> pd.DataFrame:
         'unbekannt': 'unknown',
     }
     status_df['sex'] = status_df['Sex'].apply(lambda x: gender_map.get(x, 'unknown'))
+    categories = pd.get_dummies(status_df['sex'])
+    status_df = pd.concat([status_df, categories], axis=1)
     return status_df
 
 
