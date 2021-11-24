@@ -8,7 +8,27 @@ import numpy as np
 
 def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic_regression_model, random_forest_model,
                             xgboost_model, validation_data):
+    """
+    Function to create a table of metrics for the models.
 
+    For each model, we create predictions on the validation data and order these from largest to smallest. We then take
+    the top 10 of these predictions, mark them as a no show prediction (the rest of the appointments marked as not to
+    no-show), and calculate a set of statistics based on this (e.g. F1 macro score). This is replicating the accuracy
+    metrics we can expect to have if we provide the 10 appointments most likely to no-show (according to the model) to
+    the nurses. We then repeat this step for the top 20, 30, 40, ..., 100. This creates a large table of 10 rows per
+    model (1 row per top X) containing accuracy metrics.
+
+    Args:
+        harvey_model_log_reg: serialised harvey logistic regression model
+        harvey_random_forest: serialised harvey random forest model
+        logistic_regression_model: serialised logistic regression model
+        random_forest_model: serialised random forest model
+        xgboost_model: serialised xgboost model
+        validation_data: validation data, split out from master_feature_set before experiments were ran
+
+    Returns:
+
+    """
     serialised_models = [('Harvey LogReg', harvey_model_log_reg), ('Harvey RandomForest', harvey_random_forest),
                          ('Logistic Regression', logistic_regression_model), ('RandomForest', random_forest_model),
                          ('XGBoost', xgboost_model)]
@@ -25,7 +45,7 @@ def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic
 
         preds_prob = experiment.final_predictor.predict_proba(val_dataset.x)
 
-        preds_prob_sorted = np.sort(preds_prob)[::-1]
+        preds_prob_sorted = reversed(np.sort(preds_prob))
 
         calc_list = []
 
