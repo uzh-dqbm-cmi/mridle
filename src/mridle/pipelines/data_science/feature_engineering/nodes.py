@@ -176,7 +176,7 @@ def identify_sched_events(row: pd.DataFrame) -> dt.datetime:
 
 def feature_days_scheduled_in_advance(status_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Append the 'sched_days_advanced', 'sched_days_advanced_sq' and 'sched_2_days' features to the dataframe.
+    Append the features 'sched_days_advanced' (int), 'sched_days_advanced_sq' (int) and 'sched_2_days' (bool) to the dataframe.
 
     Works by:
         1. Identify status changes that represent scheduling events
