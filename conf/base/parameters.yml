@@ -454,7 +454,7 @@ models:
                             flavor: torch.optim.Adam
                             instantiate: False
         Trainer:
-            flavor: Trainer
+            flavor: SkorchTrainer
         Tuner:
             flavor: BayesianTuner
             config:
