@@ -411,8 +411,8 @@ models:
                                 columns:
                                   - 'no_show_before'
                                   - 'sched_days_advanced'
-                                  -  'age'
-                                  -  'hour_sched'
+                                  - 'age'
+                                  - 'hour_sched'
                                   - 'distance_to_usz'
                           - name: 'onehot'
                             flavor: sklearn.preprocessing.OneHotEncoder
@@ -431,6 +431,16 @@ models:
                         function:
                             name: 'tofloat_func'
                             flavor: mridle.utilities.data_processing.tofloat32
+                        columns:
+                            - 'no_show_before'
+                            - 'sched_days_advanced'
+                            - 'age'
+                            - 'hour_sched'
+                            - 'distance_to_usz'
+                            - 'marital'
+                            - 'modality'
+                            - 'sex'
+                            - 'day_of_week_str'
                   - flavor: skorch.NeuralNet
                     name: 'classifier'
                     config:
