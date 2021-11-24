@@ -435,8 +435,8 @@ models:
                         module:
                             flavor: mridle.experiment.architectures.MLP.MLP
                             config:
-                                input_layer_size: 39
-                                hidden_layer_size: 50
+                                input_layer_size: 45
+                                hidden_layer_size: 30
                                 dropout_p: 0
                         criterion:
                             flavor: torch.nn.BCELoss
@@ -467,7 +467,7 @@ models:
                                 - 0.1
                 search_type: bayesian
                 num_cv_folds: 5
-                num_iters: 50  # 150
+                num_iters: 2  # 150
                 scoring_function: log_loss
                 verbose: 0
                 hyperopt_timeout: 10000000
