@@ -279,6 +279,7 @@ numpy==1.21.2
     #   scikit-learn
     #   scipy
     #   seaborn
+    #   skorch
     #   xgboost
 openpyxl==3.0.9
     # via -r /Users/markmm/Projects/MRIdle/mridle/src/requirements.in
@@ -406,12 +407,15 @@ requests==2.25.1
     #   pgeocode
     #   requests-unixsocket
 scikit-learn==0.24.2
-    # via sklearn
+    # via
+    #   sklearn
+    #   skorch
 scipy==1.7.1
     # via
     #   hyperopt
     #   scikit-learn
     #   seaborn
+    #   skorch
     #   xgboost
 seaborn==0.11.2
     # via -r /Users/markmm/Projects/MRIdle/mridle/src/requirements.in
@@ -433,7 +437,9 @@ six==1.16.0
     #   plotly
     #   python-dateutil
 sklearn==0.0
-    # via -r /Users/markmm/Projects/MRIdle/mridle/src/requirements.in
+    # via -r /Users/laurakinkead/Documents/githubs/mridle/src/requirements.in
+skorch==0.11.0
+    # via -r /Users/laurakinkead/Documents/githubs/mridle/src/requirements.in
 smmap==4.0.0
     # via gitdb
 sniffio==1.2.0
@@ -443,7 +449,9 @@ sqlalchemy==1.4.23
 starlette==0.14.2
     # via fastapi
 sympy==1.8
-    # via -r /Users/markmm/Projects/MRIdle/mridle/src/requirements.in
+    # via -r /Users/laurakinkead/Documents/githubs/mridle/src/requirements.in
+tabulate==0.8.9
+    # via skorch
 tenacity==8.0.1
     # via plotly
 terminado==0.12.1
@@ -466,6 +474,8 @@ toolz==0.11.1
     # via altair
 toposort==1.6
     # via kedro
+torch==1.10.0
+    # via -r /Users/laurakinkead/Documents/githubs/mridle/src/requirements.in
 tornado==6.1
     # via
     #   altair-data-server
@@ -476,7 +486,9 @@ tornado==6.1
     #   notebook
     #   terminado
 tqdm==4.62.2
-    # via hyperopt
+    # via
+    #   hyperopt
+    #   skorch
 traitlets==5.1.0
     # via
     #   ipykernel
@@ -492,7 +504,9 @@ traitlets==5.1.0
     #   notebook
     #   qtconsole
 typing-extensions==3.10.0.2
-    # via pydantic
+    # via
+    #   pydantic
+    #   torch
 urllib3==1.26.6
     # via
     #   requests

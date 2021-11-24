@@ -103,7 +103,7 @@ class ComponentInterface:
         return {}
 
     @classmethod
-    def select_flavor(cls, flavor: str) -> Type[ConfigurableComponent]:
+    def select_flavor(cls, flavor: str) -> Type[Any]:
         if flavor in cls.registered_flavors:
             return cls.registered_flavors[flavor]
         elif '.' in flavor:
