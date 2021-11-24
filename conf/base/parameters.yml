@@ -372,3 +372,110 @@ models:
             - flavor: AUPRC
             - flavor: AUROC
             - flavor: LogLoss
+
+    neural_net:
+        name: neural_net
+        verbose: false
+        DataSet:
+            flavor: DataSet
+            config:
+                features:
+                    - 'no_show_before'
+                    - 'sched_days_advanced'
+                    #- 'month'
+                    - 'age'
+                    - 'modality'
+                    - 'sex'
+                    - 'hour_sched'
+                    - 'distance_to_usz'
+                    - 'day_of_week_str'
+                    - 'marital'
+                target: NoShow
+        Stratifier:
+            flavor: PartitionedLabelStratifier
+            config:
+                n_partitions: 5
+        Architecture:
+            flavor: Pipeline
+            config:
+                steps:
+                  - flavor: sklearn.compose.ColumnTransformer
+                    name: 'preprocessing'
+                    config:
+                        steps:
+                          - name: 'scaler'
+                            flavor: sklearn.preprocessing.StandardScaler
+                            config:
+                                with_mean: True
+                            args:
+                                columns:
+                                  - 'no_show_before'
+                                  - 'sched_days_advanced'
+                                  -  'age'
+                                  -  'hour_sched'
+                                  - 'distance_to_usz'
+                          - name: 'onehot'
+                            flavor: sklearn.preprocessing.OneHotEncoder
+                            config:
+                                handle_unknown: 'ignore'
+                            args:
+                                columns:
+                                  - 'marital'
+                                  - 'modality'
+                                  - 'sex'
+                                  - 'day_of_week_str'
+                  - flavor: skorch.NeuralNet
+                    name: 'classifier'
+                    config:
+                      lr: 0.0001
+                      max_epochs: 100
+                      verbose: 0
+                      iterator_train__shuffle: True
+                    args:
+                        module:
+                            flavor: mridle.experiment.architectures.MLP.MLP
+                            config:
+                                input_layer_size: 39
+                                hidden_layer_size: 50
+                                dropout_p: 0
+                        criterion:
+                            flavor: torch.nn.BCELoss
+                            instantiate: False
+                        optimizer:
+                            flavor: torch.optim.Adam
+                            instantiate: False
+        Trainer:
+            flavor: Trainer
+        Tuner:
+            flavor: BayesianTuner
+            config:
+                hyperparameters:
+                    classifier__batch_size:
+                        parse_hp_choice:
+                            choice_list:
+                                - 16
+                                - 32
+                                - 62
+                                - 128
+                                - 256
+                    classifier__lr:
+                        parse_hp_choice:
+                            choice_list:
+                                - 0.0001
+                                - 0.001
+                                - 0.01
+                                - 0.1
+                search_type: bayesian
+                num_cv_folds: 5
+                num_iters: 50  # 150
+                scoring_function: log_loss
+                verbose: 0
+                hyperopt_timeout: 10000000
+        #            run_hyperparam_search: true
+        Metrics:
+            - flavor: F1_Macro
+              config:
+                  classification_cutoff: 0.5
+            - flavor: AUPRC
+            - flavor: AUROC
+            - flavor: LogLoss
