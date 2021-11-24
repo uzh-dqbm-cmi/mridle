@@ -3,7 +3,7 @@ import altair as alt
 from mridle.experiment.dataset import DataSet
 from mridle.experiment.experiment import Experiment
 from mridle.pipelines.data_science.harvey.nodes import process_features_for_model
-from sklearn.metrics import f1_score, confusion_matrix, brier_score_loss
+from sklearn.metrics import f1_score, confusion_matrix, brier_score_loss, roc_curve, precision_recall_curve, auc
 import numpy as np
 
 
@@ -124,3 +124,75 @@ def create_model_precision_comparison_plot(evaluation_table_df: pd.DataFrame) ->
     )
 
     return model_precision_comparison_plot + line_plot
+
+
+def plot_pr_roc_curve_comparison(harvey_model_log_reg, harvey_random_forest, logistic_regression_model,
+                                 random_forest_model, xgboost_model, validation_data):
+
+    serialised_models = [('Harvey LogReg', harvey_model_log_reg), ('Harvey RandomForest', harvey_random_forest),
+                         ('Logistic Regression', logistic_regression_model), ('RandomForest', random_forest_model),
+                         ('XGBoost', xgboost_model)]
+
+    alt.data_transformers.disable_max_rows()
+    all_pr_df = pd.DataFrame()
+    all_roc_df = pd.DataFrame()
+
+    for (model_name, serialised_m) in serialised_models:
+        model_validation_data = validation_data.copy()
+
+        if 'Harvey' in model_name:
+            model_validation_data = process_features_for_model(model_validation_data)
+
+        val_dataset = DataSet(serialised_m['components']['DataSet']['config'], model_validation_data)
+
+        experiment = Experiment.deserialize(serialised_m)
+
+        p, r, t = precision_recall_curve(val_dataset.y, experiment.final_predictor.predict_proba(val_dataset.x))
+        pr_df = pd.DataFrame()
+        pr_df['p'] = p
+        pr_df['r'] = r
+        pr_df['name'] = '{}: {}'.format(model_name, round(auc(r, p), 3))
+
+        all_pr_df = pd.concat([all_pr_df, pr_df], axis=0)
+
+        fpr, tpr, thresholds = roc_curve(val_dataset.y, experiment.final_predictor.predict_proba(val_dataset.x))
+        roc_df = pd.DataFrame()
+        roc_df['fpr'] = fpr
+        roc_df['tpr'] = tpr
+        roc_df['name'] = '{}: {}'.format(model_name, round(auc(fpr, tpr), 3))
+
+        all_roc_df = pd.concat([all_roc_df, roc_df], axis=0)
+
+    all_pr_df_mean = all_pr_df.groupby(['r', 'name']).mean().reset_index()
+
+    pr_curves = alt.Chart(all_pr_df_mean).mark_line(color='red').encode(
+        alt.X('r', title="Recall"),
+        alt.Y('p', title="Precision"),
+        color=alt.Color('name', legend=alt.Legend(
+            orient='top-right',
+            title='',
+            fillColor='white',
+            titleAnchor='middle'))
+    ).properties(title='Precision Recall Curves')
+
+    baseline_df = pd.DataFrame({'y': [np.sum(val_dataset.y) / len(val_dataset.y)]})
+    hline = alt.Chart(baseline_df).mark_rule(color='black', strokeWidth=2, strokeDash=[1, 1]).encode(y='y:Q')
+    pr_curves = pr_curves + hline
+
+    roc_curves = alt.Chart(all_roc_df).mark_line(color='red').encode(
+        alt.X('fpr', title="False Positive Rate"),
+        alt.Y('tpr', title="True Positive Rate"),
+        color=alt.Color('name', legend=alt.Legend(
+            orient='bottom-right',
+            title='',
+            fillColor='white',
+            titleAnchor='middle'))
+    ).properties(title='ROC Curves')
+
+    diag_line_df = pd.DataFrame({'var1': [0, 1], 'var2': [0, 1]})
+    diag_line = alt.Chart(diag_line_df).mark_line(color='black', strokeWidth=2, strokeDash=[1, 1]).encode(
+        x='var1',
+        y='var2')
+    roc_curves = roc_curves + diag_line
+
+    return pr_curves, roc_curves
