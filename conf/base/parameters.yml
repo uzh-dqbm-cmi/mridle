@@ -424,6 +424,10 @@ models:
                                   - 'modality'
                                   - 'sex'
                                   - 'day_of_week_str'
+                  - flavor: mridle.utilities.data_processing.tofloat32
+                    name: 'tofloat'
+                    config:
+                      accept_sparse: True
                   - flavor: skorch.NeuralNet
                     name: 'classifier'
                     config:
