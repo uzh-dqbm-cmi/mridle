@@ -428,7 +428,7 @@ models:
                     name: 'tofloat'
                     args:
                         accept_sparse: True
-                        func: mridle.utilities.data_processing.tofloat32
+                        function: mridle.utilities.data_processing.tofloat32
                   - flavor: skorch.NeuralNet
                     name: 'classifier'
                     config:
