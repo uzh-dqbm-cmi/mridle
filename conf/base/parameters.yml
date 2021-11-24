@@ -30,7 +30,22 @@ models:
             config:
                 n_partitions: 3  # 5
         Architecture:
-            flavor: LogisticRegression
+            flavor: Pipeline
+            config:
+                steps:
+                  - flavor: sklearn.compose.ColumnTransformer
+                    name: 'preprocessing'
+                    config:
+                        steps:
+                            - name: 'onehot'
+                              flavor: sklearn.preprocessing.OneHotEncoder
+                              config:
+                                  handle_unknown: 'ignore'
+                              args:
+                                  columns:
+                                      - 'sex'
+                  - flavor: LogisticRegression
+                    name: 'classifier'
         Trainer:
             flavor: Trainer
         Tuner:
@@ -80,7 +95,22 @@ models:
             config:
                 n_partitions: 2  # 5
         Architecture:
-            flavor: RandomForestClassifier
+            flavor: Pipeline
+            config:
+                steps:
+                  - flavor: sklearn.compose.ColumnTransformer
+                    name: 'preprocessing'
+                    config:
+                        steps:
+                            - name: 'onehot'
+                              flavor: sklearn.preprocessing.OneHotEncoder
+                              config:
+                                  handle_unknown: 'ignore'
+                              args:
+                                  columns:
+                                      - 'sex'
+                  - flavor: RandomForestClassifier
+                    name: 'classifier'
         Trainer:
             flavor: Trainer
         Tuner:

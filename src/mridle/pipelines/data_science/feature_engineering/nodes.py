@@ -186,6 +186,9 @@ def feature_days_scheduled_in_advance(status_df: pd.DataFrame) -> pd.DataFrame:
     status_df['sched_days_advanced'] = status_df.apply(identify_sched_events, axis=1)
     status_df['sched_days_advanced'] = status_df.groupby('FillerOrderNo')['sched_days_advanced'].shift(1).fillna(
         method='ffill')
+    status_df['sched_days_advanced_sq'] = status_df['sched_days_advanced'] ** 2
+    status_df['sched_2_days'] = status_df['sched_days_advanced'] <= 2
+
     return status_df
 
 
@@ -211,6 +214,9 @@ def feature_sex(status_df: pd.DataFrame) -> pd.DataFrame:
 
 def feature_age(status_df: pd.DataFrame) -> pd.DataFrame:
     status_df['age'] = pd.to_datetime(status_df['date']).dt.year - pd.to_datetime(status_df['DateOfBirth']).dt.year
+    status_df['age_sq'] = status_df['age'] ** 2
+    status_df['age_20_60'] = (status_df['age'] > 20) & (status_df['age'] < 60)
+
     return status_df
 
 
@@ -258,7 +264,8 @@ def feature_distance_to_usz(status_df: pd.DataFrame) -> pd.DataFrame:
     Args:
         status_df: A row-per-status-change dataframe.
 
-    Returns: A row-per-status-change dataframe with additional column 'distance_to_usz'.
+    Returns: A row-per-status-change dataframe with additional columns 'distance_to_usz', 'distance_to_usz_sq', and
+    'close_to_usz'.
     """
     dist = pgeocode.GeoDistance('ch')
     usz_post_code = '8091'
@@ -267,6 +274,9 @@ def feature_distance_to_usz(status_df: pd.DataFrame) -> pd.DataFrame:
     unique_zips = pd.DataFrame(status_df['post_code'].unique(), columns=['post_code'])
     unique_zips['distance_to_usz'] = unique_zips['post_code'].apply(lambda x: dist.query_postal_code(x, usz_post_code))
     status_df = pd.merge(status_df, unique_zips, on='post_code', how='left')
+    status_df['distance_to_usz_sq'] = status_df['distance_to_usz'] ** 2
+    status_df['close_to_usz'] = status_df['distance_to_usz'] < 16
+
     return status_df
 
 
@@ -286,6 +296,9 @@ def feature_no_show_before(slot_df: pd.DataFrame) -> pd.DataFrame:
     # cumsum will include the current no show, so subtract 1, except don't go negative
     slot_df_ordered['no_show_before'] = np.where(slot_df_ordered['NoShow'], slot_df_ordered['no_show_before'] - 1,
                                                  slot_df_ordered['no_show_before'])
+
+    slot_df_ordered['no_show_before_sq'] = slot_df_ordered['no_show_before'] ** 2
+
     return slot_df_ordered
 
 
