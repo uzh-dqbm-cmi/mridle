@@ -427,20 +427,11 @@ models:
                   - flavor: sklearn.preprocessing.FunctionTransformer
                     name: 'tofloat'
                     args:
-                        accept_sparse: True
                         function:
                             name: 'tofloat_func'
                             flavor: mridle.utilities.data_processing.tofloat32
-                        columns:
-                            - 'no_show_before'
-                            - 'sched_days_advanced'
-                            - 'age'
-                            - 'hour_sched'
-                            - 'distance_to_usz'
-                            - 'marital'
-                            - 'modality'
-                            - 'sex'
-                            - 'day_of_week_str'
+                    config:
+                        accept_sparse: True
                   - flavor: skorch.NeuralNet
                     name: 'classifier'
                     config:
