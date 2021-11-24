@@ -424,7 +424,7 @@ models:
                                   - 'modality'
                                   - 'sex'
                                   - 'day_of_week_str'
-                  - flavor: sklearn.compose.FunctionTransformer
+                  - flavor: sklearn.preprocessing.FunctionTransformer
                     name: 'tofloat'
                     args:
                         accept_sparse: True
