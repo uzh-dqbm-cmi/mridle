@@ -38,6 +38,8 @@ models:
                 steps:
                   - flavor: LogisticRegression
                     name: 'classifier'
+                    config:
+                        solver: 'saga'
         Trainer:
             flavor: Trainer
         Tuner:
@@ -57,11 +59,6 @@ models:
                                 - 0
                                 - 1
                                 - 10
-                    classifier__solver:
-                        parse_hp_choice:
-                            choice_list:
-                                - 'liblinear'
-                                - 'lbfgs'
                 search_type: bayesian
                 num_cv_folds: 5
                 num_iters: 50  # 150
