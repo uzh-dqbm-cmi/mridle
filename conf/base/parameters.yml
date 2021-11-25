@@ -41,17 +41,33 @@ models:
         Trainer:
             flavor: Trainer
         Tuner:
-            flavor: RandomSearchTuner
+            flavor: BayesianTuner
             config:
                 hyperparameters:
-                    classifier__penalty: ['l1', 'l2', 'elasticnet', 'none']
-                    classifier__C: [0, 1, 10]
-                    classifier__solver: ['liblinear', 'lbfgs']
-                search_type: random
-                num_cv_folds: 2  # 5
-                num_iters: 2  # 150
-                scoring_function: f1_macro
-#                run_hyperparam_search: true
+                    classifier__penalty:
+                        parse_hp_choice:
+                            choice_list:
+                                - 'l1'
+                                - 'l2'
+                                - 'elasticnet'
+                                - 'none'
+                    classifier__C:
+                        parse_hp_choice:
+                            choice_list:
+                                - 0
+                                - 1
+                                - 10
+                    classifier__solver:
+                        parse_hp_choice:
+                            choice_list:
+                                - 'liblinear'
+                                - 'lbfgs'
+                search_type: bayesian
+                num_cv_folds: 5
+                num_iters: 50  # 150
+                scoring_function: log_loss
+                verbose: 0
+                hyperopt_timeout: 10000000
         Metrics:
             - flavor: F1_Macro
               config:
@@ -95,28 +111,41 @@ models:
         Trainer:
             flavor: Trainer
         Tuner:
-            flavor: RandomSearchTuner
+            flavor: BayesianTuner
             config:
                 hyperparameters:
                     classifier__n_estimators:
-                        parse_np_linspace:
+                        parse_hp_uniformint:
                             start: 200
-                            stop: 2000
-                            num: 10
-                    classifier__max_features: ['auto', 'sqrt']
+                            end: 2000
+                    classifier__max_features:
+                        parse_hp_choice:
+                            choice_list:
+                                - 'auto'
+                                - 'sqrt'
                     classifier__max_depth:
-                        parse_np_linspace:
+                        parse_hp_uniformint:
                             start: 10
-                            stop: 110
-                            num: 11
-                    classifier__min_samples_split: [2, 4, 6, 8, 10]
-                    classifier__min_samples_leaf: [1, 2, 5, 10]
-                    classifier__bootstrap: [true, false]
-                search_type: random
-                num_cv_folds: 2  # 5
-                num_iters: 2  # 150
-                scoring_function: f1_macro
-#            run_hyperparam_search: true
+                            end: 110
+                    classifier__min_samples_split:
+                        parse_hp_uniformint:
+                            start: 2
+                            end: 10
+                    classifier__min_samples_leaf:
+                        parse_hp_uniformint:
+                            start: 1
+                            end: 10
+                    classifier__bootstrap:
+                        parse_hp_choice:
+                            choice_list:
+                                - true
+                                - false
+                search_type: bayesian
+                num_cv_folds: 5
+                num_iters: 50  # 150
+                scoring_function: log_loss
+                verbose: 0
+                hyperopt_timeout: 10000000
         Metrics:
             - flavor: F1_Macro
               config:
@@ -290,7 +319,6 @@ models:
                 scoring_function: log_loss
                 verbose: 0
                 hyperopt_timeout: 10000000
-        #            run_hyperparam_search: true
         Metrics:
             - flavor: F1_Macro
               config:
@@ -375,7 +403,6 @@ models:
                 scoring_function: log_loss
                 verbose: 0
                 hyperopt_timeout: 10000000
-        #            run_hyperparam_search: true
         Metrics:
             - flavor: F1_Macro
               config:
