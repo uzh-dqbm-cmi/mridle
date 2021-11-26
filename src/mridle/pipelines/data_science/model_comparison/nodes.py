@@ -45,9 +45,8 @@ def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic
 
         preds_prob = experiment.final_predictor.predict_proba(val_dataset.x)
 
-        preds_prob_sorted = preds_prob.copy()
-        preds_prob_sorted.sort()
-        preds_prob_sorted.reverse()
+        preds_prob_sorted = np.sort(preds_prob)[::-1]
+
         calc_list = []
 
         for i in range(1, 11):
