@@ -487,7 +487,6 @@ models:
                         optimizer:
                             flavor: torch.optim.Adam
                             instantiate: False
-                        verbose: 1
         Trainer:
             flavor: SkorchTrainer
         Tuner:
