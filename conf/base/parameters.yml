@@ -478,7 +478,7 @@ models:
                         module:
                             flavor: mridle.experiment.architectures.MLP.MLP
                             config:
-                                input_layer_size: 44
+                                input_layer_size: 45
                                 hidden_layer_size: 30
                                 dropout_p: 0
                         criterion:
@@ -487,6 +487,7 @@ models:
                         optimizer:
                             flavor: torch.optim.Adam
                             instantiate: False
+                        verbose: 1
         Trainer:
             flavor: SkorchTrainer
         Tuner:
@@ -510,7 +511,7 @@ models:
                                 - 0.1
                 search_type: bayesian
                 num_cv_folds: 5
-                num_iters: 2  # 150
+                num_iters: 5  # 150
                 scoring_function: log_loss
                 verbose: 0
                 hyperopt_timeout: 10000000
