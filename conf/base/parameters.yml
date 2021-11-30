@@ -2,6 +2,9 @@ ris:
     dataset_valid_starting: '01/01/2015'
     dataset_valid_ending: '01/01/2020'
 
+train_val_split:
+    test_size: 0.2
+
 models:
     harvey_logistic_reg:
         name: harvey_logistic_reg
@@ -30,16 +33,20 @@ models:
             config:
                 n_partitions: 3  # 5
         Architecture:
-            flavor: LogisticRegression
+            flavor: Pipeline
+            config:
+                steps:
+                  - flavor: LogisticRegression
+                    name: 'classifier'
         Trainer:
             flavor: Trainer
         Tuner:
             flavor: RandomSearchTuner
             config:
                 hyperparameters:
-                    penalty: ['l1', 'l2', 'elasticnet', 'none']
-                    C: [0, 1, 10]
-                    solver: ['liblinear', 'lbfgs']
+                    classifier__penalty: ['l1', 'l2', 'elasticnet', 'none']
+                    classifier__C: [0, 1, 10]
+                    classifier__solver: ['liblinear', 'lbfgs']
                 search_type: random
                 num_cv_folds: 2  # 5
                 num_iters: 2  # 150
@@ -80,27 +87,31 @@ models:
             config:
                 n_partitions: 2  # 5
         Architecture:
-            flavor: RandomForestClassifier
+            flavor: Pipeline
+            config:
+                steps:
+                  - flavor: RandomForestClassifier
+                    name: 'classifier'
         Trainer:
             flavor: Trainer
         Tuner:
             flavor: RandomSearchTuner
             config:
                 hyperparameters:
-                    n_estimators:
+                    classifier__n_estimators:
                         parse_np_linspace:
                             start: 200
                             stop: 2000
                             num: 10
-                    max_features: ['auto', 'sqrt']
-                    max_depth:
+                    classifier__max_features: ['auto', 'sqrt']
+                    classifier__max_depth:
                         parse_np_linspace:
                             start: 10
                             stop: 110
                             num: 11
-                    min_samples_split: [2, 4, 6, 8, 10]
-                    min_samples_leaf: [1, 2, 5, 10]
-                    bootstrap: [true, false]
+                    classifier__min_samples_split: [2, 4, 6, 8, 10]
+                    classifier__min_samples_leaf: [1, 2, 5, 10]
+                    classifier__bootstrap: [true, false]
                 search_type: random
                 num_cv_folds: 2  # 5
                 num_iters: 2  # 150
