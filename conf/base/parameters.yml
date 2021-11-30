@@ -419,7 +419,7 @@ models:
                     - 'sched_days_advanced'
                     #- 'month'
                     - 'age'
-                    - 'modality'
+                    # - 'modality'
                     - 'sex'
                     - 'hour_sched'
                     - 'distance_to_usz'
@@ -456,7 +456,7 @@ models:
                             args:
                                 columns:
                                   - 'marital'
-                                  - 'modality'
+                                  # - 'modality'
                                   - 'sex'
                                   - 'day_of_week_str'
                   - flavor: sklearn.preprocessing.FunctionTransformer
