@@ -4,6 +4,8 @@ from mridle.pipelines.data_engineering.ris.nodes import build_slot_df
 import pgeocode
 import datetime as dt
 import re
+from sklearn.model_selection import train_test_split
+from typing import Dict
 
 
 def build_feature_set(status_df: pd.DataFrame) -> pd.DataFrame:
@@ -42,16 +44,24 @@ def build_feature_set(status_df: pd.DataFrame) -> pd.DataFrame:
         'NoShow': 'min',
         'hour_sched': 'first',
         'sched_days_advanced': 'first',
+        'sched_days_advanced_sq': 'first',
+        'sched_2_days': 'first',
         'modality': 'last',
         'insurance_class': 'last',
         'day_of_week': 'last',
         'day_of_week_str': 'last',
         'month': 'last',
         'sex': 'last',
+        'male': 'last',
+        'female': 'last',
         'age': 'last',
+        'age_sq': 'last',
+        'age_20_60': 'last',
         'marital': 'last',
         'post_code': 'last',
         'distance_to_usz': 'last',
+        'distance_to_usz_sq': 'last',
+        'close_to_usz': 'last',
         'slot_outcome': 'last',
         'date': 'last'
     }
@@ -63,6 +73,26 @@ def build_feature_set(status_df: pd.DataFrame) -> pd.DataFrame:
     slot_df = feature_cyclical_month(slot_df)
 
     return slot_df
+
+
+def remove_na(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """
+    Changes variables for model optimization modifying feature_df
+
+    Args:
+        dataframe: dataframe obtained from feature generation
+
+    Returns: modified dataframe specific for this model
+    """
+
+    dataframe = dataframe.dropna(axis=0).reset_index(drop=True)
+
+    return dataframe
+
+
+def train_val_split(df: pd.DataFrame, params: Dict):
+    test_data, validation_data = train_test_split(df, test_size=params['test_size'], random_state=94)
+    return test_data, validation_data
 
 
 # Feature engineering functions
@@ -147,7 +177,9 @@ def identify_sched_events(row: pd.DataFrame) -> dt.datetime:
 
 def feature_days_scheduled_in_advance(status_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Append the sched_days_advanced feature to the dataframe.
+    Append the features 'sched_days_advanced' (int), 'sched_days_advanced_sq' (int) and 'sched_2_days' (bool) to the
+    dataframe.
+
     Works by:
         1. Identify status changes that represent scheduling events
         2. Shift scheduling events forward 1, so that each row has the previous scheduling event.
@@ -160,11 +192,15 @@ def feature_days_scheduled_in_advance(status_df: pd.DataFrame) -> pd.DataFrame:
     Args:
         status_df: A row-per-status-change dataframe.
 
-    Returns: A row-per-status-change dataframe with additional column 'sched_days_advanced'.
+    Returns: A row-per-status-change dataframe with additional columns 'sched_days_advanced', 'sched_days_advanced_sq'
+    and 'sched_2_days'.
     """
     status_df['sched_days_advanced'] = status_df.apply(identify_sched_events, axis=1)
     status_df['sched_days_advanced'] = status_df.groupby('FillerOrderNo')['sched_days_advanced'].shift(1).fillna(
         method='ffill')
+    status_df['sched_days_advanced_sq'] = status_df['sched_days_advanced'] ** 2
+    status_df['sched_2_days'] = status_df['sched_days_advanced'] <= 2
+
     return status_df
 
 
@@ -185,11 +221,16 @@ def feature_sex(status_df: pd.DataFrame) -> pd.DataFrame:
         'unbekannt': 'unknown',
     }
     status_df['sex'] = status_df['Sex'].apply(lambda x: gender_map.get(x, 'unknown'))
+    categories = pd.get_dummies(status_df['sex'])
+    status_df = pd.concat([status_df, categories], axis=1)
     return status_df
 
 
 def feature_age(status_df: pd.DataFrame) -> pd.DataFrame:
     status_df['age'] = pd.to_datetime(status_df['date']).dt.year - pd.to_datetime(status_df['DateOfBirth']).dt.year
+    status_df['age_sq'] = status_df['age'] ** 2
+    status_df['age_20_60'] = (status_df['age'] > 20) & (status_df['age'] < 60)
+
     return status_df
 
 
@@ -232,12 +273,15 @@ def feature_post_code(status_df: pd.DataFrame) -> pd.DataFrame:
 
 def feature_distance_to_usz(status_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Calculate distance between the patient's home post code and the post code of the hospital.
+    Calculate distance between the patient's home post code and the post code of the hospital. After calculating this,
+    add a feature which is the distance_squared (used in harvey models) and then a boolean indicating whether the
+    patient is 'close' to the hospital
 
     Args:
         status_df: A row-per-status-change dataframe.
 
-    Returns: A row-per-status-change dataframe with additional column 'distance_to_usz'.
+    Returns: A row-per-status-change dataframe with additional columns 'distance_to_usz', 'distance_to_usz_sq', and
+    'close_to_usz'.
     """
     dist = pgeocode.GeoDistance('ch')
     usz_post_code = '8091'
@@ -246,6 +290,9 @@ def feature_distance_to_usz(status_df: pd.DataFrame) -> pd.DataFrame:
     unique_zips = pd.DataFrame(status_df['post_code'].unique(), columns=['post_code'])
     unique_zips['distance_to_usz'] = unique_zips['post_code'].apply(lambda x: dist.query_postal_code(x, usz_post_code))
     status_df = pd.merge(status_df, unique_zips, on='post_code', how='left')
+    status_df['distance_to_usz_sq'] = status_df['distance_to_usz'] ** 2
+    status_df['close_to_usz'] = status_df['distance_to_usz'] < 16
+
     return status_df
 
 
@@ -257,7 +304,7 @@ def feature_no_show_before(slot_df: pd.DataFrame) -> pd.DataFrame:
     Args:
         slot_df: A row-per-appointment dataframe.
 
-    Returns: A row-per-appointment dataframe with additional column 'no_show_before'.
+    Returns: A row-per-appointment dataframe with additional columns 'no_show_before', 'no_show_before_sq'.
 
     """
     slot_df_ordered = slot_df.sort_values('date')
@@ -265,6 +312,9 @@ def feature_no_show_before(slot_df: pd.DataFrame) -> pd.DataFrame:
     # cumsum will include the current no show, so subtract 1, except don't go negative
     slot_df_ordered['no_show_before'] = np.where(slot_df_ordered['NoShow'], slot_df_ordered['no_show_before'] - 1,
                                                  slot_df_ordered['no_show_before'])
+
+    slot_df_ordered['no_show_before_sq'] = slot_df_ordered['no_show_before'] ** 2
+
     return slot_df_ordered
 
 

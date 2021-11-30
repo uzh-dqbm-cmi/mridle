@@ -1,6 +1,6 @@
 random_forest_model_input:
   type: pandas.ParquetDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/05_model_input/random_forest/random_forest_model_input.parquet
+  filepath: /data/mridle/data/kedro_data_catalog/05_model_input/train_data.parquet
   layer: model input
 
 random_forest_model:
