@@ -472,7 +472,7 @@ models:
                     name: 'classifier'
                     config:
                       max_epochs: 100
-                      verbose: 0
+                      verbose: 1
                       iterator_train__shuffle: True
                     args:
                         module:
