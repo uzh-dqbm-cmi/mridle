@@ -478,7 +478,7 @@ models:
                         module:
                             flavor: mridle.experiment.architectures.MLP.MLP
                             config:
-                                input_layer_size: 45
+                                input_layer_size: 44
                                 hidden_layer_size: 30
                                 dropout_p: 0
                         criterion:
@@ -498,7 +498,7 @@ models:
                             choice_list:
                                 - 16
                                 - 32
-                                - 62
+                                - 64
                                 - 128
                                 - 256
                     classifier__lr:
