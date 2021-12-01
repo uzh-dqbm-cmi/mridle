@@ -456,7 +456,7 @@ models:
                             args:
                                 columns:
                                   - 'marital'
-                                   - 'modality'
+                                  - 'modality'
                                   - 'sex'
                                   - 'day_of_week_str'
                   - flavor: sklearn.preprocessing.FunctionTransformer
