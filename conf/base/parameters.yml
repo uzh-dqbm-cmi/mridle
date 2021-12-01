@@ -420,11 +420,11 @@ models:
                     #- 'month'
                     - 'age'
                     # - 'modality'
-                    - 'sex'
+#                    - 'sex'
                     - 'hour_sched'
                     - 'distance_to_usz'
-                    - 'day_of_week_str'
-                    - 'marital'
+#                    - 'day_of_week_str'
+#                    - 'marital'
                 target: NoShow
         Stratifier:
             flavor: PartitionedLabelStratifier
@@ -449,16 +449,16 @@ models:
                                   - 'age'
                                   - 'hour_sched'
                                   - 'distance_to_usz'
-                          - name: 'onehot'
-                            flavor: sklearn.preprocessing.OneHotEncoder
-                            config:
-                                handle_unknown: 'ignore'
-                            args:
-                                columns:
-                                  - 'marital'
-                                  # - 'modality'
-                                  - 'sex'
-                                  - 'day_of_week_str'
+#                          - name: 'onehot'
+#                            flavor: sklearn.preprocessing.OneHotEncoder
+#                            config:
+#                                handle_unknown: 'ignore'
+#                            args:
+#                                columns:
+#                                  #- 'marital'
+#                                  # - 'modality'
+#                                  #- 'sex'
+#                                  #- 'day_of_week_str'
                   - flavor: sklearn.preprocessing.FunctionTransformer
                     name: 'tofloat'
                     args:
@@ -478,7 +478,7 @@ models:
                         module:
                             flavor: mridle.experiment.architectures.MLP.MLP
                             config:
-                                input_layer_size: 22
+                                input_layer_size: 5s
                                 hidden_layer_size: 30
                                 dropout_p: 0
                         criterion:
