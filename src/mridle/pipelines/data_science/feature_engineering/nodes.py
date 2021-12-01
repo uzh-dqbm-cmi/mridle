@@ -71,6 +71,7 @@ def build_feature_set(status_df: pd.DataFrame) -> pd.DataFrame:
     slot_df = feature_cyclical_hour(slot_df)
     slot_df = feature_cyclical_day_of_week(slot_df)
     slot_df = feature_cyclical_month(slot_df)
+    slot_df = slot_df[slot_df['day_of_week_str'].isin(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])]
 
     return slot_df
 
@@ -250,6 +251,7 @@ def feature_marital(status_df: pd.DataFrame) -> pd.DataFrame:
         'LED': 'single',
         'GES': 'divorced',
         'UNB': 'not known',
+        'XXX': 'not known',
         'VRW': 'widowed',
         'GTR': 'unable to translate',
         'PAR': 'partnership',
@@ -259,7 +261,6 @@ def feature_marital(status_df: pd.DataFrame) -> pd.DataFrame:
         # 'LA': 'forcible partnership',
         # 'LE': 'civil partnership dissolved by declaration of death',
         np.NaN: 'blank',
-        'XXX': 'undefined',
     }
 
     status_df['marital'] = status_df['Zivilstand'].map(zivilstand_abbreviation_mapping)
