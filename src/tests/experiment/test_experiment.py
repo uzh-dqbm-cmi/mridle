@@ -267,3 +267,13 @@ class TestExperiment(unittest.TestCase):
         y_pred = exp.final_predictor.predict(x_test)
         y_pred_des = exp_deserialized.final_predictor.predict(x_test_des)
         np.testing.assert_almost_equal(y_pred_des, y_pred)
+
+        # Partition Training Metadata
+        self.assertTrue(isinstance(exp.partition_training_metadata, list))
+        # TrainTestStratifier has 1 partition
+        self.assertEqual(len(exp.partition_training_metadata), 1)
+        for part_train_metadata in exp.partition_training_metadata:
+            self.assertTrue(isinstance(part_train_metadata, dict))
+
+        # Final Training Metadata
+        self.assertTrue(isinstance(exp.final_training_metadata, dict))

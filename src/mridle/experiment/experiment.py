@@ -134,6 +134,8 @@ class ExperimentInterface:
         exp.partition_predictors = config['results']['partition_predictors']
         exp.evaluation = pd.DataFrame(config['results']['evaluation'])
         exp.final_predictor = config['results']['final_predictor']
+        exp.partition_training_metadata = config['results']['partition_training_metadata']
+        exp.final_training_metadata = config['results']['final_training_metadata']
         return exp
 
     @classmethod
@@ -154,9 +156,8 @@ class ExperimentInterface:
                 'partition_predictors': experiment.partition_predictors,
                 'evaluation': experiment.evaluation.to_dict(),
                 'final_predictor': experiment.final_predictor,
-                # TODO
-                # self.partition_training_metadata = []
-                # self.final_training_metadata = {}
+                'partition_training_metadata': experiment.partition_training_metadata,
+                'final_training_metadata': experiment.final_training_metadata,
             }
         }
         # optional components
