@@ -134,8 +134,8 @@ class ExperimentInterface:
         exp.partition_predictors = config['results']['partition_predictors']
         exp.evaluation = pd.DataFrame(config['results']['evaluation'])
         exp.final_predictor = config['results']['final_predictor']
-        exp.partition_training_metadata = config['results']['partition_training_metadata']
-        exp.final_training_metadata = config['results']['final_training_metadata']
+        exp.partition_training_metadata = config['results'].get('partition_training_metadata', list())  # backwards com.
+        exp.final_training_metadata = config['results'].get('final_training_metadata', dict())  # backwards compatibili.
         return exp
 
     @classmethod
