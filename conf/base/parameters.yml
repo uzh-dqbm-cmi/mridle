@@ -478,7 +478,7 @@ models:
                         module:
                             flavor: mridle.experiment.architectures.MLP.MLP
                             config:
-                                input_layer_size: 44
+                                input_layer_size: 42
                                 hidden_layer_size: 30
                                 dropout_p: 0
                         criterion:
