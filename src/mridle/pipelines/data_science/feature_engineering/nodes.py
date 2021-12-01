@@ -3,6 +3,9 @@ import numpy as np
 from mridle.pipelines.data_engineering.ris.nodes import build_slot_df
 import pgeocode
 import datetime as dt
+import re
+from sklearn.model_selection import train_test_split
+from typing import Dict
 
 
 def build_feature_set(status_df: pd.DataFrame, valid_start_date: str, valid_end_date: str) -> pd.DataFrame:
@@ -45,24 +48,55 @@ def build_feature_set(status_df: pd.DataFrame, valid_start_date: str, valid_end_
         'NoShow': 'min',
         'hour_sched': 'first',
         'sched_days_advanced': 'first',
+        'sched_days_advanced_sq': 'first',
+        'sched_2_days': 'first',
         'modality': 'last',
         'insurance_class': 'last',
         'day_of_week': 'last',
         'day_of_week_str': 'last',
         'month': 'last',
         'sex': 'last',
+        'male': 'last',
+        'female': 'last',
         'age': 'last',
+        'age_sq': 'last',
+        'age_20_60': 'last',
         'marital': 'last',
         'post_code': 'last',
         'distance_to_usz': 'last',
+        'distance_to_usz_sq': 'last',
+        'close_to_usz': 'last',
         'slot_outcome': 'last',
         'date': 'last'
     }
 
     slot_df = build_slot_df(status_df, valid_start_date, valid_end_date, agg_dict, include_id_cols=True)
     slot_df = feature_no_show_before(slot_df)
+    slot_df = feature_cyclical_hour(slot_df)
+    slot_df = feature_cyclical_day_of_week(slot_df)
+    slot_df = feature_cyclical_month(slot_df)
 
     return slot_df
+
+
+def remove_na(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """
+    Changes variables for model optimization modifying feature_df
+
+    Args:
+        dataframe: dataframe obtained from feature generation
+
+    Returns: modified dataframe specific for this model
+    """
+
+    dataframe = dataframe.dropna(axis=0).reset_index(drop=True)
+
+    return dataframe
+
+
+def train_val_split(df: pd.DataFrame, params: Dict):
+    test_data, validation_data = train_test_split(df, test_size=params['test_size'], random_state=94)
+    return test_data, validation_data
 
 
 # Feature engineering functions
@@ -86,7 +120,7 @@ def identify_end_times(row: pd.DataFrame) -> dt.datetime:
 
 def feature_month(status_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Append the day_of_week feature to the dataframe.
+    Append the month feature to the dataframe.
 
     Args:
         status_df: A row-per-status-change dataframe.
@@ -147,7 +181,9 @@ def identify_sched_events(row: pd.DataFrame) -> dt.datetime:
 
 def feature_days_scheduled_in_advance(status_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Append the sched_days_advanced feature to the dataframe.
+    Append the features 'sched_days_advanced' (int), 'sched_days_advanced_sq' (int) and 'sched_2_days' (bool) to the
+    dataframe.
+
     Works by:
         1. Identify status changes that represent scheduling events
         2. Shift scheduling events forward 1, so that each row has the previous scheduling event.
@@ -160,25 +196,15 @@ def feature_days_scheduled_in_advance(status_df: pd.DataFrame) -> pd.DataFrame:
     Args:
         status_df: A row-per-status-change dataframe.
 
-    Returns: A row-per-status-change dataframe with additional column 'sched_days_advanced'.
+    Returns: A row-per-status-change dataframe with additional columns 'sched_days_advanced', 'sched_days_advanced_sq'
+    and 'sched_2_days'.
     """
     status_df['sched_days_advanced'] = status_df.apply(identify_sched_events, axis=1)
     status_df['sched_days_advanced'] = status_df.groupby('FillerOrderNo')['sched_days_advanced'].shift(1).fillna(
         method='ffill')
-    return status_df
+    status_df['sched_days_advanced_sq'] = status_df['sched_days_advanced'] ** 2
+    status_df['sched_2_days'] = status_df['sched_days_advanced'] <= 2
 
-
-def feature_modality(status_df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Append the modality feature to the dataframe.
-
-    Args:
-        status_df: A row-per-status-change dataframe.
-
-    Returns: A row-per-status-change dataframe with additional column 'marital'.
-
-    """
-    status_df['modality'] = status_df['UniversalServiceName']
     return status_df
 
 
@@ -199,11 +225,16 @@ def feature_sex(status_df: pd.DataFrame) -> pd.DataFrame:
         'unbekannt': 'unknown',
     }
     status_df['sex'] = status_df['Sex'].apply(lambda x: gender_map.get(x, 'unknown'))
+    categories = pd.get_dummies(status_df['sex'])
+    status_df = pd.concat([status_df, categories], axis=1)
     return status_df
 
 
 def feature_age(status_df: pd.DataFrame) -> pd.DataFrame:
     status_df['age'] = pd.to_datetime(status_df['date']).dt.year - pd.to_datetime(status_df['DateOfBirth']).dt.year
+    status_df['age_sq'] = status_df['age'] ** 2
+    status_df['age_20_60'] = (status_df['age'] > 20) & (status_df['age'] < 60)
+
     return status_df
 
 
@@ -246,12 +277,15 @@ def feature_post_code(status_df: pd.DataFrame) -> pd.DataFrame:
 
 def feature_distance_to_usz(status_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Calculate distance between the patient's home post code and the post code of the hospital.
+    Calculate distance between the patient's home post code and the post code of the hospital. After calculating this,
+    add a feature which is the distance_squared (used in harvey models) and then a boolean indicating whether the
+    patient is 'close' to the hospital
 
     Args:
         status_df: A row-per-status-change dataframe.
 
-    Returns: A row-per-status-change dataframe with additional column 'distance_to_usz'.
+    Returns: A row-per-status-change dataframe with additional columns 'distance_to_usz', 'distance_to_usz_sq', and
+    'close_to_usz'.
     """
     dist = pgeocode.GeoDistance('ch')
     usz_post_code = '8091'
@@ -260,6 +294,9 @@ def feature_distance_to_usz(status_df: pd.DataFrame) -> pd.DataFrame:
     unique_zips = pd.DataFrame(status_df['post_code'].unique(), columns=['post_code'])
     unique_zips['distance_to_usz'] = unique_zips['post_code'].apply(lambda x: dist.query_postal_code(x, usz_post_code))
     status_df = pd.merge(status_df, unique_zips, on='post_code', how='left')
+    status_df['distance_to_usz_sq'] = status_df['distance_to_usz'] ** 2
+    status_df['close_to_usz'] = status_df['distance_to_usz'] < 16
+
     return status_df
 
 
@@ -271,7 +308,7 @@ def feature_no_show_before(slot_df: pd.DataFrame) -> pd.DataFrame:
     Args:
         slot_df: A row-per-appointment dataframe.
 
-    Returns: A row-per-appointment dataframe with additional column 'no_show_before'.
+    Returns: A row-per-appointment dataframe with additional columns 'no_show_before', 'no_show_before_sq'.
 
     """
     slot_df_ordered = slot_df.sort_values('date')
@@ -279,7 +316,137 @@ def feature_no_show_before(slot_df: pd.DataFrame) -> pd.DataFrame:
     # cumsum will include the current no show, so subtract 1, except don't go negative
     slot_df_ordered['no_show_before'] = np.where(slot_df_ordered['NoShow'], slot_df_ordered['no_show_before'] - 1,
                                                  slot_df_ordered['no_show_before'])
+
+    slot_df_ordered['no_show_before_sq'] = slot_df_ordered['no_show_before'] ** 2
+
     return slot_df_ordered
+
+
+def feature_modality(slot_df: pd.DataFrame, group_categories_less_than: int = None) -> pd.DataFrame:
+    """
+    Renames UniversalServiceName to modality, and maps this column to more general groups, defined by us.
+
+    Args:
+        slot_df: A row-per-appointment dataframe.
+        group_categories_less_than: If provided, we remap all the remapped categories with fewer than the user-chosen
+            number of occurrences/rows to 'other'
+
+    Returns:
+        dataframe with modality column added, and mapping applied to this column.
+    """
+    def regex_search(x, search_str):
+        return bool(re.search(search_str, x, re.IGNORECASE))
+
+    df_remap = slot_df.copy()
+    df_remap['modality'] = df_remap['UniversalServiceName']
+    df_remap['modality'] = df_remap['modality'].astype(str)
+
+    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="becken"), 'modality'] = 'back'
+    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="leber"), 'modality'] = 'liver'
+    df_remap.loc[df_remap['modality'].apply(regex_search, search_str='niere'), 'modality'] = 'kidney'
+    df_remap.loc[df_remap['modality'].apply(
+        regex_search, search_str='hand|finger|ellbogen|vorderarm|oberarm|obere extremität'), 'modality'] = 'arm'
+    df_remap.loc[df_remap['modality'].apply(regex_search,
+                                            search_str="abdomen|thorax|hüfte|MR TOS"), 'modality'] = 'midsection'
+    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="schenkel"), 'modality'] = 'leg'
+    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="ganzkörper|ganzkvrper"), 'modality'] = 'full_body'
+    df_remap.loc[df_remap['modality'].apply(regex_search,
+                                            search_str="schädel|schadel|gehirn|felsenbein"), 'modality'] = 'head'
+    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="herz"), 'modality'] = 'heart'
+    df_remap.loc[df_remap['modality'].apply(regex_search,
+                                            search_str="Pankreas|Dünndarm|Milz|MRCP"), 'modality'] = 'organ'
+    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="Intervention"), 'modality'] = 'intervention'
+    df_remap.loc[df_remap['modality'].apply(
+        regex_search, search_str="Neurographie|Magnetresonanztomographie"), 'modality'] = 'general'
+    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="Angio"), 'modality'] = 'angiography'
+    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="Arthrographie"), 'modality'] = 'joint'
+    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="venograp|Phlebographie"), 'modality'] = 'veins'
+    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="Mamma"), 'modality'] = 'mammography'
+    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="Prostata"), 'modality'] = 'prostate'
+    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="Hals"), 'modality'] = 'throat'
+    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="Defäkographie"), 'modality'] = 'defecography'
+    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="LWS|BWS|HWS"), 'modality'] = 'spine'
+    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="schulter"), 'modality'] = 'shoulder'
+    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="knie"), 'modality'] = 'knee'
+    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="fuss"), 'modality'] = 'foot'
+
+    if group_categories_less_than:
+        df_remap['modality_freq'] = df_remap[['modality', 'MRNCmpdId']].groupby('modality').transform(len)
+        df_remap.loc[df_remap['modality_freq'] < group_categories_less_than, 'modality'] = 'other'
+        df_remap = df_remap.drop('modality_freq', axis=1)
+
+    return df_remap
+
+
+def feature_time_of_day(slot_df):
+    """
+    Categorises the 'hour_sched' column into buckets.
+
+    Args:
+        slot_df: A row-per-appointment dataframe.
+
+    Returns: A row-per-appointment dataframe with additional column 'time_of_day'.
+
+    """
+
+    df_copy = slot_df.copy()
+    df_copy['time_of_day'] = pd.cut(df_copy['hour_sched'], bins=[-1, 9, 12, 14, 17, 100],
+                                    labels=['early_morning', 'late_morning', 'lunchtime', 'afternoon', 'evening'])
+    return df_copy
+
+
+def feature_cyclical_hour(slot_df):
+    """
+    Creates cyclical features out of the hour_sched column.
+
+    Args:
+        slot_df: A row-per-appointment dataframe.
+
+    Returns: A row-per-appointment dataframe with 2 additional columns: 'hour_sin' and 'hour_cos'.
+
+    """
+
+    df_copy = slot_df.copy()
+
+    df_copy['hour_sin'] = np.sin(df_copy['hour_sched'] * (2. * np.pi / 24))
+    df_copy['hour_cos'] = np.cos(df_copy['hour_sched'] * (2. * np.pi / 24))
+    return df_copy
+
+
+def feature_cyclical_day_of_week(slot_df):
+    """
+    Creates cyclical features out of the day_of_week column.
+
+    Args:
+        slot_df: A row-per-appointment dataframe.
+
+    Returns: A row-per-appointment dataframe with 2 additional columns: 'day_of_week_sin' and 'day_of_weekcos'.
+
+    """
+
+    df_copy = slot_df.copy()
+
+    df_copy['day_of_week_sin'] = np.sin(df_copy['day_of_week'] * (2. * np.pi / 5))
+    df_copy['day_of_week_cos'] = np.cos(df_copy['day_of_week'] * (2. * np.pi / 5))
+    return df_copy
+
+
+def feature_cyclical_month(slot_df):
+    """
+    Creates cyclical features out of the month column.
+
+    Args:
+        slot_df: A row-per-appointment dataframe.
+
+    Returns: A row-per-appointment dataframe with 2 additional columns: 'month_sin' and 'month_cos'.
+
+    """
+
+    df_copy = slot_df.copy()
+
+    df_copy['month_sin'] = np.sin((df_copy['month'] - 1) * (2. * np.pi / 12))
+    df_copy['month_cos'] = np.cos((df_copy['month'] - 1) * (2. * np.pi / 12))
+    return df_copy
 
 
 # feature engineering for the duration model

@@ -83,3 +83,7 @@ def filter_duplicate_patient_time_slots(slot_df: pd.DataFrame) -> pd.DataFrame:
     first_slot_only = slot_df[slot_df['multi_slot'] == 0].copy()
     first_slot_only.drop(columns=['multi_slot'], axis=1, inplace=True)
     return first_slot_only
+
+
+def tofloat32(x):
+    return x.astype(np.float32)

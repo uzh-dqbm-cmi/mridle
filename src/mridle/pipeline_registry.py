@@ -31,7 +31,8 @@ from typing import Dict
 
 from kedro.pipeline import Pipeline
 from mridle.pipelines.data_engineering import ris, dicom, dispo
-from mridle.pipelines.data_science import harvey, feature_engineering, descriptive_viz
+from mridle.pipelines.data_science import harvey, feature_engineering, descriptive_viz, random_forest, xgboost, \
+    logistic_regression, model_comparison
 
 
 def register_pipelines() -> Dict[str, Pipeline]:
@@ -47,16 +48,27 @@ def register_pipelines() -> Dict[str, Pipeline]:
     descriptive_viz_pipeline = descriptive_viz.create_pipeline()
     feature_engineering_pipeline = feature_engineering.create_pipeline()
     harvey_pipeline = harvey.create_pipeline()
+    logistic_regression_pipeline = logistic_regression.create_pipeline()
+    random_forest_pipeline = random_forest.create_pipeline()
+    xgboost_pipeline = xgboost.create_pipeline()
+    model_comparison_pipeline = model_comparison.create_pipeline()
 
     return {
 
-        "__default__": ris_pipeline + feature_engineering_pipeline + harvey_pipeline,
+        "__default__": ris_pipeline + feature_engineering_pipeline + harvey_pipeline + logistic_regression_pipeline +
+        random_forest_pipeline + xgboost_pipeline + model_comparison_pipeline,
         "all": ris_pipeline + dicom_pipeline + dispo_pipeline + descriptive_viz_pipeline +
-        feature_engineering_pipeline + harvey_pipeline,
+        feature_engineering_pipeline + harvey_pipeline + logistic_regression_pipeline +
+        random_forest_pipeline + xgboost_pipeline + model_comparison_pipeline,
         "ris": ris_pipeline,
         "dicom": dicom_pipeline,
         "dispo": dispo_pipeline,
         "descriptive_viz": descriptive_viz_pipeline,
         "feature_engineering": feature_engineering_pipeline,
         "harvey": harvey_pipeline,
+        "logistic_regression": logistic_regression_pipeline,
+        "random_forest": random_forest_pipeline,
+        "xgboost": xgboost_pipeline,
+        "model_comparison": model_comparison_pipeline,
+
     }

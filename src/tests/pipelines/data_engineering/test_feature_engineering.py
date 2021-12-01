@@ -32,19 +32,22 @@ class TestFeatureEngineering(unittest.TestCase):
                 'MRNCmpdId': 1,
                 'date': str(day(2)),
                 'NoShow': 1,
-                'no_show_before': 0
+                'no_show_before': 0,
+                'no_show_before_sq': 0
             },
             {
                 'MRNCmpdId': 1,
                 'date': str(day(3)),
                 'NoShow': 1,
-                'no_show_before': 1
+                'no_show_before': 1,
+                'no_show_before_sq': 1
             },
             {
                 'MRNCmpdId': 1,
                 'date': str(day(4)),
                 'NoShow': 0,
-                'no_show_before': 2
+                'no_show_before': 2,
+                'no_show_before_sq': 4
             }
         ])
         result = feature_no_show_before(slot_df)
@@ -70,13 +73,15 @@ class TestFeatureEngineering(unittest.TestCase):
                 'MRNCmpdId': 2,
                 'date': str(day(2)),
                 'NoShow': 0,
-                'no_show_before': 0
+                'no_show_before': 0,
+                'no_show_before_sq': 0
             },
             {
                 'MRNCmpdId': 2,
                 'date': str(day(3)),
                 'NoShow': 0,
-                'no_show_before': 0
+                'no_show_before': 0,
+                'no_show_before_sq': 0
             }
         ])
         result = feature_no_show_before(slot_df)
@@ -117,31 +122,38 @@ class TestFeatureEngineering(unittest.TestCase):
                 'MRNCmpdId': 1,
                 'date': str(day(2)),
                 'NoShow': 1,
-                'no_show_before': 0
+                'no_show_before': 0,
+                'no_show_before_sq': 0
             },
             {
                 'MRNCmpdId': 1,
                 'date': str(day(3)),
                 'NoShow': 1,
-                'no_show_before': 1
+                'no_show_before': 1,
+                'no_show_before_sq': 1
             },
             {
                 'MRNCmpdId': 1,
                 'date': str(day(4)),
                 'NoShow': 0,
-                'no_show_before': 2
+                'no_show_before': 2,
+                'no_show_before_sq': 4
             },
             {
                 'MRNCmpdId': 2,
                 'date': str(day(2)),
                 'NoShow': 0,
-                'no_show_before': 0
+                'no_show_before': 0,
+                'no_show_before_sq': 0
+
             },
             {
                 'MRNCmpdId': 2,
                 'date': str(day(3)),
                 'NoShow': 0,
-                'no_show_before': 0
+                'no_show_before': 0,
+                'no_show_before_sq': 0
+
             }
         ])
         result = feature_no_show_before(slot_df)
@@ -167,13 +179,17 @@ class TestFeatureEngineering(unittest.TestCase):
                 'MRNCmpdId': 2,
                 'date': str(day(2)),
                 'NoShow': 1,
-                'no_show_before': 0
+                'no_show_before': 0,
+                'no_show_before_sq': 0
+
             },
             {
                 'MRNCmpdId': 2,
                 'date': str(day(3)),
                 'NoShow': 0,
-                'no_show_before': 1
+                'no_show_before': 1,
+                'no_show_before_sq': 1
+
             }
         ])
         result = feature_no_show_before(slot_df)

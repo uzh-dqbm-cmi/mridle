@@ -1,0 +1,20 @@
+logistic_regression_model_input:
+  type: pandas.ParquetDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/05_model_input/train_data.parquet
+  layer: model input
+
+logistic_regression_model:
+  type: pickle.PickleDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/06_models/logistic_regression/logistic_regression_model.pkl
+  layer: models
+
+logistic_regression_model_results:
+  type: pandas.CSVDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/07_model_output/logistic_regression/logistic_regression_model_results.csv
+  layer: model output
+
+logistic_regression_model_metrics_plot:
+  type: mridle.extras.datasets.altair_dataset.AltairDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/logistic_regression/logistic_regression_model_metrics_plot.html
+  layer: reporting
+

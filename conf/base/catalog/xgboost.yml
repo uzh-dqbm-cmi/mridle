@@ -1,0 +1,20 @@
+xgboost_model_input:
+  type: pandas.ParquetDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/05_model_input/train_data.parquet
+  layer: model input
+
+xgboost_model:
+  type: pickle.PickleDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/06_models/xgboost/xgboost_model.pkl
+  layer: models
+
+xgboost_model_results:
+  type: pandas.CSVDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/07_model_output/xgboost/xgboost_model_results.csv
+  layer: model output
+
+xgboost_model_metrics_plot:
+  type: mridle.extras.datasets.altair_dataset.AltairDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/xgboost/xgboost_model_metrics_plot.html
+  layer: reporting
+

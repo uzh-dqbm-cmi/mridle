@@ -1,6 +1,6 @@
 from kedro.pipeline import Pipeline, node
-from .nodes import process_features_for_model, train_harvey_model_logistic_reg,\
-    train_harvey_model_random_forest, plot_harvey_metrics
+from mridle.utilities.modeling import run_experiment
+from .nodes import plot_harvey_metrics
 
 
 def create_pipeline(**kwargs):
@@ -8,20 +8,14 @@ def create_pipeline(**kwargs):
         [
 
             node(
-                func=process_features_for_model,
-                inputs=["master_feature_set"],
-                outputs="harvey_model_input",
-                name="process_features_for_harvey_model"
-            ),
-            node(
-                func=train_harvey_model_logistic_reg,
-                inputs=["harvey_model_input", "params:harvey.harvey_logistic_reg"],
+                func=run_experiment,
+                inputs=["train_data", "params:models.harvey_logistic_reg"],
                 outputs=["harvey_model_logistic_reg", "harvey_model_results_logistic_reg"],
                 name="train_harvey_model_logistic_reg"
             ),
             node(
-                func=train_harvey_model_random_forest,
-                inputs=["harvey_model_input", "params:harvey.harvey_random_forest"],
+                func=run_experiment,
+                inputs=["train_data", "params:models.harvey_random_forest"],
                 outputs=["harvey_model_random_forest", "harvey_model_results_random_forest"],
                 name="train_harvey_model_random_forest"
             ),
