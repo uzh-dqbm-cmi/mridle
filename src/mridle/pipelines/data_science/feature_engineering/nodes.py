@@ -5,10 +5,10 @@ import pgeocode
 import datetime as dt
 import re
 from sklearn.model_selection import train_test_split
-from typing import Dict
+from typing import Dict, List
 
 
-def build_feature_set(status_df: pd.DataFrame, valid_start_date: str, valid_end_date: str) -> pd.DataFrame:
+def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str]) -> pd.DataFrame:
     """
     Builds a feature set that replicates the Harvey et al model as best we can.
     So far includes:
@@ -20,11 +20,8 @@ def build_feature_set(status_df: pd.DataFrame, valid_start_date: str, valid_end_
         - no_show_before: The number of no shows the patient has had up to the date of the appt
     Args:
         status_df: status_df
-        valid_start_date: The starting date of the valid slot data period (status_df contains status change data outside
-         the valid slot date range).
-        valid_end_date: The ending date of the valid slot data period (status_df contains status change data outside
-         the valid slot date range).
-
+        valid_date_range: List of 2 strings defining the starting date of the valid slot data period (status_df contains
+         status change data outside the valid slot date range- these should not be made into slots).
     Returns:
 
     """
@@ -70,7 +67,7 @@ def build_feature_set(status_df: pd.DataFrame, valid_start_date: str, valid_end_
         'date': 'last'
     }
 
-    slot_df = build_slot_df(status_df, valid_start_date, valid_end_date, agg_dict, include_id_cols=True)
+    slot_df = build_slot_df(status_df, valid_date_range, agg_dict, include_id_cols=True)
     slot_df = feature_no_show_before(slot_df)
     slot_df = feature_cyclical_hour(slot_df)
     slot_df = feature_cyclical_day_of_week(slot_df)

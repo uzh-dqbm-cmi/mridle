@@ -7,7 +7,7 @@ def create_pipeline(**kwargs):
         [
             node(
                 func=build_feature_set,
-                inputs=["status_df", "params:ris.dataset_valid_starting", "params:ris.dataset_valid_ending"],
+                inputs=["status_df", "params:ris.valid_date_range"],
                 outputs="master_feature_set",
                 name="build_feature_set",
             ),

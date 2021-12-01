@@ -26,7 +26,7 @@ def create_pipeline(**kwargs):
             ),
             node(
                 func=build_slot_df,
-                inputs=["status_df", "params:ris.dataset_valid_starting", "params:ris.dataset_valid_ending"],
+                inputs=["status_df", "params:ris.valid_date_range"],
                 outputs="slot_df",
                 name="build_slot_df"
             ),

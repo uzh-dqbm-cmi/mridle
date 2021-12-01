@@ -1,18 +1,21 @@
 ris:
-    # valid range is dataset_valid_starting ≤ x ≤ dataset_valid_ending
-    dataset_valid_starting: '2015-01-01'
-    dataset_valid_ending: '2019-12-31'
+    valid_date_range:
+        # valid range is starting ≤ x ≤ ending
+        - '2015-01-01'
+        - '2019-12-31'
 
 dispo:
     experiment_2:
-        # valid range is dataset_valid_starting ≤ x ≤ dataset_valid_ending
-        dataset_valid_starting: '2020-09-28'
-        dataset_valid_ending: '2020-10-02'
+        valid_date_range:
+            # valid range is starting ≤ x ≤ ending
+            - '2020-09-28'
+            - '2020-10-02'
 
     experiment_3:
-        # valid range is dataset_valid_starting ≤ x ≤ dataset_valid_ending
-        dataset_valid_starting: '2021-04-12'
-        dataset_valid_ending: '2021-04-16'
+        valid_date_range:
+            # valid range is starting ≤ x ≤ ending
+            - '2021-04-12'
+            - '2021-04-16'
 
 train_val_split:
     test_size: 0.2
