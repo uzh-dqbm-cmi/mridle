@@ -455,10 +455,10 @@ models:
                                 handle_unknown: 'ignore'
                             args:
                                 columns:
-                                  #- 'marital'
-                                  # - 'modality'
-                                  #- 'sex'
-                                  #- 'day_of_week_str'
+                                  - 'marital'
+                                   - 'modality'
+                                  - 'sex'
+                                  - 'day_of_week_str'
                   - flavor: sklearn.preprocessing.FunctionTransformer
                     name: 'tofloat'
                     args:
