@@ -3,6 +3,7 @@ import pandas as pd
 from typing import Dict, Tuple
 from mridle.experiment.experiment import Experiment
 from hyperopt import hp
+from sklearn.base import BaseEstimator, TransformerMixin
 
 
 def parse_hyperparams(hyperparams: Dict) -> Dict:
@@ -62,3 +63,22 @@ def run_experiment(features_df: pd.DataFrame, params: Dict) -> Tuple[Dict, pd.Da
     serialized_exp = exp.serialize()
     evaluation = exp.evaluation
     return serialized_exp, evaluation
+
+
+class CyclicalTransformer(BaseEstimator, TransformerMixin):
+
+    def __init__(self, period):
+        self.period = period
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        df_copy = pd.DataFrame()
+        df_copy['month_sin'] = np.sin(X * (2. * np.pi / self.period))
+        df_copy['month_cos'] = np.cos(X * (2. * np.pi / self.period))
+
+        return df_copy
+
+    def get_feature_names(self, _):
+        return ['month_sin', 'month_cos']

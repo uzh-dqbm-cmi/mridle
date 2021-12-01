@@ -241,7 +241,7 @@ models:
                 features:
                     - 'no_show_before'
                     - 'sched_days_advanced'
-                    #- 'month'
+                    - 'month'
                     - 'age'
                     - 'modality'
                     - 'sex'
@@ -283,6 +283,13 @@ models:
                                       - 'modality'
                                       - 'sex'
                                       - 'day_of_week_str'
+                            - name: 'cyc'
+                              flavor: mridle.utilities.modeling.CyclicalTransformer
+                              config:
+                                  period: 12
+                              args:
+                                  columns:
+                                      - 'month'
                   - flavor: RandomForestClassifier
                     name: 'classifier'
                     config:
