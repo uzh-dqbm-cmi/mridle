@@ -33,19 +33,22 @@ class Experiment:
         self.partition_evaluations = []
         self.evaluation = pd.DataFrame()
         self.final_predictor = None
+        self.partition_training_metadata = []
+        self.final_training_metadata = {}
 
     def go(self):
         self.run_date = datetime.datetime.now()
         for i, (x_train, y_train, x_test, y_test) in enumerate(self.stratifier):
             print('Running partition {}...'.format(i+1))
-            predictor = self.trainer.fit(x_train, y_train)
+            predictor, training_metadata = self.trainer.fit(x_train, y_train)
             self.partition_predictors.append(predictor)
+            self.partition_training_metadata.append(training_metadata)
             partition_evaluation = self.evaluate(predictor, self.metrics, x_test, y_test)
             self.partition_evaluations.append(partition_evaluation)
         self.evaluation = self.summarize_evaluations(self.partition_evaluations)
 
         print('Fitting final model...')
-        self.final_predictor = self.trainer.fit(self.dataset.x, self.dataset.y)
+        self.final_predictor, self.final_training_metadata = self.trainer.fit(self.dataset.x, self.dataset.y)
         return self.evaluation
 
     @staticmethod
@@ -151,6 +154,9 @@ class ExperimentInterface:
                 'partition_predictors': experiment.partition_predictors,
                 'evaluation': experiment.evaluation.to_dict(),
                 'final_predictor': experiment.final_predictor,
+                # TODO
+                # self.partition_training_metadata = []
+                # self.final_training_metadata = {}
             }
         }
         # optional components
