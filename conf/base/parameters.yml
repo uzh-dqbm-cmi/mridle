@@ -419,12 +419,12 @@ models:
                     - 'sched_days_advanced'
                     #- 'month'
                     - 'age'
-                    # - 'modality'
-#                    - 'sex'
+                    - 'modality'
+                    - 'sex'
                     - 'hour_sched'
                     - 'distance_to_usz'
-#                    - 'day_of_week_str'
-#                    - 'marital'
+                    - 'day_of_week_str'
+                    - 'marital'
                 target: NoShow
         Stratifier:
             flavor: PartitionedLabelStratifier
@@ -449,16 +449,16 @@ models:
                                   - 'age'
                                   - 'hour_sched'
                                   - 'distance_to_usz'
-#                          - name: 'onehot'
-#                            flavor: sklearn.preprocessing.OneHotEncoder
-#                            config:
-#                                handle_unknown: 'ignore'
-#                            args:
-#                                columns:
-#                                  #- 'marital'
-#                                  # - 'modality'
-#                                  #- 'sex'
-#                                  #- 'day_of_week_str'
+                          - name: 'onehot'
+                            flavor: sklearn.preprocessing.OneHotEncoder
+                            config:
+                                handle_unknown: 'ignore'
+                            args:
+                                columns:
+                                  #- 'marital'
+                                  # - 'modality'
+                                  #- 'sex'
+                                  #- 'day_of_week_str'
                   - flavor: sklearn.preprocessing.FunctionTransformer
                     name: 'tofloat'
                     args:
@@ -478,7 +478,7 @@ models:
                         module:
                             flavor: mridle.experiment.architectures.MLP.MLP
                             config:
-                                input_layer_size: 5
+                                input_layer_size: 44
                                 hidden_layer_size: 30
                                 dropout_p: 0
                         criterion:
