@@ -216,7 +216,7 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
 
     slot_df = pd.concat([show_slot_df, no_show_slot_df], sort=False)
 
-    slot_df = slot_df[slot_df['was_sched_for_date'].dt.strftime('%A').isin(['Monday', 'Tuesday', 'Wednesday',
+    slot_df = slot_df[slot_df['now_sched_for_date'].dt.strftime('%A').isin(['Monday', 'Tuesday', 'Wednesday',
                                                                             'Thursday', 'Friday'])]
 
     if len(slot_df) > 0:
