@@ -20,12 +20,14 @@ class Trainer(ConfigurableComponent):
         self.tuner = tuner
 
     def fit(self, x, y) -> Predictor:
+        training_metadata = {}
         architecture = self.get_architecture()
         if self.tuner:
-            trained_model = self.tuner.fit(architecture, x, y)
+            trained_model, training_metadata = self.tuner.fit(architecture, x, y)
         else:
             trained_model = architecture.fit(x, y)
-        return Predictor(trained_model)
+        predictor = Predictor(trained_model)
+        return predictor, training_metadata
 
     def get_architecture(self) -> Architecture:
         """

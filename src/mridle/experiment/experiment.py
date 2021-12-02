@@ -33,19 +33,22 @@ class Experiment:
         self.partition_evaluations = []
         self.evaluation = pd.DataFrame()
         self.final_predictor = None
+        self.partition_training_metadata = []
+        self.final_training_metadata = {}
 
     def go(self):
         self.run_date = datetime.datetime.now()
         for i, (x_train, y_train, x_test, y_test) in enumerate(self.stratifier):
             print('Running partition {}...'.format(i+1))
-            predictor = self.trainer.fit(x_train, y_train)
+            predictor, training_metadata = self.trainer.fit(x_train, y_train)
             self.partition_predictors.append(predictor)
+            self.partition_training_metadata.append(training_metadata)
             partition_evaluation = self.evaluate(predictor, self.metrics, x_test, y_test)
             self.partition_evaluations.append(partition_evaluation)
         self.evaluation = self.summarize_evaluations(self.partition_evaluations)
 
         print('Fitting final model...')
-        self.final_predictor = self.trainer.fit(self.dataset.x, self.dataset.y)
+        self.final_predictor, self.final_training_metadata = self.trainer.fit(self.dataset.x, self.dataset.y)
         return self.evaluation
 
     @staticmethod
@@ -131,6 +134,8 @@ class ExperimentInterface:
         exp.partition_predictors = config['results']['partition_predictors']
         exp.evaluation = pd.DataFrame(config['results']['evaluation'])
         exp.final_predictor = config['results']['final_predictor']
+        exp.partition_training_metadata = config['results'].get('partition_training_metadata', list())  # backwards com.
+        exp.final_training_metadata = config['results'].get('final_training_metadata', dict())  # backwards compatibili.
         return exp
 
     @classmethod
@@ -151,6 +156,8 @@ class ExperimentInterface:
                 'partition_predictors': experiment.partition_predictors,
                 'evaluation': experiment.evaluation.to_dict(),
                 'final_predictor': experiment.final_predictor,
+                'partition_training_metadata': experiment.partition_training_metadata,
+                'final_training_metadata': experiment.final_training_metadata,
             }
         }
         # optional components
