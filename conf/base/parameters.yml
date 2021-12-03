@@ -518,7 +518,7 @@ models:
                 search_type: bayesian
                 num_cv_folds: 5
                 num_iters: 5  # 150
-                scoring_function: f1_macro
+                scoring_function: log_loss
                 verbose: 1
                 hyperopt_timeout: 10000000
         #            run_hyperparam_search: true
