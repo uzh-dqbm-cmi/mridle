@@ -15,6 +15,6 @@ class Predictor:
         if y_pred_proba.shape[1] == 2:
             y_pred_proba = y_pred_proba[:, 1]
 
-        y_pred_proba = np.where(y_pred_proba == 0, 1e-5, y_pred_proba)
+        y_pred_proba = np.clip(y_pred_proba, 1e-5, 1-1e-5)
 
         return y_pred_proba
