@@ -99,6 +99,7 @@ class BayesianTuner(Tuner):
             model_copy = model_copy.fit(x_train_cv, y_train_cv)
 
             y_proba_preds = model_copy.predict_proba(x_test_cv)
+            print(np.mean(y_proba_preds))
 
             if scoring_fn == 'f1_macro':
                 loss = -F1_Macro().calculate(y_test_cv, y_proba_preds)

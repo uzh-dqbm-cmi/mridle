@@ -16,5 +16,5 @@ class Predictor:
             y_pred_proba = y_pred_proba[:, 1]
 
         y_pred_proba = np.where(y_pred_proba == 0, 1e-5, y_pred_proba)
-        print(np.mean(y_pred_proba))
+
         return y_pred_proba
