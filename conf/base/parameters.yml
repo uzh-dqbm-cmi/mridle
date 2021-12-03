@@ -340,9 +340,10 @@ models:
                 features:
                     - 'no_show_before'
                     - 'sched_days_advanced'
-                    #- 'month'
+                    - 'month'
                     - 'age'
                     - 'modality'
+                    - 'occupation'
                     - 'sex'
                     - 'hour_sched'
                     - 'distance_to_usz'
@@ -369,9 +370,10 @@ models:
                                 columns:
                                   - 'no_show_before'
                                   - 'sched_days_advanced'
-                                  -  'age'
-                                  -  'hour_sched'
+                                  - 'age'
+                                  - 'hour_sched'
                                   - 'distance_to_usz'
+                                  - 'month'
                           - name: 'onehot'
                             flavor: sklearn.preprocessing.OneHotEncoder
                             config:
@@ -379,6 +381,7 @@ models:
                             args:
                                 columns:
                                   - 'marital'
+                                  - 'occupation'
                                   - 'modality'
                                   - 'sex'
                                   - 'day_of_week_str'
@@ -387,6 +390,7 @@ models:
                     config:
                       eval_metric: 'logloss'
                       use_label_encoder: False
+                      scale_pos_weight: 6
         Trainer:
             flavor: Trainer
         Tuner:
@@ -401,6 +405,22 @@ models:
                         parse_hp_uniformint:
                             start: 2
                             end: 20
+                    classifier__learning_rate:
+                        parse_hp_loguniform:
+                            start: -5.5
+                            end: -1.5
+                    classifier__gamma:
+                        parse_hp_uniform:
+                            start: 0
+                            end: 0.1
+                    classifier__subsample:
+                        parse_hp_uniform:
+                            start: 0.5
+                            end: 1
+                    classifier__reg_lambda:
+                        parse_hp_loguniform:
+                            start: -3
+                            end: 2
                 search_type: bayesian
                 num_cv_folds: 5
                 num_iters: 50  # 150
