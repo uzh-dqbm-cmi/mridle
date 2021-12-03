@@ -478,7 +478,7 @@ models:
                   - flavor: skorch.NeuralNet
                     name: 'classifier'
                     config:
-                      max_epochs: 100
+                      max_epochs: 3
                       verbose: 1
                       iterator_train__shuffle: True
                     args:
