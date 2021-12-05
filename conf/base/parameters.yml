@@ -390,7 +390,7 @@ models:
                     config:
                       eval_metric: 'logloss'
                       use_label_encoder: False
-                      scale_pos_weight: 6
+                      # scale_pos_weight: 6
         Trainer:
             flavor: Trainer
         Tuner:
