@@ -52,7 +52,7 @@ def create_pipeline(**kwargs):
                 name="plot_no_show_heat_map",
             ),
             node(
-                func=partial(plot_no_show_heat_map, log=True),
+                func=partial(plot_no_show_heat_map, log_scale=True),
                 inputs="master_feature_set",
                 outputs="no_show_heat_map_log",
                 name="plot_no_show_heat_map_log",
