@@ -54,11 +54,9 @@ models:
                                 - 'elasticnet'
                                 - 'none'
                     classifier__C:
-                        parse_hp_choice:
-                            choice_list:
-                                - 0
-                                - 1
-                                - 10
+                        parse_hp_uniform:
+                            start: 0
+                            end: 10
                 search_type: bayesian
                 num_cv_folds: 5
                 num_iters: 50  # 150
