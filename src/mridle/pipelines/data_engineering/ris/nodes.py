@@ -109,7 +109,7 @@ def build_status_df(raw_df: pd.DataFrame,  exclude_patient_ids: List[str]) -> pd
     Returns: Dataframe with one row per appointment status change.
         The resulting dataframe has the columns (illustrative, not a complete list):
          - FillerOrderNo: int, appt id
-         - date (MessageDtTm): datetime, the date and time of the status change
+         - date (History_MessageDtTm): datetime, the date and time of the status change
          - was_status: str, the status the appt changed from
          - now_status: str, the status the appt changed to
          - was_sched_for: int, number of days ahead the appt was sched for before status change relative to `date`
