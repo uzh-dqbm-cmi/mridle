@@ -74,11 +74,11 @@ class CyclicalTransformer(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X, y=None):
-        df_copy = pd.DataFrame()
-        df_copy['month_sin'] = np.sin(X * (2. * np.pi / self.period))
-        df_copy['month_cos'] = np.cos(X * (2. * np.pi / self.period))
+        df = pd.DataFrame()
+        df['month_sin'] = np.sin(X * (2. * np.pi / self.period))
+        df['month_cos'] = np.cos(X * (2. * np.pi / self.period))
 
-        return df_copy
+        return df
 
     def get_feature_names(self, _):
         return ['month_sin', 'month_cos']
