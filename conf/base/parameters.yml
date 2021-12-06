@@ -51,7 +51,7 @@ models:
                             choice_list:
                                 - 'l1'
                                 - 'l2'
-                                - 'elasticnet'
+                                # - 'elasticnet'
                                 - 'none'
                     classifier__C:
                         parse_hp_uniform:
