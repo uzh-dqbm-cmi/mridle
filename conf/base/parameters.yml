@@ -39,7 +39,8 @@ models:
                   - flavor: LogisticRegression
                     name: 'classifier'
                     config:
-                        solver: 'saga'
+                        solver: 'liblinear'
+                        class_weight: 'balanced'
         Trainer:
             flavor: Trainer
         Tuner:
@@ -52,7 +53,7 @@ models:
                                 - 'l1'
                                 - 'l2'
                                 # - 'elasticnet'
-                                - 'none'
+                                # - 'none'
                     classifier__C:
                         parse_hp_uniform:
                             start: 0
