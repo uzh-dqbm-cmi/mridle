@@ -7,7 +7,7 @@ import numpy as np
 
 
 def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic_regression_model, random_forest_model,
-                            xgboost_model, validation_data):
+                            xgboost_model, neural_net_model, validation_data):
     """
     Function to create a table of metrics for the models.
 
@@ -24,6 +24,7 @@ def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic
         logistic_regression_model: serialised logistic regression model
         random_forest_model: serialised random forest model
         xgboost_model: serialised xgboost model
+        neural_net_model: serialised neural net model
         validation_data: validation data, split out from master_feature_set before experiments were ran
 
     Returns:
@@ -31,7 +32,7 @@ def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic
     """
     serialised_models = [('Harvey LogReg', harvey_model_log_reg), ('Harvey RandomForest', harvey_random_forest),
                          ('Logistic Regression', logistic_regression_model), ('RandomForest', random_forest_model),
-                         ('XGBoost', xgboost_model)]
+                         ('XGBoost', xgboost_model), ('Neural Net', neural_net_model)]
 
     evaluation_table = []
     avg_appts_per_week = 166  # taken from aggregation of df_features_original data for the year 2017 (in notebook 52)
@@ -143,11 +144,11 @@ def create_model_precision_comparison_plot(evaluation_table_df: pd.DataFrame) ->
 
 
 def plot_pr_roc_curve_comparison(harvey_model_log_reg, harvey_random_forest, logistic_regression_model,
-                                 random_forest_model, xgboost_model, validation_data):
+                                 random_forest_model, xgboost_model, neural_net_model, validation_data):
 
     serialised_models = [('Harvey LogReg', harvey_model_log_reg), ('Harvey RandomForest', harvey_random_forest),
                          ('Logistic Regression', logistic_regression_model), ('RandomForest', random_forest_model),
-                         ('XGBoost', xgboost_model)]
+                         ('XGBoost', xgboost_model),  ('Neural Net', neural_net_model)]
 
     alt.data_transformers.disable_max_rows()
     all_pr_df = pd.DataFrame()
