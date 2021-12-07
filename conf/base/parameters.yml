@@ -525,6 +525,7 @@ models:
                       max_epochs: 100
                       verbose: 1
                       iterator_train__shuffle: True
+                      batch_size: 32
                     args:
                         module:
                             flavor: mridle.experiment.architectures.MLP.MLP
@@ -544,14 +545,14 @@ models:
             flavor: BayesianTuner
             config:
                 hyperparameters:
-                    classifier__batch_size:
-                        parse_hp_choice:
-                            choice_list:
-                                - 16
-                                - 32
-                                - 64
-                                - 128
-                                - 256
+#                    classifier__batch_size:
+#                        parse_hp_choice:
+#                            choice_list:
+#                                - 16
+#                                - 32
+#                                - 64
+#                                - 128
+#                                - 256
                     classifier__lr:
                         parse_hp_choice:
                             choice_list:
@@ -561,7 +562,7 @@ models:
                                 - 0.1
                 search_type: bayesian
                 num_cv_folds: 5
-                num_iters: 30  # 150
+                num_iters: 4  # 150
                 scoring_function: log_loss
                 verbose: 1
                 hyperopt_timeout: 10000000
