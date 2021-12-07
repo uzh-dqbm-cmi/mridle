@@ -540,6 +540,26 @@ class TestBuildSlotDF(unittest.TestCase):
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
+    def test_basic_show_not_included_when_outside_valid_date_range(self):
+        raw_df = pd.DataFrame.from_records([
+                # date,                               now_status,            now_sched_for_date
+                (day(0),                              code['scheduled'],     day(4)),
+                (day(4),                              code['started'],       day(4)),
+                (day(4) + pd.Timedelta(minutes=30),   code['examined'],      day(4)),
+            ],
+            columns=[date_col, now_status_col, now_sched_for_date_col]
+        )
+        raw_df['PatientClass'] = 'ambulant'
+
+        different_valid_date_range = [pd.Timestamp(year=2020, month=1, day=1, hour=0, minute=0),
+                                      pd.Timestamp(year=2020, month=2, day=1, hour=0, minute=0)]
+
+        raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, None)
+        status_df = build_status_df(raw_df, exclude_patient_ids=[])
+        slot_df = build_slot_df(status_df, different_valid_date_range)
+
+        self.assertEqual(len(slot_df), 0)
+
 
 class TestFindNoShowsPositive(unittest.TestCase):
 
