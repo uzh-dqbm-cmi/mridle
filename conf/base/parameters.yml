@@ -36,7 +36,31 @@ models:
             flavor: Pipeline
             config:
                 steps:
-                  - flavor: LogisticRegression
+                    - flavor: sklearn.compose.ColumnTransformer
+                      name: 'preprocessing'
+                      config:
+                          steps:
+                              - name: 'scaler'
+                                flavor: sklearn.preprocessing.StandardScaler
+                                config:
+                                    with_mean: True
+                                args:
+                                    columns:
+                                        - 'no_show_before'
+                                        - 'no_show_before_sq'
+                                        - 'sched_days_advanced'
+                                        - 'hour_sched'
+                                        - 'distance_to_usz'
+                                        - 'age'
+                                        - 'close_to_usz'
+                                        - 'male'
+                                        - 'female'
+                                        - 'age_sq'
+                                        - 'sched_days_advanced_sq'
+                                        - 'distance_to_usz_sq'
+                                        - 'sched_2_days'
+                                        - 'age_20_60'
+                    - flavor: LogisticRegression
                     name: 'classifier'
                     config:
                         solver: 'liblinear'
