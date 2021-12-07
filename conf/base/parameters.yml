@@ -61,10 +61,10 @@ models:
                                     - 'sched_2_days'
                                     - 'age_20_60'
                   - flavor: LogisticRegression
-                  name: 'classifier'
-                  config:
-                      solver: 'liblinear'
-                      class_weight: 'balanced'
+                    name: 'classifier'
+                    config:
+                        solver: 'liblinear'
+                        class_weight: 'balanced'
         Trainer:
             flavor: Trainer
         Tuner:
