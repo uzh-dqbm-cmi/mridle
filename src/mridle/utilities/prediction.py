@@ -2,10 +2,10 @@ import argparse
 import pandas as pd
 from pathlib import Path
 import pickle
-from mridle.pipelines.data_engineering.ris.nodes import build_status_df
+from mridle.pipelines.data_engineering.ris.nodes import build_status_df, prep_raw_df_for_parquet
 from mridle.pipelines.data_science.feature_engineering.nodes import build_feature_set, remove_na
 from mridle.experiment.experiment import Experiment
-from mridle.experiment.data_set import DataSet
+from mridle.experiment.dataset import DataSet
 
 
 def main(data_path, model_dir, output_path):
@@ -20,7 +20,9 @@ def main(data_path, model_dir, output_path):
     Returns: None
     """
     raw_df = pd.read_csv(data_path)
-    status_df = build_status_df(raw_df)
+    exclude_pat_ids = list()  # TODO!
+    formatted_df = prep_raw_df_for_parquet(raw_df)
+    status_df = build_status_df(formatted_df, exclude_pat_ids)
     features_df_maybe_na = build_feature_set(status_df)
     features_df = remove_na(features_df_maybe_na)
     prediction_df = features_df.copy()
@@ -29,7 +31,10 @@ def main(data_path, model_dir, output_path):
     for model_dir in model_dirs:
         model_paths = model_dir.glob('*')
         for model_path in model_paths:
-            serialized_model = pickle.load(model_path)
+            if model_path.name == 'harvey_model_random_forest_hp.pkl':
+                continue
+            with open(model_path, "rb+") as f:
+                serialized_model = pickle.load(f)
             exp = Experiment.deserialize(serialized_model)
             data_set = DataSet(exp.dataset.config, features_df)
             preds_proba = exp.final_predictor.predict_proba(data_set.x)

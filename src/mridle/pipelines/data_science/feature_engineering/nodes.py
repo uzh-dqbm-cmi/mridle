@@ -221,8 +221,8 @@ def feature_sex(status_df: pd.DataFrame) -> pd.DataFrame:
         'unbekannt': 'unknown',
     }
     status_df['sex'] = status_df['Sex'].apply(lambda x: gender_map.get(x, 'unknown'))
-    categories = pd.get_dummies(status_df['sex'])
-    status_df = pd.concat([status_df, categories], axis=1)
+    status_df['male'] = np.where(status_df['Sex'] == 'male', 1, 0)
+    status_df['female'] = np.where(status_df['Sex'] == 'female', 1, 0)
     return status_df
 
 
