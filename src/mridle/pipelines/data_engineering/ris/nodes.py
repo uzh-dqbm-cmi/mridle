@@ -215,6 +215,7 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
         no_show_slot_df.drop('was_sched_for_date', axis=1, inplace=True)
 
     slot_df = pd.concat([show_slot_df, no_show_slot_df], sort=False)
+
     if len(slot_df) > 0:
         slot_df['FillerOrderNo'] = slot_df['FillerOrderNo'].astype(int)
 

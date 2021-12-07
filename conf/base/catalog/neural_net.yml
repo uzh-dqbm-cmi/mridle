@@ -1,0 +1,20 @@
+neural_net_model_input:
+  type: pandas.ParquetDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/05_model_input/neural_net/neural_net_model_input.parquet
+  layer: model input
+
+neural_net_model:
+  type: pickle.PickleDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/06_models/neural_net/neural_net_model.pkl
+  layer: models
+
+neural_net_model_results:
+  type: pandas.CSVDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/07_model_output/neural_net/neural_net_model_results.csv
+  layer: model output
+
+neural_net_model_metrics_plot:
+  type: mridle.extras.datasets.altair_dataset.AltairDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/neural_net/neural_net_model_metrics_plot.html
+  layer: reporting
+

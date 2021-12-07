@@ -39,6 +39,7 @@ def build_feature_set(status_df: pd.DataFrame) -> pd.DataFrame:
     status_df = feature_marital(status_df)
     status_df = feature_post_code(status_df)
     status_df = feature_distance_to_usz(status_df)
+    status_df = feature_occupation(status_df)
 
     agg_dict = {
         'NoShow': 'min',
@@ -47,6 +48,7 @@ def build_feature_set(status_df: pd.DataFrame) -> pd.DataFrame:
         'sched_days_advanced_sq': 'first',
         'sched_2_days': 'first',
         'modality': 'last',
+        'occupation': 'last',
         'insurance_class': 'last',
         'day_of_week': 'last',
         'day_of_week_str': 'last',
@@ -71,6 +73,7 @@ def build_feature_set(status_df: pd.DataFrame) -> pd.DataFrame:
     slot_df = feature_cyclical_hour(slot_df)
     slot_df = feature_cyclical_day_of_week(slot_df)
     slot_df = feature_cyclical_month(slot_df)
+    slot_df = slot_df[slot_df['day_of_week_str'].isin(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])]
 
     return slot_df
 
@@ -250,6 +253,7 @@ def feature_marital(status_df: pd.DataFrame) -> pd.DataFrame:
         'LED': 'single',
         'GES': 'divorced',
         'UNB': 'not known',
+        'XXX': 'not known',
         'VRW': 'widowed',
         'GTR': 'unable to translate',
         'PAR': 'partnership',
@@ -259,7 +263,6 @@ def feature_marital(status_df: pd.DataFrame) -> pd.DataFrame:
         # 'LA': 'forcible partnership',
         # 'LE': 'civil partnership dissolved by declaration of death',
         np.NaN: 'blank',
-        'XXX': 'undefined',
     }
 
     status_df['marital'] = status_df['Zivilstand'].map(zivilstand_abbreviation_mapping)
@@ -445,6 +448,56 @@ def feature_cyclical_month(slot_df):
     return df_copy
 
 
+def feature_occupation(df):
+
+    df_remap = df.copy()
+    df_remap.rename(columns={'Beruf': 'occupation'}, inplace=True)
+    df_remap['occupation'] = df_remap['occupation'].astype(str)
+
+    df_remap.loc[df_remap['occupation'] == 'nan', 'occupation'] = 'none_given'
+    df_remap.loc[df_remap['occupation'] == '-', 'occupation'] = 'none_given'
+    df_remap.loc[df_remap['occupation'].apply(regex_search, search_str='rentner|Renter|pensioniert|pens.|rente'),
+                 'occupation'] = 'retired'
+    df_remap.loc[df_remap['occupation'].apply(regex_search, search_str='keine Angaben|keine Ang'),
+                 'occupation'] = 'none_given'
+    df_remap.loc[df_remap['occupation'].apply(regex_search,
+                                              search_str='Angestellte|ang.|baue|angest.|Hauswart|dozent|designer|^KV$|'
+                                                         'masseu|Raumpflegerin|Apothekerin|Ing.|fotog|Psycholog|'
+                                                         'Sozialpädagoge|Werkzeu|druck|musik|koordinator|software|'
+                                                         'schaler|Kosmetikerin|Physiotherapeutin|Physiker|Unternehmer|'
+                                                         'Praktikant|Analy|reinig|Detailhandel|putz|Grafiker|anwält|'
+                                                         'maschinist|Immobilien|Zimmermann|schloss|Kassiererin|'
+                                                         'hotel|hochbau|marketing|engineer|IT|Rechts|backer|bäcker|'
+                                                         'baecker|Disponent|magazin|chemik|Journalist|Schreiner|metzg|'
+                                                         'Consultant|Berater|Köch|gärtn|gartn|gaertn|Professor|'
+                                                         'Praktikantin|Gipser|Küche|lehrl|logist|Buchhalter|technik|'
+                                                         'Projektleiter|Manager|Assistent|Landwirt|Poliz|Elektro|'
+                                                         'Elektri|Jurist|Kellner|Sekret|Lager|Monteur|Coiffeu|spengler|'
+                                                         'Kindergärtner|Geschäfts|mechanik|maurer|Maler|Chauffeur|'
+                                                         'ingenieur|Kauf|mitarbeiter|Verkäufer|Informatiker|koch|'
+                                                         'lehrer|arbeiter|architekt'),
+                 'occupation'] = 'employed'
+    df_remap.loc[df_remap['occupation'].apply(regex_search, search_str='student|Schüler|Doktorand|'
+                                                                       'Kind|Stud.|Ausbildung|^MA$'),
+                 'occupation'] = 'student'
+    df_remap.loc[df_remap['occupation'].apply(regex_search, search_str='^IV$|^IV-Bezüger|^$|arbeitslos|ohne Arbeit|'
+                                                                       'ohne|o.A.|nicht Arbeitstätig|'
+                                                                       'Sozialhilfeempfänger|o. Arbeit|keine Arbeit|'
+                                                                       'Asyl|RAV|Hausfrau|Hausmann'),
+                 'occupation'] = 'unemployed'
+    df_remap.loc[df_remap['occupation'].apply(regex_search, search_str='selbst'), 'occupation'] = 'self_employed'
+    df_remap.loc[df_remap['occupation'].apply(regex_search, search_str='arzt|aerzt|ärzt|pflegefachfrau|Pflegehelfer|'
+                                                                       'MTRA|Erzieherin|Fachfrau Betreuung|'
+                                                                       'Pflegefachmann|MPA|FaGe|Krankenschwester|'
+                                                                       'Fachmann MTRA'),
+                 'occupation'] = 'hospital_worker'
+    df_remap.loc[df_remap['occupation'].apply(regex_search, search_str='Tourist'), 'occupation'] = 'other'
+    df_remap['occupation_freq'] = df_remap[['occupation', 'FillerOrderNo']].groupby('occupation').transform(len)
+    df_remap.loc[df_remap['occupation_freq'] < 150, 'occupation'] = 'other'
+    df_remap = df_remap.drop('occupation_freq', axis=1)
+    return df_remap
+
+
 # feature engineering for the duration model
 def feature_duration(dicom_df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -454,3 +507,7 @@ def feature_duration(dicom_df: pd.DataFrame) -> pd.DataFrame:
 
     dicom_df["duration"] = (dicom_df["image_end"] - dicom_df["image_start"]) / np.timedelta64(1, "m")
     return dicom_df
+
+
+def regex_search(x, search_str):
+    return bool(re.search(search_str, x, re.IGNORECASE))

@@ -31,15 +31,40 @@ models:
         Stratifier:
             flavor: PartitionedLabelStratifier
             config:
-                n_partitions: 3  # 5
+                n_partitions: 5  # 5
         Architecture:
             flavor: Pipeline
             config:
                 steps:
+                  - flavor: sklearn.compose.ColumnTransformer
+                    name: 'preprocessing'
+                    config:
+                        steps:
+                            - name: 'scaler'
+                              flavor: sklearn.preprocessing.StandardScaler
+                              config:
+                                with_mean: True
+                              args:
+                                columns:
+                                    - 'no_show_before'
+                                    - 'no_show_before_sq'
+                                    - 'sched_days_advanced'
+                                    - 'hour_sched'
+                                    - 'distance_to_usz'
+                                    - 'age'
+                                    - 'close_to_usz'
+                                    - 'male'
+                                    - 'female'
+                                    - 'age_sq'
+                                    - 'sched_days_advanced_sq'
+                                    - 'distance_to_usz_sq'
+                                    - 'sched_2_days'
+                                    - 'age_20_60'
                   - flavor: LogisticRegression
                     name: 'classifier'
                     config:
-                        solver: 'saga'
+                        solver: 'liblinear'
+                        class_weight: 'balanced'
         Trainer:
             flavor: Trainer
         Tuner:
@@ -51,14 +76,12 @@ models:
                             choice_list:
                                 - 'l1'
                                 - 'l2'
-                                - 'elasticnet'
-                                - 'none'
+                                # - 'elasticnet'
+                                # - 'none'
                     classifier__C:
-                        parse_hp_choice:
-                            choice_list:
-                                - 0
-                                - 1
-                                - 10
+                        parse_hp_uniform:
+                            start: 0
+                            end: 10
                 search_type: bayesian
                 num_cv_folds: 5
                 num_iters: 50  # 150
@@ -98,7 +121,7 @@ models:
         Stratifier:
             flavor: PartitionedLabelStratifier
             config:
-                n_partitions: 2  # 5
+                n_partitions: 5  # 5
         Architecture:
             flavor: Pipeline
             config:
@@ -241,7 +264,7 @@ models:
                 features:
                     - 'no_show_before'
                     - 'sched_days_advanced'
-                    #- 'month'
+                    - 'month'
                     - 'age'
                     - 'modality'
                     - 'sex'
@@ -273,6 +296,7 @@ models:
                                     - 'age'
                                     - 'hour_sched'
                                     - 'distance_to_usz'
+                                    - 'month'
                             - name: 'onehot'
                               flavor: sklearn.preprocessing.OneHotEncoder
                               config:
@@ -283,6 +307,13 @@ models:
                                       - 'modality'
                                       - 'sex'
                                       - 'day_of_week_str'
+                            - name: 'cyc'
+                              flavor: mridle.utilities.modeling.CyclicalTransformer
+                              config:
+                                  period: 12
+                              args:
+                                  columns:
+                                      - 'month'
                   - flavor: RandomForestClassifier
                     name: 'classifier'
                     config:
@@ -333,6 +364,110 @@ models:
                 features:
                     - 'no_show_before'
                     - 'sched_days_advanced'
+                    - 'month'
+                    - 'age'
+                    - 'modality'
+                    - 'occupation'
+                    - 'sex'
+                    - 'hour_sched'
+                    - 'distance_to_usz'
+                    - 'day_of_week_str'
+                    - 'marital'
+                target: NoShow
+        Stratifier:
+            flavor: PartitionedLabelStratifier
+            config:
+                n_partitions: 5
+        Architecture:
+            flavor: Pipeline
+            config:
+                steps:
+                  - flavor: sklearn.compose.ColumnTransformer
+                    name: 'preprocessing'
+                    config:
+                        steps:
+                          - name: 'scaler'
+                            flavor: sklearn.preprocessing.StandardScaler
+                            config:
+                                with_mean: True
+                            args:
+                                columns:
+                                  - 'no_show_before'
+                                  - 'sched_days_advanced'
+                                  - 'age'
+                                  - 'hour_sched'
+                                  - 'distance_to_usz'
+                                  - 'month'
+                          - name: 'onehot'
+                            flavor: sklearn.preprocessing.OneHotEncoder
+                            config:
+                                handle_unknown: 'ignore'
+                            args:
+                                columns:
+                                  - 'marital'
+                                  - 'occupation'
+                                  - 'modality'
+                                  - 'sex'
+                                  - 'day_of_week_str'
+                  - flavor: XGBClassifier
+                    name: 'classifier'
+                    config:
+                      eval_metric: 'logloss'
+                      use_label_encoder: False
+                      # scale_pos_weight: 6
+        Trainer:
+            flavor: Trainer
+        Tuner:
+            flavor: BayesianTuner
+            config:
+                hyperparameters:
+                    classifier__n_estimators:
+                        parse_hp_uniformint:
+                            start: 10
+                            end: 400
+                    classifier__max_depth:
+                        parse_hp_uniformint:
+                            start: 2
+                            end: 20
+                    classifier__learning_rate:
+                        parse_hp_loguniform:
+                            start: -5.5
+                            end: -1.5
+                    classifier__gamma:
+                        parse_hp_uniform:
+                            start: 0
+                            end: 0.1
+                    classifier__subsample:
+                        parse_hp_uniform:
+                            start: 0.5
+                            end: 1
+                    classifier__reg_lambda:
+                        parse_hp_loguniform:
+                            start: -3
+                            end: 2
+                search_type: bayesian
+                num_cv_folds: 5
+                num_iters: 50  # 150
+                scoring_function: log_loss
+                verbose: 0
+                hyperopt_timeout: 10000000
+        Metrics:
+            - flavor: F1_Macro
+              config:
+                  classification_cutoff: 0.5
+            - flavor: AUPRC
+            - flavor: AUROC
+            - flavor: LogLoss
+
+    neural_net:
+        name: neural_net
+        verbose: false
+        DataSet:
+            flavor: DataSet
+            config:
+                features:
+                    - 'no_show_before'
+                    - 'sched_days_advanced'
                     #- 'month'
                     - 'age'
                     - 'modality'
@@ -362,8 +497,8 @@ models:
                                 columns:
                                   - 'no_show_before'
                                   - 'sched_days_advanced'
-                                  -  'age'
-                                  -  'hour_sched'
+                                  - 'age'
+                                  - 'hour_sched'
                                   - 'distance_to_usz'
                           - name: 'onehot'
                             flavor: sklearn.preprocessing.OneHotEncoder
@@ -375,31 +510,63 @@ models:
                                   - 'modality'
                                   - 'sex'
                                   - 'day_of_week_str'
-                  - flavor: XGBClassifier
+                  - flavor: sklearn.preprocessing.FunctionTransformer
+                    name: 'tofloat'
+                    args:
+                        function:
+                            name: 'tofloat_func'
+                            flavor: mridle.utilities.data_processing.tofloat32
+                            instantiate: False
+                    config:
+                        accept_sparse: True
+                  - flavor: skorch.NeuralNet
                     name: 'classifier'
                     config:
-                      eval_metric: 'logloss'
-                      use_label_encoder: False
+                      max_epochs: 100
+                      verbose: 1
+                      iterator_train__shuffle: True
+                      batch_size: 32
+                    args:
+                        module:
+                            flavor: mridle.experiment.architectures.MLP.MLP
+                            config:
+                                input_layer_size: 42
+                                hidden_layer_size: 30
+                                dropout_p: 0
+                        criterion:
+                            flavor: torch.nn.BCELoss
+                            instantiate: False
+                        optimizer:
+                            flavor: torch.optim.Adam
+                            instantiate: False
         Trainer:
-            flavor: Trainer
+            flavor: SkorchTrainer
         Tuner:
             flavor: BayesianTuner
             config:
                 hyperparameters:
-                    classifier__n_estimators:
-                        parse_hp_uniformint:
-                            start: 10
-                            end: 400
-                    classifier__max_depth:
-                        parse_hp_uniformint:
-                            start: 2
-                            end: 20
+#                    classifier__batch_size:
+#                        parse_hp_choice:
+#                            choice_list:
+#                                - 16
+#                                - 32
+#                                - 64
+#                                - 128
+#                                - 256
+                    classifier__lr:
+                        parse_hp_choice:
+                            choice_list:
+                                - 0.0001
+                                - 0.001
+                                - 0.01
+                                - 0.1
                 search_type: bayesian
                 num_cv_folds: 5
-                num_iters: 50  # 150
+                num_iters: 4  # 150
                 scoring_function: log_loss
-                verbose: 0
+                verbose: 1
                 hyperopt_timeout: 10000000
+        #            run_hyperparam_search: true
         Metrics:
             - flavor: F1_Macro
               config:
