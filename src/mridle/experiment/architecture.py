@@ -62,28 +62,36 @@ class ArchitectureInterface(ComponentInterface):
     }
 
     @classmethod
-    def configure(cls, d: Dict, **kwargs) -> Union[ConfigurableComponent, Type[ConfigurableComponent]]:
+    def configure(cls, d: Dict, **kwargs) -> Union[ConfigurableComponent, Type[ConfigurableComponent],
+                                                   List[ConfigurableComponent]]:
         """
         Instantiate a component from a {'flavor: ..., 'config': {}} dictionary.
 
         Args:
             d: A dictionary with the keys 'flavor' describing the class name of the component to be insantiated, and
-             key 'config' containting the object's config dictionary. d may also contain other keys, which must be added
+             key 'config' containing the object's config dictionary. d may also contain other keys, which must be added
              to the object by the subclass-ed method.
 
         Returns:
 
         """
-        d = cls.validate_config(d)
-        flavor_cls = cls.select_flavor(d['flavor'])
-
-        if d.get('instantiate', True) is False:
-            return flavor_cls
-        elif ArchitectureInterfaceFactory.recognizes_flavor(flavor_cls):
-            interface = ArchitectureInterfaceFactory.select_from_flavor(flavor_cls)
-            return interface.configure(d)
+        if type(d) is list:
+            configured_list = []
+            for f in d:
+                configured_list.append(ArchitectureInterface.configure(f))
+            return configured_list
+        elif type(d) is dict:
+            d = cls.validate_config(d)
+            flavor_cls = cls.select_flavor(d['flavor'])
+            if d.get('instantiate', True) is False:
+                return flavor_cls
+            elif ArchitectureInterfaceFactory.recognizes_flavor(flavor_cls):
+                interface = ArchitectureInterfaceFactory.select_from_flavor(flavor_cls)
+                return interface.configure(d)
+            else:
+                return flavor_cls(**d['config'])
         else:
-            return flavor_cls(**d['config'])
+            raise ValueError(f"Architecture configuration should be of type dict or list, got {type(d)}")
 
     @classmethod
     def deserialize(cls, d: Dict) -> Union[ConfigurableComponent, Type[ConfigurableComponent]]:
