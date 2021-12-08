@@ -541,8 +541,8 @@ models:
                             flavor: torch.optim.SGD
                             instantiate: False
                         callbacks:
-                          - flavor: skorch.callbacks.EarlyStopping
-                            instantiate: True
+                            - flavor: skorch.callbacks.EarlyStopping
+                              instantiate: True
         Trainer:
             flavor: SkorchTrainer
         Tuner:
