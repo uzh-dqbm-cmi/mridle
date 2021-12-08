@@ -564,7 +564,6 @@ models:
                 scoring_function: log_loss
                 verbose: 1
                 hyperopt_timeout: 10000000
-                    run_hyperparam_search: true
         Metrics:
             - flavor: F1_Macro
               config:
