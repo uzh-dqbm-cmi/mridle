@@ -540,6 +540,10 @@ models:
                         optimizer:
                             flavor: torch.optim.SGD
                             instantiate: False
+                        callbacks:
+                            flavor: skorch.callbacks.EarlyStopping
+                            config:
+                                patience: 5
         Trainer:
             flavor: SkorchTrainer
         Tuner:
