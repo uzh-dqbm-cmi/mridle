@@ -78,7 +78,7 @@ class ArchitectureInterface(ComponentInterface):
         if type(d) is list:
             configured_list = []
             for f in d:
-                configured_list.append(ArchitectureInterface.configure(f))
+                configured_list.append(cls.configure(f))
             return configured_list
         elif type(d) is dict:
             d = cls.validate_config(d)
