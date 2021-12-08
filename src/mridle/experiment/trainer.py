@@ -1,6 +1,6 @@
 from copy import deepcopy
 from sklearn.preprocessing import LabelEncoder
-from typing import Dict
+from typing import Dict, Tuple
 from .architecture import Architecture, ArchitectureInterface
 from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
 from .tuner import Tuner, TunerInterface
