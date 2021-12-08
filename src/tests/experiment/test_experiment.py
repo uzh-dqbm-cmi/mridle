@@ -1,4 +1,6 @@
 import unittest
+from datetime import datetime
+from copy import deepcopy
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
@@ -191,7 +193,8 @@ class TestExperiment(unittest.TestCase):
             self.assertEqual(exp_deserialized.metrics[i].config, exp.metrics[i].config)
 
         # Metadata
-        self.assertEqual(exp_deserialized.run_date, exp.run_date)
+        self.assertTrue(isinstance(exp_deserialized.metadata, dict))
+        self.assertEqual(len(exp_deserialized.metadata), 0)  # dictionary is empty if not `go` not called
 
     def test_serialize_deserialize_without_Tuner(self):
         exp = Experiment.configure(config=self.configuration_without_tuner, data=self.df)
@@ -202,6 +205,19 @@ class TestExperiment(unittest.TestCase):
 
         # Tuner
         self.assertIsNone(exp_deserialized.trainer.tuner)
+
+    def test_deserialize_with_metadata(self):
+        metadata = {'name': 'test'}
+        config = deepcopy(self.configuration)
+        config['metadata'] = metadata
+
+        exp = Experiment.configure(config=config, data=self.df)
+        exp_dict = exp.serialize()
+        exp_deserialized = Experiment.deserialize(exp_dict)
+
+        self.assertTrue(isinstance(exp_deserialized.metadata, dict))
+        for key, value in metadata.items():
+            self.assertEqual(exp_deserialized.metadata[key], value)
 
     def test_deserialize_after_go(self):
         exp = Experiment.configure(config=self.configuration, data=self.df)
@@ -241,7 +257,8 @@ class TestExperiment(unittest.TestCase):
             self.assertEqual(exp_deserialized.metrics[i].config, exp.metrics[i].config)
 
         # Metadata
-        self.assertEqual(exp_deserialized.run_date, exp.run_date)
+        self.assertEqual(exp_deserialized.metadata, exp.metadata)
+        self.assertTrue(isinstance(exp_deserialized.metadata['run_date'], datetime))
 
         # Evaluation
         pd.testing.assert_frame_equal(exp_deserialized.evaluation, exp.evaluation)
@@ -267,3 +284,13 @@ class TestExperiment(unittest.TestCase):
         y_pred = exp.final_predictor.predict(x_test)
         y_pred_des = exp_deserialized.final_predictor.predict(x_test_des)
         np.testing.assert_almost_equal(y_pred_des, y_pred)
+
+        # Partition Training Metadata
+        self.assertTrue(isinstance(exp.partition_training_metadata, list))
+        # TrainTestStratifier has 1 partition
+        self.assertEqual(len(exp.partition_training_metadata), 1)
+        for part_train_metadata in exp.partition_training_metadata:
+            self.assertTrue(isinstance(part_train_metadata, dict))
+
+        # Final Training Metadata
+        self.assertTrue(isinstance(exp.final_training_metadata, dict))

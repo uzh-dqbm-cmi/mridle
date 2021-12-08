@@ -1,9 +1,10 @@
 from abc import abstractmethod
+from copy import deepcopy
 from functools import partial
 from hyperopt import fmin, tpe, Trials, space_eval
 import numpy as np
 from sklearn.model_selection import RandomizedSearchCV
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from .architecture import Architecture
 from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
 from .metric import AUPRC, LogLoss, F1_Macro, AUROC, BrierScore
@@ -15,7 +16,7 @@ class Tuner(ConfigurableComponent):
         super().__init__(config)
 
     @abstractmethod
-    def fit(self, architecture: Architecture, x, y) -> Architecture:
+    def fit(self, architecture: Architecture, x, y) -> Tuple[Architecture, Dict]:
         pass
 
 
@@ -29,13 +30,14 @@ class RandomSearchTuner(Tuner):
         self.scoring_function = config['scoring_function']
         self.verbose = config.get('verbose', False)
 
-    def fit(self, architecture, x, y) -> Architecture:
+    def fit(self, architecture, x, y) -> Tuple[Architecture, Dict]:
         random_search = RandomizedSearchCV(estimator=architecture, param_distributions=self.hyperparameters,
                                            n_iter=self.num_iters, cv=self.num_cv_folds, verbose=self.verbose,
                                            random_state=42, n_jobs=-1, scoring=self.scoring_function)
         random_search.fit(x, y)
         best_est = random_search.best_estimator_
-        return best_est
+        training_metadata = random_search.best_params_
+        return best_est, training_metadata
 
 
 class BayesianTuner(Tuner):
@@ -49,21 +51,26 @@ class BayesianTuner(Tuner):
         self.verbose = config['verbose']
         self.timeout = config['hyperopt_timeout']
 
-    def fit(self, architecture, x, y) -> Architecture:
+    def fit(self, architecture, x, y) -> Tuple[Architecture, Dict]:
         cv_ids = list(range(self.num_cv_folds)) * np.floor((len(x) / self.num_cv_folds)).astype(int)
         cv_ids.extend(list(range(len(x) % self.num_cv_folds)))
         cv_ids = np.random.permutation(cv_ids)
 
-        best_rf = fmin(partial(self.hyperopt_objective, model=architecture, x_train=x, y_train=y,
-                               scoring_fn=self.scoring_function, ids=cv_ids, nfolds=self.num_cv_folds,
-                               verbose=self.verbose),
-                       self.hyperparameters, algo=tpe.suggest, timeout=self.timeout, max_evals=self.num_iters,
-                       trials=Trials(), verbose=self.verbose)
-        best_params = space_eval(self.hyperparameters, best_rf)
+        trials = Trials()
+        best_fit = fmin(partial(self.hyperopt_objective, model=architecture, x_train=x, y_train=y,
+                                scoring_fn=self.scoring_function, ids=cv_ids, nfolds=self.num_cv_folds,
+                                verbose=self.verbose),
+                        self.hyperparameters, algo=tpe.suggest, timeout=self.timeout, max_evals=self.num_iters,
+                        trials=trials, verbose=self.verbose)
+        best_params = space_eval(self.hyperparameters, best_fit)
         tuned_architecture = architecture.set_params(**best_params)
         best_est = tuned_architecture.fit(x, y)
 
-        return best_est
+        training_metadata = {
+            'trials': deepcopy(trials),
+            'params': best_params,
+        }
+        return best_est, training_metadata
 
     @classmethod
     def hyperopt_objective(cls, params, model, x_train, y_train, scoring_fn: str, ids: List[int], nfolds, verbose):
