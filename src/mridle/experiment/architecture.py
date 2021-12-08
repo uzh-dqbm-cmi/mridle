@@ -62,8 +62,8 @@ class ArchitectureInterface(ComponentInterface):
     }
 
     @classmethod
-    def configure(cls, d: Dict, **kwargs) -> Union[ConfigurableComponent, Type[ConfigurableComponent],
-                                                   List[ConfigurableComponent]]:
+    def configure(cls, d: Union[Dict, List], **kwargs) -> Union[ConfigurableComponent, Type[ConfigurableComponent],
+                                                                List[ConfigurableComponent]]:
         """
         Instantiate a component from a {'flavor: ..., 'config': {}} dictionary.
 
