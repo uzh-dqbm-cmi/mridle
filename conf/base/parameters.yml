@@ -542,32 +542,29 @@ models:
                             instantiate: False
         Trainer:
             flavor: SkorchTrainer
-#        Tuner:
-#            flavor: BayesianTuner
-#            config:
-#                hyperparameters:
-##                    classifier__batch_size:
-##                        parse_hp_choice:
-##                            choice_list:
-##                                - 16
-##                                - 32
-##                                - 64
-##                                - 128
-##                                - 256
-#                    classifier__lr:
+        Tuner:
+            flavor: BayesianTuner
+            config:
+                hyperparameters:
+#                    classifier__batch_size:
 #                        parse_hp_choice:
 #                            choice_list:
-#                                - 0.0001
-#                                - 0.001
-#                                - 0.01
-#                                - 0.1
-#                search_type: bayesian
-#                num_cv_folds: 5
-#                num_iters: 4  # 150
-#                scoring_function: log_loss
-#                verbose: 1
-#                hyperopt_timeout: 10000000
-        #            run_hyperparam_search: true
+#                                - 16
+#                                - 32
+#                                - 64
+#                                - 128
+#                                - 256
+                    classifier__lr:
+                        parse_hp_loguniform:
+                            start: -5.5
+                            end: -1.5
+                search_type: bayesian
+                num_cv_folds: 5
+                num_iters: 20  # 150
+                scoring_function: log_loss
+                verbose: 1
+                hyperopt_timeout: 10000000
+                    run_hyperparam_search: true
         Metrics:
             - flavor: F1_Macro
               config:
