@@ -541,10 +541,10 @@ models:
                             flavor: torch.optim.SGD
                             instantiate: False
                         callbacks:
-                          - flavor: skorch.callbacks.EarlyStopping
-                            instantiate: True
-                            config:
-                                patience: 5
+                            - flavor: skorch.callbacks.EarlyStopping
+                              instantiate: True
+                              config:
+                                  patience: 5
         Trainer:
             flavor: SkorchTrainer
         Tuner:
