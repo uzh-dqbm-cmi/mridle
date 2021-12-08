@@ -30,3 +30,6 @@ class MLP(nn.Module):
         x = self.fc3(x)
         output = self.out(x)
         return output
+
+    def get_params(self):
+        return self.config
