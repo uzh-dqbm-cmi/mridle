@@ -63,7 +63,7 @@ def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict) -> pd.DataFrame:
+def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict = None) -> pd.DataFrame:
     """
     Convert status_df into slot_df. Identify "show" and "no show" appointment slots from status_df,
     and synthesize into a single dataframe of all appointments that occurred or were supposed to occur (but no-show'ed).
