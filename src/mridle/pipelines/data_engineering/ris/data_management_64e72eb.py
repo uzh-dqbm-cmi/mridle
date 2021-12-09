@@ -97,8 +97,8 @@ def build_slot_df(input_status_df: pd.DataFrame) -> pd.DataFrame:
         'slot_type': 'min',
         'slot_type_detailed': 'min',
         'NoShow_outcome': 'min',
-        'EnteringOrganisationDeviceID': 'min',
-        'UniversalServiceName': 'min',
+        'EnteringOrganisationDeviceID': 'last',  # 'min', CHANGED TO BE PARQUET COMPATIBLE
+        'UniversalServiceName': 'last',  # 'min', CHANGED TO BE PARQUET COMPATIBLE
     }
     if 'MRNCmpdId' in status_df.columns:
         agg_dict['MRNCmpdId'] = 'min'
