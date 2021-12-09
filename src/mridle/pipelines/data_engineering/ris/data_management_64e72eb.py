@@ -63,7 +63,7 @@ def build_status_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def build_slot_df(input_status_df: pd.DataFrame) -> pd.DataFrame:
+def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict) -> pd.DataFrame:
     """
     Convert status_df into slot_df. Identify "show" and "no show" appointment slots from status_df,
     and synthesize into a single dataframe of all appointments that occurred or were supposed to occur (but no-show'ed).
@@ -90,7 +90,7 @@ def build_slot_df(input_status_df: pd.DataFrame) -> pd.DataFrame:
     status_df['end_time'] = status_df.groupby('FillerOrderNo')['end_time'].fillna(method='bfill')
 
     # this agg dict will be used for getting data about both show and no-show appt slots
-    agg_dict = {
+    default_agg_dict = {
         'start_time': 'min',
         'end_time': 'min',
         'NoShow': 'min',
@@ -100,6 +100,8 @@ def build_slot_df(input_status_df: pd.DataFrame) -> pd.DataFrame:
         'EnteringOrganisationDeviceID': 'last',  # 'min', CHANGED TO BE PARQUET COMPATIBLE
         'UniversalServiceName': 'last',  # 'min', CHANGED TO BE PARQUET COMPATIBLE
     }
+    if agg_dict is None:  # ADDED TO BE BUILD_FEATURE_SET COMPATIBLE
+        agg_dict = default_agg_dict
     if 'MRNCmpdId' in status_df.columns:
         agg_dict['MRNCmpdId'] = 'min'
 
