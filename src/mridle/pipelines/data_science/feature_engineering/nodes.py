@@ -73,7 +73,7 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], use_
 
     if use_before_val_func:
         # new column 'slot_outcome' was created in the mean time, NoShow_outcome close enough
-        status_df['slot_outcome'] = status_df['NoShow_outcome']
+        status_df['slot_outcome'] = status_df['NoShow_outcome'].fillna('show')
         # start_time is now part of the groupby, but needs to be added excplicitly for the old version
         agg_dict['start_time'] = 'last'
         slot_df = bv_build_slot_df(status_df, agg_dict)
