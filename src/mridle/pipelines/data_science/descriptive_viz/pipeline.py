@@ -2,6 +2,7 @@ from kedro.pipeline import Pipeline, node
 from .nodes import plot_dave_b, plot_no_show_by_day_of_week, plot_no_show_by_month, plot_no_show_by_hour_of_day,\
     plot_no_show_by_age, plot_appts_per_patient, plot_no_show_heat_map, plot_appt_noshow_tree_map, \
     plot_numerical_feature_correlations
+from functools import partial
 
 
 def create_pipeline(**kwargs):
@@ -49,6 +50,12 @@ def create_pipeline(**kwargs):
                 inputs="master_feature_set",
                 outputs="no_show_heat_map",
                 name="plot_no_show_heat_map",
+            ),
+            node(
+                func=partial(plot_no_show_heat_map, log_scale=True),
+                inputs="master_feature_set",
+                outputs="no_show_heat_map_log",
+                name="plot_no_show_heat_map_log",
             ),
             node(
                 func=plot_appt_noshow_tree_map,

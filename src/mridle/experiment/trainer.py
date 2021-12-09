@@ -1,6 +1,6 @@
 from copy import deepcopy
 from sklearn.preprocessing import LabelEncoder
-from typing import Dict
+from typing import Dict, Tuple
 from .architecture import Architecture, ArchitectureInterface
 from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
 from .tuner import Tuner, TunerInterface
@@ -19,7 +19,7 @@ class Trainer(ConfigurableComponent):
         self.architecture = architecture
         self.tuner = tuner
 
-    def fit(self, x, y) -> Predictor:
+    def fit(self, x, y) -> Tuple[Predictor, dict]:
         training_metadata = {}
         architecture = self.get_architecture()
         if self.tuner:
@@ -45,14 +45,17 @@ class Trainer(ConfigurableComponent):
 
 class SkorchTrainer(Trainer):
 
-    def fit(self, x, y) -> Predictor:
+    def fit(self, x, y) -> Tuple[Predictor, dict]:
+        training_metadata = {}
         architecture = self.get_architecture()
         y = self.transform_y(y)
+
         if self.tuner:
-            trained_model = self.tuner.fit(architecture, x, y)
+            trained_model, training_metadata = self.tuner.fit(architecture, x, y)
         else:
             trained_model = architecture.fit(x, y)
-        return Predictor(trained_model)
+        predictor = Predictor(trained_model)
+        return predictor, training_metadata
 
     @staticmethod
     def transform_y(y):

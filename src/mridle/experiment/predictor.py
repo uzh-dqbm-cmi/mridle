@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class Predictor:
 
     def __init__(self, model=None):
@@ -11,5 +14,7 @@ class Predictor:
         y_pred_proba = self.model.predict_proba(x)
         if y_pred_proba.shape[1] == 2:
             y_pred_proba = y_pred_proba[:, 1]
+
+        y_pred_proba = np.clip(y_pred_proba, 1e-5, 1-1e-5)
 
         return y_pred_proba
