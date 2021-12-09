@@ -54,7 +54,7 @@ def create_pipeline(**kwargs):
             ),
             node(
                 func=build_slot_df,
-                inputs="val_ris_development_status_df",
+                inputs=["val_ris_development_status_df", "params:dispo.experiment_2.valid_date_range"],
                 outputs="val_ris_development_slot_df_pre_filter",
                 name="build_val_ris_development_slot_df"
             ),
@@ -86,7 +86,7 @@ def create_pipeline(**kwargs):
             ),
             node(
                 func=build_slot_df,
-                inputs="val_ris_evaluation_status_df",
+                inputs=["val_ris_evaluation_status_df", "params:dispo.experiment_3.valid_date_range"],
                 outputs="val_ris_evaluation_slot_df_pre_filter",
                 name="build_val_ris_evaluation_slot_df"
             ),

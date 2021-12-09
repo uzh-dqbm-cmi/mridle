@@ -1,6 +1,21 @@
 ris:
-    dataset_valid_starting: '01/01/2015'
-    dataset_valid_ending: '01/01/2020'
+    valid_date_range:
+        # valid range is starting ≤ x ≤ ending
+        - '2015-01-01'
+        - '2019-12-31'
+
+dispo:
+    experiment_2:
+        valid_date_range:
+            # valid range is starting ≤ x ≤ ending
+            - '2020-09-28'
+            - '2020-10-02'
+
+    experiment_3:
+        valid_date_range:
+            # valid range is starting ≤ x ≤ ending
+            - '2021-04-12'
+            - '2021-04-16'
 
 train_val_split:
     test_size: 0.2
@@ -468,7 +483,7 @@ models:
                 features:
                     - 'no_show_before'
                     - 'sched_days_advanced'
-                    #- 'month'
+                    - 'month'
                     - 'age'
                     - 'modality'
                     - 'sex'
@@ -500,6 +515,7 @@ models:
                                   - 'age'
                                   - 'hour_sched'
                                   - 'distance_to_usz'
+                                  - 'month'
                           - name: 'onehot'
                             flavor: sklearn.preprocessing.OneHotEncoder
                             config:
@@ -530,15 +546,18 @@ models:
                         module:
                             flavor: mridle.experiment.architectures.MLP.MLP
                             config:
-                                input_layer_size: 42
-                                hidden_layer_size: 30
+                                input_layer_size: 43
+                                hidden_layer_size: 20
                                 dropout_p: 0
                         criterion:
                             flavor: torch.nn.BCELoss
                             instantiate: False
                         optimizer:
-                            flavor: torch.optim.Adam
+                            flavor: torch.optim.SGD
                             instantiate: False
+                        callbacks:
+                          - flavor: skorch.callbacks.EarlyStopping
+                            instantiate: True
         Trainer:
             flavor: SkorchTrainer
         Tuner:
@@ -554,19 +573,15 @@ models:
 #                                - 128
 #                                - 256
                     classifier__lr:
-                        parse_hp_choice:
-                            choice_list:
-                                - 0.0001
-                                - 0.001
-                                - 0.01
-                                - 0.1
+                        parse_hp_loguniform:
+                            start: -5.5
+                            end: -1.5
                 search_type: bayesian
                 num_cv_folds: 5
-                num_iters: 4  # 150
+                num_iters: 20  # 150
                 scoring_function: log_loss
                 verbose: 1
                 hyperopt_timeout: 10000000
-        #            run_hyperparam_search: true
         Metrics:
             - flavor: F1_Macro
               config:

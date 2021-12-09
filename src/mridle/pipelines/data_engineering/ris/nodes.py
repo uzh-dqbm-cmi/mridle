@@ -143,14 +143,16 @@ def build_status_df(raw_df: pd.DataFrame,  exclude_patient_ids: List[str]) -> pd
     return df
 
 
-def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None, include_id_cols: bool = True
-                  ) -> pd.DataFrame:
+def build_slot_df(input_status_df: pd.DataFrame, valid_date_range: List[str], agg_dict: Dict[str, str] = None,
+                  include_id_cols: bool = True) -> pd.DataFrame:
     """
     Convert status_df into slot_df. Identify "show" and "no show" appointment slots from status_df,
     and synthesize into a single dataframe of all appointments that occurred or were supposed to occur (but no-show'ed).
 
     Args:
         input_status_df: row-per-status-change dataframe.
+        valid_date_range: List of 2 strings defining the starting and ending date of the valid slot data period
+         (status_df contains status change data outside the valid slot date range- these should not be made into slots).
         agg_dict: aggregation dict to pass to pd.DataFrame.agg() that specifies which columns from status_df to include
             in slot_df. It is recommended to aggregate by 'last' to use the latest value recorded for the slot. If no
             agg_dict is passed, the default will be used.
@@ -215,6 +217,12 @@ def build_slot_df(input_status_df: pd.DataFrame, agg_dict: Dict[str, str] = None
         no_show_slot_df.drop('was_sched_for_date', axis=1, inplace=True)
 
     slot_df = pd.concat([show_slot_df, no_show_slot_df], sort=False)
+
+    # restrict to the valid date range
+    valid_start_date, valid_end_date = valid_date_range
+    day_after_last_valid_date = pd.to_datetime(valid_end_date) + pd.to_timedelta(1, 'days')
+    slot_df = slot_df[slot_df['start_time'] >= valid_start_date]
+    slot_df = slot_df[slot_df['start_time'] < day_after_last_valid_date]
 
     if len(slot_df) > 0:
         slot_df['FillerOrderNo'] = slot_df['FillerOrderNo'].astype(int)

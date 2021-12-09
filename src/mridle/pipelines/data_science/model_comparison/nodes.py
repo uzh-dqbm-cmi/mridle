@@ -45,7 +45,8 @@ def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic
         experiment = Experiment.deserialize(serialised_m)
 
         preds_prob = experiment.final_predictor.predict_proba(val_dataset.x)
-
+        if model_name == 'Neural Net':
+            preds_prob = [prob for [prob] in preds_prob]
         preds_prob_sorted = np.sort(preds_prob)[::-1]
 
         calc_list = []
