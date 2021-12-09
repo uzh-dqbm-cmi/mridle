@@ -72,7 +72,8 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], use_
     }
 
     if use_before_val_func:
-        # TODO: refactor bv_build_slot_df to accept an agg_dict
+        # CHANGED: refactor bv_build_slot_df to accept an agg_dict
+        del agg_dict['slot_outcome']
         slot_df = bv_build_slot_df(status_df, agg_dict)
         # restrict to valida date range, since the old build_slot_df didn't do that
         valid_start_date, valid_end_date = valid_date_range
