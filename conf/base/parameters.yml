@@ -345,7 +345,7 @@ models:
                     classifier__max_depth:
                         parse_hp_uniformint:
                             start: 2
-                            end: 20
+                            end: 100
                     classifier__min_samples_split:
                         parse_hp_uniformint:
                             start: 2
