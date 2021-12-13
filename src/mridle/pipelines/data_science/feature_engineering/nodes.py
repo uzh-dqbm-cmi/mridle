@@ -66,7 +66,7 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str]) -> p
         'distance_to_usz_sq': 'last',
         'close_to_usz': 'last',
         'slot_outcome': 'last',
-        'date': 'last'
+        # 'date': 'last'
     }
 
     slot_df = build_slot_df(status_df, valid_date_range, agg_dict, include_id_cols=True)
@@ -311,7 +311,7 @@ def feature_no_show_before(slot_df: pd.DataFrame) -> pd.DataFrame:
     Returns: A row-per-appointment dataframe with additional columns 'no_show_before', 'no_show_before_sq'.
 
     """
-    slot_df_ordered = slot_df.sort_values('date')
+    slot_df_ordered = slot_df.sort_values('start_time')
     slot_df_ordered['no_show_before'] = slot_df_ordered.groupby('MRNCmpdId')['NoShow'].cumsum()
     # cumsum will include the current no show, so subtract 1, except don't go negative
     slot_df_ordered['no_show_before'] = np.where(slot_df_ordered['NoShow'], slot_df_ordered['no_show_before'] - 1,
