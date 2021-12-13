@@ -8,7 +8,7 @@ from mridle.experiment.experiment import Experiment
 from mridle.experiment.dataset import DataSet
 
 
-def main(data_path, model_dir, output_path):
+def main(data_path, model_dir, output_path, valid_date_range):
     """
     Make predictions for all models in model_dir on the given data, saving the resulting predictions to output_path.
     Args:
@@ -16,14 +16,16 @@ def main(data_path, model_dir, output_path):
         model_dir: Directory to the model experiments. This directory should contain a set of directories containing
          pickled serialized `Experiments`.
         output_path: Destination to save the predictions file to (csv).
+        valid_date_range: Date range on which to filter slot_df for relevant appointment slots.
 
     Returns: None
     """
+
     raw_df = pd.read_csv(data_path)
     exclude_pat_ids = list()  # TODO!
     formatted_df = prep_raw_df_for_parquet(raw_df)
     status_df = build_status_df(formatted_df, exclude_pat_ids)
-    features_df_maybe_na = build_feature_set(status_df)
+    features_df_maybe_na = build_feature_set(status_df, valid_date_range, build_future_slots=True)
     features_df = remove_na(features_df_maybe_na)
     prediction_df = features_df.copy()
 
@@ -49,5 +51,8 @@ if __name__ == "__main__":
     parser.add_argument('data_path',  type=str, help='Path to the input data')
     parser.add_argument('model_dir',  type=str, help='Parent directory containing model subdirectories.')
     parser.add_argument('output_path',  type=str, help='Destination to save the prediction data')
+    parser.add_argument('start_date',  type=str, help='Destination to save the prediction data')
+    parser.add_argument('end_date',  type=str, help='Destination to save the prediction data')
     args = parser.parse_args()
-    main(args.data_path, args.model_dir, args.output_path)
+    valid_date_range = (args.start_date, args.end_date)
+    main(args.data_path, args.model_dir, args.output_path, valid_date_range)

@@ -8,7 +8,8 @@ from sklearn.model_selection import train_test_split
 from typing import Dict, List
 
 
-def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str]) -> pd.DataFrame:
+def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], build_future_slots: bool = False
+                      ) -> pd.DataFrame:
     """
     Builds a feature set that replicates the Harvey et al model as best we can.
     So far includes:
@@ -22,6 +23,9 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str]) -> p
         status_df: status_df
         valid_date_range: List of 2 strings defining the starting date of the valid slot data period (status_df contains
          status change data outside the valid slot date range- these should not be made into slots).
+         build_future_slots: whether we are building slot_df for appointments in the future to build dataset for
+            predictions (and therefore no show/no-show type events yet), or we are building it 'normally' (with past
+            data and show/no-show events) to train models with.
     Returns:
 
     """
@@ -69,7 +73,8 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str]) -> p
         # 'date': 'last'
     }
 
-    slot_df = build_slot_df(status_df, valid_date_range, agg_dict, include_id_cols=True)
+    slot_df = build_slot_df(status_df, valid_date_range, agg_dict, build_future_slots=build_future_slots,
+                            include_id_cols=True)
     slot_df = feature_no_show_before(slot_df)
     slot_df = feature_cyclical_hour(slot_df)
     slot_df = feature_cyclical_day_of_week(slot_df)

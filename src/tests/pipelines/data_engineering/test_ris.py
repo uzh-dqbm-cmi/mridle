@@ -82,7 +82,6 @@ class TestBuildSlotDF(unittest.TestCase):
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
         status_df = build_status_df(raw_df, exclude_patient_ids=[])
         slot_df = build_slot_df(status_df, valid_date_range)
-        print(expected_slot_df.T, slot_df.T)
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 

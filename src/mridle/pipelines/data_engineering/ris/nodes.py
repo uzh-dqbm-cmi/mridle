@@ -159,7 +159,7 @@ def build_slot_df(input_status_df: pd.DataFrame, valid_date_range: List[str], ag
         include_id_cols: whether to include patient and appointment id columns in the resulting dataset.
         build_future_slots: whether we are building slot_df for appointments in the future to build dataset for
             predictions (and therefore no show/no-show type events yet), or we are building it 'normally' (with past
-            data and show/no-show events) to train models with
+            data and show/no-show events) to train models with.
 
     Returns: row-per-appointment-slot dataframe.
         If no agg_dict is passed, the resulting dataframe has the following default columns:
