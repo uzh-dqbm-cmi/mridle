@@ -33,8 +33,6 @@ def main(data_path, model_dir, output_path, valid_date_range):
     for model_dir in model_dirs:
         model_paths = model_dir.glob('*')
         for model_path in model_paths:
-            if model_path.name == 'harvey_model_random_forest_hp.pkl':  # old and not backwards compatible exp
-                continue
             with open(model_path, "rb+") as f:
                 serialized_model = pickle.load(f)
             exp = Experiment.deserialize(serialized_model)
