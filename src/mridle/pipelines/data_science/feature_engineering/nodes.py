@@ -69,7 +69,7 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], buil
         'distance_to_usz': 'last',
         'distance_to_usz_sq': 'last',
         'close_to_usz': 'last',
-        'slot_outcome': 'last',
+        # 'slot_outcome': 'last',
         'start_time': 'last'
         # 'date': 'last'
     }
