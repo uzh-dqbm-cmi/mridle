@@ -20,7 +20,6 @@ class Trainer(ConfigurableComponent):
         self.tuner = tuner
 
     def fit(self, x, y) -> Tuple[Predictor, dict]:
-
         training_metadata = {}
         architecture = self.get_architecture()
         if self.tuner:

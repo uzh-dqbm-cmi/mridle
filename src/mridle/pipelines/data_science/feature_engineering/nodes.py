@@ -69,9 +69,7 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], buil
         'distance_to_usz': 'last',
         'distance_to_usz_sq': 'last',
         'close_to_usz': 'last',
-        # 'slot_outcome': 'last',
         'start_time': 'last'
-        # 'date': 'last'
     }
 
     slot_df = build_slot_df(status_df, valid_date_range, agg_dict, build_future_slots=build_future_slots,

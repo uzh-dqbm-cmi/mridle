@@ -863,4 +863,3 @@ class TestSetNoShowSeverity(unittest.TestCase):
         }, index=[0])
         expected_result = 'hard'
         self.assertEqual(example_row.apply(set_no_show_severity, axis=1).iloc[0], expected_result)
-
