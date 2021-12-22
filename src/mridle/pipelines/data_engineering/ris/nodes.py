@@ -109,7 +109,7 @@ def build_status_df(raw_df: pd.DataFrame,  exclude_patient_ids: List[str]) -> pd
     Returns: Dataframe with one row per appointment status change.
         The resulting dataframe has the columns (illustrative, not a complete list):
          - FillerOrderNo: int, appt id
-         - date (MessageDtTm): datetime, the date and time of the status change
+         - date (History_MessageDtTm): datetime, the date and time of the status change
          - was_status: str, the status the appt changed from
          - now_status: str, the status the appt changed to
          - was_sched_for: int, number of days ahead the appt was sched for before status change relative to `date`
@@ -144,7 +144,7 @@ def build_status_df(raw_df: pd.DataFrame,  exclude_patient_ids: List[str]) -> pd
 
 
 def build_slot_df(input_status_df: pd.DataFrame, valid_date_range: List[str], agg_dict: Dict[str, str] = None,
-                  include_id_cols: bool = True) -> pd.DataFrame:
+                  include_id_cols: bool = True, build_future_slots: bool = False) -> pd.DataFrame:
     """
     Convert status_df into slot_df. Identify "show" and "no show" appointment slots from status_df,
     and synthesize into a single dataframe of all appointments that occurred or were supposed to occur (but no-show'ed).
@@ -157,6 +157,9 @@ def build_slot_df(input_status_df: pd.DataFrame, valid_date_range: List[str], ag
             in slot_df. It is recommended to aggregate by 'last' to use the latest value recorded for the slot. If no
             agg_dict is passed, the default will be used.
         include_id_cols: whether to include patient and appointment id columns in the resulting dataset.
+        build_future_slots: whether we are building slot_df for appointments in the future to build dataset for
+            predictions (and therefore no show/no-show type events yet), or we are building it 'normally' (with past
+            data and show/no-show events) to train models with.
 
     Returns: row-per-appointment-slot dataframe.
         If no agg_dict is passed, the resulting dataframe has the following default columns:
@@ -200,23 +203,35 @@ def build_slot_df(input_status_df: pd.DataFrame, valid_date_range: List[str], ag
     status_df['end_time'] = status_df.apply(identify_end_times, axis=1)
     status_df['end_time'] = status_df.groupby('FillerOrderNo')['end_time'].fillna(method='bfill')
 
-    # there should be one show appt per FillerOrderNo
-    show_slot_type_events = status_df[status_df['slot_type'].isin(['show', 'inpatient'])].copy()
-    show_slot_df = show_slot_type_events.groupby(['FillerOrderNo', 'MRNCmpdId']).agg(agg_dict)
-    if len(show_slot_df) > 0:
-        # if there are no shows, the index column will be 'index', and reset_index will create an extra index col
-        show_slot_df.reset_index(inplace=True)
+    if build_future_slots:
+        agg_dict['now_sched_for_date'] = 'last'
+        future_slot_df = status_df.groupby(['FillerOrderNo', 'MRNCmpdId']).agg(agg_dict)
+        future_slot_df['start_time'] = future_slot_df['now_sched_for_date']
+        future_slot_df['end_time'] = future_slot_df['start_time'] + pd.to_timedelta(30, unit='minutes')
+        future_slot_df.drop(columns=['now_sched_for_date'], inplace=True)
+        if len(future_slot_df) > 0:
+            # if there are 0 slots, the index column will be 'index', and reset_index will create an extra index col
+            future_slot_df.reset_index(inplace=True)
 
-    # there may be multiple no-show appts per FillerOrderNo
-    no_show_slot_type_events = status_df[status_df['NoShow']].copy()
-    no_show_groupby_cols = ['FillerOrderNo', 'MRNCmpdId', 'was_sched_for_date']
-    no_show_slot_df = no_show_slot_type_events.groupby(no_show_groupby_cols).agg(agg_dict)
-    if len(no_show_slot_df) > 0:
-        # if there are no no-shows, the index column will be 'index', and reset_index will create an extra index col
-        no_show_slot_df.reset_index(inplace=True)
-        no_show_slot_df.drop('was_sched_for_date', axis=1, inplace=True)
+        slot_df = future_slot_df.copy()
+    else:
+        # there should be one show appt per FillerOrderNo
+        show_slot_type_events = status_df[status_df['slot_type'].isin(['show', 'inpatient'])].copy()
+        show_slot_df = show_slot_type_events.groupby(['FillerOrderNo', 'MRNCmpdId']).agg(agg_dict)
+        if len(show_slot_df) > 0:
+            # if there are 0 shows, the index column will be 'index', and reset_index will create an extra index col
+            show_slot_df.reset_index(inplace=True)
 
-    slot_df = pd.concat([show_slot_df, no_show_slot_df], sort=False)
+        # there may be multiple no-show appts per FillerOrderNo
+        no_show_slot_type_events = status_df[status_df['NoShow']].copy()
+        no_show_groupby_cols = ['FillerOrderNo', 'MRNCmpdId', 'was_sched_for_date']
+        no_show_slot_df = no_show_slot_type_events.groupby(no_show_groupby_cols).agg(agg_dict)
+        if len(no_show_slot_df) > 0:
+            # if there are 0 no-shows, the index column will be 'index', and reset_index will create an extra index col
+            no_show_slot_df.reset_index(inplace=True)
+            no_show_slot_df.drop('was_sched_for_date', axis=1, inplace=True)
+
+        slot_df = pd.concat([show_slot_df, no_show_slot_df], sort=False)
 
     # restrict to the valid date range
     valid_start_date, valid_end_date = valid_date_range
@@ -410,6 +425,8 @@ def set_slot_outcome(row: pd.DataFrame) -> str:
             return 'rescheduled'
     elif row['slot_type'] == 'show' or row['slot_type'] == 'inpatient':
         return 'show'
+    else:
+        return None
 
 
 def set_slot_type(row: pd.DataFrame) -> Union[str, None]:

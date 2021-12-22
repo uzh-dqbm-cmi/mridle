@@ -35,8 +35,7 @@ models:
                     - 'distance_to_usz'
                     - 'age'
                     - 'close_to_usz'
-                    - 'male'
-                    - 'female'
+                    - 'sex'
                     - 'age_sq'
                     - 'sched_days_advanced_sq'
                     - 'distance_to_usz_sq'
@@ -68,8 +67,7 @@ models:
                                     - 'distance_to_usz'
                                     - 'age'
                                     - 'close_to_usz'
-                                    - 'male'
-                                    - 'female'
+                                    - 'sex'
                                     - 'age_sq'
                                     - 'sched_days_advanced_sq'
                                     - 'distance_to_usz_sq'
@@ -125,8 +123,7 @@ models:
                     - 'distance_to_usz'
                     - 'age'
                     - 'close_to_usz'
-                    - 'male'
-                    - 'female'
+                    - 'sex'
                     - 'age_sq'
                     - 'sched_days_advanced_sq'
                     - 'distance_to_usz_sq'
@@ -345,7 +342,7 @@ models:
                     classifier__max_depth:
                         parse_hp_uniformint:
                             start: 2
-                            end: 20
+                            end: 100
                     classifier__min_samples_split:
                         parse_hp_uniformint:
                             start: 2

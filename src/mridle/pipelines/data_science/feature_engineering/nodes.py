@@ -8,7 +8,8 @@ from sklearn.model_selection import train_test_split
 from typing import Dict, List
 
 
-def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str]) -> pd.DataFrame:
+def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], build_future_slots: bool = False
+                      ) -> pd.DataFrame:
     """
     Builds a feature set that replicates the Harvey et al model as best we can.
     So far includes:
@@ -22,6 +23,9 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str]) -> p
         status_df: status_df
         valid_date_range: List of 2 strings defining the starting date of the valid slot data period (status_df contains
          status change data outside the valid slot date range- these should not be made into slots).
+         build_future_slots: whether we are building slot_df for appointments in the future to build dataset for
+            predictions (and therefore no show/no-show type events yet), or we are building it 'normally' (with past
+            data and show/no-show events) to train models with.
     Returns:
 
     """
@@ -55,8 +59,6 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str]) -> p
         'day_of_week_str': 'last',
         'month': 'last',
         'sex': 'last',
-        'male': 'last',
-        'female': 'last',
         'age': 'last',
         'age_sq': 'last',
         'age_20_60': 'last',
@@ -65,11 +67,11 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str]) -> p
         'distance_to_usz': 'last',
         'distance_to_usz_sq': 'last',
         'close_to_usz': 'last',
-        'slot_outcome': 'last',
-        'date': 'last'
+        'start_time': 'last'
     }
 
-    slot_df = build_slot_df(status_df, valid_date_range, agg_dict, include_id_cols=True)
+    slot_df = build_slot_df(status_df, valid_date_range, agg_dict, build_future_slots=build_future_slots,
+                            include_id_cols=True)
     slot_df = feature_no_show_before(slot_df)
     slot_df = feature_cyclical_hour(slot_df)
     slot_df = feature_cyclical_day_of_week(slot_df)
@@ -219,14 +221,7 @@ def feature_insurance_class(status_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def feature_sex(status_df: pd.DataFrame) -> pd.DataFrame:
-    gender_map = {
-        'weiblich': 'female',
-        'männlich': 'male',
-        'unbekannt': 'unknown',
-    }
-    status_df['sex'] = status_df['Sex'].apply(lambda x: gender_map.get(x, 'unknown'))
-    categories = pd.get_dummies(status_df['sex'])
-    status_df = pd.concat([status_df, categories], axis=1)
+    status_df['sex'] = np.where(status_df['Sex'] == 'weiblich', 1, 0)
     return status_df
 
 
@@ -311,7 +306,7 @@ def feature_no_show_before(slot_df: pd.DataFrame) -> pd.DataFrame:
     Returns: A row-per-appointment dataframe with additional columns 'no_show_before', 'no_show_before_sq'.
 
     """
-    slot_df_ordered = slot_df.sort_values('date')
+    slot_df_ordered = slot_df.sort_values('start_time')
     slot_df_ordered['no_show_before'] = slot_df_ordered.groupby('MRNCmpdId')['NoShow'].cumsum()
     # cumsum will include the current no show, so subtract 1, except don't go negative
     slot_df_ordered['no_show_before'] = np.where(slot_df_ordered['NoShow'], slot_df_ordered['no_show_before'] - 1,
