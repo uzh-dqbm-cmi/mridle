@@ -195,7 +195,7 @@ models:
                 features:
                     - 'no_show_before'
                     - 'sched_days_advanced'
-                    #- 'month'
+                    - 'month'
                     - 'age'
                     - 'modality'
                     - 'sex'
@@ -227,6 +227,7 @@ models:
                                     - 'age'
                                     - 'hour_sched'
                                     - 'distance_to_usz'
+                                    - 'month'
                             - name: 'onehot'
                               flavor: sklearn.preprocessing.OneHotEncoder
                               config:
@@ -235,7 +236,6 @@ models:
                                   columns:
                                       - 'marital'
                                       - 'modality'
-                                      - 'sex'
                                       - 'day_of_week_str'
                   - flavor: LogisticRegression
                     name: 'classifier'
@@ -279,6 +279,7 @@ models:
                     - 'month'
                     - 'age'
                     - 'modality'
+                    - 'occupation'
                     - 'sex'
                     - 'hour_sched'
                     - 'distance_to_usz'
@@ -317,8 +318,8 @@ models:
                                   columns:
                                       - 'marital'
                                       - 'modality'
-                                      - 'sex'
                                       - 'day_of_week_str'
+                                      - 'occupation'
                             - name: 'cyc'
                               flavor: mridle.utilities.modeling.CyclicalTransformer
                               config:
@@ -419,7 +420,6 @@ models:
                                   - 'marital'
                                   - 'occupation'
                                   - 'modality'
-                                  - 'sex'
                                   - 'day_of_week_str'
                   - flavor: XGBClassifier
                     name: 'classifier'
@@ -521,7 +521,6 @@ models:
                                 columns:
                                   - 'marital'
                                   - 'modality'
-                                  - 'sex'
                                   - 'day_of_week_str'
                   - flavor: sklearn.preprocessing.FunctionTransformer
                     name: 'tofloat'
