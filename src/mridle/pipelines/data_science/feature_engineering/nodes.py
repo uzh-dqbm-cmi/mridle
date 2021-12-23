@@ -59,8 +59,6 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], buil
         'day_of_week_str': 'last',
         'month': 'last',
         'sex': 'last',
-        'male': 'last',
-        'female': 'last',
         'age': 'last',
         'age_sq': 'last',
         'age_20_60': 'last',
@@ -223,14 +221,7 @@ def feature_insurance_class(status_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def feature_sex(status_df: pd.DataFrame) -> pd.DataFrame:
-    gender_map = {
-        'weiblich': 'female',
-        'männlich': 'male',
-        'unbekannt': 'unknown',
-    }
-    status_df['sex'] = status_df['Sex'].apply(lambda x: gender_map.get(x, 'unknown'))
-    status_df['male'] = np.where(status_df['sex'] == 'male', 1, 0)
-    status_df['female'] = np.where(status_df['sex'] == 'female', 1, 0)
+    status_df['sex'] = np.where(status_df['Sex'] == 'weiblich', 1, 0)
     return status_df
 
 
