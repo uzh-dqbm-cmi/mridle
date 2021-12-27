@@ -35,8 +35,7 @@ models:
                     - 'distance_to_usz'
                     - 'age'
                     - 'close_to_usz'
-                    - 'male'
-                    - 'female'
+                    - 'sex'
                     - 'age_sq'
                     - 'sched_days_advanced_sq'
                     - 'distance_to_usz_sq'
@@ -68,8 +67,7 @@ models:
                                     - 'distance_to_usz'
                                     - 'age'
                                     - 'close_to_usz'
-                                    - 'male'
-                                    - 'female'
+                                    - 'sex'
                                     - 'age_sq'
                                     - 'sched_days_advanced_sq'
                                     - 'distance_to_usz_sq'
@@ -125,8 +123,7 @@ models:
                     - 'distance_to_usz'
                     - 'age'
                     - 'close_to_usz'
-                    - 'male'
-                    - 'female'
+                    - 'sex'
                     - 'age_sq'
                     - 'sched_days_advanced_sq'
                     - 'distance_to_usz_sq'
@@ -198,7 +195,7 @@ models:
                 features:
                     - 'no_show_before'
                     - 'sched_days_advanced'
-                    #- 'month'
+                    - 'month'
                     - 'age'
                     - 'modality'
                     - 'sex'
@@ -230,6 +227,7 @@ models:
                                     - 'age'
                                     - 'hour_sched'
                                     - 'distance_to_usz'
+                                    - 'month'
                             - name: 'onehot'
                               flavor: sklearn.preprocessing.OneHotEncoder
                               config:
@@ -238,7 +236,6 @@ models:
                                   columns:
                                       - 'marital'
                                       - 'modality'
-                                      - 'sex'
                                       - 'day_of_week_str'
                   - flavor: LogisticRegression
                     name: 'classifier'
@@ -282,6 +279,7 @@ models:
                     - 'month'
                     - 'age'
                     - 'modality'
+                    - 'occupation'
                     - 'sex'
                     - 'hour_sched'
                     - 'distance_to_usz'
@@ -320,8 +318,8 @@ models:
                                   columns:
                                       - 'marital'
                                       - 'modality'
-                                      - 'sex'
                                       - 'day_of_week_str'
+                                      - 'occupation'
                             - name: 'cyc'
                               flavor: mridle.utilities.modeling.CyclicalTransformer
                               config:
@@ -345,7 +343,7 @@ models:
                     classifier__max_depth:
                         parse_hp_uniformint:
                             start: 2
-                            end: 20
+                            end: 100
                     classifier__min_samples_split:
                         parse_hp_uniformint:
                             start: 2
@@ -422,7 +420,6 @@ models:
                                   - 'marital'
                                   - 'occupation'
                                   - 'modality'
-                                  - 'sex'
                                   - 'day_of_week_str'
                   - flavor: XGBClassifier
                     name: 'classifier'
@@ -524,7 +521,6 @@ models:
                                 columns:
                                   - 'marital'
                                   - 'modality'
-                                  - 'sex'
                                   - 'day_of_week_str'
                   - flavor: sklearn.preprocessing.FunctionTransformer
                     name: 'tofloat'

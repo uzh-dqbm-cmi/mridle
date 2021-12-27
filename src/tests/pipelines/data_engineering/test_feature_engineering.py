@@ -12,17 +12,17 @@ class TestFeatureEngineering(unittest.TestCase):
         slot_df = pd.DataFrame([
             {
                 'MRNCmpdId': 1,
-                'date': str(day(2)),
+                'start_time': str(day(2)),
                 'NoShow': 1
             },
             {
                 'MRNCmpdId': 1,
-                'date': str(day(3)),
+                'start_time': str(day(3)),
                 'NoShow': 1
             },
             {
                 'MRNCmpdId': 1,
-                'date': str(day(4)),
+                'start_time': str(day(4)),
                 'NoShow': 0
             }
         ])
@@ -30,21 +30,21 @@ class TestFeatureEngineering(unittest.TestCase):
         expected = pd.DataFrame([
             {
                 'MRNCmpdId': 1,
-                'date': str(day(2)),
+                'start_time': str(day(2)),
                 'NoShow': 1,
                 'no_show_before': 0,
                 'no_show_before_sq': 0
             },
             {
                 'MRNCmpdId': 1,
-                'date': str(day(3)),
+                'start_time': str(day(3)),
                 'NoShow': 1,
                 'no_show_before': 1,
                 'no_show_before_sq': 1
             },
             {
                 'MRNCmpdId': 1,
-                'date': str(day(4)),
+                'start_time': str(day(4)),
                 'NoShow': 0,
                 'no_show_before': 2,
                 'no_show_before_sq': 4
@@ -58,12 +58,12 @@ class TestFeatureEngineering(unittest.TestCase):
         slot_df = pd.DataFrame([
             {
                 'MRNCmpdId': 2,
-                'date': str(day(2)),
+                'start_time': str(day(2)),
                 'NoShow': 0
             },
             {
                 'MRNCmpdId': 2,
-                'date': str(day(3)),
+                'start_time': str(day(3)),
                 'NoShow': 0
             }
         ])
@@ -71,14 +71,14 @@ class TestFeatureEngineering(unittest.TestCase):
         expected = pd.DataFrame([
             {
                 'MRNCmpdId': 2,
-                'date': str(day(2)),
+                'start_time': str(day(2)),
                 'NoShow': 0,
                 'no_show_before': 0,
                 'no_show_before_sq': 0
             },
             {
                 'MRNCmpdId': 2,
-                'date': str(day(3)),
+                'start_time': str(day(3)),
                 'NoShow': 0,
                 'no_show_before': 0,
                 'no_show_before_sq': 0
@@ -92,27 +92,27 @@ class TestFeatureEngineering(unittest.TestCase):
         slot_df = pd.DataFrame([
             {
                 'MRNCmpdId': 1,
-                'date': str(day(2)),
+                'start_time': str(day(2)),
                 'NoShow': 1
             },
             {
                 'MRNCmpdId': 1,
-                'date': str(day(3)),
+                'start_time': str(day(3)),
                 'NoShow': 1
             },
             {
                 'MRNCmpdId': 1,
-                'date': str(day(4)),
+                'start_time': str(day(4)),
                 'NoShow': 0
             },
             {
                 'MRNCmpdId': 2,
-                'date': str(day(2)),
+                'start_time': str(day(2)),
                 'NoShow': 0
             },
             {
                 'MRNCmpdId': 2,
-                'date': str(day(3)),
+                'start_time': str(day(3)),
                 'NoShow': 0
             }
         ])
@@ -120,28 +120,28 @@ class TestFeatureEngineering(unittest.TestCase):
         expected = pd.DataFrame([
             {
                 'MRNCmpdId': 1,
-                'date': str(day(2)),
+                'start_time': str(day(2)),
                 'NoShow': 1,
                 'no_show_before': 0,
                 'no_show_before_sq': 0
             },
             {
                 'MRNCmpdId': 1,
-                'date': str(day(3)),
+                'start_time': str(day(3)),
                 'NoShow': 1,
                 'no_show_before': 1,
                 'no_show_before_sq': 1
             },
             {
                 'MRNCmpdId': 1,
-                'date': str(day(4)),
+                'start_time': str(day(4)),
                 'NoShow': 0,
                 'no_show_before': 2,
                 'no_show_before_sq': 4
             },
             {
                 'MRNCmpdId': 2,
-                'date': str(day(2)),
+                'start_time': str(day(2)),
                 'NoShow': 0,
                 'no_show_before': 0,
                 'no_show_before_sq': 0
@@ -149,7 +149,7 @@ class TestFeatureEngineering(unittest.TestCase):
             },
             {
                 'MRNCmpdId': 2,
-                'date': str(day(3)),
+                'start_time': str(day(3)),
                 'NoShow': 0,
                 'no_show_before': 0,
                 'no_show_before_sq': 0
@@ -164,12 +164,12 @@ class TestFeatureEngineering(unittest.TestCase):
         slot_df = pd.DataFrame([
             {
                 'MRNCmpdId': 2,
-                'date': str(day(3)),
+                'start_time': str(day(3)),
                 'NoShow': 0
             },
             {
                 'MRNCmpdId': 2,
-                'date': str(day(2)),
+                'start_time': str(day(2)),
                 'NoShow': 1
             }
         ])
@@ -177,7 +177,7 @@ class TestFeatureEngineering(unittest.TestCase):
         expected = pd.DataFrame([
             {
                 'MRNCmpdId': 2,
-                'date': str(day(2)),
+                'start_time': str(day(2)),
                 'NoShow': 1,
                 'no_show_before': 0,
                 'no_show_before_sq': 0
@@ -185,7 +185,7 @@ class TestFeatureEngineering(unittest.TestCase):
             },
             {
                 'MRNCmpdId': 2,
-                'date': str(day(3)),
+                'start_time': str(day(3)),
                 'NoShow': 0,
                 'no_show_before': 1,
                 'no_show_before_sq': 1
