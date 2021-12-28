@@ -67,7 +67,6 @@ models:
                                     - 'distance_to_usz'
                                     - 'age'
                                     - 'close_to_usz'
-                                    - 'sex'
                                     - 'age_sq'
                                     - 'sched_days_advanced_sq'
                                     - 'distance_to_usz_sq'

@@ -9,7 +9,8 @@ from sklearn.model_selection import train_test_split
 from typing import Dict, List
 
 
-def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], use_before_val_func: bool = False, build_future_slots: bool = False) -> pd.DataFrame:
+def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], use_before_val_func: bool = False,
+                      build_future_slots: bool = False) -> pd.DataFrame:
     """
     Builds a feature set that replicates the Harvey et al model as best we can.
     So far includes:
@@ -82,8 +83,8 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], use_
         slot_df = slot_df[slot_df['start_time'] >= valid_start_date]
         slot_df = slot_df[slot_df['start_time'] < day_after_last_valid_date]
     else:
-         slot_df = build_slot_df(status_df, valid_date_range, agg_dict, build_future_slots=build_future_slots,
-                            include_id_cols=True)
+        slot_df = build_slot_df(status_df, valid_date_range, agg_dict, build_future_slots=build_future_slots,
+                                include_id_cols=True)
     slot_df = feature_no_show_before(slot_df)
     slot_df = feature_cyclical_hour(slot_df)
     slot_df = feature_cyclical_day_of_week(slot_df)
