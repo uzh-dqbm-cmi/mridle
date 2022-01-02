@@ -308,7 +308,6 @@ models:
                                     - 'age'
                                     - 'hour_sched'
                                     - 'distance_to_usz'
-                                    - 'month'
                             - name: 'onehot'
                               flavor: sklearn.preprocessing.OneHotEncoder
                               config:
@@ -350,7 +349,6 @@ models:
                     classifier__max_features:
                         parse_hp_choice:
                             choice_list:
-                                - 'auto'
                                 - 'sqrt'
                                 - 'log2'
                 search_type: bayesian
@@ -409,7 +407,6 @@ models:
                                   - 'age'
                                   - 'hour_sched'
                                   - 'distance_to_usz'
-                                  - 'month'
                           - name: 'onehot'
                             flavor: sklearn.preprocessing.OneHotEncoder
                             config:
@@ -420,6 +417,13 @@ models:
                                   - 'occupation'
                                   - 'modality'
                                   - 'day_of_week_str'
+                          - name: 'cyc'
+                            flavor: mridle.utilities.modeling.CyclicalTransformer
+                            config:
+                                period: 12
+                            args:
+                                columns:
+                                    - 'month'
                   - flavor: XGBClassifier
                     name: 'classifier'
                     config:
