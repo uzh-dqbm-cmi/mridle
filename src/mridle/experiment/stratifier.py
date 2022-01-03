@@ -24,7 +24,7 @@ class Stratifier(ConfigurableComponent):
             self.data_set = None
         else:
             raise ValueError(f"{type(self).__name__} received one but not both of data_set and partition_idxs. It is"
-                             f" only valid to pass one or both.")
+                             f" only valid to pass none or both.")
 
     def __iter__(self):
         self.n = 0
