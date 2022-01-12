@@ -271,10 +271,10 @@ def feature_marital(status_df: pd.DataFrame) -> pd.DataFrame:
         # 'LV': 'life partnership dissolved by death',
         # 'LA': 'forcible partnership',
         # 'LE': 'civil partnership dissolved by declaration of death',
-        np.NaN: 'blank',
     }
 
     status_df['marital'] = status_df['Zivilstand'].map(zivilstand_abbreviation_mapping)
+    status_df['marital'] = status_df['marital'].fillna('not known')
     return status_df
 
 

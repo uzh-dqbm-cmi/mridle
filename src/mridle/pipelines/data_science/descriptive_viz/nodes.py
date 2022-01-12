@@ -201,9 +201,10 @@ def plot_no_show_by_day_of_week(df):
         lambda x: np.sum(x) / len(x)).reset_index()
 
     return alt.Chart(df_day_agg).mark_bar().encode(
-        alt.X('day_of_week_str', sort=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']),
+        alt.X('day_of_week_str', sort=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+              title='Day of the Week'),
         alt.Y('NoShow', axis=alt.Axis(format='%'))
-    ).properties(width=250, title='Day of Week')
+    ).properties(width=250)
 
 
 def plot_no_show_by_month(df):
@@ -220,9 +221,9 @@ def plot_no_show_by_month(df):
     df_month_agg = df.copy()
     df_month_agg = df_month_agg[['month', 'NoShow']].groupby('month').apply(lambda x: np.sum(x) / len(x))
     return alt.Chart(df_month_agg).mark_bar(color='#409caf').encode(
-        alt.X('month:O'),
+        alt.X('month:O', title='Month'),
         alt.Y('NoShow', axis=alt.Axis(format='%'))
-    ).properties(width=250, title='Month')
+    ).properties(width=250)
 
 
 def plot_no_show_by_hour_of_day(df):
@@ -242,9 +243,9 @@ def plot_no_show_by_hour_of_day(df):
     df_hour_agg = df_hour_agg[['hour_sched', 'NoShow']].groupby('hour_sched').apply(lambda x: np.sum(x) / len(x))
 
     return alt.Chart(df_hour_agg).mark_bar(color='#D35400').encode(
-        alt.X('hour_sched:O'),
+        alt.X('hour_sched:O', title='Hour Scheduled'),
         alt.Y('NoShow', axis=alt.Axis(format='%'))
-    ).properties(width=400, title='Hour of Day')
+    ).properties(width=400, title='')
 
 
 def plot_no_show_by_age(df):
@@ -267,7 +268,7 @@ def plot_no_show_by_age(df):
 
     df_age_agg['NoShow'] = df_age_agg['NoShowSum'] / df_age_agg['Number of patients']
     return alt.Chart(df_age_agg).mark_circle().encode(
-        alt.X('age'),
+        alt.X('age', title='Age'),
         alt.Y('NoShow', axis=alt.Axis(format='%')),
         size=alt.Size('Number of patients')
     ).properties(width=400)
