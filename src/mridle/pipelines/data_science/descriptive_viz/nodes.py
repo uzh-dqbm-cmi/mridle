@@ -295,13 +295,15 @@ def plot_appts_per_patient(df, log_scale=False):
 
     if log_scale:
         chart = alt.Chart(appts_per_patient_agg).mark_bar(size=15).encode(
-            x=alt.X('num_appts', axis=alt.Axis(tickCount=appts_per_patient_agg.shape[0], grid=False)),
-            y=alt.Y('num_patients', scale=alt.Scale(type='log'))
+            x=alt.X('num_appts', title='Number of Appointments',
+                    axis=alt.Axis(tickCount=appts_per_patient_agg.shape[0], grid=False)),
+            y=alt.Y('num_patients', title='Number of Patients', scale=alt.Scale(type='log'))
         ).properties(title='Number of appointments per patient (log scale)')
     else:
         chart = alt.Chart(appts_per_patient_agg).mark_bar(size=15).encode(
-            x=alt.X('num_appts', axis=alt.Axis(tickCount=appts_per_patient_agg.shape[0], grid=False)),
-            y='num_patients'
+            x=alt.X('num_appts', title='Number of Appointments',
+                    axis=alt.Axis(tickCount=appts_per_patient_agg.shape[0], grid=False)),
+            y=alt.Y('num_patients', title='Number of Patients',)
         ).properties(title='Number of appointments per patient')
 
     return chart
@@ -331,14 +333,14 @@ def plot_no_show_heat_map(df, log_scale=False):
 
     if log_scale:
         chart = alt.Chart(pat_appts_counts).mark_rect().encode(
-            x='num_appts:O',
-            y=alt.Y('num_noshow:O', sort='descending'),
+            x=alt.X('num_appts:O', title='Number of Appointments'),
+            y=alt.Y('num_noshow:O', title='Number of No-shows', sort='descending'),
             color=alt.Color('num_patients:Q', scale=alt.Scale(type='log'))
         ).properties(title='Heat map of appointments and no-show distribution (log scale)')
     else:
         chart = alt.Chart(pat_appts_counts).mark_rect().encode(
-            x='num_appts:O',
-            y=alt.Y('num_noshow:O', sort='descending'),
+            x=alt.X('num_appts:O', title='Number of Appointments'),
+            y=alt.Y('num_noshow:O', title='Number of No-shows', sort='descending'),
             color=alt.Color('num_patients:Q')
         ).properties(title='Heat map of appointments and no-show distribution')
 
