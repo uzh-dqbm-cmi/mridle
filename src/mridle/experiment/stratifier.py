@@ -12,7 +12,8 @@ class Stratifier(ConfigurableComponent):
     Yield data partitions.
     """
 
-    def __init__(self, config: Dict, data_set=None, partition_idxs=None):
+    def __init__(self, config: Dict, data_set: DataSet = None, partition_idxs: List[Tuple[List[int], List[int]]] = None
+                 ):
         super().__init__(config)
         self.validate_config(config)
 
