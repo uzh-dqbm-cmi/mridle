@@ -158,7 +158,7 @@ class PowerSimulations:
         else:
             orig_diff = f1_score(df['true'], df['pred'], average='macro') - f1_score(df_new['true'], df_new['pred'],
                                                                                      average='macro')
-
+        logging.info(f'still running...{orig_diff}')
         differences = [self.run_single_trial(pooled) for i in range(self.num_trials_per_run)]
         individual_alpha = np.sum(differences > orig_diff) / len(differences)
         return individual_alpha
