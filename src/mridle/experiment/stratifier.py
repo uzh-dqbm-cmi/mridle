@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.model_selection import StratifiedKFold
 from typing import Any, Dict, List, Tuple
 from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
-from .dataset import DataSet, DataSetInterface
+from .dataset import DataSet
 
 
 class Stratifier(ConfigurableComponent):
@@ -12,43 +12,17 @@ class Stratifier(ConfigurableComponent):
     Yield data partitions.
     """
 
-    def __init__(self, config: Dict, data_set: DataSet = None, partition_idxs: List[Tuple[List[int], List[int]]] = None
-                 ):
+    def __init__(self, config: Dict, partition_idxs: List[Tuple[List[int], List[int]]] = None):
         super().__init__(config)
         self.validate_config(config)
+        self.partition_idxs = partition_idxs
 
-        if data_set is not None and partition_idxs is not None:
-            self.partition_idxs = partition_idxs
-            self.data_set = data_set
-        elif data_set is None and partition_idxs is None:
-            self.partition_idxs = None
-            self.data_set = None
-        else:
-            raise ValueError(f"{type(self).__name__} received one but not both of data_set and partition_idxs. It is"
-                             f" only valid to pass none or both.")
+    def stratify(self, data_set: DataSet):
+        self.partition_idxs = self.partition_data(data_set)
 
-    def __iter__(self):
-        self.n = 0
-        return self
-
-    def __next__(self) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]:
-        """
-        Iterate over the partitions.
-
-        Returns: X_train, y_train, X_test, y_test
-        """
-        if self.data_set is None:
-            raise ValueError('Stratifier does not have data. Use `Stratifier.load(data_set)` before iterating.')
-        if self.n < self.n_partitions:
-            return_value = self.materialize_partition(self.n)
-            self.n += 1
-            return return_value
-        else:
-            raise StopIteration
-
-    def load_data(self, data_set: DataSet):
-        self.data_set = data_set
-        self.partition_idxs = self.partition_data(self.data_set)
+    @property
+    def is_stratified(self):
+        return self.partition_idxs is not None
 
     @property
     def n_partitions(self):
@@ -58,7 +32,13 @@ class Stratifier(ConfigurableComponent):
     def partition_data(self, data_set: DataSet) -> List[Tuple[List[int], List[int]]]:
         pass
 
-    def materialize_partition(self, partition_id: int) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]:
+    @classmethod
+    @abstractmethod
+    def validate_config(cls, config):
+        pass
+
+    def materialize_partition(self, partition_id: int, data_set: DataSet) -> Tuple[pd.DataFrame, pd.Series,
+                                                                                   pd.DataFrame, pd.Series]:
         """
         Create training and testing dataset based on the partition, which indicate the ids for the test set.
 
@@ -68,10 +48,10 @@ class Stratifier(ConfigurableComponent):
         Returns: X_train, y_train, X_test, y_test
         """
         train_partition_ids, test_partition_ids = self.partition_idxs[partition_id]
-        x_train = self.data_set.x.iloc[train_partition_ids]
-        y_train = self.data_set.y.iloc[train_partition_ids]
-        x_test = self.data_set.x.iloc[test_partition_ids]
-        y_test = self.data_set.y.iloc[test_partition_ids]
+        x_train = data_set.x.iloc[train_partition_ids]
+        y_train = data_set.y.iloc[train_partition_ids]
+        x_test = data_set.x.iloc[test_partition_ids]
+        y_test = data_set.y.iloc[test_partition_ids]
         return x_train, y_train, x_test, y_test
 
 
@@ -98,8 +78,8 @@ class PartitionedLabelStratifier(Stratifier):
 
 class TrainTestStratifier(Stratifier):
 
-    def __init__(self, config: Dict, data_set=None, partition_idxs=None):
-        super().__init__(config, data_set, partition_idxs)
+    def __init__(self, config: Dict, partition_idxs=None):
+        super().__init__(config, partition_idxs)
         self.test_split_size = config['test_split_size']
 
     def partition_data(self, data_set: DataSet) -> List[Tuple[List[int], List[int]]]:
@@ -132,16 +112,9 @@ class StratifierInterface(ComponentInterface):
     }
 
     @classmethod
-    def deserialize(cls, d: Dict) -> Stratifier:
-        stratifier_config = d['Stratifier']
-        stratifier_config = cls.validate_serialization_config(stratifier_config)
-
-        flavor_cls = cls.select_flavor(stratifier_config['flavor'])
-        data_set = DataSetInterface.deserialize(d['DataSet'])
-        partition_idxs = stratifier_config['partition_idxs']
-        flavor_instance = flavor_cls(config=stratifier_config['config'], data_set=data_set,
-                                     partition_idxs=partition_idxs)
-        return flavor_instance
+    def additional_info_for_deserialization(cls, d: Dict) -> Dict[str, Any]:
+        partition_idxs = d['partition_idxs']
+        return {'partition_idxs': partition_idxs}
 
     @classmethod
     def additional_info_for_serialization(cls, stratifier: Stratifier) -> Dict[str, Any]:

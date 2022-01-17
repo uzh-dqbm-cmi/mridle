@@ -2,6 +2,7 @@ from datetime import datetime
 import pandas as pd
 from .dataset import DataSet, DataSetInterface
 from .stratifier import Stratifier, StratifierInterface
+from .StratifiedDataSet import StratifiedDataSet, StratifiedDataSetInterface
 from .architecture import Architecture, ArchitectureInterface
 from .trainer import Trainer, TrainerInterface
 from .tuner import Tuner, TunerInterface
@@ -19,8 +20,9 @@ class Experiment:
     Orchestrate a machine learning experiment, including training and evaluation.
     """
 
-    def __init__(self, data_set: DataSet, trainer: Trainer, metrics: List[Metric], metadata: Dict = None):
-        self.dataset = data_set
+    def __init__(self, data_set: DataSet, stratifier: Stratifier, trainer: Trainer, metrics: List[Metric],
+                 metadata: Dict = None):
+        self.stratified_dataset = StratifiedDataSet(data_set, stratifier)
         self.trainer = trainer
         self.metrics = metrics
 
@@ -36,7 +38,7 @@ class Experiment:
 
     def go(self):
         self.metadata['run_date'] = datetime.now()
-        for i, (x_train, y_train, x_test, y_test) in enumerate(self.dataset.stratifier):
+        for i, (x_train, y_train, x_test, y_test) in enumerate(self.stratified_dataset):
             print('Running partition {}...'.format(i+1))
             predictor, training_metadata = self.trainer.fit(x_train, y_train)
             self.partition_predictors.append(predictor)
@@ -46,7 +48,8 @@ class Experiment:
         self.evaluation = self.summarize_evaluations(self.partition_evaluations)
 
         print('Fitting final model...')
-        self.final_predictor, self.final_training_metadata = self.trainer.fit(self.dataset.x, self.dataset.y)
+        self.final_predictor, self.final_training_metadata = self.trainer.fit(self.stratified_dataset.x,
+                                                                              self.stratified_dataset.y)
         return self.evaluation
 
     @staticmethod
@@ -98,8 +101,8 @@ class ExperimentInterface:
         Returns:
 
         """
+        data_set = DataSetInterface.configure(config['DataSet'], data=data)
         stratifier = StratifierInterface.configure(config['Stratifier'])
-        data_set = DataSetInterface.configure(config['DataSet'], data=data, stratifier=stratifier)
 
         architecture = ArchitectureInterface.configure(config['Architecture'])
         tuner = TunerInterface.configure(config['Tuner']) if 'Tuner' in config else None
@@ -108,7 +111,7 @@ class ExperimentInterface:
         metrics = MetricInterface.configure(config['Metrics'])
         metadata = config.get('metadata', dict())
 
-        exp = Experiment(data_set=data_set, trainer=trainer, metrics=metrics, metadata=metadata)
+        exp = Experiment(data_set=data_set, stratifier=stratifier, trainer=trainer, metrics=metrics, metadata=metadata)
         return exp
 
     @classmethod
@@ -124,14 +127,15 @@ class ExperimentInterface:
         """
         components = config['components']
 
-        data_set_dict = {key: components[key] for key in components if key in ['DataSet', 'Stratifier']}
-        data_set = DataSetInterface.deserialize(data_set_dict)
+        data_set = DataSetInterface.deserialize(components['DataSet'])
+        stratifier = StratifierInterface.deserialize(components['Stratifier'])
 
         trainer_dict = {key: components[key] for key in components if key in ['Trainer', 'Architecture', 'Tuner']}
         trainer = TrainerInterface.deserialize(trainer_dict)
 
         metrics = MetricInterface.deserialize(components['Metrics'])
-        exp = Experiment(data_set=data_set, trainer=trainer, metrics=metrics, metadata=config['metadata'])
+        exp = Experiment(data_set=data_set, stratifier=stratifier, trainer=trainer, metrics=metrics,
+                         metadata=config['metadata'])
 
         exp.partition_predictors = config['results']['partition_predictors']
         exp.evaluation = pd.DataFrame(config['results']['evaluation'])
@@ -145,8 +149,8 @@ class ExperimentInterface:
         d = {
             'metadata': experiment.metadata,
             'components': {
-                'DataSet': DataSetInterface.serialize(experiment.dataset),
-                'Stratifier': StratifierInterface.serialize(experiment.dataset.stratifier),
+                'DataSet': StratifiedDataSetInterface.serialize(experiment.stratified_dataset),
+                'Stratifier': StratifierInterface.serialize(experiment.stratified_dataset.stratifier),
                 'Architecture': ArchitectureInterface.serialize(experiment.trainer.architecture),
                 'Trainer': TrainerInterface.serialize(experiment.trainer),
                 'Metrics': MetricInterface.serialize(experiment.metrics),
