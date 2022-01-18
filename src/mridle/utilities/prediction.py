@@ -51,6 +51,7 @@ if __name__ == "__main__":
     parser.add_argument('output_path',  type=str, help='Destination to save the prediction data')
     parser.add_argument('start_date',  type=str, help='Destination to save the prediction data')
     parser.add_argument('end_date',  type=str, help='Destination to save the prediction data')
+    parser.add_argument('file_encoding',  type=str, help='Encoding arg for read_csv()')
     args = parser.parse_args()
     valid_date_range = (args.start_date, args.end_date)
     main(args.data_path, args.model_dir, args.output_path, valid_date_range)
