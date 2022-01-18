@@ -45,7 +45,7 @@ class Trainer(ConfigurableComponent):
 
 class SkorchTrainer(Trainer):
 
-    def fit(self, x, y) -> Tuple[Predictor, dict]:
+    def fit(self, x, y) -> Tuple[Predictor, Dict]:
         training_metadata = {}
         architecture = self.get_architecture()
         y = self.transform_y(y)
