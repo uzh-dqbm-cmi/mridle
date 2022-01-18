@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 from mridle.pipelines.data_engineering.ris.nodes import build_slot_df
-from mridle.pipelines.data_engineering.ris.data_management_64e72eb import build_slot_df as bv_build_slot_df
 import pgeocode
 import datetime as dt
 import re
@@ -9,8 +8,8 @@ from sklearn.model_selection import train_test_split
 from typing import Dict, List
 
 
-def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], use_before_val_func: bool = False,
-                      build_future_slots: bool = False) -> pd.DataFrame:
+def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], build_future_slots: bool = False
+                      ) -> pd.DataFrame:
     """
     Builds a feature set that replicates the Harvey et al model as best we can.
     So far includes:
@@ -71,20 +70,8 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], use_
         'start_time': 'last'
     }
 
-    if use_before_val_func:
-        # new column 'slot_outcome' was created in the mean time, NoShow_outcome close enough
-        status_df['slot_outcome'] = status_df['NoShow_outcome'].fillna('show')
-        # start_time is now part of the groupby, but needs to be added excplicitly for the old version
-        agg_dict['start_time'] = 'last'
-        slot_df = bv_build_slot_df(status_df, agg_dict)
-        # restrict to valida date range, since the old build_slot_df didn't do that
-        valid_start_date, valid_end_date = valid_date_range
-        day_after_last_valid_date = pd.to_datetime(valid_end_date) + pd.to_timedelta(1, 'days')
-        slot_df = slot_df[slot_df['start_time'] >= valid_start_date]
-        slot_df = slot_df[slot_df['start_time'] < day_after_last_valid_date]
-    else:
-        slot_df = build_slot_df(status_df, valid_date_range, agg_dict, build_future_slots=build_future_slots,
-                                include_id_cols=True)
+    slot_df = build_slot_df(status_df, valid_date_range, agg_dict, build_future_slots=build_future_slots,
+                            include_id_cols=True)
     slot_df = feature_no_show_before(slot_df)
     slot_df = feature_cyclical_hour(slot_df)
     slot_df = feature_cyclical_day_of_week(slot_df)
@@ -271,10 +258,10 @@ def feature_marital(status_df: pd.DataFrame) -> pd.DataFrame:
         # 'LV': 'life partnership dissolved by death',
         # 'LA': 'forcible partnership',
         # 'LE': 'civil partnership dissolved by declaration of death',
+        np.NaN: 'blank',
     }
 
     status_df['marital'] = status_df['Zivilstand'].map(zivilstand_abbreviation_mapping)
-    status_df['marital'] = status_df['marital'].fillna('not known')
     return status_df
 
 
