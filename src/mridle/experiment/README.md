@@ -20,6 +20,8 @@ Likewise, an Experiment has 3 parts:
 
 An `Experiment` may optionally also have a `metadata` dictionary that can store whatever information you want to track.
 
+![Experiment Class Diagram](./ExperimentClassDiagram.svg)
+
 # Example usage
 
 ## Define an `Experiment`
