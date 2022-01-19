@@ -157,12 +157,14 @@ class PowerSimulations:
 
         pooled = pd.concat([df, df_new])
         if self.performance_type == 'log_loss':
-            orig_diff = log_loss(df_new['true'], df_new['pred']) - log_loss(df['true'], df['pred'])
+            orig_diff = calculate_f1_diff(df_new, df)
+
         else:
-            orig_diff = f1_score(df['true'], df['pred'], average='macro') - f1_score(df_new['true'], df_new['pred'],
-                                                                                     average='macro')
+            orig_diff = calculate_f1_diff(df, df_new)
+
         differences = [self.run_single_trial(pooled) for i in range(self.num_trials_per_run)]
-        individual_alpha = np.sum(differences > orig_diff) / len(differences)
+
+        individual_alpha = np.sum(1 if d > orig_diff else 0 for d in differences) / len(differences)
         return individual_alpha
 
     def run_single_trial(self, pooled_data: pd.DataFrame) -> float:
