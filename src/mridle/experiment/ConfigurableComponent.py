@@ -41,7 +41,7 @@ class ComponentInterface:
     @classmethod
     def additional_info_for_serialization(cls, component: ConfigurableComponent) -> Dict[str, Any]:
         """
-        (Optional) Build a dictionary of additional data (beyonnd the config) that needs to be saved in the
+        (Optional) Build a dictionary of additional data (beyond the config) that needs to be saved in the
          serialization dictionary. The key value pairs will be added to the object's serialization dictionary.
 
         Args:
@@ -57,8 +57,8 @@ class ComponentInterface:
         Instantiate a component from a dictionary and other objects if necessary.
 
         Args:
-            d: A dictionary with the keys 'flavor' describing the class name of the component to be insantiated, and
-             key 'config' containting the object's config dictionary. d may also contain other keys, which must be added
+            d: A dictionary with the keys 'flavor' describing the class name of the component to be instantiated, and
+             key 'config' containing the object's config dictionary. d may also contain other keys, which must be added
              to the object by the subclass-ed method.
 
         Returns:
@@ -75,8 +75,8 @@ class ComponentInterface:
         Instantiate a component from a dictionary.
 
         Args:
-            d: A dictionary with the keys 'flavor' describing the class name of the component to be insantiated, and
-             key 'config' containting the object's config dictionary. d may also contain other keys, which must be added
+            d: A dictionary with the keys 'flavor' describing the class name of the component to be instantiated, and
+             key 'config' containing the object's config dictionary. d may also contain other keys, which must be added
              to the object by the subclass-ed method.
 
         Returns:
@@ -96,7 +96,7 @@ class ComponentInterface:
           component initialization as kwargs.
 
         Args:
-            d: The serialization dictionary from which to extract additional information for initalization.
+            d: The serialization dictionary from which to extract additional information for initialization.
 
         Returns: A dictionary of additional information to be included passed to the component's init.
         """

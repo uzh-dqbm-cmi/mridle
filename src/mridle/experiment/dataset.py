@@ -11,11 +11,6 @@ class DataSet(ConfigurableComponent):
     """
 
     def __init__(self, config: Dict, data: pd.DataFrame):
-        if not isinstance(config, dict):
-            if isinstance(data, dict):
-                raise ValueError('It looks like the order of the arguments to `DataSet` is swapped. Please use'
-                                 ' `DataSet(config, data)`.')
-            raise ValueError('The first argument to DataSet must be a dictionary.')
         super().__init__(config)
         self.validate_config(config, data)
         self.data = data
