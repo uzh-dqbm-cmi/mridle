@@ -8,7 +8,6 @@ from .trainer import Trainer, TrainerInterface
 from .tuner import Tuner, TunerInterface
 from .predictor import Predictor
 from .metric import Metric, MetricInterface
-from sklearn.ensemble import RandomForestClassifier
 from typing import Dict, List, Union, Type
 
 
@@ -128,33 +127,65 @@ class Experiment:
 
     @classmethod
     def configure(cls, config: Dict, data: pd.DataFrame) -> 'Experiment':
+        """
+        Configure an `Experiment` from a configuration dictionary.
+        Args:
+            config: An Experiment configuration dictionary.
+            data: The dataframe to train and test on. It is ok if the data contains extra columns not used in training.
+             The data will be stratified into train/test partitions by the Experiment's Stratifier.
+
+        Returns: An `Experiment` object.
+
+        """
         return ExperimentInterface.configure(config=config, data=data)
 
     def serialize(self) -> Dict:
+        """
+        Serialize an `Experiment` into a dictionary-based format that is ready to be pickled and saved to disk.
+
+        Serializing the Experiment before pickling, as opposed to pickling the Experiment directly, enables saved
+         `Experiment`s to be saved and re-opened with different versions of the `Experiment` library. Directly pickled
+         `Experiment` objects will only be able to be un-pickled using the same version of the Experiment library. By
+         serializing first, serialized Experiment objects can be re-opened with future versions of the `Experiment`
+         library.
+
+        Returns: An `Experiment` serialization dictionary.
+
+        """
         return ExperimentInterface.serialize(self)
 
     @classmethod
     def deserialize(cls, d: Dict) -> 'Experiment':
+        """
+        Convert an `Experiment` serialization dictionary back into a live `Experiment` object.
+
+        Args:
+            d: `Experiment` serialization dictionary.
+
+        Returns: An` Experiment` object.
+
+        """
         return ExperimentInterface.deserialize(d)
 
 
 class ExperimentInterface:
-
-    component_flavors = {
-        'Architecture': {
-            'RandomForestClassifier': RandomForestClassifier,
-        },
-    }
+    """Convert between Experiment objects and their serialized representations.
+     Can instantiate an Experiment from a configuration dictionary.
+     Can convert an Experiment into a serialization dictionary that is suitable for saving to the file system for
+      storage, and deserialize back to an Experiment object.
+    """
 
     @classmethod
     def configure(cls, config: Dict, data: pd.DataFrame) -> Experiment:
         """
-        Instantiate a new Experiment object from a config and dataframe.
-        Args:
-            config:
-            data:
+        Instantiate a new Experiment object from a config dictionary and dataframe.
 
-        Returns:
+        Args:
+            config: An Experiment configuration dictionary.
+            data: The dataframe to train and test on. It is ok if the data contains extra columns not used in training.
+             The data will be stratified into train/test partitions by the Experiment's Stratifier.
+
+        Returns: An `Experiment` object.
 
         """
         data_set = DataSetInterface.configure(config['DataSet'], data=data)
@@ -171,17 +202,17 @@ class ExperimentInterface:
         return exp
 
     @classmethod
-    def deserialize(cls, config: Dict) -> Experiment:
+    def deserialize(cls, d: Dict) -> Experiment:
         """
-        Re-instantiate a experiment object from a dictionary.
+        Convert an `Experiment` serialization dictionary back into a live `Experiment` object.
 
         Args:
-            config:
+            d: `Experiment` serialization dictionary.
 
-        Returns:
+        Returns: An` Experiment` object.
 
         """
-        components = config['components']
+        components = d['components']
 
         data_set = DataSetInterface.deserialize(components['DataSet'])
         stratifier = StratifierInterface.deserialize(components['Stratifier'])
@@ -191,17 +222,25 @@ class ExperimentInterface:
 
         metrics = MetricInterface.deserialize(components['Metrics'])
         exp = Experiment(data_set=data_set, stratifier=stratifier, trainer=trainer, metrics=metrics,
-                         metadata=config['metadata'])
+                         metadata=d['metadata'])
 
-        exp.partition_predictors = config['results']['partition_predictors']
-        exp.evaluation = pd.DataFrame(config['results']['evaluation'])
-        exp.final_predictor = config['results']['final_predictor']
-        exp.partition_training_metadata = config['results'].get('partition_training_metadata', list())  # backwards com.
-        exp.final_training_metadata = config['results'].get('final_training_metadata', dict())  # backwards compatibili.
+        exp.partition_predictors = d['results']['partition_predictors']
+        exp.evaluation = pd.DataFrame(d['results']['evaluation'])
+        exp.final_predictor = d['results']['final_predictor']
+        exp.partition_training_metadata = d['results'].get('partition_training_metadata', list())  # backwards com.
+        exp.final_training_metadata = d['results'].get('final_training_metadata', dict())  # backwards compatibili.
         return exp
 
     @classmethod
     def serialize(cls, experiment: Experiment) -> Dict:
+        """
+        Convert an `Experiment` object into a serialization dictionary.
+        Args:
+            experiment: An `Experiment` object.
+
+        Returns: A serialization dictionary.
+
+        """
         d = {
             'metadata': experiment.metadata,
             'components': {
@@ -209,6 +248,7 @@ class ExperimentInterface:
                 'Stratifier': StratifierInterface.serialize(experiment.stratified_dataset.stratifier),
                 'Architecture': ArchitectureInterface.serialize(experiment.trainer.architecture),
                 'Trainer': TrainerInterface.serialize(experiment.trainer),
+                # Tuner is below, in "optional components"
                 'Metrics': MetricInterface.serialize(experiment.metrics),
             },
             'results': {
