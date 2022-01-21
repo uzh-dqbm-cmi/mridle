@@ -165,7 +165,7 @@ class PowerSimulations:
         differences = [self.run_single_trial(pooled) for i in range(self.num_trials_per_run)]
         # print("Differences", differences[:5])
         # print("ORIG", orig_diff)
-        individual_alpha = np.sum(differences > orig_diff) / len(differences)
+        individual_alpha = np.sum([1 if diff > orig_diff else 0 for diff in differences]) / len(differences)
         return individual_alpha
 
     def run_single_trial(self, pooled_data: pd.DataFrame) -> float:
