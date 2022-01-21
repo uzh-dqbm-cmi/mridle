@@ -158,7 +158,7 @@ class PowerSimulations:
         pooled = pd.concat([df, df_new])
 
         if self.performance_type == 'log_loss':
-            orig_diff = calculate_log_loss_diff(df_new, df)
+            orig_diff = calculate_log_loss_diff(df, df_new)
         else:
             orig_diff = calculate_f1_diff(df, df_new)
 
