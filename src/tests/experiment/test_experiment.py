@@ -7,6 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 from mridle.experiment.experiment import Experiment
 from mridle.experiment.dataset import DataSet
 from mridle.experiment.stratifier import TrainTestStratifier
+from mridle.experiment.StratifiedDataSet import StratifiedDataSet
 from mridle.experiment.trainer import Trainer
 from mridle.experiment.tuner import RandomSearchTuner
 from mridle.experiment.metric import Metric
@@ -103,12 +104,12 @@ class TestExperiment(unittest.TestCase):
     def test_configure(self):
         exp = Experiment.configure(config=self.configuration, data=self.df)
 
-        self.assertTrue(isinstance(exp.dataset, DataSet))
-        self.assertEqual(exp.dataset.config, self.configuration['DataSet']['config'])
-        pd.testing.assert_frame_equal(exp.dataset.data, self.df)
+        self.assertTrue(isinstance(exp.stratified_dataset, StratifiedDataSet))
+        self.assertEqual(exp.stratified_dataset.config, self.configuration['DataSet']['config'])
+        pd.testing.assert_frame_equal(exp.stratified_dataset.data, self.df)
 
-        self.assertTrue(isinstance(exp.stratifier, TrainTestStratifier))
-        self.assertEqual(exp.stratifier.config, self.configuration['Stratifier']['config'])
+        self.assertTrue(isinstance(exp.stratified_dataset.stratifier, TrainTestStratifier))
+        self.assertEqual(exp.stratified_dataset.stratifier.config, self.configuration['Stratifier']['config'])
 
         self.assertTrue(isinstance(exp.trainer.architecture, RandomForestClassifier))
         # self.assertEqual(exp.dataset.config, self.configuration['DataSet']['config'])  # TODO How to test this?
@@ -135,7 +136,7 @@ class TestExperiment(unittest.TestCase):
             orig_component_dict = self.configuration[component]
 
             if component == 'Architecture':
-                continue  # TODO
+                continue  # see test_architecture.py
 
             if component == 'Metrics':
                 for i, m in enumerate(component_dict):
@@ -162,16 +163,16 @@ class TestExperiment(unittest.TestCase):
         exp_deserialized = Experiment.deserialize(exp_dict)
 
         # DataSet
-        self.assertEqual(type(exp_deserialized.dataset), type(exp.dataset))
-        pd.testing.assert_frame_equal(exp_deserialized.dataset.data, exp.dataset.data)
+        self.assertEqual(type(exp_deserialized.stratified_dataset), type(exp.stratified_dataset))
+        pd.testing.assert_frame_equal(exp_deserialized.stratified_dataset.data, exp.stratified_dataset.data)
 
         # Stratifier
-        self.assertEqual(type(exp_deserialized.stratifier), type(exp.stratifier))
-        self.assertEqual(exp_deserialized.stratifier.config, exp.stratifier.config)
-        for p, partition in enumerate(exp.stratifier.partition_idxs):
+        self.assertEqual(type(exp_deserialized.stratified_dataset.stratifier), type(exp.stratified_dataset.stratifier))
+        self.assertEqual(exp_deserialized.stratified_dataset.stratifier.config, exp.stratified_dataset.stratifier.config)
+        for p, partition in enumerate(exp.stratified_dataset.stratifier.partition_idxs):
             for d, indx in enumerate(partition):
-                np.testing.assert_almost_equal(exp_deserialized.stratifier.partition_idxs[p][d],
-                                               exp.stratifier.partition_idxs[p][d])
+                np.testing.assert_almost_equal(exp_deserialized.stratified_dataset.stratifier.partition_idxs[p][d],
+                                               exp.stratified_dataset.stratifier.partition_idxs[p][d])
                 # for i, v in enumerate(indx):
                 #     self.assertEqual(exp_deserialized.stratifier.partition_idxs[p][d][i],
                 #                      exp.stratifier.partition_idxs[p][d][i])
@@ -181,7 +182,7 @@ class TestExperiment(unittest.TestCase):
         self.assertEqual(exp_deserialized.trainer.config, exp.trainer.config)
 
         # Architecture
-        # TODO architecture
+        # see test_architecture.py
 
         # Tuner
         self.assertEqual(type(exp_deserialized.trainer.tuner), type(exp.trainer.tuner))
@@ -226,16 +227,16 @@ class TestExperiment(unittest.TestCase):
         exp_deserialized = Experiment.deserialize(exp_dict)
 
         # DataSet
-        self.assertEqual(type(exp_deserialized.dataset), type(exp.dataset))
-        pd.testing.assert_frame_equal(exp_deserialized.dataset.data, exp.dataset.data)
+        self.assertEqual(type(exp_deserialized.stratified_dataset), type(exp.stratified_dataset))
+        pd.testing.assert_frame_equal(exp_deserialized.stratified_dataset.data, exp.stratified_dataset.data)
 
         # Stratifier
-        self.assertEqual(type(exp_deserialized.stratifier), type(exp.stratifier))
-        self.assertEqual(exp_deserialized.stratifier.config, exp.stratifier.config)
-        for p, partition in enumerate(exp.stratifier.partition_idxs):
+        self.assertEqual(type(exp_deserialized.stratified_dataset.stratifier), type(exp.stratified_dataset.stratifier))
+        self.assertEqual(exp_deserialized.stratified_dataset.stratifier.config, exp.stratified_dataset.stratifier.config)
+        for p, partition in enumerate(exp.stratified_dataset.stratifier.partition_idxs):
             for d, indx in enumerate(partition):
-                np.testing.assert_almost_equal(exp_deserialized.stratifier.partition_idxs[p][d],
-                                               exp.stratifier.partition_idxs[p][d])
+                np.testing.assert_almost_equal(exp_deserialized.stratified_dataset.stratifier.partition_idxs[p][d],
+                                               exp.stratified_dataset.stratifier.partition_idxs[p][d])
                 # for i, v in enumerate(indx):
                 #     self.assertEqual(exp_deserialized.stratifier.partition_idxs[p][d][i],
                 #                      exp.stratifier.partition_idxs[p][d][i])
@@ -245,7 +246,7 @@ class TestExperiment(unittest.TestCase):
         self.assertEqual(exp_deserialized.trainer.config, exp.trainer.config)
 
         # Architecture
-        # TODO architecture
+        # see test_architecture.py
 
         # Tuner
         self.assertEqual(type(exp_deserialized.trainer.tuner), type(exp.trainer.tuner))
@@ -265,9 +266,9 @@ class TestExperiment(unittest.TestCase):
 
         # Partition Predictors
         # assert that for every partition, the predictors predict the same values
-        for partition_idx in range(exp.stratifier.n_partitions):
-            x_train, y_train, x_test, y_test = exp.stratifier.materialize_partition(partition_idx)
-            x_train_des, y_train_des, x_test_des, y_test_des = exp.stratifier.materialize_partition(partition_idx)
+        for partition_idx in range(exp.stratified_dataset.stratifier.n_partitions):
+            x_train, y_train, x_test, y_test = exp.stratified_dataset.stratifier.materialize_partition(partition_idx, exp.stratified_dataset)
+            x_train_des, y_train_des, x_test_des, y_test_des = exp_deserialized.stratified_dataset.stratifier.materialize_partition(partition_idx, exp_deserialized.stratified_dataset)
             # before checking the predictors, make sure the X they're predicting on is the same.
             pd.testing.assert_frame_equal(x_test_des, x_test)
             y_pred = exp.partition_predictors[partition_idx].predict(x_test)
@@ -275,10 +276,10 @@ class TestExperiment(unittest.TestCase):
             np.testing.assert_almost_equal(y_pred_des, y_pred)
 
         # Final Predictor
-        self.assertTrue(isinstance(exp.final_predictor, Predictor))
+        self.assertTrue(isinstance(exp_deserialized.final_predictor, Predictor))
         # assert same predictions on sample partition
-        x_train, y_train, x_test, y_test = exp.stratifier.materialize_partition(0)
-        x_train_des, y_train_des, x_test_des, y_test_des = exp.stratifier.materialize_partition(0)
+        x_train, y_train, x_test, y_test = exp.stratified_dataset.stratifier.materialize_partition(0, exp.stratified_dataset)
+        x_train_des, y_train_des, x_test_des, y_test_des = exp_deserialized.stratified_dataset.stratifier.materialize_partition(0, exp_deserialized.stratified_dataset)
         # before checking the predictors, make sure the X they're predicting on is the same.
         pd.testing.assert_frame_equal(x_test_des, x_test)
         y_pred = exp.final_predictor.predict(x_test)
@@ -286,11 +287,11 @@ class TestExperiment(unittest.TestCase):
         np.testing.assert_almost_equal(y_pred_des, y_pred)
 
         # Partition Training Metadata
-        self.assertTrue(isinstance(exp.partition_training_metadata, list))
+        self.assertTrue(isinstance(exp_deserialized.partition_training_metadata, list))
         # TrainTestStratifier has 1 partition
-        self.assertEqual(len(exp.partition_training_metadata), 1)
-        for part_train_metadata in exp.partition_training_metadata:
+        self.assertEqual(len(exp_deserialized.partition_training_metadata), 1)
+        for part_train_metadata in exp_deserialized.partition_training_metadata:
             self.assertTrue(isinstance(part_train_metadata, dict))
 
         # Final Training Metadata
-        self.assertTrue(isinstance(exp.final_training_metadata, dict))
+        self.assertTrue(isinstance(exp_deserialized.final_training_metadata, dict))
