@@ -14,7 +14,7 @@ class Metric(ConfigurableComponent):
         self.classification_cutoff = self.config.get('classification_cutoff', 0.5)
 
     @abstractmethod
-    def calculate(self, y_true, y_pred_proba):
+    def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
         pass
 
     def convert_proba_to_class(self, y_pred_proba: np.ndarray):
@@ -35,7 +35,7 @@ class F1_Macro(Metric):
 
     name = 'f1_macro'
 
-    def calculate(self, y_true, y_pred_proba):
+    def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
         y_pred = self.convert_proba_to_class(y_pred_proba)
         metric = f1_score(y_true, y_pred, average='macro')
         return metric
@@ -45,7 +45,7 @@ class BrierScore(Metric):
 
     name = 'f1_macro'
 
-    def calculate(self, y_true, y_pred_proba):
+    def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
         y_pred = y_pred_proba
         metric = brier_score_loss(y_true, y_pred)
         return metric
@@ -55,7 +55,7 @@ class AUPRC(Metric):
 
     name = 'auprc'
 
-    def calculate(self, y_true, y_pred_proba):
+    def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
         y_pred = y_pred_proba
         precision, recall, thresholds = precision_recall_curve(y_true, y_pred)
         metric = auc(recall, precision)
@@ -66,7 +66,7 @@ class AUROC(Metric):
 
     name = 'auroc'
 
-    def calculate(self, y_true, y_pred_proba):
+    def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
         y_pred = y_pred_proba
         metric = roc_auc_score(y_true, y_pred)
         return metric
@@ -76,7 +76,7 @@ class LogLoss(Metric):
 
     name = 'log_loss'
 
-    def calculate(self, y_true, y_pred_proba):
+    def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
         y_pred = y_pred_proba
         metric = log_loss(y_true, y_pred)
         return metric
