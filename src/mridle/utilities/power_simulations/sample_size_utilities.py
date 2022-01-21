@@ -206,7 +206,7 @@ class PowerSimulations:
         elif self.performance_type == 'f1_macro':
             return self.generate_actuals_preds_f1_macro(performance, n, p)
         elif self.performance_type == 'log_loss':
-            return self.generate_actuals_preds_f1_log_loss(performance, n, p)
+            return self.generate_actuals_preds_log_loss(performance, n, p)
 
     @staticmethod
     def generate_actuals_preds_precision(precision: float, n: int, p: float) -> pd.DataFrame:
@@ -356,7 +356,7 @@ class PowerSimulations:
         return df
 
     @staticmethod
-    def generate_actuals_preds_f1_log_loss(log_loss: float, n: int, p: float):
+    def generate_actuals_preds_log_loss(log_loss: float, n: int, p: float):
         """
 
         Args:

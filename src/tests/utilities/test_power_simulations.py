@@ -1,7 +1,8 @@
 import unittest
-from mridle.utilities.power_simulations.sample_size_utilities import PowerSimulations, calculate_f1_diff, permute_and_split
+from mridle.utilities.power_simulations.sample_size_utilities import PowerSimulations, calculate_f1_diff, \
+    permute_and_split, calculate_log_loss_diff
 import pandas as pd
-from sklearn.metrics import f1_score, precision_score, recall_score
+from sklearn.metrics import f1_score, precision_score, log_loss
 from pandas.testing import assert_frame_equal
 import numpy as np
 
@@ -92,6 +93,41 @@ class TestPowerSimulations(unittest.TestCase):
 
         self.assertGreater(score, 0)
 
+    def test_log_loss_same_df(self):
+        performance = 0.42
+
+        df = PowerSimulations.generate_actuals_preds_log_loss(performance, 4000, p=p)
+
+        score = calculate_log_loss_diff(df, df)
+        self.assertEqual(score, 0)
+
+    def test_log_loss_diff_df(self):
+        performance = 0.42
+
+        df = PowerSimulations.generate_actuals_preds_log_loss(performance, 4000, p=p)
+
+        performance_new = performance * (1 + 0.1)
+        sample_size_new = avg_appts_per_week * 5
+
+        df_new = PowerSimulations.generate_actuals_preds_log_loss(performance_new, sample_size_new, p=p)
+
+        score = calculate_log_loss_diff(df, df_new)
+
+        self.assertNotEqual(score, 0)
+
+    def test_log_loss_diff_greater_than_0(self):
+        performance = 0.42
+        df = PowerSimulations.generate_actuals_preds_log_loss(performance, 4000, p=p)
+
+        performance_new = performance * (1 + 0.1)
+        sample_size_new = avg_appts_per_week * 5
+
+        df_new = PowerSimulations.generate_actuals_preds_log_loss(performance_new, sample_size_new, p=p)
+
+        score = calculate_log_loss_diff(df, df_new)
+
+        self.assertGreater(score, 0)
+
     def test_generate_data_precision(self):
         performance = 0.513
         exp = PowerSimulations(sample_sizes=sample_sizes, effect_sizes=effect_sizes, num_trials_per_run=1000,
@@ -114,6 +150,21 @@ class TestPowerSimulations(unittest.TestCase):
 
         self.assertTrue(performance*0.97 <= generated_f1_macro <= performance*1.03)
 
+    def test_generate_data_log_loss(self):
+        truth_list = []
+        for performance in np.arange(0.3, 0.6, 0.01):
+            for k in range(100):
+                exp = PowerSimulations(sample_sizes=sample_sizes, effect_sizes=effect_sizes, num_trials_per_run=1000,
+                                       num_runs_for_power_calc=1000, original_test_set_length=4000,
+                                       significance_level=0.05, base_performance=performance,
+                                       performance_type='log_loss', num_cpus=8, random_seed=0)
+
+                df = exp.generate_actuals_preds_log_loss(exp.base_performance, exp.original_test_set_length, p=p)
+                generated_log_loss = log_loss(df['true'], df['pred'])
+                within_range = performance*0.99 <= generated_log_loss <= performance*1.01
+                truth_list.append(within_range)
+        self.assertTrue(all(truth_list))
+
     def test_generate_data_df_proportions_precision(self):
         class_1_proportion = 0.2
         exp = PowerSimulations(sample_sizes=sample_sizes, effect_sizes=effect_sizes, num_trials_per_run=1000,
@@ -121,8 +172,7 @@ class TestPowerSimulations(unittest.TestCase):
                                base_performance=0.6, performance_type='precision', num_cpus=8, random_seed=0,
                                p=class_1_proportion)
 
-        df = exp.generate_actuals_preds_precision(exp.base_performance, exp.original_test_set_length,
-                                                  p=exp.p)
+        df = exp.generate_actuals_preds_precision(exp.base_performance, exp.original_test_set_length, p=exp.p)
         class_1 = np.sum(df['true']) / len(df)
         self.assertTrue(exp.p*0.90 <= class_1 <= exp.p*1.1)
 
@@ -133,11 +183,22 @@ class TestPowerSimulations(unittest.TestCase):
                                base_performance=0.6, performance_type='f1_macro', num_cpus=8, random_seed=0,
                                p=class_1_proportion)
 
-        df = exp.generate_actuals_preds_f1_macro(exp.base_performance, exp.original_test_set_length,
-                                                 p=exp.p)
+        df = exp.generate_actuals_preds_f1_macro(exp.base_performance, exp.original_test_set_length, p=exp.p)
         class_1 = np.sum(df['true']) / len(df)
 
         self.assertTrue(exp.p*0.92 <= class_1 <= exp.p*1.08)
+
+    def test_generate_data_df_proportions_log_loss(self):
+        class_1_proportion = 0.17
+        exp = PowerSimulations(sample_sizes=sample_sizes, effect_sizes=effect_sizes, num_trials_per_run=1000,
+                               num_runs_for_power_calc=1000, original_test_set_length=4000, significance_level=0.05,
+                               base_performance=0.6, performance_type='log_loss', num_cpus=8, random_seed=0,
+                               p=class_1_proportion)
+
+        df = exp.generate_actuals_preds_log_loss(exp.base_performance, exp.original_test_set_length, p=exp.p)
+        class_1 = np.sum(df['true']) / len(df)
+
+        self.assertTrue(exp.p*0.99 <= class_1 <= exp.p*1.01)
 
 
 if __name__ == '__main__':
