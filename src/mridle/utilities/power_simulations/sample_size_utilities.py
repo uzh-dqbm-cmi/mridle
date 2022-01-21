@@ -163,7 +163,7 @@ class PowerSimulations:
             orig_diff = calculate_f1_diff(df, df_new)
 
         differences = [self.run_single_trial(pooled) for i in range(self.num_trials_per_run)]
-
+        print(differences[:5], orig_diff)
         individual_alpha = np.sum(differences > orig_diff) / len(differences)
         return individual_alpha
 
