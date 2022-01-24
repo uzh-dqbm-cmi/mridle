@@ -201,9 +201,10 @@ def plot_no_show_by_day_of_week(df):
         lambda x: np.sum(x) / len(x)).reset_index()
 
     return alt.Chart(df_day_agg).mark_bar().encode(
-        alt.X('day_of_week_str', sort=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']),
+        alt.X('day_of_week_str', sort=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+              title='Day of the Week'),
         alt.Y('NoShow', axis=alt.Axis(format='%'))
-    ).properties(width=250, title='Day of Week')
+    ).properties(width=250)
 
 
 def plot_no_show_by_month(df):
@@ -220,9 +221,9 @@ def plot_no_show_by_month(df):
     df_month_agg = df.copy()
     df_month_agg = df_month_agg[['month', 'NoShow']].groupby('month').apply(lambda x: np.sum(x) / len(x))
     return alt.Chart(df_month_agg).mark_bar(color='#409caf').encode(
-        alt.X('month:O'),
+        alt.X('month:O', title='Month'),
         alt.Y('NoShow', axis=alt.Axis(format='%'))
-    ).properties(width=250, title='Month')
+    ).properties(width=250)
 
 
 def plot_no_show_by_hour_of_day(df):
@@ -242,9 +243,9 @@ def plot_no_show_by_hour_of_day(df):
     df_hour_agg = df_hour_agg[['hour_sched', 'NoShow']].groupby('hour_sched').apply(lambda x: np.sum(x) / len(x))
 
     return alt.Chart(df_hour_agg).mark_bar(color='#D35400').encode(
-        alt.X('hour_sched:O'),
+        alt.X('hour_sched:O', title='Hour Scheduled'),
         alt.Y('NoShow', axis=alt.Axis(format='%'))
-    ).properties(width=400, title='Hour of Day')
+    ).properties(width=400, title='')
 
 
 def plot_no_show_by_age(df):
@@ -267,7 +268,7 @@ def plot_no_show_by_age(df):
 
     df_age_agg['NoShow'] = df_age_agg['NoShowSum'] / df_age_agg['Number of patients']
     return alt.Chart(df_age_agg).mark_circle().encode(
-        alt.X('age'),
+        alt.X('age', title='Age'),
         alt.Y('NoShow', axis=alt.Axis(format='%')),
         size=alt.Size('Number of patients')
     ).properties(width=400)
@@ -294,13 +295,15 @@ def plot_appts_per_patient(df, log_scale=False):
 
     if log_scale:
         chart = alt.Chart(appts_per_patient_agg).mark_bar(size=15).encode(
-            x=alt.X('num_appts', axis=alt.Axis(tickCount=appts_per_patient_agg.shape[0], grid=False)),
-            y=alt.Y('num_patients', scale=alt.Scale(type='log'))
+            x=alt.X('num_appts', title='Number of Appointments',
+                    axis=alt.Axis(tickCount=appts_per_patient_agg.shape[0], grid=False)),
+            y=alt.Y('num_patients', title='Number of Patients', scale=alt.Scale(type='log'))
         ).properties(title='Number of appointments per patient (log scale)')
     else:
         chart = alt.Chart(appts_per_patient_agg).mark_bar(size=15).encode(
-            x=alt.X('num_appts', axis=alt.Axis(tickCount=appts_per_patient_agg.shape[0], grid=False)),
-            y='num_patients'
+            x=alt.X('num_appts', title='Number of Appointments',
+                    axis=alt.Axis(tickCount=appts_per_patient_agg.shape[0], grid=False)),
+            y=alt.Y('num_patients', title='Number of Patients',)
         ).properties(title='Number of appointments per patient')
 
     return chart
@@ -330,14 +333,14 @@ def plot_no_show_heat_map(df, log_scale=False):
 
     if log_scale:
         chart = alt.Chart(pat_appts_counts).mark_rect().encode(
-            x='num_appts:O',
-            y=alt.Y('num_noshow:O', sort='descending'),
+            x=alt.X('num_appts:O', title='Number of Appointments'),
+            y=alt.Y('num_noshow:O', title='Number of No-shows', sort='descending'),
             color=alt.Color('num_patients:Q', scale=alt.Scale(type='log'))
         ).properties(title='Heat map of appointments and no-show distribution (log scale)')
     else:
         chart = alt.Chart(pat_appts_counts).mark_rect().encode(
-            x='num_appts:O',
-            y=alt.Y('num_noshow:O', sort='descending'),
+            x=alt.X('num_appts:O', title='Number of Appointments'),
+            y=alt.Y('num_noshow:O', title='Number of No-shows', sort='descending'),
             color=alt.Color('num_patients:Q')
         ).properties(title='Heat map of appointments and no-show distribution')
 

@@ -8,7 +8,7 @@ from mridle.experiment.experiment import Experiment
 from mridle.experiment.dataset import DataSet
 
 
-def main(data_path, model_dir, output_path, valid_date_range):
+def main(data_path, model_dir, output_path, valid_date_range, file_encoding):
     """
     Make predictions for all models in model_dir on the given data, saving the resulting predictions to output_path.
     Args:
@@ -17,11 +17,15 @@ def main(data_path, model_dir, output_path, valid_date_range):
          pickled serialized `Experiments`.
         output_path: Destination to save the predictions file to (csv).
         valid_date_range: Date range on which to filter slot_df for relevant appointment slots.
+        file_encoding: Encoding for file in pd.read_csv()
 
     Returns: None
     """
+    if file_encoding:
+        raw_df = pd.read_csv(data_path, encoding=file_encoding)
+    else:
+        raw_df = pd.read_csv(data_path)
 
-    raw_df = pd.read_csv(data_path)
     exclude_pat_ids = list()  # TODO!
     formatted_df = prep_raw_df_for_parquet(raw_df)
     status_df = build_status_df(formatted_df, exclude_pat_ids)
@@ -51,6 +55,7 @@ if __name__ == "__main__":
     parser.add_argument('output_path',  type=str, help='Destination to save the prediction data')
     parser.add_argument('start_date',  type=str, help='Destination to save the prediction data')
     parser.add_argument('end_date',  type=str, help='Destination to save the prediction data')
+    parser.add_argument('file_encoding',  type=str, help='Encoding arg for read_csv()')
     args = parser.parse_args()
     valid_date_range = (args.start_date, args.end_date)
     main(args.data_path, args.model_dir, args.output_path, valid_date_range)

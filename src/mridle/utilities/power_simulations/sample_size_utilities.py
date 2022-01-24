@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score, log_loss
 from multiprocessing import Pool, Queue
 import itertools
 import logging
@@ -44,7 +44,7 @@ class PowerSimulations:
             original_test_set_length: Number of samples to create for the 'original' test set
             significance_level: Significance level to use for the permutation test
             base_performance: Performance of the model on the original test set
-            performance_type: Score measure of the base_performance (i.e. 'f1_macro', 'precision')
+            performance_type: Score measure of the base_performance (i.e. 'f1_macro', 'precision', 'log_loss')
             num_cpus: Number of cpus to use for the experiment executions
             p: Proportion of 1s in the sample. Default to 0.14, which is approx. the no show rate of our dataset
 
@@ -116,7 +116,13 @@ class PowerSimulations:
         """
         effect_size, sample_size = effect_sample_sizes
 
-        performance_new = self.base_performance * (1 - effect_size)
+        if self.performance_type == 'log_loss':
+            performance_new = self.base_performance * (1 + effect_size)
+        else:
+            performance_new = self.base_performance * (1 - effect_size)
+
+        logging.info(f'Starting to run for effect & sample size:{effect_sample_sizes}, '
+                     f'base_performance: {self.base_performance}, performance_new: {performance_new}')
 
         if self.random_seed:
             np.random.seed(self.random_seed)
@@ -125,7 +131,8 @@ class PowerSimulations:
                   for i in range(self.num_runs_for_power_calc)]
         power = np.sum(alphas < self.significance_level) / len(alphas)
 
-        logging.info(f'Completed permutation: effect & sample size:{effect_sample_sizes}; Power:{power}')
+        logging.info(f'Completed permutation: effect & sample size:{effect_sample_sizes}; Power:{power}: '
+                     f'performance_new: {performance_new}')
 
         return power
 
@@ -149,11 +156,14 @@ class PowerSimulations:
         df_new = self.generate_actuals_preds(performance_new, sample_size_new, self.p)
 
         pooled = pd.concat([df, df_new])
-        orig_diff = f1_score(df['true'], df['pred'], average='macro') - f1_score(df_new['true'], df_new['pred'],
-                                                                                 average='macro')
+
+        if self.performance_type == 'log_loss':
+            orig_diff = calculate_log_loss_diff(df, df_new)
+        else:
+            orig_diff = calculate_f1_diff(df, df_new)
 
         differences = [self.run_single_trial(pooled) for i in range(self.num_trials_per_run)]
-        individual_alpha = np.sum(differences > orig_diff) / len(differences)
+        individual_alpha = np.sum([1 if diff > orig_diff else 0 for diff in differences]) / len(differences)
         return individual_alpha
 
     def run_single_trial(self, pooled_data: pd.DataFrame) -> float:
@@ -168,7 +178,10 @@ class PowerSimulations:
 
         """
         new_orig_df, new_new_df = permute_and_split(pooled_data, split_point=self.original_test_set_length)
-        score = calculate_f1_diff(new_orig_df, new_new_df)
+        if self.performance_type == 'log_loss':
+            score = calculate_log_loss_diff(new_orig_df, new_new_df)
+        else:
+            score = calculate_f1_diff(new_orig_df, new_new_df)
 
         return score
 
@@ -190,6 +203,8 @@ class PowerSimulations:
             return self.generate_actuals_preds_precision(performance, n, p)
         elif self.performance_type == 'f1_macro':
             return self.generate_actuals_preds_f1_macro(performance, n, p)
+        elif self.performance_type == 'log_loss':
+            return self.generate_actuals_preds_log_loss(performance, n, p)
 
     @staticmethod
     def generate_actuals_preds_precision(precision: float, n: int, p: float) -> pd.DataFrame:
@@ -334,9 +349,35 @@ class PowerSimulations:
         sol_list.extend([[0, 1]] * fn0)
         sol_list.extend([[1, 1]] * tp1)
         sol_list.extend([[1, 0]] * fn1)
-        solution_df = pd.DataFrame(sol_list, columns=['true', 'pred'])
+        df = pd.DataFrame(sol_list, columns=['true', 'pred'])
 
-        return solution_df
+        return df
+
+    @staticmethod
+    def generate_actuals_preds_log_loss(log_loss: float, n: int, p: float):
+        """
+
+        Args:
+            log_loss: Performance value which the created dataset should have (e.g. a log_loss of 0.4)
+            n: Size of dataset to be created
+            p: Proportion of 1s in the sample.
+
+        Returns:
+
+        """
+
+        n_class1 = int(np.round(n * p))
+        n_class0 = n - n_class1
+        class0_sampling_prob = log_loss  # np.random.uniform()
+        class1_sampling_prob = 1 - np.exp((-(n * log_loss) - n_class1 * np.log(class0_sampling_prob)) / n_class0)
+
+        class_0_preds = np.random.normal(loc=class1_sampling_prob, scale=0.01, size=n_class0)
+        class_1_preds = np.random.normal(loc=class0_sampling_prob, scale=0.01, size=n_class1)
+        actuals = [0] * n_class0 + [1] * n_class1
+        preds = np.concatenate([class_0_preds, class_1_preds])
+        df = pd.DataFrame({'true': actuals, 'pred': preds})
+
+        return df
 
     def save(self, parent_directory: str, descriptor: str = '') -> Path:
         """
@@ -447,6 +488,22 @@ def calculate_f1_diff(df1: pd.DataFrame, df2: pd.DataFrame) -> float:
         F1 score difference between the two provided dataframes of predicitons
     """
     score = f1_score(df1['true'], df1['pred'], average='macro') - f1_score(df2['true'], df2['pred'], average='macro')
+    return score
+
+
+def calculate_log_loss_diff(df1: pd.DataFrame, df2: pd.DataFrame) -> float:
+    """
+    Given two dataframes, both with columns 'true' and 'pred', return the difference between the Log Loss of both
+    of these dataframes.
+
+    Args:
+        df1: first dataframe
+        df2: second dataframe
+
+    Returns:
+        Log Loss difference between the two provided dataframes of predicitons
+    """
+    score = log_loss(df2['true'], df2['pred']) - log_loss(df1['true'], df1['pred'])
     return score
 
 
