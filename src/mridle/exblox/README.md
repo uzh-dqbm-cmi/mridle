@@ -191,3 +191,45 @@ exp = Experiment.deserialize(serialized_exp)
 data_set = DataSet(exp.dataset.config, features_df)
 preds_proba = exp.final_predictor.predict_proba(data_set.x)
 ```
+
+## Appendix
+
+### Configuring an sklearn Pipeline
+
+```yaml
+Architecture:
+    flavor: Pipeline
+    config:
+        steps:
+          - flavor: sklearn.compose.ColumnTransformer
+            name: 'preprocessing'
+            config:
+                steps:
+                    - name: 'scaler'
+                      flavor: sklearn.preprocessing.StandardScaler
+                      config:
+                        with_mean: True
+                      args:
+                        columns:
+                            - 'no_show_before'
+                            - 'sched_days_advanced'
+                            - 'age'
+                            - 'hour_sched'
+                            - 'distance_to_usz'
+                            - 'month'
+                    - name: 'onehot'
+                      flavor: sklearn.preprocessing.OneHotEncoder
+                      config:
+                          handle_unknown: 'ignore'
+                      args:
+                          columns:
+                              - 'marital'
+                              - 'modality'
+                              - 'day_of_week_str'
+          - flavor: LogisticRegression
+            name: 'classifier'
+            config:
+                penalty: 'l1'
+                solver: 'liblinear'
+                class_weight: 'balanced'
+```
