@@ -13,10 +13,10 @@ from sklearn.preprocessing import FunctionTransformer
 from torch import nn
 import torch
 from skorch import NeuralNet
-from mridle.experiment.architecture import ArchitectureInterface, PipelineInterface, ColumnTransformerInterface,\
+from mridle.exblox.architecture import ArchitectureInterface, PipelineInterface, ColumnTransformerInterface,\
     FunctionTransformerInterface, SkorchNeuralNetInterface
-from mridle.experiment.architecture import get_instance_import_path, get_func_or_class_import_path
-from mridle.experiment.architectures.MLP import MLP
+from mridle.exblox.architecture import get_instance_import_path, get_func_or_class_import_path
+from mridle.exblox.architectures.MLP import MLP
 from mridle.utilities.data_processing import tofloat32
 
 
