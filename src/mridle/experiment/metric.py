@@ -6,6 +6,10 @@ from typing import Dict, List
 
 
 class Metric(ConfigurableComponent):
+    """Abstract Base Class for metrics that can be calculated from a y_true and a y_pred_proba (the predicted
+     probability).
+
+     `Metric` must be subclassed with its `calculate` method implemented."""
 
     name = 'Metric'
 

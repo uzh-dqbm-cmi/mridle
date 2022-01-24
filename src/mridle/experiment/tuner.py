@@ -31,6 +31,18 @@ class RandomSearchTuner(Tuner):
         self.verbose = config.get('verbose', False)
 
     def fit(self, architecture, x, y) -> Tuple[Architecture, Dict]:
+        """
+        Find optimal hyperparameters for the training of the `Architecture`, yielding a trained `Predictor` object and a
+         `training_metadata` dictionary.
+
+        Args:
+            architecture: The `Architecture` object to train.
+            x: The training set.
+            y: The labels for the training set.
+
+        Returns: a trained `Predictor` object and a `training_metadata` dictionary.
+
+        """
         random_search = RandomizedSearchCV(estimator=architecture, param_distributions=self.hyperparameters,
                                            n_iter=self.num_iters, cv=self.num_cv_folds, verbose=self.verbose,
                                            random_state=42, n_jobs=-1, scoring=self.scoring_function)

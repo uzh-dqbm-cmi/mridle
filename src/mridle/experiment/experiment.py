@@ -129,6 +129,40 @@ class Experiment:
     def configure(cls, config: Dict, data: pd.DataFrame) -> 'Experiment':
         """
         Configure an `Experiment` from a configuration dictionary.
+
+        The configuration dictionary has the following format: {
+            'metadata': {...},
+            'DataSet': {
+                'flavor': 'DataSet',
+                'config': {
+                    'features': ['A', 'B', 'C', 'D'],
+                    'target': 'label',
+                },
+            },
+            'Stratifier': {
+                'flavor': 'TrainTestStratifier',
+                'config': {
+                    'test_split_size': 0.3,
+                },
+            },
+            'Architecture': {
+                'flavor': 'RandomForestClassifier',
+                'config': {...}
+            },
+            'Trainer': {
+                'flavor': 'Trainer',
+                'config': {...}
+            },
+            'Tuner': {
+                'flavor': 'RandomSearchTuner',
+                'config': {...},
+            },
+            'Metrics': [
+                {'flavor': 'F1_Macro', 'config': {'classification_cutoff': 0.5}},
+                ...
+            ]
+        }
+
         Args:
             config: An Experiment configuration dictionary.
             data: The dataframe to train and test on. It is ok if the data contains extra columns not used in training.
@@ -148,6 +182,25 @@ class Experiment:
          `Experiment` objects will only be able to be un-pickled using the same version of the Experiment library. By
          serializing first, serialized Experiment objects can be re-opened with future versions of the `Experiment`
          library.
+
+         The Experiment serialization dictionary has the following format: {
+            'metadata': {...},
+            'components': {
+                'DataSet': {...},
+                'Stratifier': {...},
+                'Architecture': {...},
+                'Trainer': {...},
+                'Tuner': {...},
+                'Metrics': {...},
+            },
+            'results': {
+                'partition_predictors': [...],
+                'evaluation': {...},
+                'final_predictor': experiment.final_predictor,  # TODO
+                'partition_training_metadata': [...],
+                'final_training_metadata': {...},
+            }
+        }
 
         Returns: An `Experiment` serialization dictionary.
 
@@ -235,6 +288,7 @@ class ExperimentInterface:
     def serialize(cls, experiment: Experiment) -> Dict:
         """
         Convert an `Experiment` object into a serialization dictionary.
+
         Args:
             experiment: An `Experiment` object.
 

@@ -2,6 +2,9 @@
 Name ideas:
 * blocks
 * ml-blocks
+* mlblox
+* exblox
+* exblocks
 * experiment-blocks
 * stack
 * skstack (taken)
