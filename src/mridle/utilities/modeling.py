@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from typing import Dict, Tuple
-from mridle.experiment.experiment import Experiment
+from mridle.exblox.experiment import Experiment
 from hyperopt import hp
 from sklearn.base import BaseEstimator, TransformerMixin
 

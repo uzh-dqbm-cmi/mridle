@@ -540,7 +540,7 @@ models:
                       batch_size: 32
                     args:
                         module:
-                            flavor: mridle.experiment.architectures.MLP.MLP
+                            flavor: mridle.exblox.architectures.MLP.MLP
                             config:
                                 input_layer_size: 43
                                 hidden_layer_size: 20

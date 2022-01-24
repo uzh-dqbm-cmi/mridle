@@ -45,7 +45,7 @@ class TestGetInstanceImportPath(unittest.TestCase):
     def test_get_instance_import_path(self):
         mlp_instance = MLP(10)
         result = get_instance_import_path(mlp_instance)
-        expected_result = 'mridle.experiment.architectures.MLP.MLP'
+        expected_result = 'mridle.exblox.architectures.MLP.MLP'
         self.assertEqual(result, expected_result)
 
 
@@ -417,7 +417,7 @@ class TestSkorchNeuralNetInterface(unittest.TestCase):
             },
             'args': {
                 'module': {
-                    'flavor': 'mridle.experiment.architectures.MLP.MLP',
+                    'flavor': 'mridle.exblox.architectures.MLP.MLP',
                     'config': {
                         'input_layer_size': 10,
                         'hidden_layer_size': 20,
@@ -462,7 +462,7 @@ class TestSkorchNeuralNetInterface(unittest.TestCase):
             },
             'args': {
                 'module': {
-                    'flavor': 'mridle.experiment.architectures.MLP.MLP',
+                    'flavor': 'mridle.exblox.architectures.MLP.MLP',
                     'config': {
                         'input_layer_size': 10,
                         'hidden_layer_size': 20,
