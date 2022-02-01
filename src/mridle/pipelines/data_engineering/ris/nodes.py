@@ -285,7 +285,7 @@ def find_no_shows(row: pd.DataFrame) -> bool:
         if pd.isnull(row[col]):
             return False
     if row['patient_class_adj'] == 'ambulant' \
-        and np.busday_count(row['date'], row['was_sched_for_date']) < pd.Timedelta(days=threshold) \
+        and np.busday_count(row['date'].date(), row['was_sched_for_date'].date()) < threshold \
             and row['now_status'] in no_show_now_status_changes \
             and row['was_status'] not in ok_was_status_changes \
             and row['was_sched_for_date'].hour != 0 \

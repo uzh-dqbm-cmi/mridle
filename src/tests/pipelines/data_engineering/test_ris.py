@@ -88,8 +88,8 @@ class TestBuildSlotDF(unittest.TestCase):
     def test_rescheduled_3_days_in_advance_no_slot(self):
         raw_df = pd.DataFrame.from_records([
                 # date,     now_status,            now_sched_for_date
-                (day(0),    code['scheduled'],     day(7)),
-                (day(4),    code['scheduled'],     day(14)),
+                (day(0),    code['scheduled'],     day(10)),
+                (day(7),    code['scheduled'],     day(17)),
             ],
             columns=[date_col, now_status_col, now_sched_for_date_col]
         )
@@ -104,17 +104,17 @@ class TestBuildSlotDF(unittest.TestCase):
     def test_canceled_three_days_in_advance_not_a_slot(self):
         raw_df = pd.DataFrame.from_records([
             # date,     now_status,            now_sched_for_date
-            (day(0),    code['scheduled'],     day(7)),
-            (day(4),    code['canceled'],      day(7)),
+            (day(0),    code['scheduled'],     day(10)),
+            (day(7),    code['canceled'],      day(10)),
         ],
             columns=[date_col, now_status_col, now_sched_for_date_col]
         )
         raw_df['PatientClass'] = 'ambulant'
-
+        print(raw_df)
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, None)
         status_df = build_status_df(raw_df, exclude_patient_ids=[])
         slot_df = build_slot_df(status_df, valid_date_range)
-
+        print(slot_df.T)
         self.assertEqual(slot_df.shape[0], 0)
 
     def test_inpatient_canceled_one_day_in_advance_not_a_slot(self):
@@ -603,6 +603,35 @@ class TestBuildSlotDF(unittest.TestCase):
 
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
+    def test_cancel_weekend_business_days(self):
+        raw_df = pd.DataFrame.from_records([
+            # date,    now_status,           now_sched_for_date
+            (day(0), code['scheduled'], day(6)),  # would be a Monday
+            (day(3), code['canceled'], day(6)),  # On Friday, cancel Monday appt
+        ],
+            columns=[date_col, now_status_col, now_sched_for_date_col]
+        )
+        raw_df['PatientClass'] = 'ambulant'
+        print(raw_df)
+        expected_slot_df = pd.DataFrame([
+            {
+                'start_time': day(6),
+                'end_time': day(6) + pd.Timedelta(minutes=30),
+                'NoShow': True,
+                'slot_outcome': 'canceled',
+                'slot_type': 'no-show',
+                'slot_type_detailed': 'soft no-show',
+                'duplicate_appt': 1,
+                'patient_class_adj': 'ambulant',
+            }
+        ])
+
+        raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
+        status_df = build_status_df(raw_df, exclude_patient_ids=[])
+        slot_df = build_slot_df(status_df, valid_date_range)
+
+        pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
+
 
 class TestFindNoShowsPositive(unittest.TestCase):
 
@@ -660,7 +689,6 @@ class TestFindNoShowsPositive(unittest.TestCase):
             'first_created_date': pd.Timestamp(year=2018, month=12, day=1, hour=9),
         }, index=[0])
         self.assertTrue(example_row.apply(find_no_shows, axis=1).iloc[0])
-
 
 class TestFindNoShowsNegative(unittest.TestCase):
 
@@ -817,7 +845,6 @@ class TestFindNoShowsNegative(unittest.TestCase):
             'first_created_date': pd.Timestamp(year=2019, month=1, day=1, hour=8),
         }, index=[0])
         self.assertFalse(example_row.apply(find_no_shows, axis=1).iloc[0])
-
 
 class TestSetNoShowSeverity(unittest.TestCase):
 
