@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import datetime as dt
 from typing import Dict, List, Union
 from mridle.utilities import data_processing
@@ -284,7 +285,7 @@ def find_no_shows(row: pd.DataFrame) -> bool:
         if pd.isnull(row[col]):
             return False
     if row['patient_class_adj'] == 'ambulant' \
-        and row['was_sched_for_date'] - row['date'] < pd.Timedelta(days=threshold) \
+        and np.busday_count(row['was_sched_for_date'], row['date']) < pd.Timedelta(days=threshold) \
             and row['now_status'] in no_show_now_status_changes \
             and row['was_status'] not in ok_was_status_changes \
             and row['was_sched_for_date'].hour != 0 \
