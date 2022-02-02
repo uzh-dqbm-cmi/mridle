@@ -86,15 +86,18 @@ def prep_raw_df_for_parquet(raw_df: pd.DataFrame) -> pd.DataFrame:
             df.drop(col, axis=1, inplace=True)
 
     for col in str_category_cols:
-        df[col] = df[col].astype(str)
-        df[col] = df[col].astype('category')
+        if col in df.columns:
+            df[col] = df[col].astype(str)
+            df[col] = df[col].astype('category')
 
     for col in number_category_cols:
-        df[col] = df[col].apply(data_processing.nan_non_numbers)
-        df[col] = df[col].astype('category')
+        if col in df.columns:
+            df[col] = df[col].apply(data_processing.nan_non_numbers)
+            df[col] = df[col].astype('category')
 
     for col in string_cols:
-        df[col] = df[col].astype(str)
+        if col in df.columns:
+            df[col] = df[col].astype(str)
 
     return df
 
