@@ -324,10 +324,15 @@ def add_custom_status_change_cols(df: pd.DataFrame) -> pd.DataFrame:
     df['prev_status'] = df.groupby('FillerOrderNo')['History_OrderStatus'].shift(1)
     df['was_status'] = df['prev_status'].apply(lambda x: get_status_text(x))
     df['was_sched_for_date'] = df.groupby('FillerOrderNo')['History_ObsStartPlanDtTm'].shift(1)
-    df['was_sched_for'] = (df['was_sched_for_date'] - df['History_MessageDtTm']).apply(lambda x: x.days)
     df['now_status'] = df['History_OrderStatus'].apply(lambda x: get_status_text(x))
-    df['now_sched_for'] = (df['History_ObsStartPlanDtTm'] - df['History_MessageDtTm']).apply(lambda x: x.days)
     df['now_sched_for_date'] = df['History_ObsStartPlanDtTm']
+
+    df['was_sched_for'] = (df['was_sched_for_date'] - df['History_MessageDtTm']).dt.days
+    df['was_sched_for'] = np.where(df['was_sched_for_date'].dt.time < df['History_MessageDtTm'].dt.time,
+                                   df['was_sched_for'] + 1, df['was_sched_for'])
+    df['now_sched_for'] = (df['History_ObsStartPlanDtTm'] - df['History_MessageDtTm']).dt.days
+    df['now_sched_for'] = np.where(df['History_ObsStartPlanDtTm'].dt.time < df['History_MessageDtTm'].dt.time,
+                                   df['now_sched_for'] + 1, df['now_sched_for'])
     return df
 
 

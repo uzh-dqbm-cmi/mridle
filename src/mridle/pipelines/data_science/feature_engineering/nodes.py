@@ -48,10 +48,10 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], buil
 
     agg_dict = {
         'NoShow': 'min',
-        'hour_sched': 'first',
-        'sched_days_advanced': 'first',
-        'sched_days_advanced_sq': 'first',
-        'sched_2_days': 'first',
+        'hour_sched': 'last',
+        'sched_days_advanced': 'last',
+        'sched_days_advanced_sq': 'last',
+        'sched_2_days': 'last',
         'modality': 'last',
         'occupation': 'last',
         'insurance_class': 'last',
@@ -201,9 +201,15 @@ def feature_days_scheduled_in_advance(status_df: pd.DataFrame) -> pd.DataFrame:
     Returns: A row-per-status-change dataframe with additional columns 'sched_days_advanced', 'sched_days_advanced_sq'
     and 'sched_2_days'.
     """
-    status_df['sched_days_advanced'] = status_df.apply(identify_sched_events, axis=1)
-    status_df['sched_days_advanced'] = status_df.groupby('FillerOrderNo')['sched_days_advanced'].shift(1).fillna(
-        method='ffill')
+    # status_df['sched_days_advanced'] = status_df.apply(identify_sched_events, axis=1)
+    # status_df['sched_days_advanced'] = status_df.groupby('FillerOrderNo')['sched_days_advanced'].shift(1).fillna(
+    #    method='ffill')
+    status_df['date_scheduled_change'] = (status_df['was_sched_for_date'] != status_df['now_sched_for_date'])
+    date_changed = status_df[status_df['date_scheduled_change']]
+    days_advanced_schedule = date_changed[['FillerOrderNo', 'now_sched_for_date', 'now_sched_for']].groupby(
+        ['FillerOrderNo', 'now_sched_for_date']).agg({'now_sched_for': 'first'}).reset_index()
+    days_advanced_schedule.columns = ['FillerOrderNo', 'now_sched_for_date', 'sched_days_advanced']
+    status_df = status_df.merge(days_advanced_schedule, on=['FillerOrderNo', 'now_sched_for_date'])
     status_df['sched_days_advanced_sq'] = status_df['sched_days_advanced'] ** 2
     status_df['sched_2_days'] = status_df['sched_days_advanced'] <= 2
 
