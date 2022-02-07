@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import datetime as dt
 from typing import Dict, List, Union
 from mridle.utilities import data_processing
@@ -85,15 +86,18 @@ def prep_raw_df_for_parquet(raw_df: pd.DataFrame) -> pd.DataFrame:
             df.drop(col, axis=1, inplace=True)
 
     for col in str_category_cols:
-        df[col] = df[col].astype(str)
-        df[col] = df[col].astype('category')
+        if col in df.columns:
+            df[col] = df[col].astype(str)
+            df[col] = df[col].astype('category')
 
     for col in number_category_cols:
-        df[col] = df[col].apply(data_processing.nan_non_numbers)
-        df[col] = df[col].astype('category')
+        if col in df.columns:
+            df[col] = df[col].apply(data_processing.nan_non_numbers)
+            df[col] = df[col].astype('category')
 
     for col in string_cols:
-        df[col] = df[col].astype(str)
+        if col in df.columns:
+            df[col] = df[col].astype(str)
 
     return df
 
@@ -284,7 +288,7 @@ def find_no_shows(row: pd.DataFrame) -> bool:
         if pd.isnull(row[col]):
             return False
     if row['patient_class_adj'] == 'ambulant' \
-        and row['was_sched_for_date'] - row['date'] < pd.Timedelta(days=threshold) \
+        and np.busday_count(row['date'].date(), row['was_sched_for_date'].date()) <= threshold \
             and row['now_status'] in no_show_now_status_changes \
             and row['was_status'] not in ok_was_status_changes \
             and row['was_sched_for_date'].hour != 0 \

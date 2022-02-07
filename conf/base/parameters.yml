@@ -66,12 +66,9 @@ models:
                                     - 'hour_sched'
                                     - 'distance_to_usz'
                                     - 'age'
-                                    - 'close_to_usz'
                                     - 'age_sq'
                                     - 'sched_days_advanced_sq'
                                     - 'distance_to_usz_sq'
-                                    - 'sched_2_days'
-                                    - 'age_20_60'
                   - flavor: LogisticRegression
                     name: 'classifier'
                     config:
@@ -139,38 +136,30 @@ models:
                 steps:
                   - flavor: RandomForestClassifier
                     name: 'classifier'
+                    config:
+                        class_weight: 'balanced'
+                        n_estimators: 400
+                        random_state: 94
+                        n_jobs: -1
         Trainer:
             flavor: Trainer
         Tuner:
             flavor: BayesianTuner
             config:
                 hyperparameters:
-                    classifier__n_estimators:
-                        parse_hp_uniformint:
-                            start: 200
-                            end: 2000
-                    classifier__max_features:
-                        parse_hp_choice:
-                            choice_list:
-                                - 'auto'
-                                - 'sqrt'
                     classifier__max_depth:
                         parse_hp_uniformint:
-                            start: 10
-                            end: 110
+                            start: 2
+                            end: 100
                     classifier__min_samples_split:
                         parse_hp_uniformint:
                             start: 2
-                            end: 10
-                    classifier__min_samples_leaf:
-                        parse_hp_uniformint:
-                            start: 1
-                            end: 10
-                    classifier__bootstrap:
+                            end: 20
+                    classifier__max_features:
                         parse_hp_choice:
                             choice_list:
-                                - true
-                                - false
+                                - 'sqrt'
+                                - 'log2'
                 search_type: bayesian
                 num_cv_folds: 5
                 num_iters: 50  # 150
@@ -545,7 +534,7 @@ models:
                         module:
                             flavor: mridle.experiment.architectures.MLP.MLP
                             config:
-                                input_layer_size: 43
+                                input_layer_size: 41
                                 hidden_layer_size: 20
                                 dropout_p: 0
                         criterion:
