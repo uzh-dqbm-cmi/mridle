@@ -36,7 +36,6 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], buil
     status_df = feature_month(status_df)
     status_df = feature_hour_sched(status_df)
     status_df = feature_day_of_week(status_df)
-    status_df = feature_days_scheduled_in_advance(status_df)
     status_df = feature_modality(status_df)
     status_df = feature_insurance_class(status_df)
     status_df = feature_sex(status_df)
@@ -73,6 +72,9 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], buil
 
     slot_df = build_slot_df(status_df, valid_date_range, agg_dict, build_future_slots=build_future_slots,
                             include_id_cols=True)
+
+    slot_df = feature_days_scheduled_in_advance(status_df, slot_df)
+
     slot_df = feature_no_show_before(slot_df)
     slot_df = feature_cyclical_hour(slot_df)
     slot_df = feature_cyclical_day_of_week(slot_df)
@@ -182,7 +184,7 @@ def identify_sched_events(row: pd.DataFrame) -> dt.datetime:
         return None
 
 
-def feature_days_scheduled_in_advance(status_df: pd.DataFrame) -> pd.DataFrame:
+def feature_days_scheduled_in_advance(status_df: pd.DataFrame, slot_df: pd.DataFrame) -> pd.DataFrame:
     """
     Append the features 'sched_days_advanced' (int), 'sched_days_advanced_sq' (int) and 'sched_2_days' (bool) to the
     dataframe.
@@ -205,17 +207,20 @@ def feature_days_scheduled_in_advance(status_df: pd.DataFrame) -> pd.DataFrame:
     status_df['sched_days_advanced'] = status_df.apply(identify_sched_events, axis=1)
     status_df['sched_days_advanced'] = status_df.groupby('FillerOrderNo')['sched_days_advanced'].shift(1).fillna(
         method='ffill')
+    days_advanced_schedule = status_df[['FillerOrderNo', 'MRNCmpdId',
+                                        'now_sched_for_date', 'sched_days_advanced']].drop_duplicates()
+    slot_df = slot_df.merge(days_advanced_schedule, on=['FillerOrderNo', 'MRNCmpdId', 'now_sched_for_date'])
 
     status_df['date_scheduled_change'] = (status_df['was_sched_for_date'] != status_df['now_sched_for_date'])
     date_changed = status_df[status_df['date_scheduled_change']]
-    days_advanced_schedule = date_changed[['FillerOrderNo', 'now_sched_for_date', 'now_sched_for']].groupby(
-        ['FillerOrderNo', 'now_sched_for_date']).agg({'now_sched_for': 'first'}).reset_index()
-    days_advanced_schedule.columns = ['FillerOrderNo', 'now_sched_for_date', 'sched_days_advanced2']
-    status_df = status_df.merge(days_advanced_schedule, on=['FillerOrderNo', 'now_sched_for_date'])
-    status_df['sched_days_advanced_sq'] = status_df['sched_days_advanced'] ** 2
-    status_df['sched_2_days'] = status_df['sched_days_advanced'] <= 2
+    days_advanced_schedule2 = date_changed[['FillerOrderNo', 'now_sched_for_date', 'now_sched_for']].groupby(
+        ['FillerOrderNo', 'MRNCmpdId', 'now_sched_for_date']).agg({'now_sched_for': 'first'}).reset_index()
+    days_advanced_schedule2.columns = ['FillerOrderNo', 'MRNCmpdId', 'now_sched_for_date', 'sched_days_advanced2']
+    slot_df = slot_df.merge(days_advanced_schedule2, on=['FillerOrderNo', 'MRNCmpdId', 'now_sched_for_date'])
+    slot_df['sched_days_advanced_sq'] = slot_df['sched_days_advanced'] ** 2
+    slot_df['sched_2_days'] = slot_df['sched_days_advanced'] <= 2
 
-    return status_df
+    return slot_df
 
 
 def feature_insurance_class(status_df: pd.DataFrame) -> pd.DataFrame:
