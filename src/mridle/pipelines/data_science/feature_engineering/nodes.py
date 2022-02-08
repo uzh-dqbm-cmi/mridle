@@ -50,6 +50,7 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], buil
         'NoShow': 'min',
         'hour_sched': 'last',
         'sched_days_advanced': 'last',
+        'sched_days_advanced2': 'last',
         'sched_days_advanced_sq': 'last',
         'sched_2_days': 'last',
         'modality': 'last',
