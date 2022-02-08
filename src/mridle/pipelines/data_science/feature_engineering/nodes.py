@@ -44,14 +44,15 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], buil
     status_df = feature_post_code(status_df)
     status_df = feature_distance_to_usz(status_df)
     status_df = feature_occupation(status_df)
+    status_df = feature_days_scheduled_in_advance(status_df)
 
     agg_dict = {
         'NoShow': 'min',
         'hour_sched': 'last',
-        #  'sched_days_advanced': 'first',
+        'sched_days_advanced': 'first',
         #  'sched_days_advanced2': 'first',
-        #  'sched_days_advanced_sq': 'first',
-        #  'sched_2_days': 'first',
+        'sched_days_advanced_sq': 'first',
+        'sched_2_days': 'first',
         'modality': 'last',
         'occupation': 'last',
         'insurance_class': 'last',
@@ -73,7 +74,7 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], buil
     slot_df = build_slot_df(status_df, valid_date_range, agg_dict, build_future_slots=build_future_slots,
                             include_id_cols=True)
 
-    slot_df = feature_days_scheduled_in_advance(status_df, slot_df)
+    slot_df = feature_days_scheduled_in_advance2(status_df, slot_df)
 
     slot_df = feature_no_show_before(slot_df)
     slot_df = feature_cyclical_hour(slot_df)
@@ -184,7 +185,33 @@ def identify_sched_events(row: pd.DataFrame) -> dt.datetime:
         return None
 
 
-def feature_days_scheduled_in_advance(status_df: pd.DataFrame, slot_df: pd.DataFrame) -> pd.DataFrame:
+def feature_days_scheduled_in_advance(status_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Append the features 'sched_days_advanced' (int), 'sched_days_advanced_sq' (int) and 'sched_2_days' (bool) to the
+    dataframe.
+    Works by:
+        1. Identify status changes that represent scheduling events
+        2. Shift scheduling events forward 1, so that each row has the previous scheduling event.
+            For example, on a No-Show status change row, Step 1 will stamp the scheduling event that occurs as a result
+             of a no-show going from scheduled status -> scheduled status. To calculate the scheduled date of the
+              no-show appt slot, we need the previous scheduling event.
+        3. Fill forward so the scheduling event dates so that 'show' and 'no-show' appt status rows contain the date of
+         the most recent (but previous) scheduling event.
+    Args:
+        status_df: A row-per-status-change dataframe.
+    Returns: A row-per-status-change dataframe with additional columns 'sched_days_advanced', 'sched_days_advanced_sq'
+    and 'sched_2_days'.
+    """
+    status_df['sched_days_advanced'] = status_df.apply(identify_sched_events, axis=1)
+    status_df['sched_days_advanced'] = status_df.groupby('FillerOrderNo')['sched_days_advanced'].shift(1).fillna(
+        method='ffill')
+    status_df['sched_days_advanced_sq'] = status_df['sched_days_advanced'] ** 2
+    status_df['sched_2_days'] = status_df['sched_days_advanced'] <= 2
+
+    return status_df
+
+
+def feature_days_scheduled_in_advance2(status_df: pd.DataFrame, slot_df: pd.DataFrame) -> pd.DataFrame:
     """
     Append the features 'sched_days_advanced' (int), 'sched_days_advanced_sq' (int) and 'sched_2_days' (bool) to the
     dataframe.
@@ -204,13 +231,6 @@ def feature_days_scheduled_in_advance(status_df: pd.DataFrame, slot_df: pd.DataF
     Returns: A row-per-status-change dataframe with additional columns 'sched_days_advanced', 'sched_days_advanced_sq'
     and 'sched_2_days'.
     """
-    status_df['sched_days_advanced'] = status_df.apply(identify_sched_events, axis=1)
-    status_df['sched_days_advanced'] = status_df.groupby('FillerOrderNo')['sched_days_advanced'].shift(1).fillna(
-        method='ffill')
-    days_advanced_schedule = status_df[['FillerOrderNo', 'now_sched_for_date', 'sched_days_advanced']].groupby(
-        ['FillerOrderNo', 'now_sched_for_date']).agg({'sched_days_advanced': 'first'}).reset_index()
-    slot_df = slot_df.merge(days_advanced_schedule, left_on=['FillerOrderNo', 'start_time'],
-                            right_on=['FillerOrderNo', 'now_sched_for_date'])
 
     status_df['date_scheduled_change'] = (status_df['was_sched_for_date'] != status_df['now_sched_for_date'])
     date_changed = status_df[status_df['date_scheduled_change']]
