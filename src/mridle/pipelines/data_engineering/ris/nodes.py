@@ -211,7 +211,6 @@ def build_slot_df(input_status_df: pd.DataFrame, valid_date_range: List[str], ag
         agg_dict['now_sched_for_date'] = 'last'
         if 'sched_days_advanced' in agg_dict.keys():
             agg_dict['sched_days_advanced'] = 'last'
-            agg_dict['sched_days_advanced2'] = 'last'
             agg_dict['sched_days_advanced_sq'] = 'last'
             agg_dict['sched_2_days'] = 'last'
 
