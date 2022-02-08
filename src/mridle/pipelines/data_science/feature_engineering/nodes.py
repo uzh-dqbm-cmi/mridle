@@ -209,14 +209,16 @@ def feature_days_scheduled_in_advance(status_df: pd.DataFrame, slot_df: pd.DataF
         method='ffill')
     days_advanced_schedule = status_df[['FillerOrderNo', 'MRNCmpdId',
                                         'now_sched_for_date', 'sched_days_advanced']].drop_duplicates()
-    slot_df = slot_df.merge(days_advanced_schedule, on=['FillerOrderNo', 'MRNCmpdId', 'now_sched_for_date'])
+    slot_df = slot_df.merge(days_advanced_schedule, left_on=['FillerOrderNo', 'MRNCmpdId', 'start_time'],
+                            right_on=['FillerOrderNo', 'MRNCmpdId', 'now_sched_for_date'])
 
     status_df['date_scheduled_change'] = (status_df['was_sched_for_date'] != status_df['now_sched_for_date'])
     date_changed = status_df[status_df['date_scheduled_change']]
     days_advanced_schedule2 = date_changed[['FillerOrderNo', 'now_sched_for_date', 'now_sched_for']].groupby(
         ['FillerOrderNo', 'MRNCmpdId', 'now_sched_for_date']).agg({'now_sched_for': 'first'}).reset_index()
     days_advanced_schedule2.columns = ['FillerOrderNo', 'MRNCmpdId', 'now_sched_for_date', 'sched_days_advanced2']
-    slot_df = slot_df.merge(days_advanced_schedule2, on=['FillerOrderNo', 'MRNCmpdId', 'now_sched_for_date'])
+    slot_df = slot_df.merge(days_advanced_schedule2, left_on=['FillerOrderNo', 'MRNCmpdId', 'start_time'],
+                            right_on=['FillerOrderNo', 'MRNCmpdId', 'now_sched_for_date'])
     slot_df['sched_days_advanced_sq'] = slot_df['sched_days_advanced'] ** 2
     slot_df['sched_2_days'] = slot_df['sched_days_advanced'] <= 2
 
