@@ -210,8 +210,8 @@ def feature_days_scheduled_in_advance(status_df: pd.DataFrame) -> pd.DataFrame:
         ['FillerOrderNo', 'now_sched_for_date']).agg({'now_sched_for': 'first'}).reset_index()
     days_advanced_schedule.columns = ['FillerOrderNo', 'now_sched_for_date', 'sched_days_advanced2']
     status_df = status_df.merge(days_advanced_schedule, on=['FillerOrderNo', 'now_sched_for_date'])
-    #  status_df['sched_days_advanced_sq'] = status_df['sched_days_advanced'] ** 2
-    #  status_df['sched_2_days'] = status_df['sched_days_advanced'] <= 2
+    status_df['sched_days_advanced_sq'] = status_df['sched_days_advanced'] ** 2
+    status_df['sched_2_days'] = status_df['sched_days_advanced'] <= 2
 
     return status_df
 
