@@ -207,8 +207,8 @@ def feature_days_scheduled_in_advance(status_df: pd.DataFrame, slot_df: pd.DataF
     status_df['sched_days_advanced'] = status_df.apply(identify_sched_events, axis=1)
     status_df['sched_days_advanced'] = status_df.groupby('FillerOrderNo')['sched_days_advanced'].shift(1).fillna(
         method='ffill')
-    days_advanced_schedule = status_df[['FillerOrderNo',
-                                        'now_sched_for_date', 'sched_days_advanced']].drop_duplicates()
+    days_advanced_schedule = status_df[['FillerOrderNo', 'now_sched_for_date', 'sched_days_advanced']].groupby(
+        ['FillerOrderNo', 'now_sched_for_date']).agg({'sched_days_advanced': 'first'}).reset_index()
     slot_df = slot_df.merge(days_advanced_schedule, left_on=['FillerOrderNo', 'start_time'],
                             right_on=['FillerOrderNo', 'now_sched_for_date'])
 
