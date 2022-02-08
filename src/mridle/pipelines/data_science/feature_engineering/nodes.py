@@ -205,6 +205,7 @@ def feature_days_scheduled_in_advance(status_df: pd.DataFrame) -> pd.DataFrame:
     status_df['sched_days_advanced'] = status_df.apply(identify_sched_events, axis=1)
     status_df['sched_days_advanced'] = status_df.groupby('FillerOrderNo')['sched_days_advanced'].shift(1).fillna(
         method='ffill')
+
     status_df['date_scheduled_change'] = (status_df['was_sched_for_date'] != status_df['now_sched_for_date'])
     date_changed = status_df[status_df['date_scheduled_change']]
     days_advanced_schedule = date_changed[['FillerOrderNo', 'now_sched_for_date', 'now_sched_for']].groupby(

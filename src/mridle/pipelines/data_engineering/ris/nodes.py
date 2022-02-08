@@ -209,6 +209,11 @@ def build_slot_df(input_status_df: pd.DataFrame, valid_date_range: List[str], ag
 
     if build_future_slots:
         agg_dict['now_sched_for_date'] = 'last'
+        agg_dict['sched_days_advanced'] = 'last'
+        agg_dict['sched_days_advanced2'] = 'last'
+        agg_dict['sched_days_advanced_sq'] = 'last'
+        agg_dict['sched_2_days'] = 'last'
+
         future_slot_df = status_df.groupby(['FillerOrderNo', 'MRNCmpdId']).agg(agg_dict)
         future_slot_df['start_time'] = future_slot_df['now_sched_for_date']
         future_slot_df['end_time'] = future_slot_df['start_time'] + pd.to_timedelta(30, unit='minutes')
