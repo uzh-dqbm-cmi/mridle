@@ -356,6 +356,7 @@ def feature_modality(slot_df: pd.DataFrame, group_categories_less_than: int = No
     Returns:
         dataframe with modality column added, and mapping applied to this column.
     """
+
     def regex_search(x, search_str):
         return bool(re.search(search_str, x, re.IGNORECASE))
 
@@ -472,52 +473,52 @@ def feature_cyclical_month(slot_df):
 
 
 def feature_occupation(df):
-
     df_remap = df.copy()
-    df_remap.rename(columns={'Beruf': 'occupation'}, inplace=True)
+    #  df_remap['occupation'] = df_remap['Beruf']
+    df_remap['occupation'] = None
     df_remap['occupation'] = df_remap['occupation'].astype(str)
 
-    df_remap.loc[df_remap['occupation'] == 'nan', 'occupation'] = 'none_given'
-    df_remap.loc[df_remap['occupation'] == '-', 'occupation'] = 'none_given'
-    df_remap.loc[df_remap['occupation'].apply(regex_search, search_str='rentner|Renter|pensioniert|pens.|rente'),
+    df_remap.loc[df_remap['Beruf'] == 'nan', 'occupation'] = 'none_given'
+    df_remap.loc[df_remap['Beruf'] == '-', 'occupation'] = 'none_given'
+    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='rentner|Renter|pensioniert|pens.|rente'),
                  'occupation'] = 'retired'
-    df_remap.loc[df_remap['occupation'].apply(regex_search, search_str='keine Angaben|keine Ang'),
+    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='keine Angaben|keine Ang'),
                  'occupation'] = 'none_given'
-    df_remap.loc[df_remap['occupation'].apply(regex_search,
-                                              search_str='Angestellte|ang.|baue|angest.|Hauswart|dozent|designer|^KV$|'
-                                                         'masseu|Raumpflegerin|Apothekerin|Ing.|fotog|Psycholog|'
-                                                         'Sozialpädagoge|Werkzeu|druck|musik|koordinator|software|'
-                                                         'schaler|Kosmetikerin|Physiotherapeutin|Physiker|Unternehmer|'
-                                                         'Praktikant|Analy|reinig|Detailhandel|putz|Grafiker|anwält|'
-                                                         'maschinist|Immobilien|Zimmermann|schloss|Kassiererin|'
-                                                         'hotel|hochbau|marketing|engineer|IT|Rechts|backer|bäcker|'
-                                                         'baecker|Disponent|magazin|chemik|Journalist|Schreiner|metzg|'
-                                                         'Consultant|Berater|Köch|gärtn|gartn|gaertn|Professor|'
-                                                         'Praktikantin|Gipser|Küche|lehrl|logist|Buchhalter|technik|'
-                                                         'Projektleiter|Manager|Assistent|Landwirt|Poliz|Elektro|'
-                                                         'Elektri|Jurist|Kellner|Sekret|Lager|Monteur|Coiffeu|spengler|'
-                                                         'Kindergärtner|Geschäfts|mechanik|maurer|Maler|Chauffeur|'
-                                                         'ingenieur|Kauf|mitarbeiter|Verkäufer|Informatiker|koch|'
-                                                         'lehrer|arbeiter|architekt'),
+    df_remap.loc[df_remap['Beruf'].apply(regex_search,
+                                         search_str='Angestellte|ang.|baue|angest.|Hauswart|dozent|designer|^KV$|'
+                                                    'masseu|Raumpflegerin|Apothekerin|Ing.|fotog|Psycholog|'
+                                                    'Sozialpädagoge|Werkzeu|druck|musik|koordinator|software|'
+                                                    'schaler|Kosmetikerin|Physiotherapeutin|Physiker|Unternehmer|'
+                                                    'Praktikant|Analy|reinig|Detailhandel|putz|Grafiker|anwält|'
+                                                    'maschinist|Immobilien|Zimmermann|schloss|Kassiererin|'
+                                                    'hotel|hochbau|marketing|engineer|IT|Rechts|backer|bäcker|'
+                                                    'baecker|Disponent|magazin|chemik|Journalist|Schreiner|metzg|'
+                                                    'Consultant|Berater|Köch|gärtn|gartn|gaertn|Professor|'
+                                                    'Praktikantin|Gipser|Küche|lehrl|logist|Buchhalter|technik|'
+                                                    'Projektleiter|Manager|Assistent|Landwirt|Poliz|Elektro|'
+                                                    'Elektri|Jurist|Kellner|Sekret|Lager|Monteur|Coiffeu|spengler|'
+                                                    'Kindergärtner|Geschäfts|mechanik|maurer|Maler|Chauffeur|'
+                                                    'ingenieur|Kauf|mitarbeiter|Verkäufer|Informatiker|koch|'
+                                                    'lehrer|arbeiter|architekt'),
                  'occupation'] = 'employed'
-    df_remap.loc[df_remap['occupation'].apply(regex_search, search_str='student|Schüler|Doktorand|'
-                                                                       'Kind|Stud.|Ausbildung|^MA$'),
+    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='student|Schüler|Doktorand|'
+                                                                  'Kind|Stud.|Ausbildung|^MA$'),
                  'occupation'] = 'student'
-    df_remap.loc[df_remap['occupation'].apply(regex_search, search_str='^IV$|^IV-Bezüger|^$|arbeitslos|ohne Arbeit|'
-                                                                       'ohne|o.A.|nicht Arbeitstätig|'
-                                                                       'Sozialhilfeempfänger|o. Arbeit|keine Arbeit|'
-                                                                       'Asyl|RAV|Hausfrau|Hausmann'),
+    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='^IV$|^IV-Bezüger|^$|arbeitslos|ohne Arbeit|'
+                                                                  'ohne|o.A.|nicht Arbeitstätig|'
+                                                                  'Sozialhilfeempfänger|o. Arbeit|keine Arbeit|'
+                                                                  'Asyl|RAV|Hausfrau|Hausmann'),
                  'occupation'] = 'unemployed'
-    df_remap.loc[df_remap['occupation'].apply(regex_search, search_str='selbst'), 'occupation'] = 'self_employed'
-    df_remap.loc[df_remap['occupation'].apply(regex_search, search_str='arzt|aerzt|ärzt|pflegefachfrau|Pflegehelfer|'
-                                                                       'MTRA|Erzieherin|Fachfrau Betreuung|'
-                                                                       'Pflegefachmann|MPA|FaGe|Krankenschwester|'
-                                                                       'Fachmann MTRA'),
+    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='selbst'), 'occupation'] = 'self_employed'
+    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='arzt|aerzt|ärzt|pflegefachfrau|Pflegehelfer|'
+                                                                  'MTRA|Erzieherin|Fachfrau Betreuung|'
+                                                                  'Pflegefachmann|MPA|FaGe|Krankenschwester|'
+                                                                  'Fachmann MTRA'),
                  'occupation'] = 'hospital_worker'
-    df_remap.loc[df_remap['occupation'].apply(regex_search, search_str='Tourist'), 'occupation'] = 'other'
-    df_remap['occupation_freq'] = df_remap[['occupation', 'FillerOrderNo']].groupby('occupation').transform(len)
-    df_remap.loc[df_remap['occupation_freq'] < 150, 'occupation'] = 'other'
-    df_remap = df_remap.drop('occupation_freq', axis=1)
+    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='Tourist'), 'occupation'] = 'other'
+    # df_remap['occupation_freq'] = df_remap[['occupation', 'FillerOrderNo']].groupby('occupation').transform(len)
+    df_remap.loc[df_remap['occupation'] is None, 'occupation'] = 'other'
+    df_remap = df_remap.drop('Beruf', axis=1)
     return df_remap
 
 
