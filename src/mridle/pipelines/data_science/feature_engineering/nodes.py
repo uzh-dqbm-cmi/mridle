@@ -33,9 +33,6 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], buil
 
     status_df = status_df[status_df['patient_class_adj'] != 'inpatient']
 
-    status_df = feature_month(status_df)
-    status_df = feature_hour_sched(status_df)
-    status_df = feature_day_of_week(status_df)
     status_df = feature_modality(status_df)
     status_df = feature_insurance_class(status_df)
     status_df = feature_sex(status_df)
@@ -48,17 +45,12 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], buil
 
     agg_dict = {
         'NoShow': 'min',
-        'hour_sched': 'last',
         'sched_days_advanced': 'first',
-        #  'sched_days_advanced2': 'first',
         'sched_days_advanced_sq': 'first',
         'sched_2_days': 'first',
         'modality': 'last',
         'occupation': 'last',
         'insurance_class': 'last',
-        'day_of_week': 'last',
-        'day_of_week_str': 'last',
-        'month': 'last',
         'sex': 'last',
         'age': 'last',
         'age_sq': 'last',
@@ -75,7 +67,9 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], buil
                             include_id_cols=True)
 
     slot_df = feature_days_scheduled_in_advance2(status_df, slot_df)
-
+    slot_df = feature_month(slot_df)
+    slot_df = feature_hour_sched(slot_df)
+    slot_df = feature_day_of_week(slot_df)
     slot_df = feature_no_show_before(slot_df)
     slot_df = feature_cyclical_hour(slot_df)
     slot_df = feature_cyclical_day_of_week(slot_df)
@@ -124,49 +118,49 @@ def identify_end_times(row: pd.DataFrame) -> dt.datetime:
         return None
 
 
-def feature_month(status_df: pd.DataFrame) -> pd.DataFrame:
+def feature_month(slot_df: pd.DataFrame) -> pd.DataFrame:
     """
     Append the month feature to the dataframe.
 
     Args:
-        status_df: A row-per-status-change dataframe.
+        slot_df: A dataframe containing appointment slots.
 
     Returns: A row-per-status-change dataframe with additional column 'month' containing integers 1-12.
 
     """
-    status_df['month'] = status_df['was_sched_for_date'].dt.month
-    return status_df
+    slot_df['month'] = slot_df['start_time'].dt.month
+    return slot_df
 
 
-def feature_hour_sched(status_df: pd.DataFrame) -> pd.DataFrame:
+def feature_hour_sched(slot_df: pd.DataFrame) -> pd.DataFrame:
     """
     Append the hour_sched feature to the dataframe using was_sched_for_date.
 
     Args:
-        status_df: A row-per-status-change dataframe.
+        slot_df: A dataframe containing appointment slots.
 
     Returns: A row-per-status-change dataframe with additional column 'hour_sched'.
     """
-    status_df['hour_sched'] = status_df['was_sched_for_date'].dt.hour
-    return status_df
+    slot_df['hour_sched'] = slot_df['start_time'].dt.hour
+    return slot_df
 
 
-def feature_day_of_week(status_df: pd.DataFrame) -> pd.DataFrame:
+def feature_day_of_week(slot_df: pd.DataFrame) -> pd.DataFrame:
     """
     Append the day_of_week feature to the dataframe.
 
     Args:
-        status_df: A row-per-status-change dataframe.
+        slot_df: A dataframe containing appointment slots.
 
     Returns:
         A row-per-status-change dataframe with additional columns 'day_of_week' (containing integers 0-6)
         and `day_of_week_str` containing strings in the format 'Monday', 'Tuesday', ...
 
     """
-    status_df['day_of_week'] = status_df['was_sched_for_date'].dt.dayofweek
-    status_df['day_of_week_str'] = status_df['was_sched_for_date'].dt.strftime('%A')
+    slot_df['day_of_week'] = slot_df['start_time'].dt.dayofweek
+    slot_df['day_of_week_str'] = slot_df['start_time'].dt.strftime('%A')
 
-    return status_df
+    return slot_df
 
 
 def identify_sched_events(row: pd.DataFrame) -> dt.datetime:
@@ -239,9 +233,7 @@ def feature_days_scheduled_in_advance2(status_df: pd.DataFrame, slot_df: pd.Data
     days_advanced_schedule2.columns = ['FillerOrderNo', 'now_sched_for_date', 'sched_days_advanced2']
     slot_df = slot_df.merge(days_advanced_schedule2, left_on=['FillerOrderNo', 'start_time'],
                             right_on=['FillerOrderNo', 'now_sched_for_date'])
-    slot_df['sched_days_advanced_sq'] = slot_df['sched_days_advanced'] ** 2
-    slot_df['sched_2_days'] = slot_df['sched_days_advanced'] <= 2
-
+    slot_df.drop('now_sched_for_date', axis=1, inplace=True)
     return slot_df
 
 
