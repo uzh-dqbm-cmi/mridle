@@ -242,7 +242,9 @@ class TestDaysScheduleInAdvance(unittest.TestCase):
                                  'slot_type_detailed',
                                  'EnteringOrganisationDeviceID',
                                  'UniversalServiceName',
-                                 'sched_days_advanced2'
+                                 'sched_days_advanced',
+                                 'sched_days_advanced_sq',
+                                 'sched_2_days'
                                  ]
             slot_df = slot_df[slot_df_col_order]
 
@@ -269,7 +271,9 @@ class TestDaysScheduleInAdvance(unittest.TestCase):
                 'slot_type_detailed': 'show',
                 'duplicate_appt': 1,
                 'patient_class_adj': 'ambulant',
-                'sched_days_advanced2': 4,
+                'sched_days_advanced': 4,
+                'sched_days_advanced_sq': 16,
+                'sched_2_days': False
             }
         ])
 
@@ -303,7 +307,9 @@ class TestDaysScheduleInAdvance(unittest.TestCase):
                 'slot_type_detailed': 'show',
                 'duplicate_appt': 1,
                 'patient_class_adj': 'ambulant',
-                'sched_days_advanced2': 13,
+                'sched_days_advanced': 13,
+                'sched_days_advanced_sq': 169,
+                'sched_2_days': False
             }
         ])
 
@@ -337,7 +343,10 @@ class TestDaysScheduleInAdvance(unittest.TestCase):
                 'slot_type_detailed': 'soft no-show',
                 'duplicate_appt': 1,
                 'patient_class_adj': 'ambulant',
-                'sched_days_advanced2': 10,
+                'sched_days_advanced': 10,
+                'sched_days_advanced_sq': 100,
+                'sched_2_days': False
+
             },
             {
                 'start_time': day(14),
@@ -348,7 +357,10 @@ class TestDaysScheduleInAdvance(unittest.TestCase):
                 'slot_type_detailed': 'show',
                 'duplicate_appt': 1,
                 'patient_class_adj': 'ambulant',
-                'sched_days_advanced2': 5,
+                'sched_days_advanced': 5,
+                'sched_days_advanced_sq': 25,
+                'sched_2_days': False
+
             }
         ])
 
@@ -380,7 +392,9 @@ class TestDaysScheduleInAdvance(unittest.TestCase):
                 'slot_type_detailed': None,
                 'duplicate_appt': 1,
                 'patient_class_adj': 'ambulant',
-                'sched_days_advanced2': 13,
+                'sched_days_advanced': 13,
+                'sched_days_advanced_sq': 169,
+                'sched_2_days': False
             }
         ])
 
