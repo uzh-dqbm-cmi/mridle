@@ -45,9 +45,9 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], buil
 
     agg_dict = {
         'NoShow': 'min',
-        'sched_days_advanced': 'first',
-        'sched_days_advanced_sq': 'first',
-        'sched_2_days': 'first',
+        'sched_days_advanced2': 'first',
+        'sched_days_advanced_sq2': 'first',
+        'sched_2_days2': 'first',
         'modality': 'last',
         'occupation': 'last',
         'insurance_class': 'last',
@@ -196,11 +196,11 @@ def feature_days_scheduled_in_advance(status_df: pd.DataFrame) -> pd.DataFrame:
     Returns: A row-per-status-change dataframe with additional columns 'sched_days_advanced', 'sched_days_advanced_sq'
     and 'sched_2_days'.
     """
-    status_df['sched_days_advanced'] = status_df.apply(identify_sched_events, axis=1)
-    status_df['sched_days_advanced'] = status_df.groupby('FillerOrderNo')['sched_days_advanced'].shift(1).fillna(
+    status_df['sched_days_advanced2'] = status_df.apply(identify_sched_events, axis=1)
+    status_df['sched_days_advanced2'] = status_df.groupby('FillerOrderNo')['sched_days_advanced2'].shift(1).fillna(
         method='ffill')
-    status_df['sched_days_advanced_sq'] = status_df['sched_days_advanced'] ** 2
-    status_df['sched_2_days'] = status_df['sched_days_advanced'] <= 2
+    status_df['sched_days_advanced_sq2'] = status_df['sched_days_advanced2'] ** 2
+    status_df['sched_2_days2'] = status_df['sched_days_advanced2'] <= 2
 
     return status_df
 
@@ -230,10 +230,13 @@ def feature_days_scheduled_in_advance2(status_df: pd.DataFrame, slot_df: pd.Data
     date_changed = status_df[status_df['date_scheduled_change']]
     days_advanced_schedule2 = date_changed[['FillerOrderNo', 'now_sched_for_date', 'now_sched_for']].groupby(
         ['FillerOrderNo', 'now_sched_for_date']).agg({'now_sched_for': 'first'}).reset_index()
-    days_advanced_schedule2.columns = ['FillerOrderNo', 'now_sched_for_date', 'sched_days_advanced2']
+    days_advanced_schedule2.columns = ['FillerOrderNo', 'now_sched_for_date', 'sched_days_advanced']
     slot_df = slot_df.merge(days_advanced_schedule2, left_on=['FillerOrderNo', 'start_time'],
                             right_on=['FillerOrderNo', 'now_sched_for_date'])
     slot_df.drop('now_sched_for_date', axis=1, inplace=True)
+    slot_df['sched_days_advanced_sq'] = slot_df['sched_days_advanced'] ** 2
+    slot_df['sched_2_days'] = slot_df['sched_days_advanced'] <= 2
+
     return slot_df
 
 
