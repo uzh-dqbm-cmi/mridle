@@ -517,7 +517,7 @@ def feature_occupation(df):
                  'occupation'] = 'hospital_worker'
     df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='Tourist'), 'occupation'] = 'other'
     # df_remap['occupation_freq'] = df_remap[['occupation', 'FillerOrderNo']].groupby('occupation').transform(len)
-    df_remap.loc[df_remap['occupation'] is None, 'occupation'] = 'other'
+    df_remap.loc[df_remap['occupation'].isna(), 'occupation'] = 'other'
     df_remap = df_remap.drop('Beruf', axis=1)
     return df_remap
 
