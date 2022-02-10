@@ -41,13 +41,9 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], buil
     status_df = feature_post_code(status_df)
     status_df = feature_distance_to_usz(status_df)
     status_df = feature_occupation(status_df)
-    status_df = feature_days_scheduled_in_advance(status_df)
 
     agg_dict = {
         'NoShow': 'min',
-        'sched_days_advanced2': 'first',
-        'sched_days_advanced_sq2': 'first',
-        'sched_2_days2': 'first',
         'modality': 'last',
         'occupation': 'last',
         'insurance_class': 'last',
@@ -228,10 +224,10 @@ def feature_days_scheduled_in_advance2(status_df: pd.DataFrame, slot_df: pd.Data
 
     status_df['date_scheduled_change'] = (status_df['was_sched_for_date'] != status_df['now_sched_for_date'])
     date_changed = status_df[status_df['date_scheduled_change']]
-    days_advanced_schedule2 = date_changed[['FillerOrderNo', 'now_sched_for_date', 'now_sched_for']].groupby(
+    days_advanced_schedule = date_changed[['FillerOrderNo', 'now_sched_for_date', 'now_sched_for']].groupby(
         ['FillerOrderNo', 'now_sched_for_date']).agg({'now_sched_for': 'first'}).reset_index()
-    days_advanced_schedule2.columns = ['FillerOrderNo', 'now_sched_for_date', 'sched_days_advanced']
-    slot_df = slot_df.merge(days_advanced_schedule2, left_on=['FillerOrderNo', 'start_time'],
+    days_advanced_schedule.columns = ['FillerOrderNo', 'now_sched_for_date', 'sched_days_advanced']
+    slot_df = slot_df.merge(days_advanced_schedule, left_on=['FillerOrderNo', 'start_time'],
                             right_on=['FillerOrderNo', 'now_sched_for_date'])
     slot_df.drop('now_sched_for_date', axis=1, inplace=True)
     slot_df['sched_days_advanced_sq'] = slot_df['sched_days_advanced'] ** 2
