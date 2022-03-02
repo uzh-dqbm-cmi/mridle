@@ -220,7 +220,7 @@ def feature_days_scheduled_in_advance2(status_df: pd.DataFrame, slot_df: pd.Data
     status_df['date_scheduled_change'] = (status_df['was_sched_for_date'] != status_df['now_sched_for_date'])
     date_changed = status_df.loc[status_df['date_scheduled_change'],
                                  ['FillerOrderNo', 'now_sched_for_date', 'now_sched_for', 'now_sched_for_busday']]
-    days_advanced_schedule = date_changed.groupby(['FillerOrderNo', 'now_sched_for_date'] ).agg({
+    days_advanced_schedule = date_changed.groupby(['FillerOrderNo', 'now_sched_for_date']).agg({
         'now_sched_for': 'first',
         'now_sched_for_busday': 'first'
     }).reset_index()
