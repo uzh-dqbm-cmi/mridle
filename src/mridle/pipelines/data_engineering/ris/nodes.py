@@ -338,6 +338,9 @@ def add_custom_status_change_cols(df: pd.DataFrame) -> pd.DataFrame:
     df['now_sched_for'] = (df['History_ObsStartPlanDtTm'] - df['History_MessageDtTm']).dt.days
     df['now_sched_for'] = np.where(df['History_ObsStartPlanDtTm'].dt.time < df['History_MessageDtTm'].dt.time,
                                    df['now_sched_for'] + 1, df['now_sched_for'])
+    df['now_sched_for_busday'] = np.busday_count(df['History_MessageDtTm'].values.astype('datetime64[D]'),
+                                                 df['History_ObsStartPlanDtTm'].values.astype('datetime64[D]'))
+
     return df
 
 

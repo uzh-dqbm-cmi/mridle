@@ -207,13 +207,8 @@ def feature_days_scheduled_in_advance2(status_df: pd.DataFrame, slot_df: pd.Data
     dataframe.
 
     Works by:
-        1. Identify status changes that represent scheduling events
-        2. Shift scheduling events forward 1, so that each row has the previous scheduling event.
-            For example, on a No-Show status change row, Step 1 will stamp the scheduling event that occurs as a result
-             of a no-show going from scheduled status -> scheduled status. To calculate the scheduled date of the
-              no-show appt slot, we need the previous scheduling event.
-        3. Fill forward so the scheduling event dates so that 'show' and 'no-show' appt status rows contain the date of
-         the most recent (but previous) scheduling event.
+        ...
+        ...
 
     Args:
         status_df: A row-per-status-change dataframe.
@@ -223,10 +218,14 @@ def feature_days_scheduled_in_advance2(status_df: pd.DataFrame, slot_df: pd.Data
     """
 
     status_df['date_scheduled_change'] = (status_df['was_sched_for_date'] != status_df['now_sched_for_date'])
-    date_changed = status_df[status_df['date_scheduled_change']]
-    days_advanced_schedule = date_changed[['FillerOrderNo', 'now_sched_for_date', 'now_sched_for']].groupby(
-        ['FillerOrderNo', 'now_sched_for_date']).agg({'now_sched_for': 'first'}).reset_index()
-    days_advanced_schedule.columns = ['FillerOrderNo', 'now_sched_for_date', 'sched_days_advanced']
+    date_changed = status_df.loc[status_df['date_scheduled_change'],
+                                 ['FillerOrderNo', 'now_sched_for_date', 'now_sched_for', 'now_sched_for_busday']]
+    days_advanced_schedule = date_changed.groupby(['FillerOrderNo', 'now_sched_for_date'] ).agg({
+        'now_sched_for': 'first',
+        'now_sched_for_busday': 'first'
+    }).reset_index()
+    days_advanced_schedule.columns = ['FillerOrderNo', 'now_sched_for_date', 'sched_days_advanced',
+                                      'sched_days_advanced_busday']
     slot_df = slot_df.merge(days_advanced_schedule, left_on=['FillerOrderNo', 'start_time'],
                             right_on=['FillerOrderNo', 'now_sched_for_date'])
     slot_df.drop('now_sched_for_date', axis=1, inplace=True)
