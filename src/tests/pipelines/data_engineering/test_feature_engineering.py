@@ -243,6 +243,7 @@ class TestDaysScheduleInAdvance(unittest.TestCase):
                                  'EnteringOrganisationDeviceID',
                                  'UniversalServiceName',
                                  'sched_days_advanced',
+                                 'sched_days_advanced_busday',
                                  'sched_days_advanced_sq',
                                  'sched_2_days'
                                  ]
@@ -272,6 +273,7 @@ class TestDaysScheduleInAdvance(unittest.TestCase):
                 'duplicate_appt': 1,
                 'patient_class_adj': 'ambulant',
                 'sched_days_advanced': 4,
+                'sched_days_advanced_busday': 4,
                 'sched_days_advanced_sq': 16,
                 'sched_2_days': False
             }
@@ -308,6 +310,7 @@ class TestDaysScheduleInAdvance(unittest.TestCase):
                 'duplicate_appt': 1,
                 'patient_class_adj': 'ambulant',
                 'sched_days_advanced': 13,
+                'sched_days_advanced_busday': 9,
                 'sched_days_advanced_sq': 169,
                 'sched_2_days': False
             }
@@ -344,6 +347,7 @@ class TestDaysScheduleInAdvance(unittest.TestCase):
                 'duplicate_appt': 1,
                 'patient_class_adj': 'ambulant',
                 'sched_days_advanced': 10,
+                'sched_days_advanced_busday': 8,
                 'sched_days_advanced_sq': 100,
                 'sched_2_days': False
 
@@ -358,6 +362,7 @@ class TestDaysScheduleInAdvance(unittest.TestCase):
                 'duplicate_appt': 1,
                 'patient_class_adj': 'ambulant',
                 'sched_days_advanced': 5,
+                'sched_days_advanced_busday': 3,
                 'sched_days_advanced_sq': 25,
                 'sched_2_days': False
 
@@ -393,6 +398,7 @@ class TestDaysScheduleInAdvance(unittest.TestCase):
                 'duplicate_appt': 1,
                 'patient_class_adj': 'ambulant',
                 'sched_days_advanced': 13,
+                'sched_days_advanced_busday': 9,
                 'sched_days_advanced_sq': 169,
                 'sched_2_days': False
             }
@@ -402,5 +408,5 @@ class TestDaysScheduleInAdvance(unittest.TestCase):
         status_df = build_status_df(raw_df, exclude_patient_ids=[])
         slot_df = build_slot_df(status_df, valid_date_range, build_future_slots=True)
         slot_df_with_feature = feature_days_scheduled_in_advance2(status_df, slot_df)
-
+        print(slot_df_with_feature.columns)
         pd.testing.assert_frame_equal(slot_df_with_feature, expected_slot_df, check_like=True)
