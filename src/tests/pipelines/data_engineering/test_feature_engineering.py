@@ -5,7 +5,7 @@ from mridle.pipelines.data_science.feature_engineering.nodes import feature_no_s
 from mridle.pipelines.data_engineering.ris.nodes import build_status_df, build_slot_df, find_no_shows, \
     set_no_show_severity, STATUS_MAP
 from mridle.pipelines.data_science.feature_engineering.nodes import build_feature_set, \
-    feature_days_scheduled_in_advance2, feature_days_scheduled_in_advance
+    feature_days_scheduled_in_advance, feature_days_scheduled_in_advance
 
 
 def day(num_days_from_start, hour=9):
@@ -282,7 +282,7 @@ class TestDaysScheduleInAdvance(unittest.TestCase):
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
         status_df = build_status_df(raw_df, exclude_patient_ids=[])
         slot_df = build_slot_df(status_df, valid_date_range)
-        slot_df_with_feature = feature_days_scheduled_in_advance2(status_df, slot_df)
+        slot_df_with_feature = feature_days_scheduled_in_advance(status_df, slot_df)
 
         pd.testing.assert_frame_equal(slot_df_with_feature, expected_slot_df, check_like=True)
 
@@ -319,7 +319,7 @@ class TestDaysScheduleInAdvance(unittest.TestCase):
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
         status_df = build_status_df(raw_df, exclude_patient_ids=[])
         slot_df = build_slot_df(status_df, valid_date_range)
-        slot_df_with_feature = feature_days_scheduled_in_advance2(status_df, slot_df)
+        slot_df_with_feature = feature_days_scheduled_in_advance(status_df, slot_df)
 
         pd.testing.assert_frame_equal(slot_df_with_feature, expected_slot_df, check_like=True)
 
@@ -372,7 +372,7 @@ class TestDaysScheduleInAdvance(unittest.TestCase):
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
         status_df = build_status_df(raw_df, exclude_patient_ids=[])
         slot_df = build_slot_df(status_df, valid_date_range)
-        slot_df_with_feature = feature_days_scheduled_in_advance2(status_df, slot_df)
+        slot_df_with_feature = feature_days_scheduled_in_advance(status_df, slot_df)
 
         pd.testing.assert_frame_equal(slot_df_with_feature, expected_slot_df, check_like=True)
 
@@ -407,6 +407,6 @@ class TestDaysScheduleInAdvance(unittest.TestCase):
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
         status_df = build_status_df(raw_df, exclude_patient_ids=[])
         slot_df = build_slot_df(status_df, valid_date_range, build_future_slots=True)
-        slot_df_with_feature = feature_days_scheduled_in_advance2(status_df, slot_df)
+        slot_df_with_feature = feature_days_scheduled_in_advance(status_df, slot_df)
         print(slot_df_with_feature.columns)
         pd.testing.assert_frame_equal(slot_df_with_feature, expected_slot_df, check_like=True)
