@@ -408,5 +408,5 @@ class TestDaysScheduleInAdvance(unittest.TestCase):
         status_df = build_status_df(raw_df, exclude_patient_ids=[])
         slot_df = build_slot_df(status_df, valid_date_range, build_future_slots=True)
         slot_df_with_feature = feature_days_scheduled_in_advance(status_df, slot_df)
-        print(slot_df_with_feature.columns)
+
         pd.testing.assert_frame_equal(slot_df_with_feature, expected_slot_df, check_like=True)
