@@ -209,6 +209,11 @@ def build_slot_df(input_status_df: pd.DataFrame, valid_date_range: List[str], ag
 
     if build_future_slots:
         agg_dict['now_sched_for_date'] = 'last'
+        if 'sched_days_advanced' in agg_dict.keys():
+            agg_dict['sched_days_advanced'] = 'last'
+            agg_dict['sched_days_advanced_sq'] = 'last'
+            agg_dict['sched_2_days'] = 'last'
+
         future_slot_df = status_df.groupby(['FillerOrderNo', 'MRNCmpdId']).agg(agg_dict)
         future_slot_df['start_time'] = future_slot_df['now_sched_for_date']
         future_slot_df['end_time'] = future_slot_df['start_time'] + pd.to_timedelta(30, unit='minutes')
@@ -324,10 +329,18 @@ def add_custom_status_change_cols(df: pd.DataFrame) -> pd.DataFrame:
     df['prev_status'] = df.groupby('FillerOrderNo')['History_OrderStatus'].shift(1)
     df['was_status'] = df['prev_status'].apply(lambda x: get_status_text(x))
     df['was_sched_for_date'] = df.groupby('FillerOrderNo')['History_ObsStartPlanDtTm'].shift(1)
-    df['was_sched_for'] = (df['was_sched_for_date'] - df['History_MessageDtTm']).apply(lambda x: x.days)
     df['now_status'] = df['History_OrderStatus'].apply(lambda x: get_status_text(x))
-    df['now_sched_for'] = (df['History_ObsStartPlanDtTm'] - df['History_MessageDtTm']).apply(lambda x: x.days)
     df['now_sched_for_date'] = df['History_ObsStartPlanDtTm']
+
+    df['was_sched_for'] = (df['was_sched_for_date'] - df['History_MessageDtTm']).dt.days
+    df['was_sched_for'] = np.where(df['was_sched_for_date'].dt.time < df['History_MessageDtTm'].dt.time,
+                                   df['was_sched_for'] + 1, df['was_sched_for'])
+    df['now_sched_for'] = (df['History_ObsStartPlanDtTm'] - df['History_MessageDtTm']).dt.days
+    df['now_sched_for'] = np.where(df['History_ObsStartPlanDtTm'].dt.time < df['History_MessageDtTm'].dt.time,
+                                   df['now_sched_for'] + 1, df['now_sched_for'])
+    df['now_sched_for_busday'] = np.busday_count(df['History_MessageDtTm'].values.astype('datetime64[D]'),
+                                                 df['History_ObsStartPlanDtTm'].values.astype('datetime64[D]'))
+
     return df
 
 

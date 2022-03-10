@@ -33,10 +33,6 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], buil
 
     status_df = status_df[status_df['patient_class_adj'] != 'inpatient']
 
-    status_df = feature_month(status_df)
-    status_df = feature_hour_sched(status_df)
-    status_df = feature_day_of_week(status_df)
-    status_df = feature_days_scheduled_in_advance(status_df)
     status_df = feature_modality(status_df)
     status_df = feature_insurance_class(status_df)
     status_df = feature_sex(status_df)
@@ -48,16 +44,9 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], buil
 
     agg_dict = {
         'NoShow': 'min',
-        'hour_sched': 'first',
-        'sched_days_advanced': 'first',
-        'sched_days_advanced_sq': 'first',
-        'sched_2_days': 'first',
         'modality': 'last',
         'occupation': 'last',
         'insurance_class': 'last',
-        'day_of_week': 'last',
-        'day_of_week_str': 'last',
-        'month': 'last',
         'sex': 'last',
         'age': 'last',
         'age_sq': 'last',
@@ -72,6 +61,11 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], buil
 
     slot_df = build_slot_df(status_df, valid_date_range, agg_dict, build_future_slots=build_future_slots,
                             include_id_cols=True)
+
+    slot_df = feature_days_scheduled_in_advance(status_df, slot_df)
+    slot_df = feature_month(slot_df)
+    slot_df = feature_hour_sched(slot_df)
+    slot_df = feature_day_of_week(slot_df)
     slot_df = feature_no_show_before(slot_df)
     slot_df = feature_cyclical_hour(slot_df)
     slot_df = feature_cyclical_day_of_week(slot_df)
@@ -120,49 +114,49 @@ def identify_end_times(row: pd.DataFrame) -> dt.datetime:
         return None
 
 
-def feature_month(status_df: pd.DataFrame) -> pd.DataFrame:
+def feature_month(slot_df: pd.DataFrame) -> pd.DataFrame:
     """
     Append the month feature to the dataframe.
 
     Args:
-        status_df: A row-per-status-change dataframe.
+        slot_df: A dataframe containing appointment slots.
 
     Returns: A row-per-status-change dataframe with additional column 'month' containing integers 1-12.
 
     """
-    status_df['month'] = status_df['was_sched_for_date'].dt.month
-    return status_df
+    slot_df['month'] = slot_df['start_time'].dt.month
+    return slot_df
 
 
-def feature_hour_sched(status_df: pd.DataFrame) -> pd.DataFrame:
+def feature_hour_sched(slot_df: pd.DataFrame) -> pd.DataFrame:
     """
     Append the hour_sched feature to the dataframe using was_sched_for_date.
 
     Args:
-        status_df: A row-per-status-change dataframe.
+        slot_df: A dataframe containing appointment slots.
 
     Returns: A row-per-status-change dataframe with additional column 'hour_sched'.
     """
-    status_df['hour_sched'] = status_df['was_sched_for_date'].dt.hour
-    return status_df
+    slot_df['hour_sched'] = slot_df['start_time'].dt.hour
+    return slot_df
 
 
-def feature_day_of_week(status_df: pd.DataFrame) -> pd.DataFrame:
+def feature_day_of_week(slot_df: pd.DataFrame) -> pd.DataFrame:
     """
     Append the day_of_week feature to the dataframe.
 
     Args:
-        status_df: A row-per-status-change dataframe.
+        slot_df: A dataframe containing appointment slots.
 
     Returns:
         A row-per-status-change dataframe with additional columns 'day_of_week' (containing integers 0-6)
         and `day_of_week_str` containing strings in the format 'Monday', 'Tuesday', ...
 
     """
-    status_df['day_of_week'] = status_df['was_sched_for_date'].dt.dayofweek
-    status_df['day_of_week_str'] = status_df['was_sched_for_date'].dt.strftime('%A')
+    slot_df['day_of_week'] = slot_df['start_time'].dt.dayofweek
+    slot_df['day_of_week_str'] = slot_df['start_time'].dt.strftime('%A')
 
-    return status_df
+    return slot_df
 
 
 def identify_sched_events(row: pd.DataFrame) -> dt.datetime:
@@ -181,33 +175,40 @@ def identify_sched_events(row: pd.DataFrame) -> dt.datetime:
         return None
 
 
-def feature_days_scheduled_in_advance(status_df: pd.DataFrame) -> pd.DataFrame:
+def feature_days_scheduled_in_advance(status_df: pd.DataFrame, slot_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Append the features 'sched_days_advanced' (int), 'sched_days_advanced_sq' (int) and 'sched_2_days' (bool) to the
-    dataframe.
+    Append the features 'sched_days_advanced' (int), 'sched_days_advanced_busday' (int), 'sched_days_advanced_sq' (int)
+    and 'sched_2_days' (bool) to slot_df.
 
     Works by:
-        1. Identify status changes that represent scheduling events
-        2. Shift scheduling events forward 1, so that each row has the previous scheduling event.
-            For example, on a No-Show status change row, Step 1 will stamp the scheduling event that occurs as a result
-             of a no-show going from scheduled status -> scheduled status. To calculate the scheduled date of the
-              no-show appt slot, we need the previous scheduling event.
-        3. Fill forward so the scheduling event dates so that 'show' and 'no-show' appt status rows contain the date of
-         the most recent (but previous) scheduling event.
+        Taking all rows from status_df where the date of the appointment changes. These are then grouped and the number
+        of days in advance this date change was made is calculated. This is then joined onto the slot_df for each
+        appointment.
 
     Args:
         status_df: A row-per-status-change dataframe.
+        slot_df: A dataframe containing appointment slots.
 
     Returns: A row-per-status-change dataframe with additional columns 'sched_days_advanced', 'sched_days_advanced_sq'
     and 'sched_2_days'.
     """
-    status_df['sched_days_advanced'] = status_df.apply(identify_sched_events, axis=1)
-    status_df['sched_days_advanced'] = status_df.groupby('FillerOrderNo')['sched_days_advanced'].shift(1).fillna(
-        method='ffill')
-    status_df['sched_days_advanced_sq'] = status_df['sched_days_advanced'] ** 2
-    status_df['sched_2_days'] = status_df['sched_days_advanced'] <= 2
 
-    return status_df
+    status_df['date_scheduled_change'] = (status_df['was_sched_for_date'] != status_df['now_sched_for_date'])
+    date_changed = status_df.loc[status_df['date_scheduled_change'],
+                                 ['FillerOrderNo', 'now_sched_for_date', 'now_sched_for', 'now_sched_for_busday']]
+    days_advanced_schedule = date_changed.groupby(['FillerOrderNo', 'now_sched_for_date']).agg({
+        'now_sched_for': 'first',
+        'now_sched_for_busday': 'first'
+    }).reset_index()
+    days_advanced_schedule.columns = ['FillerOrderNo', 'now_sched_for_date', 'sched_days_advanced',
+                                      'sched_days_advanced_busday']
+    slot_df = slot_df.merge(days_advanced_schedule, left_on=['FillerOrderNo', 'start_time'],
+                            right_on=['FillerOrderNo', 'now_sched_for_date'])
+    slot_df.drop('now_sched_for_date', axis=1, inplace=True)
+    slot_df['sched_days_advanced_sq'] = slot_df['sched_days_advanced'] ** 2
+    slot_df['sched_2_days'] = slot_df['sched_days_advanced'] <= 2
+
+    return slot_df
 
 
 def feature_insurance_class(status_df: pd.DataFrame) -> pd.DataFrame:
@@ -329,6 +330,7 @@ def feature_modality(slot_df: pd.DataFrame, group_categories_less_than: int = No
     Returns:
         dataframe with modality column added, and mapping applied to this column.
     """
+
     def regex_search(x, search_str):
         return bool(re.search(search_str, x, re.IGNORECASE))
 
@@ -445,52 +447,52 @@ def feature_cyclical_month(slot_df):
 
 
 def feature_occupation(df):
-
     df_remap = df.copy()
-    df_remap.rename(columns={'Beruf': 'occupation'}, inplace=True)
+    #  df_remap['occupation'] = df_remap['Beruf']
+    df_remap['occupation'] = None
     df_remap['occupation'] = df_remap['occupation'].astype(str)
 
-    df_remap.loc[df_remap['occupation'] == 'nan', 'occupation'] = 'none_given'
-    df_remap.loc[df_remap['occupation'] == '-', 'occupation'] = 'none_given'
-    df_remap.loc[df_remap['occupation'].apply(regex_search, search_str='rentner|Renter|pensioniert|pens.|rente'),
+    df_remap.loc[df_remap['Beruf'] == 'nan', 'occupation'] = 'none_given'
+    df_remap.loc[df_remap['Beruf'] == '-', 'occupation'] = 'none_given'
+    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='rentner|Renter|pensioniert|pens.|rente'),
                  'occupation'] = 'retired'
-    df_remap.loc[df_remap['occupation'].apply(regex_search, search_str='keine Angaben|keine Ang'),
+    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='keine Angaben|keine Ang'),
                  'occupation'] = 'none_given'
-    df_remap.loc[df_remap['occupation'].apply(regex_search,
-                                              search_str='Angestellte|ang.|baue|angest.|Hauswart|dozent|designer|^KV$|'
-                                                         'masseu|Raumpflegerin|Apothekerin|Ing.|fotog|Psycholog|'
-                                                         'Sozialpädagoge|Werkzeu|druck|musik|koordinator|software|'
-                                                         'schaler|Kosmetikerin|Physiotherapeutin|Physiker|Unternehmer|'
-                                                         'Praktikant|Analy|reinig|Detailhandel|putz|Grafiker|anwält|'
-                                                         'maschinist|Immobilien|Zimmermann|schloss|Kassiererin|'
-                                                         'hotel|hochbau|marketing|engineer|IT|Rechts|backer|bäcker|'
-                                                         'baecker|Disponent|magazin|chemik|Journalist|Schreiner|metzg|'
-                                                         'Consultant|Berater|Köch|gärtn|gartn|gaertn|Professor|'
-                                                         'Praktikantin|Gipser|Küche|lehrl|logist|Buchhalter|technik|'
-                                                         'Projektleiter|Manager|Assistent|Landwirt|Poliz|Elektro|'
-                                                         'Elektri|Jurist|Kellner|Sekret|Lager|Monteur|Coiffeu|spengler|'
-                                                         'Kindergärtner|Geschäfts|mechanik|maurer|Maler|Chauffeur|'
-                                                         'ingenieur|Kauf|mitarbeiter|Verkäufer|Informatiker|koch|'
-                                                         'lehrer|arbeiter|architekt'),
+    df_remap.loc[df_remap['Beruf'].apply(regex_search,
+                                         search_str='Angestellte|ang.|baue|angest.|Hauswart|dozent|designer|^KV$|'
+                                                    'masseu|Raumpflegerin|Apothekerin|Ing.|fotog|Psycholog|'
+                                                    'Sozialpädagoge|Werkzeu|druck|musik|koordinator|software|'
+                                                    'schaler|Kosmetikerin|Physiotherapeutin|Physiker|Unternehmer|'
+                                                    'Praktikant|Analy|reinig|Detailhandel|putz|Grafiker|anwält|'
+                                                    'maschinist|Immobilien|Zimmermann|schloss|Kassiererin|'
+                                                    'hotel|hochbau|marketing|engineer|IT|Rechts|backer|bäcker|'
+                                                    'baecker|Disponent|magazin|chemik|Journalist|Schreiner|metzg|'
+                                                    'Consultant|Berater|Köch|gärtn|gartn|gaertn|Professor|'
+                                                    'Praktikantin|Gipser|Küche|lehrl|logist|Buchhalter|technik|'
+                                                    'Projektleiter|Manager|Assistent|Landwirt|Poliz|Elektro|'
+                                                    'Elektri|Jurist|Kellner|Sekret|Lager|Monteur|Coiffeu|spengler|'
+                                                    'Kindergärtner|Geschäfts|mechanik|maurer|Maler|Chauffeur|'
+                                                    'ingenieur|Kauf|mitarbeiter|Verkäufer|Informatiker|koch|'
+                                                    'lehrer|arbeiter|architekt'),
                  'occupation'] = 'employed'
-    df_remap.loc[df_remap['occupation'].apply(regex_search, search_str='student|Schüler|Doktorand|'
-                                                                       'Kind|Stud.|Ausbildung|^MA$'),
+    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='student|Schüler|Doktorand|'
+                                                                  'Kind|Stud.|Ausbildung|^MA$'),
                  'occupation'] = 'student'
-    df_remap.loc[df_remap['occupation'].apply(regex_search, search_str='^IV$|^IV-Bezüger|^$|arbeitslos|ohne Arbeit|'
-                                                                       'ohne|o.A.|nicht Arbeitstätig|'
-                                                                       'Sozialhilfeempfänger|o. Arbeit|keine Arbeit|'
-                                                                       'Asyl|RAV|Hausfrau|Hausmann'),
+    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='^IV$|^IV-Bezüger|^$|arbeitslos|ohne Arbeit|'
+                                                                  'ohne|o.A.|nicht Arbeitstätig|'
+                                                                  'Sozialhilfeempfänger|o. Arbeit|keine Arbeit|'
+                                                                  'Asyl|RAV|Hausfrau|Hausmann'),
                  'occupation'] = 'unemployed'
-    df_remap.loc[df_remap['occupation'].apply(regex_search, search_str='selbst'), 'occupation'] = 'self_employed'
-    df_remap.loc[df_remap['occupation'].apply(regex_search, search_str='arzt|aerzt|ärzt|pflegefachfrau|Pflegehelfer|'
-                                                                       'MTRA|Erzieherin|Fachfrau Betreuung|'
-                                                                       'Pflegefachmann|MPA|FaGe|Krankenschwester|'
-                                                                       'Fachmann MTRA'),
+    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='selbst'), 'occupation'] = 'self_employed'
+    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='arzt|aerzt|ärzt|pflegefachfrau|Pflegehelfer|'
+                                                                  'MTRA|Erzieherin|Fachfrau Betreuung|'
+                                                                  'Pflegefachmann|MPA|FaGe|Krankenschwester|'
+                                                                  'Fachmann MTRA'),
                  'occupation'] = 'hospital_worker'
-    df_remap.loc[df_remap['occupation'].apply(regex_search, search_str='Tourist'), 'occupation'] = 'other'
-    df_remap['occupation_freq'] = df_remap[['occupation', 'FillerOrderNo']].groupby('occupation').transform(len)
-    df_remap.loc[df_remap['occupation_freq'] < 150, 'occupation'] = 'other'
-    df_remap = df_remap.drop('occupation_freq', axis=1)
+    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='Tourist'), 'occupation'] = 'other'
+    # df_remap['occupation_freq'] = df_remap[['occupation', 'FillerOrderNo']].groupby('occupation').transform(len)
+    df_remap.loc[df_remap['occupation'].isna(), 'occupation'] = 'other'
+    df_remap = df_remap.drop('Beruf', axis=1)
     return df_remap
 
 
