@@ -242,4 +242,4 @@ def plot_permutation_imp(model_fit, validation_data, scoring="log_loss", title='
     # )
     # print(3)
 
-    return X, y
+    return None
