@@ -228,9 +228,9 @@ def plot_permutation_imp(model_fit, validation_data, scoring="log_loss", title='
                                     random_state=42, n_jobs=1)
 
     sorted_idx = result.importances_mean.argsort()
-    fig, ax = plt.subplots()
-    ax.boxplot(result.importances[sorted_idx].T, vert=False, labels=X.columns[sorted_idx])
-    ax.set_title("Permutation Importance {}".format(title))
-    fig.tight_layout()
+    # fig, ax = plt.subplots()
+    plt.boxplot(result.importances[sorted_idx].T, vert=False, labels=X.columns[sorted_idx])
+    # sax.set_title("Permutation Importance {}".format(title))
+    # fig.tight_layout()
 
-    return plt.show()
+    return plt.boxplot(result.importances[sorted_idx].T, vert=False, labels=X.columns[sorted_idx])
