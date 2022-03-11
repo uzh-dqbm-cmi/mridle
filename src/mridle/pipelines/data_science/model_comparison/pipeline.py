@@ -1,5 +1,6 @@
 from kedro.pipeline import Pipeline, node
-from .nodes import create_evaluation_table, create_model_precision_comparison_plot, plot_pr_roc_curve_comparison
+from .nodes import create_evaluation_table, create_model_precision_comparison_plot, plot_pr_roc_curve_comparison, \
+    plot_permutation_imp
 
 
 def create_pipeline(**kwargs):
@@ -24,6 +25,12 @@ def create_pipeline(**kwargs):
                         "random_forest_model", "xgboost_model", "neural_net_model", "validation_data"],
                 outputs=["pr_curve_comparison", "roc_curve_comparison"],
                 name="plot_pr_roc_curve_comparison"
+            ),
+            node(
+                func=plot_permutation_imp,
+                inputs=["xgboost_model", "validation_data"],
+                outputs=["xgboost_permutation_imp"],
+                name="plot_permutation_imp_xgboost"
             )
         ]
     )

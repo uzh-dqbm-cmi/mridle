@@ -2,8 +2,11 @@ import pandas as pd
 import altair as alt
 from mridle.experiment.dataset import DataSet
 from mridle.experiment.experiment import Experiment
-from sklearn.metrics import f1_score, confusion_matrix, brier_score_loss, roc_curve, precision_recall_curve, auc
+from sklearn.metrics import f1_score, confusion_matrix, brier_score_loss, roc_curve, precision_recall_curve, auc, \
+    make_scorer, log_loss
 import numpy as np
+from sklearn.inspection import permutation_importance
+import matplotlib.pyplot as plt
 
 
 def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic_regression_model, random_forest_model,
@@ -211,3 +214,23 @@ def plot_pr_roc_curve_comparison(harvey_model_log_reg, harvey_random_forest, log
     roc_curves = roc_curves + diag_line
 
     return pr_curves, roc_curves
+
+
+def plot_permutation_imp(model_fit, validation_data, scoring="log_loss", title=''):
+    if scoring == 'log_loss':
+        log_loss_scorer = make_scorer(log_loss, greater_is_better=False)
+
+    val_dataset = DataSet(model_fit['components']['DataSet']['config'], validation_data)
+
+    X = val_dataset.x
+    y = val_dataset.y
+    result = permutation_importance(model_fit, X, y, n_repeats=10, scoring=log_loss_scorer,
+                                    random_state=42, n_jobs=1)
+
+    sorted_idx = result.importances_mean.argsort()
+    fig, ax = plt.subplots()
+    ax.boxplot(result.importances[sorted_idx].T, vert=False, labels=X.columns[sorted_idx])
+    ax.set_title("Permutation Importance {}".format(title))
+    fig.tight_layout()
+
+    return plt.show()
