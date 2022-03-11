@@ -237,4 +237,4 @@ def plot_permutation_imp(model_fit, validation_data, scoring="log_loss", title='
         filepath="matplot_lib_single_plot.png"
     )
 
-    return single_plot_writer
+    return single_plot_writer.save(plt)
