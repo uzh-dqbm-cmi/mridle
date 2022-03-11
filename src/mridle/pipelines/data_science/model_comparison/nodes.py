@@ -223,8 +223,11 @@ def plot_permutation_imp(model_fit, validation_data, scoring="log_loss", title='
 
     X = val_dataset.x
     y = val_dataset.y
+
+    experiment = Experiment.deserialize(model_fit)
+
     print(1)
-    result = permutation_importance(model_fit, X, y, n_repeats=10, scoring=log_loss_scorer,
+    result = permutation_importance(experiment, X, y, n_repeats=10, scoring=log_loss_scorer,
                                     random_state=42, n_jobs=1)
     #
     # sorted_idx = result.importances_mean.argsort()
