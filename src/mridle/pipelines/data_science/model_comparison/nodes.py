@@ -7,6 +7,7 @@ from sklearn.metrics import f1_score, confusion_matrix, brier_score_loss, roc_cu
 import numpy as np
 from sklearn.inspection import permutation_importance
 import matplotlib.pyplot as plt
+from kedro.extras.datasets.matplotlib import MatplotlibWriter
 
 
 def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic_regression_model, random_forest_model,
@@ -232,5 +233,8 @@ def plot_permutation_imp(model_fit, validation_data, scoring="log_loss", title='
     plt.boxplot(result.importances[sorted_idx].T, vert=False, labels=X.columns[sorted_idx])
     # sax.set_title("Permutation Importance {}".format(title))
     # fig.tight_layout()
+    single_plot_writer = MatplotlibWriter(
+        filepath="matplot_lib_single_plot.png"
+    )
 
-    return plt.boxplot(result.importances[sorted_idx].T, vert=False, labels=X.columns[sorted_idx])
+    return single_plot_writer
