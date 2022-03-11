@@ -226,7 +226,6 @@ def plot_permutation_imp(model_fit, validation_data, scoring="log_loss", title='
 
     experiment = Experiment.deserialize(model_fit)
 
-    print(1)
     result = permutation_importance(experiment.final_predictor.model, X, y, n_repeats=10, scoring=log_loss_scorer,
                                     random_state=42, n_jobs=1)
 
@@ -242,6 +241,5 @@ def plot_permutation_imp(model_fit, validation_data, scoring="log_loss", title='
         x=alt.X('Importances', sort='-x'),
         y='index',
     )
-    # print(3)
 
     return c
