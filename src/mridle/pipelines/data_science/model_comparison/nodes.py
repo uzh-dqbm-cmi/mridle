@@ -5,7 +5,7 @@ from mridle.experiment.experiment import Experiment
 from sklearn.metrics import f1_score, confusion_matrix, brier_score_loss, roc_curve, precision_recall_curve, auc,\
     make_scorer, log_loss
 import numpy as np
-# from sklearn.inspection import permutation_importance
+from sklearn.inspection import permutation_importance
 
 
 def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic_regression_model, random_forest_model,
