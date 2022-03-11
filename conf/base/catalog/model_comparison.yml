@@ -19,6 +19,6 @@ roc_curve_comparison:
   layer: reporting
 
 plot_permutation_imp_xgboost:
-  type: kedro.extras.datasets.matplotlib.MatplotlibWriter
-  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/plot_permutation_imp_xgboost.png
+  type: mridle.extras.datasets.altair_dataset.AltairDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/plot_permutation_imp_xgboost.html
   layer: reporting
