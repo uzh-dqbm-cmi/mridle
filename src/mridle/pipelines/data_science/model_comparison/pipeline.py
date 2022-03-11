@@ -28,7 +28,7 @@ def create_pipeline(**kwargs):
             ),
             node(
                 func=plot_permutation_imp,
-                inputs=["xgboost_model", "validation_data", "log_loss", "- Validation data"],
+                inputs=["xgboost_model", "validation_data"],
                 outputs="xgboost_permutation_imp",
                 name="plot_permutation_imp_xgboost"
             )
