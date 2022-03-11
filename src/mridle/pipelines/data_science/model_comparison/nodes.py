@@ -2,8 +2,8 @@ import pandas as pd
 import altair as alt
 from mridle.experiment.dataset import DataSet
 from mridle.experiment.experiment import Experiment
-from sklearn.metrics import f1_score, confusion_matrix, brier_score_loss, roc_curve, precision_recall_curve, auc
-#    make_scorer, log_loss
+from sklearn.metrics import f1_score, confusion_matrix, brier_score_loss, roc_curve, precision_recall_curve, auc,\
+    make_scorer, log_loss
 import numpy as np
 # from sklearn.inspection import permutation_importance
 
