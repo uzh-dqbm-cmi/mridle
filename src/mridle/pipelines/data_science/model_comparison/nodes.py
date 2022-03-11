@@ -216,8 +216,8 @@ def plot_pr_roc_curve_comparison(harvey_model_log_reg, harvey_random_forest, log
 
 
 def plot_permutation_imp(model_fit, validation_data, scoring="log_loss", title=''):
-    # if scoring == 'log_loss':
-    #     log_loss_scorer = make_scorer(log_loss, greater_is_better=False)
+    if scoring == 'log_loss':
+        log_loss_scorer = make_scorer(log_loss, greater_is_better=False)
 
     val_dataset = DataSet(model_fit['components']['DataSet']['config'], validation_data)
 
