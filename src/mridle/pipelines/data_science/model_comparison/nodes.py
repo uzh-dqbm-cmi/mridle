@@ -2,10 +2,10 @@ import pandas as pd
 import altair as alt
 from mridle.experiment.dataset import DataSet
 from mridle.experiment.experiment import Experiment
-from sklearn.metrics import f1_score, confusion_matrix, brier_score_loss, roc_curve, precision_recall_curve, auc, \
-    make_scorer, log_loss
+from sklearn.metrics import f1_score, confusion_matrix, brier_score_loss, roc_curve, precision_recall_curve, auc
+#    make_scorer, log_loss
 import numpy as np
-from sklearn.inspection import permutation_importance
+# from sklearn.inspection import permutation_importance
 
 
 def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic_regression_model, random_forest_model,
@@ -216,30 +216,30 @@ def plot_pr_roc_curve_comparison(harvey_model_log_reg, harvey_random_forest, log
 
 
 def plot_permutation_imp(model_fit, validation_data, scoring="log_loss", title=''):
-    if scoring == 'log_loss':
-        log_loss_scorer = make_scorer(log_loss, greater_is_better=False)
+    # if scoring == 'log_loss':
+    #     log_loss_scorer = make_scorer(log_loss, greater_is_better=False)
 
     val_dataset = DataSet(model_fit['components']['DataSet']['config'], validation_data)
 
     X = val_dataset.x
     y = val_dataset.y
     print(1)
-    result = permutation_importance(model_fit, X, y, n_repeats=10, scoring=log_loss_scorer,
-                                    random_state=42, n_jobs=1)
+    # result = permutation_importance(model_fit, X, y, n_repeats=10, scoring=log_loss_scorer,
+    #                                 random_state=42, n_jobs=1)
+    #
+    # sorted_idx = result.importances_mean.argsort()
+    # # fig, ax = plt.subplots()
+    # # plt.boxplot(result.importances[sorted_idx].T, vert=False, labels=X.columns[sorted_idx])
+    # # ax.set_title("Permutation Importance {}".format(title))
+    # # fig.tight_layout()
+    # results_df = pd.DataFrame(result.importances[sorted_idx].T, columns=X.columns[sorted_idx]).T.reset_index()
+    # print(2)
+    #
+    # results_df_alt = pd.melt(results_df, value_name="Importances", id_vars="index")
+    # c = alt.Chart(results_df_alt).mark_boxplot(extent='min-max').encode(
+    #     x=alt.X('Importances', sort='-x'),
+    #     y='index',
+    # )
+    # print(3)
 
-    sorted_idx = result.importances_mean.argsort()
-    # fig, ax = plt.subplots()
-    # plt.boxplot(result.importances[sorted_idx].T, vert=False, labels=X.columns[sorted_idx])
-    # ax.set_title("Permutation Importance {}".format(title))
-    # fig.tight_layout()
-    results_df = pd.DataFrame(result.importances[sorted_idx].T, columns=X.columns[sorted_idx]).T.reset_index()
-    print(2)
-
-    results_df_alt = pd.melt(results_df, value_name="Importances", id_vars="index")
-    c = alt.Chart(results_df_alt).mark_boxplot(extent='min-max').encode(
-        x=alt.X('Importances', sort='-x'),
-        y='index',
-    )
-    print(3)
-
-    return c
+    return X, y
