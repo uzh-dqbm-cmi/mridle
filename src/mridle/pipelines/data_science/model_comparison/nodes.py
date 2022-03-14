@@ -215,9 +215,9 @@ def plot_pr_roc_curve_comparison(harvey_model_log_reg, harvey_random_forest, log
     return pr_curves, roc_curves
 
 
-def plot_permutation_imp(model_fit, validation_data, scoring="log_loss", title=''):
-    if scoring == 'log_loss':
-        log_loss_scorer = make_scorer(log_loss, greater_is_better=False)
+def plot_permutation_imp(model_fit, validation_data, title=''):
+
+    log_loss_scorer = make_scorer(log_loss, greater_is_better=False)
 
     val_dataset = DataSet(model_fit['components']['DataSet']['config'], validation_data)
 
@@ -230,6 +230,7 @@ def plot_permutation_imp(model_fit, validation_data, scoring="log_loss", title='
                                     random_state=42, n_jobs=1)
 
     sorted_idx = result.importances_mean.argsort()
+    sorted_vars = X.columns[sorted_idx]
     # fig, ax = plt.subplots()
     # plt.boxplot(result.importances[sorted_idx].T, vert=False, labels=X.columns[sorted_idx])
     # ax.set_title("Permutation Importance {}".format(title))
@@ -238,7 +239,7 @@ def plot_permutation_imp(model_fit, validation_data, scoring="log_loss", title='
 
     results_df_alt = pd.melt(results_df, value_name="Importances", id_vars="index")
     c = alt.Chart(results_df_alt).mark_boxplot(extent='min-max').encode(
-        x=alt.X('Importances', sort='-x'),
+        x=alt.X('Importances', sort=sorted_vars),
         y='index',
     )
 
