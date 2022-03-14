@@ -231,6 +231,7 @@ def plot_permutation_imp(model_fit, validation_data, title=''):
 
     sorted_idx = result.importances_mean.argsort()
     sorted_vars = X.columns[sorted_idx]
+    print(sorted_vars)
     # fig, ax = plt.subplots()
     # plt.boxplot(result.importances[sorted_idx].T, vert=False, labels=X.columns[sorted_idx])
     # ax.set_title("Permutation Importance {}".format(title))
