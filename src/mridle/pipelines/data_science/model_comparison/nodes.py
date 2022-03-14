@@ -230,7 +230,8 @@ def plot_permutation_imp(model_fit, validation_data, title=''):
                                     random_state=42, n_jobs=1)
 
     sorted_idx = result.importances_mean.argsort()
-    sorted_vars = list(X.columns)[sorted_idx.astype(int)]
+    x_columns = list(X.columns)
+    sorted_vars = [x_columns[i] for i in sorted_idx]
     print(sorted_vars)
     # fig, ax = plt.subplots()
     # plt.boxplot(result.importances[sorted_idx].T, vert=False, labels=X.columns[sorted_idx])
