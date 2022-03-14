@@ -239,10 +239,10 @@ def plot_permutation_imp(model_fit, validation_data, title=''):
     # fig.tight_layout()
     results_df = pd.DataFrame(result.importances[sorted_idx].T, columns=X.columns[sorted_idx]).T.reset_index()
 
-    results_df_alt = pd.melt(results_df, value_name="Importances", id_vars="index")
+    results_df_alt = pd.melt(results_df, value_name="Permutation Importances", id_vars="index")
     c = alt.Chart(results_df_alt).mark_boxplot(extent='min-max').encode(
-        x=alt.X('Importances'),
-        y=alt.Y('index', sort=sorted_vars),
+        x=alt.X('Permutation Importances'),
+        y=alt.Y('index', sort=sorted_vars, title='Feature Name'),
     )
 
     return c
