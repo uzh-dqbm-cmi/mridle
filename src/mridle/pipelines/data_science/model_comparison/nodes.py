@@ -241,8 +241,8 @@ def plot_permutation_imp(model_fit, validation_data, title=''):
 
     results_df_alt = pd.melt(results_df, value_name="Importances", id_vars="index")
     c = alt.Chart(results_df_alt).mark_boxplot(extent='min-max').encode(
-        x=alt.X('Importances', sort=sorted_vars),
-        y='index',
+        x=alt.X('Importances'),
+        y=alt.Y('index', sort=sorted_vars),
     )
 
     return c
