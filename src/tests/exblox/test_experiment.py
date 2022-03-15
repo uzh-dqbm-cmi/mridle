@@ -4,14 +4,13 @@ from copy import deepcopy
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
-from mridle.experiment.experiment import Experiment
-from mridle.experiment.dataset import DataSet
-from mridle.experiment.stratifier import TrainTestStratifier
-from mridle.experiment.StratifiedDataSet import StratifiedDataSet
-from mridle.experiment.trainer import Trainer
-from mridle.experiment.tuner import RandomSearchTuner
-from mridle.experiment.metric import Metric
-from mridle.experiment.predictor import Predictor
+from mridle.exblox.experiment import Experiment
+from mridle.exblox.stratifier import TrainTestStratifier
+from mridle.exblox.StratifiedDataSet import StratifiedDataSet
+from mridle.exblox.trainer import Trainer
+from mridle.exblox.tuner import RandomSearchTuner
+from mridle.exblox.metric import Metric
+from mridle.exblox.predictor import Predictor
 
 
 def get_test_data_set():

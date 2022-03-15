@@ -20,6 +20,18 @@ class Trainer(ConfigurableComponent):
         self.tuner = tuner
 
     def fit(self, x, y) -> Tuple[Predictor, dict]:
+        """
+        Train the `Architecture`, yielding a trained `Predictor` object and a `training_metadata` dictionary.
+
+        If `Trainer` contains a `Tuner`, use it to fit the `Architecture`. Otherwise, `fit` the `Architecture` directly.
+
+        Args:
+            x: The training set.
+            y: The labels for the training set.
+
+        Returns: a trained `Predictor` object and a `training_metadata` dictionary.
+
+        """
         training_metadata = {}
         architecture = self.get_architecture()
         if self.tuner:

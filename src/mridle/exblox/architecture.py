@@ -21,6 +21,7 @@ def get_func_or_class_import_path(f) -> Dict:
 
 
 class Architecture(ConfigurableComponent):
+    """Abstract base class for an `Architecture` class, which must implement a `fit` method."""
 
     def __init__(self, config):
         super().__init__(config)
@@ -33,7 +34,7 @@ class Architecture(ConfigurableComponent):
 class ArchitectureInterface(ComponentInterface):
 
     registered_flavors = {
-        'RandomForestClassifier': RandomForestClassifier,  # TODO enable auto-loading from sklearn
+        'RandomForestClassifier': RandomForestClassifier,
         'LogisticRegression': LogisticRegression,
         'XGBClassifier': xgb.XGBClassifier,
         'Pipeline': Pipeline,

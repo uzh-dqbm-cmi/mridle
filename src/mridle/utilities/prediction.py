@@ -5,7 +5,7 @@ import pickle
 from mridle.pipelines.data_engineering.ris.nodes import build_status_df, prep_raw_df_for_parquet
 from mridle.pipelines.data_science.feature_engineering.nodes import build_feature_set, remove_na
 from mridle.experiment.experiment import Experiment
-from mridle.experiment.dataset import DataSet
+from mridle.exblox.dataset import DataSet
 
 
 def main(data_path, model_dir, output_path, valid_date_range, file_encoding):

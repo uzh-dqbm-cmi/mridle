@@ -9,7 +9,9 @@ from .dataset import DataSet
 
 class Stratifier(ConfigurableComponent):
     """
-    Yield data partitions.
+    Stratify a dataset, saving partition indexes.
+
+    `Stratifier` is an abstract base class that must be subclassed, implementing a `partition_data` method.
     """
 
     def __init__(self, config: Dict, partition_idxs: List[Tuple[List[int], List[int]]] = None):
@@ -30,11 +32,29 @@ class Stratifier(ConfigurableComponent):
 
     @abstractmethod
     def partition_data(self, data_set: DataSet) -> List[Tuple[List[int], List[int]]]:
+        """
+        Stratify a `DataSet`, yielding a list of partition indexes  in the format (x, y).
+
+        Args:
+            data_set: The `DataSet` to stratify.
+
+        Returns: A list of partition indexes in the format (x, y).
+
+        """
         pass
 
     @classmethod
     @abstractmethod
     def validate_config(cls, config):
+        """
+        Confirm that the `Stratifier` config contains the correct information
+
+        Args:
+            config: A `Stratifer` config.
+
+        Raises: ValueError if the config is not correct.
+
+        """
         pass
 
     def materialize_partition(self, partition_id: int, data_set: DataSet) -> Tuple[pd.DataFrame, pd.Series,

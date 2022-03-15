@@ -13,10 +13,10 @@ from sklearn.preprocessing import FunctionTransformer
 from torch import nn
 import torch
 from skorch import NeuralNet
-from mridle.experiment.architecture import ArchitectureInterface, PipelineInterface, ColumnTransformerInterface,\
+from mridle.exblox.architecture import ArchitectureInterface, PipelineInterface, ColumnTransformerInterface,\
     FunctionTransformerInterface, SkorchNeuralNetInterface
-from mridle.experiment.architecture import get_instance_import_path, get_func_or_class_import_path
-from mridle.experiment.architectures.MLP import MLP
+from mridle.exblox.architecture import get_instance_import_path, get_func_or_class_import_path
+from mridle.exblox.architectures.MLP import MLP
 from mridle.utilities.data_processing import tofloat32
 
 
@@ -45,7 +45,7 @@ class TestGetInstanceImportPath(unittest.TestCase):
     def test_get_instance_import_path(self):
         mlp_instance = MLP(10)
         result = get_instance_import_path(mlp_instance)
-        expected_result = 'mridle.experiment.architectures.MLP.MLP'
+        expected_result = 'mridle.exblox.architectures.MLP.MLP'
         self.assertEqual(result, expected_result)
 
 
@@ -417,7 +417,7 @@ class TestSkorchNeuralNetInterface(unittest.TestCase):
             },
             'args': {
                 'module': {
-                    'flavor': 'mridle.experiment.architectures.MLP.MLP',
+                    'flavor': 'mridle.exblox.architectures.MLP.MLP',
                     'config': {
                         'input_layer_size': 10,
                         'hidden_layer_size': 20,
@@ -462,7 +462,7 @@ class TestSkorchNeuralNetInterface(unittest.TestCase):
             },
             'args': {
                 'module': {
-                    'flavor': 'mridle.experiment.architectures.MLP.MLP',
+                    'flavor': 'mridle.exblox.architectures.MLP.MLP',
                     'config': {
                         'input_layer_size': 10,
                         'hidden_layer_size': 20,

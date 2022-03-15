@@ -2,6 +2,8 @@ import numpy as np
 
 
 class Predictor:
+    """A class that unifies the implementation of prediction across sklearn and skorch models to have uniform `predict`
+     and `predict_proba` methods."""
 
     def __init__(self, model=None):
         self.model = model
