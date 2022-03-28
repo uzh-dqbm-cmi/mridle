@@ -208,7 +208,7 @@ def build_slot_df(input_status_df: pd.DataFrame, valid_date_range: List[str], ag
     status_df['end_time'] = status_df.groupby('FillerOrderNo')['end_time'].fillna(method='bfill')
 
     if build_future_slots:
-        agg_dict['now_sched_for_date'] = 'last'
+        # agg_dict['now_sched_for_date'] = 'last'
         if 'sched_days_advanced' in agg_dict.keys():
             agg_dict['sched_days_advanced'] = 'last'
             agg_dict['sched_days_advanced_sq'] = 'last'

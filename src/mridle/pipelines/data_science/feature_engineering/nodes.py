@@ -61,7 +61,7 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], buil
 
     slot_df = build_slot_df(status_df, valid_date_range, agg_dict, build_future_slots=build_future_slots,
                             include_id_cols=True)
-
+    print(slot_df.columns)
     slot_df = feature_days_scheduled_in_advance(status_df, slot_df)
     slot_df = feature_month(slot_df)
     slot_df = feature_hour_sched(slot_df)
