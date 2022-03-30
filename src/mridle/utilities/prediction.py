@@ -3,14 +3,13 @@ import pandas as pd
 from pathlib import Path
 import pickle
 
-from kedro.framework.cli import catalog
 from mridle.pipelines.data_engineering.ris.nodes import build_status_df, prep_raw_df_for_parquet
 from mridle.pipelines.data_science.feature_engineering.nodes import build_feature_set, remove_na
 from mridle.experiment.experiment import Experiment
 from mridle.experiment.dataset import DataSet
 
 
-def main(data_path, model_dir, output_path, valid_date_range, file_encoding):
+def main(data_path, model_dir, output_path, valid_date_range, file_encoding, master_feature_set):
     """
     Make predictions for all models in model_dir on the given data, saving the resulting predictions to output_path.
     Args:
@@ -35,7 +34,7 @@ def main(data_path, model_dir, output_path, valid_date_range, file_encoding):
     features_df = remove_na(features_df_maybe_na)
 
     # Get number of previous no shows from historical data and add to data set
-    master_df = catalog.load('master_feature_set_na_removed')
+    master_df = master_feature_set.copy()
     prev_no_shows = master_df[['MRNCmpdId', 'no_show_before']].groupby('MRNCmpdId').max().reset_index()
     prev_no_shows['MRNCmpdId'] = prev_no_shows['MRNCmpdId'] .astype(int)
     features_df.drop('no_show_before', axis=1, inplace=True)
