@@ -59,10 +59,6 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], mast
         'start_time': 'last'
     }
 
-    status_df = status_df[status_df['now_sched_for'] > 2]  # Replicate data that will be used in reality, i.e. we won't
-    # have status changes that happened within 2 days of appointment and then use build_future_slots=True when building
-    # slot_df below
-
     slot_df = build_slot_df(status_df, valid_date_range, agg_dict, build_future_slots=build_future_slots,
                             include_id_cols=True)
 
