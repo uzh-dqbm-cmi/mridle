@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 from typing import Dict, List
 
 
-def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], master_slot_df: pd.DataFrame,
+def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], master_slot_df: pd.DataFrame = None,
                       build_future_slots: bool = True) -> pd.DataFrame:
     """
     Builds a feature set that replicates the Harvey et al model as best we can.
@@ -70,8 +70,9 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], mast
     # will appear as NoShow=False. Therefore we have to go to the master_slot_df file and join on the actual outcome
     # (replicating what would happen in reality...we would predict more than 2 days in advance, then wait and find out
     # the outcome and join it onto our predictions)
-    slot_df = slot_df.drop('NoShow', axis=1)
-    slot_df = slot_df.merge(master_slot_df[['start_time', 'MRNCmpdId', 'NoShow']], on=['start_time', 'MRNCmpdId'])
+    if master_slot_df:
+        slot_df = slot_df.drop('NoShow', axis=1)
+        slot_df = slot_df.merge(master_slot_df[['start_time', 'MRNCmpdId', 'NoShow']], on=['start_time', 'MRNCmpdId'])
 
     slot_df = feature_days_scheduled_in_advance(status_df, slot_df)
     slot_df = feature_month(slot_df)
