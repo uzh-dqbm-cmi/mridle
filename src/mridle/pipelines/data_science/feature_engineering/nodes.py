@@ -71,8 +71,9 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], mast
     # (replicating what would happen in reality...we would predict more than 2 days in advance, then wait and find out
     # the outcome and join it onto our predictions)
     slot_df = slot_df.drop('NoShow', axis=1)
+    print(1, slot_df.shape)
     slot_df = slot_df.merge(master_slot_df[['start_time', 'MRNCmpdId', 'NoShow']], on=['start_time', 'MRNCmpdId'])
-
+    print(2, slot_df.shape)
     slot_df = feature_days_scheduled_in_advance(status_df, slot_df)
     slot_df = feature_month(slot_df)
     slot_df = feature_hour_sched(slot_df)
