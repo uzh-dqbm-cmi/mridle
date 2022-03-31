@@ -8,8 +8,8 @@ from sklearn.model_selection import train_test_split
 from typing import Dict, List
 
 
-def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], build_future_slots: bool = False
-                      ) -> pd.DataFrame:
+def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], master_slot_df: pd.DataFrame,
+                      build_future_slots: bool = True) -> pd.DataFrame:
     """
     Builds a feature set that replicates the Harvey et al model as best we can.
     So far includes:
@@ -59,8 +59,19 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], buil
         'start_time': 'last'
     }
 
+    status_df = status_df[status_df['now_sched_for'] > 2]  # Replicate data that will be used in reality, i.e. we won't
+    # have status changes that happened within 2 days of appointment and then use build_future_slots=True when building
+    # slot_df below
+
     slot_df = build_slot_df(status_df, valid_date_range, agg_dict, build_future_slots=build_future_slots,
                             include_id_cols=True)
+
+    # We've now built slot_df, but since we removed status changes above and set it to build_future_slots, all slots
+    # will appear as NoShow=False. Therefore we have to go to the master_slot_df file and join on the actual outcome
+    # (replicating what would happen in reality...we would predict more than 2 days in advance, then wait and find out
+    # the outcome and join it onto our predictions)
+    slot_df = slot_df.drop('NoShow', axis=1)
+    slot_df = slot_df.merge(master_slot_df[['start_time', 'MRNCmpdId', 'NoShow']], on=['start_time', 'MRNCmpdId'])
 
     slot_df = feature_days_scheduled_in_advance(status_df, slot_df)
     slot_df = feature_month(slot_df)
@@ -71,6 +82,7 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], buil
     slot_df = feature_cyclical_day_of_week(slot_df)
     slot_df = feature_cyclical_month(slot_df)
     slot_df = slot_df[slot_df['day_of_week_str'].isin(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])]
+    slot_df = slot_df[slot_df['sched_days_advanced'] > 2]
 
     return slot_df
 
