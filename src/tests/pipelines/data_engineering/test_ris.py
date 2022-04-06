@@ -596,7 +596,8 @@ class TestBuildSlotDF(unittest.TestCase):
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
         status_df = build_status_df(raw_df, exclude_patient_ids=[])
         slot_df = build_slot_df(status_df, valid_date_range, build_future_slots=True)
-
+        print(slot_df)
+        print(expected_slot_df)
         pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
     def test_cancel_weekend_business_days(self):

@@ -217,7 +217,9 @@ def plot_pr_roc_curve_comparison(harvey_model_log_reg, harvey_random_forest, log
 
 def plot_permutation_imp(harvey_model_log_reg, harvey_random_forest, logistic_regression_model, random_forest_model,
                          xgboost_model, neural_net_model, train_data, validation_data):
-
+    """
+    Create permutation importance charts for each combination of the supplied models and the two supplied datasets
+    """
     serialised_models = [('Harvey LogReg', harvey_model_log_reg), ('Harvey RandomForest', harvey_random_forest),
                          ('Logistic Regression', logistic_regression_model), ('RandomForest', random_forest_model),
                          ('XGBoost', xgboost_model),  ('Neural Net', neural_net_model)]
