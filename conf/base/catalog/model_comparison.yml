@@ -20,60 +20,60 @@ roc_curve_comparison:
 
 harvey_logistic_reg_permutation_imp_train:
   type: mridle.extras.datasets.altair_dataset.AltairDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/harvey_logistic_reg_permutation_imp_train.html
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/permutation_importances/harvey_logistic_reg_permutation_imp_train.html
   layer: reporting
 
 harvey_random_forest_permutation_imp_train:
   type: mridle.extras.datasets.altair_dataset.AltairDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/harvey_random_forest_permutation_imp_train.html
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/permutation_importances/harvey_random_forest_permutation_imp_train.html
   layer: reporting
 
 logistic_regression_permutation_imp_train:
   type: mridle.extras.datasets.altair_dataset.AltairDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/logistic_regression_permutation_imp_train.html
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/permutation_importances/logistic_regression_permutation_imp_train.html
   layer: reporting
 
 random_forest_permutation_imp_train:
   type: mridle.extras.datasets.altair_dataset.AltairDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/random_forest_permutation_imp_train.html
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/permutation_importances/random_forest_permutation_imp_train.html
   layer: reporting
 
 xgboost_permutation_imp_train:
   type: mridle.extras.datasets.altair_dataset.AltairDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/xgboost_permutation_imp_train.html
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/permutation_importances/xgboost_permutation_imp_train.html
   layer: reporting
 
 neural_net_permutation_imp_train:
   type: mridle.extras.datasets.altair_dataset.AltairDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/neural_net_permutation_imp_train.html
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/permutation_importances/neural_net_permutation_imp_train.html
   layer: reporting
 
 harvey_logistic_reg_permutation_imp_validation:
   type: mridle.extras.datasets.altair_dataset.AltairDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/harvey_logistic_reg_permutation_imp_validation.html
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/permutation_importances/harvey_logistic_reg_permutation_imp_validation.html
   layer: reporting
 
 harvey_random_forest_permutation_imp_validation:
   type: mridle.extras.datasets.altair_dataset.AltairDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/harvey_random_forest_permutation_imp_validation.html
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/permutation_importances/harvey_random_forest_permutation_imp_validation.html
   layer: reporting
 
 logistic_regression_permutation_imp_validation:
   type: mridle.extras.datasets.altair_dataset.AltairDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/logistic_regression_permutation_imp_validation.html
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/permutation_importances/logistic_regression_permutation_imp_validation.html
   layer: reporting
 
 random_forest_permutation_imp_validation:
   type: mridle.extras.datasets.altair_dataset.AltairDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/random_forest_permutation_imp_validation.html
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/permutation_importances/random_forest_permutation_imp_validation.html
   layer: reporting
 
 xgboost_permutation_imp_validation:
   type: mridle.extras.datasets.altair_dataset.AltairDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/xgboost_permutation_imp_validation.html
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/permutation_importances/xgboost_permutation_imp_validation.html
   layer: reporting
 
 neural_net_permutation_imp_validation:
   type: mridle.extras.datasets.altair_dataset.AltairDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/neural_net_permutation_imp_validation.html
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/permutation_importances/neural_net_permutation_imp_validation.html
   layer: reporting
