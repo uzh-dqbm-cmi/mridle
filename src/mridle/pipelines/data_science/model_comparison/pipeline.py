@@ -29,7 +29,7 @@ def create_pipeline(**kwargs):
             node(
                 func=plot_permutation_imp,
                 inputs=["harvey_model_logistic_reg", "harvey_model_random_forest", "logistic_regression_model",
-                        "random_forest_model", "xgboost_model", "neural_net_model", "validation_data"],
+                        "random_forest_model", "xgboost_model", "neural_net_model", "train_data", "validation_data"],
                 outputs=["harvey_logistic_reg_permutation_imp_train", "harvey_logistic_reg_permutation_imp_validation",
                          "harvey_random_forest_permutation_imp_train",
                          "harvey_random_forest_permutation_imp_validation",
