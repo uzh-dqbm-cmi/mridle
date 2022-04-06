@@ -2,8 +2,10 @@ import pandas as pd
 import altair as alt
 from mridle.experiment.dataset import DataSet
 from mridle.experiment.experiment import Experiment
-from sklearn.metrics import f1_score, confusion_matrix, brier_score_loss, roc_curve, precision_recall_curve, auc
+from sklearn.metrics import f1_score, confusion_matrix, brier_score_loss, roc_curve, precision_recall_curve, auc,\
+    make_scorer, log_loss
 import numpy as np
+from sklearn.inspection import permutation_importance
 
 
 def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic_regression_model, random_forest_model,
@@ -211,3 +213,50 @@ def plot_pr_roc_curve_comparison(harvey_model_log_reg, harvey_random_forest, log
     roc_curves = roc_curves + diag_line
 
     return pr_curves, roc_curves
+
+
+def plot_permutation_imp(harvey_model_log_reg, harvey_random_forest, logistic_regression_model, random_forest_model,
+                         xgboost_model, neural_net_model, train_data, validation_data):
+    """
+    Create permutation importance charts for each combination of the supplied models and the two supplied datasets
+    """
+    serialised_models = [('Harvey LogReg', harvey_model_log_reg), ('Harvey RandomForest', harvey_random_forest),
+                         ('Logistic Regression', logistic_regression_model), ('RandomForest', random_forest_model),
+                         ('XGBoost', xgboost_model),  ('Neural Net', neural_net_model)]
+    dfs = [('Training', train_data), ('Validation', validation_data)]
+
+    p_imp_plot_list = []
+    log_loss_scorer = make_scorer(log_loss, greater_is_better=False)
+    for (model_name, serialised_m) in serialised_models:
+        for (s, df) in dfs:
+            data_for_p_imp = df.copy()
+
+            data_set = DataSet(serialised_m['components']['DataSet']['config'], data_for_p_imp)
+
+            X = data_set.x
+            y = data_set.y
+
+            experiment = Experiment.deserialize(serialised_m)
+
+            result = permutation_importance(experiment.final_predictor.model, X, y, n_repeats=10,
+                                            scoring=log_loss_scorer, random_state=42, n_jobs=1)
+
+            sorted_idx = result.importances_mean.argsort()
+            x_columns = list(X.columns)
+            sorted_vars = [x_columns[i] for i in sorted_idx]
+            sorted_vars.reverse()
+
+            results_df = pd.DataFrame(result.importances[sorted_idx].T, columns=X.columns[sorted_idx]).T.reset_index()
+
+            results_df_alt = pd.melt(results_df, value_name="Permutation Importances", id_vars="index")
+
+            c = alt.Chart(results_df_alt).mark_boxplot(extent='min-max').encode(
+                x=alt.X('Permutation Importances'),
+                y=alt.Y('index', sort=sorted_vars, title='Feature Name'),
+            ).properties(
+                title='{} Permutation Importance - {} Data'.format(model_name, s)
+            )
+
+            p_imp_plot_list.append(c)
+
+    return p_imp_plot_list
