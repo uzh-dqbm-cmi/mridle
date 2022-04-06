@@ -117,7 +117,6 @@ class BayesianTuner(Tuner):
             elif scoring_fn == 'brier_score':
                 loss = BrierScore().calculate(y_test_cv, y_proba_preds)
             elif scoring_fn == 'auprc':
-                print(y_proba_preds.shape)
                 loss = -AUPRC().calculate(y_test_cv, y_proba_preds)
             elif scoring_fn == 'auroc':
                 loss = -AUROC().calculate(y_test_cv, y_proba_preds)
