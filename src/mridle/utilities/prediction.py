@@ -36,11 +36,15 @@ def main(data_path, model_dir, output_path, valid_date_range, file_encoding, mas
     # Get number of previous no shows from historical data and add to data set
     master_df = master_feature_set.copy()
     prev_no_shows = master_df[['MRNCmpdId', 'no_show_before']].groupby('MRNCmpdId').max().reset_index()
+
     prev_no_shows['MRNCmpdId'] = prev_no_shows['MRNCmpdId'] .astype(int)
     features_df['MRNCmpdId'] = features_df['MRNCmpdId'] .astype(int)
-    features_df.drop('no_show_before', axis=1, inplace=True)
-    features_df = features_df.merge(prev_no_shows, on=['MRNCmpdId'], how='left')
-    features_df['no_show_before'].fillna(0, inplace=True)
+
+    features_df = features_df.merge(prev_no_shows, on=['MRNCmpdId'], how='left', suffixes=['_current', '_hist'])
+    features_df['no_show_before_hist'].fillna(0, inplace=True)
+    features_df['no_show_before'] = features_df['no_show_before_current'] + features_df['no_show_before_hist']
+    features_df.drop(['no_show_before_current', 'no_show_before_hist'], axis=1, inplace=True)
+    features_df['no_show_before_sq'] = features_df['no_show_before'] ** 2
 
     prediction_df = features_df.copy()
 
