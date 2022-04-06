@@ -215,34 +215,41 @@ def plot_pr_roc_curve_comparison(harvey_model_log_reg, harvey_random_forest, log
     return pr_curves, roc_curves
 
 
-def plot_permutation_imp(model_fit, validation_data, title=''):
+def plot_permutation_imp(harvey_model_log_reg, harvey_random_forest, logistic_regression_model, random_forest_model,
+                         xgboost_model, neural_net_model, validation_data):
 
+    serialised_models = [('Harvey LogReg', harvey_model_log_reg), ('Harvey RandomForest', harvey_random_forest),
+                         ('Logistic Regression', logistic_regression_model), ('RandomForest', random_forest_model),
+                         ('XGBoost', xgboost_model),  ('Neural Net', neural_net_model)]
+    p_imp_plot_list = []
     log_loss_scorer = make_scorer(log_loss, greater_is_better=False)
+    for (model_name, serialised_m) in serialised_models:
+        model_validation_data = validation_data.copy()
 
-    val_dataset = DataSet(model_fit['components']['DataSet']['config'], validation_data)
+        val_dataset = DataSet(serialised_m['components']['DataSet']['config'], model_validation_data)
 
-    X = val_dataset.x
-    y = val_dataset.y
+        X = val_dataset.x
+        y = val_dataset.y
 
-    experiment = Experiment.deserialize(model_fit)
+        experiment = Experiment.deserialize(serialised_m)
 
-    result = permutation_importance(experiment.final_predictor.model, X, y, n_repeats=10, scoring=log_loss_scorer,
-                                    random_state=42, n_jobs=1)
+        result = permutation_importance(experiment.final_predictor.model, X, y, n_repeats=10, scoring=log_loss_scorer,
+                                        random_state=42, n_jobs=1)
 
-    sorted_idx = result.importances_mean.argsort()
-    x_columns = list(X.columns)
-    sorted_vars = [x_columns[i] for i in sorted_idx]
-    sorted_vars.reverse()
-    # fig, ax = plt.subplots()
-    # plt.boxplot(result.importances[sorted_idx].T, vert=False, labels=X.columns[sorted_idx])
-    # ax.set_title("Permutation Importance {}".format(title))
-    # fig.tight_layout()
-    results_df = pd.DataFrame(result.importances[sorted_idx].T, columns=X.columns[sorted_idx]).T.reset_index()
+        sorted_idx = result.importances_mean.argsort()
+        x_columns = list(X.columns)
+        sorted_vars = [x_columns[i] for i in sorted_idx]
+        sorted_vars.reverse()
 
-    results_df_alt = pd.melt(results_df, value_name="Permutation Importances", id_vars="index")
-    c = alt.Chart(results_df_alt).mark_boxplot(extent='min-max').encode(
-        x=alt.X('Permutation Importances'),
-        y=alt.Y('index', sort=sorted_vars, title='Feature Name'),
-    )
+        results_df = pd.DataFrame(result.importances[sorted_idx].T, columns=X.columns[sorted_idx]).T.reset_index()
 
-    return c
+        results_df_alt = pd.melt(results_df, value_name="Permutation Importances", id_vars="index")
+
+        c = alt.Chart(results_df_alt).mark_boxplot(extent='min-max').encode(
+            x=alt.X('Permutation Importances'),
+            y=alt.Y('index', sort=sorted_vars, title='Feature Name'),
+        )
+
+        p_imp_plot_list.append(c)
+
+    return p_imp_plot_list

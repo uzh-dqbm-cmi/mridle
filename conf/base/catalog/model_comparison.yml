@@ -18,7 +18,32 @@ roc_curve_comparison:
   filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/roc_curve_comparison.html
   layer: reporting
 
+harvey_logistic_reg_permutation_imp:
+  type: mridle.extras.datasets.altair_dataset.AltairDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/harvey_logistic_reg_permutation_imp.html
+  layer: reporting
+
+harvey_random_forest_permutation_imp:
+  type: mridle.extras.datasets.altair_dataset.AltairDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/harvey_random_forest_permutation_imp.html
+  layer: reporting
+
+logistic_regression_permutation_imp:
+  type: mridle.extras.datasets.altair_dataset.AltairDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/logistic_regression_permutation_imp.html
+  layer: reporting
+
+random_forest_permutation_imp:
+  type: mridle.extras.datasets.altair_dataset.AltairDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/random_forest_permutation_imp.html
+  layer: reporting
+
 xgboost_permutation_imp:
   type: mridle.extras.datasets.altair_dataset.AltairDataSet
   filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/xgboost_permutation_imp.html
+  layer: reporting
+
+neural_net_permutation_imp:
+  type: mridle.extras.datasets.altair_dataset.AltairDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/neural_net_permutation_imp.html
   layer: reporting

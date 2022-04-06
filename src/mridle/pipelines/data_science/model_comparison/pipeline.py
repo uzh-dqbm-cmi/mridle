@@ -28,8 +28,11 @@ def create_pipeline(**kwargs):
             ),
             node(
                 func=plot_permutation_imp,
-                inputs=["xgboost_model", "validation_data"],
-                outputs="xgboost_permutation_imp",
+                inputs=["harvey_model_logistic_reg", "harvey_model_random_forest", "logistic_regression_model",
+                        "random_forest_model", "xgboost_model", "neural_net_model", "validation_data"],
+                outputs=["harvey_logistic_reg_permutation_imp", "harvey_random_forest_permutation_imp",
+                         "logistic_regression_permutation_imp", "random_forest_permutation_imp",
+                         "xgboost_permutation_imp", "neural_net_permutation_imp"],
                 name="plot_permutation_imp_xgboost"
             )
         ]
