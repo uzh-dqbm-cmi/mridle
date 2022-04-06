@@ -107,7 +107,6 @@ class BayesianTuner(Tuner):
 
             y_proba_preds = model_copy.predict_proba(x_test_cv)
             y_proba_preds = np.clip(y_proba_preds, 1e-5, 1 - 1e-5)
-            print(y_proba_preds.shape)
             if y_proba_preds.shape[1] == 2:
                 y_proba_preds = y_proba_preds[:, 1]
 
@@ -118,6 +117,7 @@ class BayesianTuner(Tuner):
             elif scoring_fn == 'brier_score':
                 loss = BrierScore().calculate(y_test_cv, y_proba_preds)
             elif scoring_fn == 'auprc':
+                print(y_proba_preds.shape)
                 loss = -AUPRC().calculate(y_test_cv, y_proba_preds)
             elif scoring_fn == 'auroc':
                 loss = -AUROC().calculate(y_test_cv, y_proba_preds)
