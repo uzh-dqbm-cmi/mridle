@@ -221,7 +221,7 @@ def plot_permutation_imp(harvey_model_log_reg, harvey_random_forest, logistic_re
     serialised_models = [('Harvey LogReg', harvey_model_log_reg), ('Harvey RandomForest', harvey_random_forest),
                          ('Logistic Regression', logistic_regression_model), ('RandomForest', random_forest_model),
                          ('XGBoost', xgboost_model),  ('Neural Net', neural_net_model)]
-    dfs = [('Train', train_data), ('Validation', validation_data)]
+    dfs = [('Training', train_data), ('Validation', validation_data)]
 
     p_imp_plot_list = []
     log_loss_scorer = make_scorer(log_loss, greater_is_better=False)
@@ -252,7 +252,7 @@ def plot_permutation_imp(harvey_model_log_reg, harvey_random_forest, logistic_re
                 x=alt.X('Permutation Importances'),
                 y=alt.Y('index', sort=sorted_vars, title='Feature Name'),
             ).properties(
-                title='Permutation Importance ({} data)'.format(s)
+                title='{} Permutation Importance - {} Data'.format(model_name, s)
             )
 
             p_imp_plot_list.append(c)
