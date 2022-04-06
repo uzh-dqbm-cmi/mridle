@@ -107,6 +107,8 @@ class BayesianTuner(Tuner):
 
             y_proba_preds = model_copy.predict_proba(x_test_cv)
             y_proba_preds = np.clip(y_proba_preds, 1e-5, 1 - 1e-5)
+            if y_proba_preds.shape[1] == 2:
+                y_proba_preds = y_proba_preds[:, 1]
 
             if scoring_fn == 'f1_macro':
                 loss = -F1_Macro().calculate(y_test_cv, y_proba_preds)

@@ -20,6 +20,8 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], mast
         - distance_to_usz: distance from the patient's home address to the hospital, approximated from Post Codes
         - no_show_before: The number of no shows the patient has had up to the date of the appt
     Args:
+        master_slot_df:
+        build_future_slots:
         status_df: status_df
         valid_date_range: List of 2 strings defining the starting date of the valid slot data period (status_df contains
          status change data outside the valid slot date range- these should not be made into slots).
