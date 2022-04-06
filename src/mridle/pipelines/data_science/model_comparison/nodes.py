@@ -229,7 +229,6 @@ def plot_permutation_imp(harvey_model_log_reg, harvey_random_forest, logistic_re
     log_loss_scorer = make_scorer(log_loss, greater_is_better=False)
     for (model_name, serialised_m) in serialised_models:
         for (s, df) in dfs:
-            print(s, model_name)
             data_for_p_imp = df.copy()
 
             data_set = DataSet(serialised_m['components']['DataSet']['config'], data_for_p_imp)
