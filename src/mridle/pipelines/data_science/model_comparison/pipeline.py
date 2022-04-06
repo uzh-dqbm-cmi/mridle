@@ -30,9 +30,14 @@ def create_pipeline(**kwargs):
                 func=plot_permutation_imp,
                 inputs=["harvey_model_logistic_reg", "harvey_model_random_forest", "logistic_regression_model",
                         "random_forest_model", "xgboost_model", "neural_net_model", "validation_data"],
-                outputs=["harvey_logistic_reg_permutation_imp", "harvey_random_forest_permutation_imp",
-                         "logistic_regression_permutation_imp", "random_forest_permutation_imp",
-                         "xgboost_permutation_imp", "neural_net_permutation_imp"],
+                outputs=["harvey_logistic_reg_permutation_imp_train", "harvey_logistic_reg_permutation_imp_validation",
+                         "harvey_random_forest_permutation_imp_train",
+                         "harvey_random_forest_permutation_imp_validation",
+                         "logistic_regression_permutation_imp_train", "logistic_regression_permutation_imp_validation",
+                         "random_forest_permutation_imp_train", "random_forest_permutation_imp_validation",
+                         "xgboost_permutation_imp_train", "xgboost_permutation_imp_validation",
+                         "neural_net_permutation_imp_train", "neural_net_permutation_imp_validation"
+                         ],
                 name="plot_permutation_imp_xgboost"
             )
         ]
