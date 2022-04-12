@@ -8,6 +8,37 @@ from sklearn.model_selection import train_test_split
 from typing import Dict, List
 
 
+def build_model_data(status_df, valid_date_range, slot_df=None):
+    """
+    Build data for use in models by trying to replicate the conditions under which the model would be used in reality
+    (i.e. no status changes 2 days before appt (since that's when the prediction would be done)). We then use the
+    previously created slot_df (i.e. master appointment list) to filter the appts for only those that are relevant - the
+    build_feature_set function with build_future_slots=True will create too many appointment slots, so we that's why we
+    have to filter. We also need to use slot_df to get the outcome of the appointment, since build_future_slots=True,
+    results in all appts appearing as NoShow=False. (replicating what would happen in reality...we would predict more
+    than 2 days in advance, then wait and find out the outcome and join it onto our predictions)
+
+    Args:
+        status_df:
+        slot_df:
+        valid_date_range:
+
+    Returns:
+
+    """
+    # valid_date_range = catalog.load('params:ris.valid_date_range')
+    status_df_copy = status_df.copy()
+    status_df_copy = status_df_copy[status_df_copy['now_sched_for'] > 2]
+    model_data = build_feature_set(status_df_copy, valid_date_range=valid_date_range, build_future_slots=True)
+    model_data = remove_na(model_data)
+    if slot_df is not None:
+        model_data.drop('NoShow', axis=1, inplace=True)
+        # slot_df = catalog.load('slot_df')
+        slot_df_copy = slot_df.copy()[['MRNCmpdId', 'FillerOrderNo', 'start_time', 'NoShow']]
+        model_data = model_data.merge(slot_df_copy, on=['MRNCmpdId', 'FillerOrderNo', 'start_time'], how='inner')
+    return model_data
+
+
 def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], master_slot_df: pd.DataFrame = None,
                       build_future_slots: bool = True) -> pd.DataFrame:
     """
@@ -63,14 +94,6 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], mast
 
     slot_df = build_slot_df(status_df, valid_date_range, agg_dict, build_future_slots=build_future_slots,
                             include_id_cols=True)
-
-    # We've now built slot_df, but since we removed status changes above and set it to build_future_slots, all slots
-    # will appear as NoShow=False. Therefore we have to go to the master_slot_df file and join on the actual outcome
-    # (replicating what would happen in reality...we would predict more than 2 days in advance, then wait and find out
-    # the outcome and join it onto our predictions
-    if master_slot_df is not None:
-        slot_df = slot_df.drop('NoShow', axis=1)
-        slot_df = slot_df.merge(master_slot_df[['start_time', 'MRNCmpdId', 'NoShow']], on=['start_time', 'MRNCmpdId'])
 
     slot_df = feature_days_scheduled_in_advance(status_df, slot_df)
     slot_df = feature_month(slot_df)
