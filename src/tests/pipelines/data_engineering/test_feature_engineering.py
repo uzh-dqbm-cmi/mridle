@@ -410,3 +410,104 @@ class TestDaysScheduleInAdvance(unittest.TestCase):
         slot_df_with_feature = feature_days_scheduled_in_advance(status_df, slot_df)
 
         pd.testing.assert_frame_equal(slot_df_with_feature, expected_slot_df, check_like=True)
+
+
+class TestFutureSlots(unittest.TestCase):
+    @staticmethod
+    def _fill_out_static_columns(raw_df, slot_df, create_fon=True):
+        if create_fon:
+            raw_df['FillerOrderNo'] = 0
+        raw_df['MRNCmpdId'] = '0'
+        raw_df['EnteringOrganisationDeviceID'] = 'MR1'
+        raw_df['UniversalServiceName'] = 'MR'
+        raw_df['OrderStatus'] = raw_df[now_status_col].tail(1).iloc[0]
+        raw_df['Klasse'] = ''
+        raw_df['Sex'] = ''
+        raw_df['DateOfBirth'] = ''
+        raw_df['Zivilstand'] = ''
+        raw_df['Zip'] = ''
+        raw_df['Beruf'] = ''
+
+        if slot_df is not None:
+            if create_fon:
+                slot_df['FillerOrderNo'] = 0
+            slot_df['MRNCmpdId'] = '0'
+            slot_df['EnteringOrganisationDeviceID'] = 'MR1'
+            slot_df['UniversalServiceName'] = 'MR'
+
+            slot_df_col_order = ['FillerOrderNo',
+                                 'MRNCmpdId',
+                                 'patient_class_adj',
+                                 'start_time',
+                                 'end_time',
+                                 'NoShow',
+                                 'slot_outcome',
+                                 'slot_type',
+                                 'slot_type_detailed',
+                                 'EnteringOrganisationDeviceID',
+                                 'UniversalServiceName'
+                                 ]
+            slot_df = slot_df[slot_df_col_order]
+
+        return raw_df, slot_df
+
+    def test_future_appointments_one_row(self):
+        raw_df = pd.DataFrame.from_records([
+            # date,                               now_status,            now_sched_for_date
+            (day(0), code['scheduled'], day(4)),
+        ],
+            columns=[date_col, now_status_col, now_sched_for_date_col]
+        )
+        raw_df['PatientClass'] = 'ambulant'
+
+        expected_feature_df = pd.DataFrame([
+            {
+                'start_time': day(4),
+                'end_time': day(4) + pd.Timedelta(minutes=30),
+                'NoShow': False,
+                'slot_outcome': None,
+                'slot_type': None,
+                'slot_type_detailed': None,
+                'duplicate_appt': 1,
+                'patient_class_adj': 'ambulant',
+            }
+        ])
+
+        raw_df, expected_feature_df = self._fill_out_static_columns(raw_df, expected_feature_df)
+        status_df = build_status_df(raw_df, exclude_patient_ids=[])
+        feature_df = build_feature_set(status_df, valid_date_range, build_future_slots=True)
+        cols = [c for c in expected_feature_df.columns.values]
+        feature_df = feature_df.loc[:, feature_df.columns.isin(cols)]
+        pd.testing.assert_frame_equal(feature_df, expected_feature_df, check_like=True)
+
+    def test_future_appointments_multiple_rows(self):
+        raw_df = pd.DataFrame.from_records([
+            # date,                               now_status,            now_sched_for_date
+            (day(0), code['requested'], day(3)),
+            (day(1), code['scheduled'], day(4)),
+        ],
+            columns=[date_col, now_status_col, now_sched_for_date_col]
+        )
+        raw_df['PatientClass'] = 'ambulant'
+
+        expected_feature_df = pd.DataFrame([
+            {
+                'start_time': day(4),
+                'end_time': day(4) + pd.Timedelta(minutes=30),
+                'NoShow': False,
+                'slot_outcome': None,
+                'slot_type': None,
+                'slot_type_detailed': None,
+                'duplicate_appt': 1,
+                'patient_class_adj': 'ambulant',
+            }
+        ])
+
+        raw_df, expected_feature_df = self._fill_out_static_columns(raw_df, expected_feature_df)
+        status_df = build_status_df(raw_df, exclude_patient_ids=[])
+        feature_df = build_feature_set(status_df, valid_date_range, build_future_slots=True)
+        print(feature_df.columns)
+        cols = [c for c in expected_feature_df.columns.values]
+        feature_df = feature_df.loc[:, feature_df.columns.isin(cols)]
+        print(expected_feature_df.columns)
+        pd.testing.assert_frame_equal(feature_df, expected_feature_df, check_like=True)

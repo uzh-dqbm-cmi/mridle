@@ -2,7 +2,7 @@ import unittest
 import pandas as pd
 import numpy as np
 from mridle.pipelines.data_engineering.ris.nodes import build_status_df, build_slot_df, find_no_shows, \
-    build_model_data, set_no_show_severity, STATUS_MAP
+    set_no_show_severity, STATUS_MAP
 
 code = {status: letter_code for letter_code, status in STATUS_MAP.items()}
 
@@ -541,62 +541,6 @@ class TestBuildSlotDF(unittest.TestCase):
         slot_df = build_slot_df(status_df, different_valid_date_range)
 
         self.assertEqual(len(slot_df), 0)
-
-    def test_future_appointments_one_row(self):
-        raw_df = pd.DataFrame.from_records([
-            # date,                               now_status,            now_sched_for_date
-            (day(0), code['scheduled'], day(4)),
-        ],
-            columns=[date_col, now_status_col, now_sched_for_date_col]
-        )
-        raw_df['PatientClass'] = 'ambulant'
-
-        expected_slot_df = pd.DataFrame([
-            {
-                'start_time': day(4),
-                'end_time': day(4) + pd.Timedelta(minutes=30),
-                'NoShow': False,
-                'slot_outcome': None,
-                'slot_type': None,
-                'slot_type_detailed': None,
-                'duplicate_appt': 1,
-                'patient_class_adj': 'ambulant',
-            }
-        ])
-
-        raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
-        status_df = build_status_df(raw_df, exclude_patient_ids=[])
-        slot_df = build_slot_df(status_df, valid_date_range, build_future_slots=True)
-
-        pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
-
-    def test_future_appointments_multiple_rows(self):
-        raw_df = pd.DataFrame.from_records([
-            # date,                               now_status,            now_sched_for_date
-            (day(0), code['requested'], day(3)),
-            (day(1), code['scheduled'], day(4)),
-        ],
-            columns=[date_col, now_status_col, now_sched_for_date_col]
-        )
-        raw_df['PatientClass'] = 'ambulant'
-
-        expected_slot_df = pd.DataFrame([
-            {
-                'start_time': day(4),
-                'end_time': day(4) + pd.Timedelta(minutes=30),
-                'NoShow': False,
-                'slot_outcome': None,
-                'slot_type': None,
-                'slot_type_detailed': None,
-                'duplicate_appt': 1,
-                'patient_class_adj': 'ambulant',
-            }
-        ])
-
-        raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
-        status_df = build_status_df(raw_df, exclude_patient_ids=[])
-        slot_df = build_model_data(status_df, valid_date_range, build_future_slots=True)
-        pd.testing.assert_frame_equal(slot_df, expected_slot_df, check_like=True)
 
     def test_cancel_weekend_business_days(self):
         raw_df = pd.DataFrame.from_records([

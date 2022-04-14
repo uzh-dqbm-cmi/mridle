@@ -369,42 +369,42 @@ def feature_modality(slot_df: pd.DataFrame, group_categories_less_than: int = No
         return bool(re.search(search_str, x, re.IGNORECASE))
 
     df_remap = slot_df.copy()
-    df_remap['modality'] = df_remap['UniversalServiceName']
-    df_remap['modality'] = df_remap['modality'].astype(str)
+    df_remap['modality'] = ""  # df_remap['UniversalServiceName']
+    #  df_remap['modality'] = df_remap['modality'].astype(str)
 
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="becken"), 'modality'] = 'back'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="leber"), 'modality'] = 'liver'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str='niere'), 'modality'] = 'kidney'
-    df_remap.loc[df_remap['modality'].apply(
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="becken"), 'modality'] = 'back'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="leber"), 'modality'] = 'liver'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str='niere'), 'modality'] = 'kidney'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(
         regex_search, search_str='hand|finger|ellbogen|vorderarm|oberarm|obere extremität'), 'modality'] = 'arm'
-    df_remap.loc[df_remap['modality'].apply(regex_search,
-                                            search_str="abdomen|thorax|hüfte|MR TOS"), 'modality'] = 'midsection'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="schenkel"), 'modality'] = 'leg'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="ganzkörper|ganzkvrper"), 'modality'] = 'full_body'
-    df_remap.loc[df_remap['modality'].apply(regex_search,
-                                            search_str="schädel|schadel|gehirn|felsenbein"), 'modality'] = 'head'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="herz"), 'modality'] = 'heart'
-    df_remap.loc[df_remap['modality'].apply(regex_search,
-                                            search_str="Pankreas|Dünndarm|Milz|MRCP"), 'modality'] = 'organ'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="Intervention"), 'modality'] = 'intervention'
-    df_remap.loc[df_remap['modality'].apply(
+    df_remap.loc[df_remap['UniversalServiceName'].apply(
+        regex_search, search_str="abdomen|thorax|hüfte|MR TOS"), 'modality'] = 'midsection'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="schenkel"), 'modality'] = 'leg'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="ganzkörper|ganzkvrper"),
+                 'modality'] = 'full_body'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(
+        regex_search, search_str="schädel|schadel|gehirn|felsenbein"), 'modality'] = 'head'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="herz"), 'modality'] = 'heart'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search,
+                                                        search_str="Pankreas|Dünndarm|Milz|MRCP"), 'modality'] = 'organ'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="Intervention"),
+                 'modality'] = 'intervention'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(
         regex_search, search_str="Neurographie|Magnetresonanztomographie"), 'modality'] = 'general'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="Angio"), 'modality'] = 'angiography'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="Arthrographie"), 'modality'] = 'joint'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="venograp|Phlebographie"), 'modality'] = 'veins'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="Mamma"), 'modality'] = 'mammography'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="Prostata"), 'modality'] = 'prostate'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="Hals"), 'modality'] = 'throat'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="Defäkographie"), 'modality'] = 'defecography'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="LWS|BWS|HWS"), 'modality'] = 'spine'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="schulter"), 'modality'] = 'shoulder'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="knie"), 'modality'] = 'knee'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="fuss"), 'modality'] = 'foot'
-
-    if group_categories_less_than:
-        df_remap['modality_freq'] = df_remap[['modality', 'MRNCmpdId']].groupby('modality').transform(len)
-        df_remap.loc[df_remap['modality_freq'] < group_categories_less_than, 'modality'] = 'other'
-        df_remap = df_remap.drop('modality_freq', axis=1)
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="Angio"), 'modality'] = 'angiography'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="Arthrographie"), 'modality'] = 'joint'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search,
+                                                        search_str="venograp|Phlebographie"), 'modality'] = 'veins'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="Mamma"), 'modality'] = 'mammography'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="Prostata"), 'modality'] = 'prostate'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="Hals"), 'modality'] = 'throat'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search,
+                                                        search_str="Defäkographie"), 'modality'] = 'defecography'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="LWS|BWS|HWS"), 'modality'] = 'spine'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="schulter"), 'modality'] = 'shoulder'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="knie"), 'modality'] = 'knee'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="fuss"), 'modality'] = 'foot'
+    df_remap.loc[df_remap['modality'] == "", 'modality'] = 'other'
 
     return df_remap
 
