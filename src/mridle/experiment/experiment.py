@@ -90,7 +90,10 @@ class Experiment:
         print('Fitting final model...')
         self.final_predictor, self.final_training_metadata = self.trainer.fit(self.stratified_dataset.x,
                                                                               self.stratified_dataset.y)
-        return print("Test Partition Results: ", self.evaluation_test)
+
+        print("Test Partition Results: \n")
+
+        return self.evaluation_test
 
     @staticmethod
     def evaluate(predictor: Predictor, metrics: List[Metric], x, y_true) -> Dict[str, Union[int, float]]:
