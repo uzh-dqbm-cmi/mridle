@@ -56,7 +56,8 @@ class Experiment:
         self.partition_evaluations_train = []
         self.partition_evaluations_test = []
         self.partition_training_metadata = []
-        self.evaluation = pd.DataFrame()
+        self.evaluation_train = pd.DataFrame()
+        self.evaluation_test = pd.DataFrame()
 
         self.final_predictor = None
         self.final_training_metadata = {}
@@ -83,8 +84,8 @@ class Experiment:
             self.partition_evaluations_train.append(partition_evaluation_train)
             partition_evaluation_test = self.evaluate(predictor, self.metrics, x_test, y_test)
             self.partition_evaluations_test.append(partition_evaluation_test)
-        self.evaluation_train = self.summarize_evaluations(self.partition_evaluation_train)
-        self.evaluation_test = self.summarize_evaluations(self.partition_evaluation_test)
+        self.evaluation_train = self.summarize_evaluations(self.partition_evaluations_train)
+        self.evaluation_test = self.summarize_evaluations(self.partition_evaluations_test)
 
         print('Fitting final model...')
         self.final_predictor, self.final_training_metadata = self.trainer.fit(self.stratified_dataset.x,
