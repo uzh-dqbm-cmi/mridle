@@ -53,7 +53,8 @@ class Experiment:
 
         # results
         self.partition_predictors = []
-        self.partition_evaluations = []
+        self.partition_evaluations_train = []
+        self.partition_evaluations_test = []
         self.partition_training_metadata = []
         self.evaluation = pd.DataFrame()
 
@@ -78,14 +79,17 @@ class Experiment:
             predictor, training_metadata = self.trainer.fit(x_train, y_train)
             self.partition_predictors.append(predictor)
             self.partition_training_metadata.append(training_metadata)
-            partition_evaluation = self.evaluate(predictor, self.metrics, x_test, y_test)
-            self.partition_evaluations.append(partition_evaluation)
-        self.evaluation = self.summarize_evaluations(self.partition_evaluations)
+            partition_evaluation_train = self.evaluate(predictor, self.metrics, x_train, y_train)
+            self.partition_evaluations_train.append(partition_evaluation_train)
+            partition_evaluation_test = self.evaluate(predictor, self.metrics, x_test, y_test)
+            self.partition_evaluations_test.append(partition_evaluation_test)
+        self.evaluation_train = self.summarize_evaluations(self.partition_evaluation_train)
+        self.evaluation_test = self.summarize_evaluations(self.partition_evaluation_test)
 
         print('Fitting final model...')
         self.final_predictor, self.final_training_metadata = self.trainer.fit(self.stratified_dataset.x,
                                                                               self.stratified_dataset.y)
-        return self.evaluation
+        return print("Test Partition Results: ", self.evaluation_test)
 
     @staticmethod
     def evaluate(predictor: Predictor, metrics: List[Metric], x, y_true) -> Dict[str, Union[int, float]]:
