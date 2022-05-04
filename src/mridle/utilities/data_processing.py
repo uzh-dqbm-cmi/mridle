@@ -42,6 +42,7 @@ def convert_DtTm_cols(df: pd.DataFrame, known_datetime_cols: List[str] = None) -
             df[col] = pd.to_datetime(df[col])
         except pd.errors.OutOfBoundsDatetime:
             df[col] = df[col].apply(fix_out_of_bounds_str_datetime)
+            df = df.dropna(subset=col)
             df[col] = pd.to_datetime(df[col])
     return df
 
