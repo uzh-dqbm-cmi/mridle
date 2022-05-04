@@ -91,7 +91,7 @@ class Experiment:
         self.final_predictor, self.final_training_metadata = self.trainer.fit(self.stratified_dataset.x,
                                                                               self.stratified_dataset.y)
 
-        print("Test Partition Results: \n")
+        print("\nTest Partition Results: ")
 
         return self.evaluation_test
 
