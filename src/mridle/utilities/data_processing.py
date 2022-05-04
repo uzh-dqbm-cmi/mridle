@@ -51,6 +51,8 @@ def fix_out_of_bounds_str_datetime(val: str) -> str:
     This is necessary because str -> datetime conversion fails for years beyond 2100."""
     if pd.isna(val):
         return np.nan
+    if val == '9000-01-01 00:00:00.0000000':
+        return np.nan
     match = re.match(r'.*([1-3][0-9]{3})', val)
     if match is None:
         return val
