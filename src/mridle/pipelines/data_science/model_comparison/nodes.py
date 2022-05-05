@@ -54,7 +54,7 @@ def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic
         calc_list = []
 
         for i in range(1, 11):
-            top_i_cut = preds_prob_sorted[int(np.round(0.06 * i * len(preds_prob_sorted)))]
+            top_i_cut = preds_prob_sorted[int(np.round((10/avg_appts_per_week) * i * len(preds_prob_sorted)))]
             preds_i_pw = (top_i_cut, np.where(preds_prob > top_i_cut, 1, 0))
             calc_list.append(preds_i_pw)
 
