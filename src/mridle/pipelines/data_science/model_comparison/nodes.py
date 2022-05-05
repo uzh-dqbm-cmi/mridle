@@ -37,7 +37,7 @@ def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic
                          ('XGBoost', xgboost_model), ('Neural Net', neural_net_model)]
 
     evaluation_table = []
-    avg_appts_per_week = 166  # taken from aggregation of df_features_original data for the year 2017 (in notebook 52)
+    avg_appts_per_week = 105  # taken from aggregation of df_features_original data for the year 2017 (in notebook 52)
 
     for (model_name, serialised_m) in serialised_models:
         model_validation_data = validation_data.copy()
