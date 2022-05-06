@@ -202,7 +202,8 @@ class ExperimentInterface:
                          metadata=config['metadata'])
 
         exp.partition_predictors = config['results']['partition_predictors']
-        exp.evaluation = pd.DataFrame(config['results']['evaluation'])
+        exp.evaluation_train = pd.DataFrame(config['results']['evaluation_train'])
+        exp.evaluation_test = pd.DataFrame(config['results']['evaluation_test'])
         exp.final_predictor = config['results']['final_predictor']
         exp.partition_training_metadata = config['results'].get('partition_training_metadata', list())  # backwards com.
         exp.final_training_metadata = config['results'].get('final_training_metadata', dict())  # backwards compatibili.
@@ -221,7 +222,8 @@ class ExperimentInterface:
             },
             'results': {
                 'partition_predictors': experiment.partition_predictors,
-                'evaluation': experiment.evaluation.to_dict(),
+                'evaluation_train': experiment.evaluation_train.to_dict(),
+                'evaluation_test': experiment.evaluation_test.to_dict(),
                 'final_predictor': experiment.final_predictor,
                 'partition_training_metadata': experiment.partition_training_metadata,
                 'final_training_metadata': experiment.final_training_metadata,
