@@ -526,7 +526,7 @@ models:
                   - flavor: skorch.NeuralNet
                     name: 'classifier'
                     config:
-                      max_epochs: 10
+                      max_epochs: 2
                       verbose: 1
                       iterator_train__shuffle: True
                       batch_size: 32
@@ -565,7 +565,7 @@ models:
                             start: -5.5
                             end: -1.5
                 search_type: bayesian
-                num_cv_folds: 5
+                num_cv_folds: 2
                 num_iters: 2  # 150
                 scoring_function: log_loss
                 verbose: 1
