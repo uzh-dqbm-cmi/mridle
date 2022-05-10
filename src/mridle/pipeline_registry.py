@@ -72,5 +72,4 @@ def register_pipelines() -> Dict[str, Pipeline]:
         "xgboost": xgboost_pipeline,
         "neural_net": neural_net_pipeline,
         "model_comparison": model_comparison_pipeline,
-
     }
