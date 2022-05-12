@@ -23,7 +23,12 @@ ris_2019:
   filepath: /data/mridle/data/kedro_data_catalog/01_raw/ris/2020_07_06_RIS_five_years/RIS_2019.xlsx
   layer: raw
 
-raw_ris_five_years:
+ris_2020_2021:
+  type: pandas.CSVDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/01_raw/ris/2020_07_06_RIS_five_years/RIS_2020_2021.csv
+  layer: raw
+
+raw_ris_seven_years:
   type: pandas.ParquetDataSet
   filepath: /data/mridle/data/kedro_data_catalog/02_intermediate/ris/raw_ris_five_years.parquet
   layer: intermediate

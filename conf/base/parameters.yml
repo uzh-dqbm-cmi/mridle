@@ -2,7 +2,7 @@ ris:
     valid_date_range:
         # valid range is starting ≤ x ≤ ending
         - '2015-01-01'
-        - '2019-12-31'
+        - '2021-12-31'
 
 dispo:
     experiment_2:
