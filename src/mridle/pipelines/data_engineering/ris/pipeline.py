@@ -8,19 +8,19 @@ def create_pipeline(**kwargs):
         [
             node(
                 func=lambda *dfs: pd.concat(dfs),
-                inputs=["ris_2015_2016", "ris_2017_2018", "ris_2019"],
-                outputs="concatenated_raw_ris_five_years",
+                inputs=["ris_2015_2016", "ris_2017_2018", "ris_2019", "ris_2020_2021"],
+                outputs="concatenated_raw_ris_seven_years",
                 name="concat_raw_data",
             ),
             node(
                 func=prep_raw_df_for_parquet,
-                inputs="concatenated_raw_ris_five_years",
-                outputs="raw_ris_five_years",
+                inputs="concatenated_raw_ris_seven_years",
+                outputs="raw_ris_seven_years",
                 name="prep_raw_df_for_parquet",
             ),
             node(
                 func=build_status_df,
-                inputs=["raw_ris_five_years", "test_patient_ids"],
+                inputs=["raw_ris_seven_years", "test_patient_ids"],
                 outputs="status_df",
                 name="build_status_df"
             ),
