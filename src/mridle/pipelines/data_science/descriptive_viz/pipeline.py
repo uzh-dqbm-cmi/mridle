@@ -10,8 +10,7 @@ def create_pipeline(**kwargs):
         [
             node(
                 func=plot_dave_b,
-                inputs=["slot_df", "slot_w_dicom_df", "params:ris.dataset_valid_starting",
-                        "params:ris.dataset_valid_ending"],
+                inputs=["slot_df", "slot_w_dicom_df", "params:ris.valid_date_range"],
                 outputs="dave_b",
                 name="plot_dave_b",
             ),
