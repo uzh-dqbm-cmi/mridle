@@ -94,6 +94,7 @@ def prep_raw_df_for_parquet(raw_df: pd.DataFrame) -> pd.DataFrame:
         if col in df.columns:
             df[col] = df[col].apply(data_processing.nan_non_numbers)
             df[col] = df[col].astype('category')
+            df[col] = df[col].astype(str).replace("\\.0", '', regex=True)
 
     for col in string_cols:
         if col in df.columns:
