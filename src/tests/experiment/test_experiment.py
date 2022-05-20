@@ -151,8 +151,8 @@ class TestExperiment(unittest.TestCase):
         self.assertTrue(isinstance(exp_dict['results']['partition_predictors'], list))
         self.assertTrue(all([isinstance(p, Predictor) for p in exp_dict['results']['partition_predictors']]))
 
-        self.assertTrue('evaluation' in exp_dict['results'].keys())
-        self.assertTrue(isinstance(exp_dict['results']['evaluation'], dict))
+        self.assertTrue('evaluation_test' in exp_dict['results'].keys())
+        self.assertTrue(isinstance(exp_dict['results']['evaluation_test'], dict))
 
         self.assertTrue('final_predictor' in exp_dict['results'].keys())
         self.assertIsNone(exp_dict['results']['final_predictor'])
@@ -262,7 +262,7 @@ class TestExperiment(unittest.TestCase):
         self.assertTrue(isinstance(exp_deserialized.metadata['run_date'], datetime))
 
         # Evaluation
-        pd.testing.assert_frame_equal(exp_deserialized.evaluation, exp.evaluation)
+        pd.testing.assert_frame_equal(exp_deserialized.evaluation_test, exp.evaluation_test)
 
         # Partition Predictors
         # assert that for every partition, the predictors predict the same values
