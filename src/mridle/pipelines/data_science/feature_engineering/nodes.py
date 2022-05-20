@@ -35,7 +35,15 @@ def build_model_data(status_df, valid_date_range, slot_df=None):
         model_data.drop('NoShow', axis=1, inplace=True)
         # slot_df = catalog.load('slot_df')
         slot_df_copy = slot_df.copy()[['MRNCmpdId', 'FillerOrderNo', 'start_time', 'NoShow']]
-        model_data = model_data.merge(slot_df_copy, on=['MRNCmpdId', 'FillerOrderNo', 'start_time'], how='inner')
+        model_data = model_data.merge(slot_df_copy, how='inner')
+    else:
+        appt_time = status_df_copy.groupby(['FillerOrderNo']).apply(
+            lambda x: x.sort_values('History_MessageDtTm', ascending=False).head(1)
+        ).reset_index(drop=True)[['MRNCmpdId', 'FillerOrderNo', 'now_sched_for_date', 'NoShow']]
+        appt_time.columns = ['MRNCmpdId', 'FillerOrderNo', 'start_time', 'NoShow']
+        model_data = model_data.merge(appt_time, how='inner')
+
+        print(model_data)
     return model_data
 
 
