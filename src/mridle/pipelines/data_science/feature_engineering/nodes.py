@@ -373,9 +373,6 @@ def feature_modality(slot_df: pd.DataFrame, group_categories_less_than: int = No
         dataframe with modality column added, and mapping applied to this column.
     """
 
-    def regex_search(x, search_str):
-        return bool(re.search(search_str, x, re.IGNORECASE))
-
     df_remap = slot_df.copy()
     df_remap['modality'] = ""
 
