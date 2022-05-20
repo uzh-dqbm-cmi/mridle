@@ -22,7 +22,8 @@ train_val_split:
 
 models:
     harvey_logistic_reg:
-        name: harvey_logistic_reg
+        metadata:
+            name: harvey_logistic_reg
         verbose: false
         DataSet:
             flavor: DataSet
@@ -106,7 +107,8 @@ models:
             - flavor: LogLoss
 
     harvey_random_forest:
-        name: harvey_random_forest
+        metadata:
+            name: harvey_random_forest
         verbose: false
         DataSet:
             flavor: DataSet
@@ -175,7 +177,8 @@ models:
             - flavor: LogLoss
 
     logistic_regression:
-        name: logistic_regression
+        metadata:
+            name: logistic_regression
         verbose: false
         DataSet:
             flavor: DataSet
@@ -256,7 +259,8 @@ models:
             - flavor: LogLoss
 
     random_forest:
-        name: random_forest
+        metadata:
+            name: random_forest
         verbose: false
         DataSet:
             flavor: DataSet
@@ -355,7 +359,8 @@ models:
             - flavor: LogLoss
 
     xgboost:
-        name: xgboost
+        metadata:
+            name: xgboost
         verbose: false
         DataSet:
             flavor: DataSet
@@ -464,7 +469,8 @@ models:
             - flavor: LogLoss
 
     neural_net:
-        name: neural_net
+        metadata:
+            name: neural_net
         verbose: false
         DataSet:
             flavor: DataSet
