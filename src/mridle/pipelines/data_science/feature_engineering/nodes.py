@@ -377,8 +377,7 @@ def feature_modality(slot_df: pd.DataFrame, group_categories_less_than: int = No
         return bool(re.search(search_str, x, re.IGNORECASE))
 
     df_remap = slot_df.copy()
-    df_remap['modality'] = ""  # df_remap['UniversalServiceName']
-    #  df_remap['modality'] = df_remap['modality'].astype(str)
+    df_remap['modality'] = ""
 
     df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="becken"), 'modality'] = 'back'
     df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="leber"), 'modality'] = 'liver'
