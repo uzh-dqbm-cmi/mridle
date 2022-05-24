@@ -83,11 +83,13 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], mast
     status_df = feature_post_code(status_df)
     status_df = feature_distance_to_usz(status_df)
     status_df = feature_occupation(status_df)
+    status_df = feature_reason(status_df)
 
     agg_dict = {
         'NoShow': 'min',
         'modality': 'last',
         'occupation': 'last',
+        'reason': 'last',
         'insurance_class': 'last',
         'sex': 'last',
         'age': 'last',
@@ -551,7 +553,6 @@ def feature_reason(status_df):
                  'reason'] = 'cancer'
     df_remap.loc[df_remap['ReasonForStudy'] == 'nan', 'reason'] = 'none_given'
     df_remap.loc[df_remap['reason'] == 0, 'reason'] = 'other'
-
     return df_remap
 
 
