@@ -74,5 +74,4 @@ def register_pipelines() -> Dict[str, Pipeline]:
         "model_comparison": model_comparison_pipeline,
         "models": harvey_pipeline + logistic_regression_pipeline + random_forest_pipeline + xgboost_pipeline +
         neural_net_pipeline
-
     }

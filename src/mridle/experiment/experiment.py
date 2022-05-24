@@ -53,9 +53,11 @@ class Experiment:
 
         # results
         self.partition_predictors = []
-        self.partition_evaluations = []
+        self.partition_evaluations_train = []
+        self.partition_evaluations_test = []
         self.partition_training_metadata = []
-        self.evaluation = pd.DataFrame()
+        self.evaluation_train = pd.DataFrame()
+        self.evaluation_test = pd.DataFrame()
 
         self.final_predictor = None
         self.final_training_metadata = {}
@@ -78,14 +80,20 @@ class Experiment:
             predictor, training_metadata = self.trainer.fit(x_train, y_train)
             self.partition_predictors.append(predictor)
             self.partition_training_metadata.append(training_metadata)
-            partition_evaluation = self.evaluate(predictor, self.metrics, x_test, y_test)
-            self.partition_evaluations.append(partition_evaluation)
-        self.evaluation = self.summarize_evaluations(self.partition_evaluations)
+            partition_evaluation_train = self.evaluate(predictor, self.metrics, x_train, y_train)
+            self.partition_evaluations_train.append(partition_evaluation_train)
+            partition_evaluation_test = self.evaluate(predictor, self.metrics, x_test, y_test)
+            self.partition_evaluations_test.append(partition_evaluation_test)
+        self.evaluation_train = self.summarize_evaluations(self.partition_evaluations_train)
+        self.evaluation_test = self.summarize_evaluations(self.partition_evaluations_test)
 
         print('Fitting final model...')
         self.final_predictor, self.final_training_metadata = self.trainer.fit(self.stratified_dataset.x,
                                                                               self.stratified_dataset.y)
-        return self.evaluation
+
+        print("\nTest Partition Results: ")
+
+        return self.evaluation_test
 
     @staticmethod
     def evaluate(predictor: Predictor, metrics: List[Metric], x, y_true) -> Dict[str, Union[int, float]]:
@@ -194,7 +202,8 @@ class ExperimentInterface:
                          metadata=config['metadata'])
 
         exp.partition_predictors = config['results']['partition_predictors']
-        exp.evaluation = pd.DataFrame(config['results']['evaluation'])
+        exp.evaluation_train = pd.DataFrame(config['results']['evaluation_train'])
+        exp.evaluation_test = pd.DataFrame(config['results']['evaluation_test'])
         exp.final_predictor = config['results']['final_predictor']
         exp.partition_training_metadata = config['results'].get('partition_training_metadata', list())  # backwards com.
         exp.final_training_metadata = config['results'].get('final_training_metadata', dict())  # backwards compatibili.
@@ -213,7 +222,8 @@ class ExperimentInterface:
             },
             'results': {
                 'partition_predictors': experiment.partition_predictors,
-                'evaluation': experiment.evaluation.to_dict(),
+                'evaluation_train': experiment.evaluation_train.to_dict(),
+                'evaluation_test': experiment.evaluation_test.to_dict(),
                 'final_predictor': experiment.final_predictor,
                 'partition_training_metadata': experiment.partition_training_metadata,
                 'final_training_metadata': experiment.final_training_metadata,

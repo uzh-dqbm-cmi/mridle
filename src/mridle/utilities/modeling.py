@@ -61,7 +61,7 @@ def run_experiment(features_df: pd.DataFrame, params: Dict) -> Tuple[Dict, pd.Da
     exp.go()
 
     serialized_exp = exp.serialize()
-    evaluation = exp.evaluation
+    evaluation = exp.evaluation_test
     return serialized_exp, evaluation
 
 

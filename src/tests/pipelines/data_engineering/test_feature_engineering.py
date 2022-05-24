@@ -5,7 +5,7 @@ from mridle.pipelines.data_science.feature_engineering.nodes import feature_no_s
 from mridle.pipelines.data_engineering.ris.nodes import build_status_df, build_slot_df, find_no_shows, \
     set_no_show_severity, STATUS_MAP
 from mridle.pipelines.data_science.feature_engineering.nodes import build_feature_set, \
-    feature_days_scheduled_in_advance, feature_days_scheduled_in_advance
+    feature_days_scheduled_in_advance, feature_days_scheduled_in_advance, build_model_data
 
 
 def day(num_days_from_start, hour=9):
@@ -216,7 +216,7 @@ class TestNoShowBefore(unittest.TestCase):
 class TestDaysScheduleInAdvance(unittest.TestCase):
 
     @staticmethod
-    def _fill_out_static_columns(raw_df, slot_df, create_fon=True):
+    def _fill_out_static_columns(raw_df, slot_df=None, create_fon=True):
         if create_fon:
             raw_df['FillerOrderNo'] = 0
         raw_df['MRNCmpdId'] = '0'
@@ -248,8 +248,9 @@ class TestDaysScheduleInAdvance(unittest.TestCase):
                                  'sched_2_days'
                                  ]
             slot_df = slot_df[slot_df_col_order]
+            return raw_df, slot_df
 
-        return raw_df, slot_df
+        return raw_df
 
     def test_basic_sched_days_advanced(self):
         raw_df = pd.DataFrame.from_records([
@@ -382,6 +383,8 @@ class TestDaysScheduleInAdvance(unittest.TestCase):
             (day(0), code['requested'], day(0)),
             (day(0), code['scheduled'], day(10)),
             (day(1), code['scheduled'], day(14)),
+            (day(14), code['started'], day(14)),
+            (day(14) + pd.Timedelta(minutes=30), code['examined'], day(14)),
         ],
             columns=[date_col, now_status_col, now_sched_for_date_col]
         )
@@ -407,6 +410,136 @@ class TestDaysScheduleInAdvance(unittest.TestCase):
         raw_df, expected_slot_df = self._fill_out_static_columns(raw_df, expected_slot_df)
         status_df = build_status_df(raw_df, exclude_patient_ids=[])
         slot_df = build_slot_df(status_df, valid_date_range, build_future_slots=True)
+        past_slot_df = build_slot_df(status_df, valid_date_range, build_future_slots=False)
         slot_df_with_feature = feature_days_scheduled_in_advance(status_df, slot_df)
-
+        slot_df_with_feature = slot_df_with_feature.merge(past_slot_df[['MRNCmpdId', 'FillerOrderNo', 'start_time']],
+                                                          how='inner', on=['MRNCmpdId', 'FillerOrderNo', 'start_time'])
         pd.testing.assert_frame_equal(slot_df_with_feature, expected_slot_df, check_like=True)
+
+
+class TestFutureSlots(unittest.TestCase):
+    @staticmethod
+    def _fill_out_static_columns(raw_df, slot_df=None, create_fon=True):
+        if create_fon:
+            raw_df['FillerOrderNo'] = 0
+        raw_df['MRNCmpdId'] = '0'
+        raw_df['EnteringOrganisationDeviceID'] = 'MR1'
+        raw_df['UniversalServiceName'] = 'MR'
+        raw_df['OrderStatus'] = raw_df[now_status_col].tail(1).iloc[0]
+        raw_df['Klasse'] = 'A'
+        raw_df['Sex'] = 'weiblich'
+        raw_df['DateOfBirth'] = '05-03-1994'
+        raw_df['Zivilstand'] = 'UNB'
+        raw_df['Zip'] = '8001'
+        raw_df['Beruf'] = 'Arzt'
+
+        if slot_df is not None:
+            if create_fon:
+                slot_df['FillerOrderNo'] = 0
+            slot_df['MRNCmpdId'] = '0'
+            slot_df['EnteringOrganisationDeviceID'] = 'MR1'
+            slot_df['UniversalServiceName'] = 'MR'
+
+            slot_df_col_order = ['FillerOrderNo',
+                                 'MRNCmpdId',
+                                 'patient_class_adj',
+                                 'start_time',
+                                 'end_time',
+                                 'NoShow',
+                                 'slot_outcome',
+                                 'slot_type',
+                                 'slot_type_detailed',
+                                 'EnteringOrganisationDeviceID',
+                                 'UniversalServiceName'
+                                 ]
+            slot_df = slot_df[slot_df_col_order]
+            return raw_df, slot_df
+
+        return raw_df
+
+    def test_future_appointments_one_row(self):
+        raw_df = pd.DataFrame.from_records([
+            # date,                               now_status,            now_sched_for_date
+            (day(0), code['scheduled'], day(7)),
+        ],
+            columns=[date_col, now_status_col, now_sched_for_date_col]
+        )
+        raw_df['PatientClass'] = 'ambulant'
+
+        expected_feature_df = pd.DataFrame([
+            {
+                'start_time': day(7),
+                'end_time': day(7) + pd.Timedelta(minutes=30),
+                'NoShow': False,
+                'sched_days_advanced': 7
+            }
+        ])
+
+        raw_df = self._fill_out_static_columns(raw_df)
+        expected_feature_df['MRNCmpdId'] = '0'
+        expected_feature_df['FillerOrderNo'] = 0
+        status_df = build_status_df(raw_df, exclude_patient_ids=[])
+        feature_df = build_model_data(status_df, valid_date_range)
+        cols = [c for c in expected_feature_df.columns.values]
+        feature_df = feature_df.loc[:, feature_df.columns.isin(cols)]
+        pd.testing.assert_frame_equal(feature_df, expected_feature_df, check_like=True)
+
+    def test_future_appointments_multiple_rows(self):
+        raw_df = pd.DataFrame.from_records([
+            # date,                               now_status,            now_sched_for_date
+            (day(0), code['requested'], day(3)),
+            (day(1), code['scheduled'], day(6)),
+        ],
+            columns=[date_col, now_status_col, now_sched_for_date_col]
+        )
+        raw_df['PatientClass'] = 'ambulant'
+
+        expected_feature_df = pd.DataFrame([
+            {
+                'start_time': day(6),
+                'end_time': day(6) + pd.Timedelta(minutes=30),
+                'NoShow': False,
+                'sched_days_advanced': 5
+            }
+        ])
+
+        raw_df = self._fill_out_static_columns(raw_df)
+        expected_feature_df['MRNCmpdId'] = '0'
+        expected_feature_df['FillerOrderNo'] = 0
+        status_df = build_status_df(raw_df, exclude_patient_ids=[])
+        feature_df = build_model_data(status_df, valid_date_range)
+        cols = [c for c in expected_feature_df.columns.values]
+        feature_df = feature_df.loc[:, feature_df.columns.isin(cols)]
+        feature_df = feature_df.reindex(cols, axis=1)
+
+        pd.testing.assert_frame_equal(feature_df, expected_feature_df, check_like=True)
+
+    def test_future_appointments_muoved_forward(self):
+        raw_df = pd.DataFrame.from_records([
+            # date,                               now_status,            now_sched_for_date
+            (day(0), code['requested'], day(13)),
+            (day(1), code['scheduled'], day(6)),
+        ],
+            columns=[date_col, now_status_col, now_sched_for_date_col]
+        )
+        raw_df['PatientClass'] = 'ambulant'
+
+        expected_feature_df = pd.DataFrame([
+            {
+                'start_time': day(6),
+                'end_time': day(6) + pd.Timedelta(minutes=30),
+                'NoShow': False,
+                'sched_days_advanced': 5
+            }
+        ])
+
+        raw_df = self._fill_out_static_columns(raw_df)
+        expected_feature_df['MRNCmpdId'] = '0'
+        expected_feature_df['FillerOrderNo'] = 0
+        status_df = build_status_df(raw_df, exclude_patient_ids=[])
+        feature_df = build_model_data(status_df, valid_date_range)
+
+        cols = [c for c in expected_feature_df.columns.values]
+        feature_df = feature_df.loc[:, feature_df.columns.isin(cols)]
+        feature_df = feature_df.reindex(cols, axis=1)
+        pd.testing.assert_frame_equal(feature_df, expected_feature_df, check_like=True)

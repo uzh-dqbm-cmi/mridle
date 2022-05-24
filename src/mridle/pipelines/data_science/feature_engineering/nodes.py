@@ -8,8 +8,47 @@ from sklearn.model_selection import train_test_split
 from typing import Dict, List
 
 
-def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], build_future_slots: bool = False
-                      ) -> pd.DataFrame:
+def build_model_data(status_df, valid_date_range, slot_df=None):
+    """
+    Build data for use in models by trying to replicate the conditions under which the model would be used in reality
+    (i.e. no status changes 2 days before appt (since that's when the prediction would be done)). We then use the
+    previously created slot_df (i.e. master appointment list) to filter the appts for only those that are relevant - the
+    build_feature_set function with build_future_slots=True will create too many appointment slots, so we that's why we
+    have to filter. We also need to use slot_df to get the outcome of the appointment, since build_future_slots=True,
+    results in all appts appearing as NoShow=False. (replicating what would happen in reality...we would predict more
+    than 2 days in advance, then wait and find out the outcome and join it onto our predictions)
+
+    Args:
+        status_df:
+        slot_df:
+        valid_date_range:
+
+    Returns:
+
+    """
+    # valid_date_range = catalog.load('params:ris.valid_date_range')
+    status_df_copy = status_df.copy()
+    status_df_copy = status_df_copy[status_df_copy['now_sched_for'] > 2]
+    model_data = build_feature_set(status_df_copy, valid_date_range=valid_date_range, build_future_slots=True)
+    model_data = remove_na(model_data)
+    if slot_df is not None:
+        model_data.drop('NoShow', axis=1, inplace=True)
+        # slot_df = catalog.load('slot_df')
+        slot_df_copy = slot_df.copy()[['MRNCmpdId', 'FillerOrderNo', 'start_time', 'NoShow']]
+        model_data = model_data.merge(slot_df_copy, how='inner')
+    else:
+        appt_time = status_df_copy.groupby(['FillerOrderNo']).apply(
+            lambda x: x.sort_values('History_MessageDtTm', ascending=False).head(1)
+        ).reset_index(drop=True)[['MRNCmpdId', 'FillerOrderNo', 'now_sched_for_date', 'NoShow']]
+        appt_time.columns = ['MRNCmpdId', 'FillerOrderNo', 'start_time', 'NoShow']
+        model_data = model_data.merge(appt_time, how='inner')
+
+        print(model_data)
+    return model_data
+
+
+def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], master_slot_df: pd.DataFrame = None,
+                      build_future_slots: bool = True) -> pd.DataFrame:
     """
     Builds a feature set that replicates the Harvey et al model as best we can.
     So far includes:
@@ -20,6 +59,8 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], buil
         - distance_to_usz: distance from the patient's home address to the hospital, approximated from Post Codes
         - no_show_before: The number of no shows the patient has had up to the date of the appt
     Args:
+        master_slot_df:
+        build_future_slots:
         status_df: status_df
         valid_date_range: List of 2 strings defining the starting date of the valid slot data period (status_df contains
          status change data outside the valid slot date range- these should not be made into slots).
@@ -71,6 +112,7 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], buil
     slot_df = feature_cyclical_day_of_week(slot_df)
     slot_df = feature_cyclical_month(slot_df)
     slot_df = slot_df[slot_df['day_of_week_str'].isin(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])]
+    slot_df = slot_df[slot_df['sched_days_advanced'] > 2]
 
     return slot_df
 
@@ -331,46 +373,42 @@ def feature_modality(slot_df: pd.DataFrame, group_categories_less_than: int = No
         dataframe with modality column added, and mapping applied to this column.
     """
 
-    def regex_search(x, search_str):
-        return bool(re.search(search_str, x, re.IGNORECASE))
-
     df_remap = slot_df.copy()
-    df_remap['modality'] = df_remap['UniversalServiceName']
-    df_remap['modality'] = df_remap['modality'].astype(str)
+    df_remap['modality'] = ""
 
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="becken"), 'modality'] = 'back'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="leber"), 'modality'] = 'liver'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str='niere'), 'modality'] = 'kidney'
-    df_remap.loc[df_remap['modality'].apply(
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="becken"), 'modality'] = 'back'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="leber"), 'modality'] = 'liver'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str='niere'), 'modality'] = 'kidney'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(
         regex_search, search_str='hand|finger|ellbogen|vorderarm|oberarm|obere extremität'), 'modality'] = 'arm'
-    df_remap.loc[df_remap['modality'].apply(regex_search,
-                                            search_str="abdomen|thorax|hüfte|MR TOS"), 'modality'] = 'midsection'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="schenkel"), 'modality'] = 'leg'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="ganzkörper|ganzkvrper"), 'modality'] = 'full_body'
-    df_remap.loc[df_remap['modality'].apply(regex_search,
-                                            search_str="schädel|schadel|gehirn|felsenbein"), 'modality'] = 'head'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="herz"), 'modality'] = 'heart'
-    df_remap.loc[df_remap['modality'].apply(regex_search,
-                                            search_str="Pankreas|Dünndarm|Milz|MRCP"), 'modality'] = 'organ'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="Intervention"), 'modality'] = 'intervention'
-    df_remap.loc[df_remap['modality'].apply(
+    df_remap.loc[df_remap['UniversalServiceName'].apply(
+        regex_search, search_str="abdomen|thorax|hüfte|MR TOS"), 'modality'] = 'midsection'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="schenkel"), 'modality'] = 'leg'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="ganzkörper|ganzkvrper"),
+                 'modality'] = 'full_body'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(
+        regex_search, search_str="schädel|schadel|gehirn|felsenbein"), 'modality'] = 'head'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="herz"), 'modality'] = 'heart'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search,
+                                                        search_str="Pankreas|Dünndarm|Milz|MRCP"), 'modality'] = 'organ'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="Intervention"),
+                 'modality'] = 'intervention'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(
         regex_search, search_str="Neurographie|Magnetresonanztomographie"), 'modality'] = 'general'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="Angio"), 'modality'] = 'angiography'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="Arthrographie"), 'modality'] = 'joint'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="venograp|Phlebographie"), 'modality'] = 'veins'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="Mamma"), 'modality'] = 'mammography'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="Prostata"), 'modality'] = 'prostate'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="Hals"), 'modality'] = 'throat'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="Defäkographie"), 'modality'] = 'defecography'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="LWS|BWS|HWS"), 'modality'] = 'spine'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="schulter"), 'modality'] = 'shoulder'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="knie"), 'modality'] = 'knee'
-    df_remap.loc[df_remap['modality'].apply(regex_search, search_str="fuss"), 'modality'] = 'foot'
-
-    if group_categories_less_than:
-        df_remap['modality_freq'] = df_remap[['modality', 'MRNCmpdId']].groupby('modality').transform(len)
-        df_remap.loc[df_remap['modality_freq'] < group_categories_less_than, 'modality'] = 'other'
-        df_remap = df_remap.drop('modality_freq', axis=1)
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="Angio"), 'modality'] = 'angiography'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="Arthrographie"), 'modality'] = 'joint'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search,
+                                                        search_str="venograp|Phlebographie"), 'modality'] = 'veins'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="Mamma"), 'modality'] = 'mammography'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="Prostata"), 'modality'] = 'prostate'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="Hals"), 'modality'] = 'throat'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search,
+                                                        search_str="Defäkographie"), 'modality'] = 'defecography'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="LWS|BWS|HWS"), 'modality'] = 'spine'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="schulter"), 'modality'] = 'shoulder'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="knie"), 'modality'] = 'knee'
+    df_remap.loc[df_remap['UniversalServiceName'].apply(regex_search, search_str="fuss"), 'modality'] = 'foot'
+    df_remap.loc[df_remap['modality'] == "", 'modality'] = 'other'
 
     return df_remap
 
