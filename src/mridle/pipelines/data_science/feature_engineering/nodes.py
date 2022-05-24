@@ -34,16 +34,17 @@ def build_model_data(status_df, valid_date_range, slot_df=None):
     if slot_df is not None:
         model_data.drop('NoShow', axis=1, inplace=True)
         # slot_df = catalog.load('slot_df')
-        slot_df_copy = slot_df.copy()[['MRNCmpdId', 'FillerOrderNo', 'start_time', 'NoShow']]
+        slot_df_copy = slot_df.copy()[['MRNCmpdId', 'FillerOrderNo', 'start_time', 'patient_class_adj', 'NoShow',
+                                       'slot_outcome', 'slot_type', 'slot_type_detailed']]
         model_data = model_data.merge(slot_df_copy, how='inner')
-    else:
+    else:  # If slot_df not provided, then we are generating data for the future (e.g. Silent Live Test), therefore
+        # NoShow should be false for all appointments (since they're future appts)
         appt_time = status_df_copy.groupby(['FillerOrderNo']).apply(
             lambda x: x.sort_values('History_MessageDtTm', ascending=False).head(1)
-        ).reset_index(drop=True)[['MRNCmpdId', 'FillerOrderNo', 'now_sched_for_date', 'NoShow']]
-        appt_time.columns = ['MRNCmpdId', 'FillerOrderNo', 'start_time', 'NoShow']
+        ).reset_index(drop=True)[['MRNCmpdId', 'FillerOrderNo', 'now_sched_for_date']]
+        appt_time.columns = ['MRNCmpdId', 'FillerOrderNo', 'start_time']
         model_data = model_data.merge(appt_time, how='inner')
-
-        print(model_data)
+        model_data['NoShow'] = False
     return model_data
 
 
