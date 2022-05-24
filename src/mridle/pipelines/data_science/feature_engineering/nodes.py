@@ -535,6 +535,26 @@ def feature_occupation(df):
     return df_remap
 
 
+def feature_reason(status_df):
+    df_remap = status_df.copy()
+
+    df_remap['reason'] = 0
+    df_remap.loc[df_remap['ReasonForStudy'].apply(regex_search, search_str="verlauf"), 'reason'] = 'verlaufskontrolle'
+    df_remap.loc[df_remap['ReasonForStudy'].apply(regex_search, search_str="läsion|laesion"), 'reason'] = 'lesion'
+    df_remap.loc[df_remap['ReasonForStudy'].apply(regex_search, search_str="nachsorge"), 'reason'] = 'aftercare'
+    df_remap.loc[df_remap['ReasonForStudy'].apply(regex_search, search_str="ganzkörper"), 'reason'] = 'full_body'
+    df_remap.loc[df_remap['ReasonForStudy'].apply(regex_search, search_str="rezidiv"), 'reason'] = 'relapse_check'
+    df_remap.loc[df_remap['ReasonForStudy'].apply(regex_search,
+                                                  search_str="entzündliche veränderungen|entzuendliche veraenderungen"),
+                 'reason'] = 'entzuendliche_veraenderungen'
+    df_remap.loc[df_remap['ReasonForStudy'].apply(regex_search, search_str="krebs|cancer|tumor|onkolog|HCC"),
+                 'reason'] = 'cancer'
+    df_remap.loc[df_remap['ReasonForStudy'] == 'nan', 'reason'] = 'none_given'
+    df_remap.loc[df_remap['reason'] == 0, 'reason'] = 'other'
+
+    return df_remap
+
+
 # feature engineering for the duration model
 def feature_duration(dicom_df: pd.DataFrame) -> pd.DataFrame:
     """
