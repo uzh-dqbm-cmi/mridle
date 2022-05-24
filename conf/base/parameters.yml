@@ -22,8 +22,7 @@ train_val_split:
 
 models:
     harvey_logistic_reg:
-        metadata:
-            name: harvey_logistic_reg
+        name: harvey_logistic_reg
         verbose: false
         DataSet:
             flavor: DataSet
@@ -107,8 +106,7 @@ models:
             - flavor: LogLoss
 
     harvey_random_forest:
-        metadata:
-            name: harvey_random_forest
+        name: harvey_random_forest
         verbose: false
         DataSet:
             flavor: DataSet
@@ -177,8 +175,7 @@ models:
             - flavor: LogLoss
 
     logistic_regression:
-        metadata:
-            name: logistic_regression
+        name: logistic_regression
         verbose: false
         DataSet:
             flavor: DataSet
@@ -259,8 +256,7 @@ models:
             - flavor: LogLoss
 
     random_forest:
-        metadata:
-            name: random_forest
+        name: random_forest
         verbose: false
         DataSet:
             flavor: DataSet
@@ -359,8 +355,7 @@ models:
             - flavor: LogLoss
 
     xgboost:
-        metadata:
-            name: xgboost
+        name: xgboost
         verbose: false
         DataSet:
             flavor: DataSet
@@ -469,8 +464,7 @@ models:
             - flavor: LogLoss
 
     neural_net:
-        metadata:
-            name: neural_net
+        name: neural_net
         verbose: false
         DataSet:
             flavor: DataSet
@@ -532,7 +526,7 @@ models:
                   - flavor: skorch.NeuralNet
                     name: 'classifier'
                     config:
-                      max_epochs: 2
+                      max_epochs: 100
                       verbose: 1
                       iterator_train__shuffle: True
                       batch_size: 32
@@ -571,8 +565,8 @@ models:
                             start: -5.5
                             end: -1.5
                 search_type: bayesian
-                num_cv_folds: 2
-                num_iters: 2  # 150
+                num_cv_folds: 5
+                num_iters: 20  # 150
                 scoring_function: log_loss
                 verbose: 1
                 hyperopt_timeout: 10000000

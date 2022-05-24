@@ -2,14 +2,13 @@ import argparse
 import pandas as pd
 from pathlib import Path
 import pickle
-
 from mridle.pipelines.data_engineering.ris.nodes import build_status_df, prep_raw_df_for_parquet
 from mridle.pipelines.data_science.feature_engineering.nodes import build_feature_set, remove_na
 from mridle.experiment.experiment import Experiment
 from mridle.experiment.dataset import DataSet
 
 
-def main(data_path, model_dir, output_path, valid_date_range, file_encoding, master_feature_set):
+def main(data_path, model_dir, output_path, valid_date_range, file_encoding):
     """
     Make predictions for all models in model_dir on the given data, saving the resulting predictions to output_path.
     Args:
@@ -32,20 +31,6 @@ def main(data_path, model_dir, output_path, valid_date_range, file_encoding, mas
     status_df = build_status_df(formatted_df, exclude_pat_ids)
     features_df_maybe_na = build_feature_set(status_df, valid_date_range, build_future_slots=True)
     features_df = remove_na(features_df_maybe_na)
-
-    # Get number of previous no shows from historical data and add to data set
-    master_df = master_feature_set.copy()
-    prev_no_shows = master_df[['MRNCmpdId', 'no_show_before']].groupby('MRNCmpdId').max().reset_index()
-
-    prev_no_shows['MRNCmpdId'] = prev_no_shows['MRNCmpdId'] .astype(int)
-    features_df['MRNCmpdId'] = features_df['MRNCmpdId'] .astype(int)
-
-    features_df = features_df.merge(prev_no_shows, on=['MRNCmpdId'], how='left', suffixes=['_current', '_hist'])
-    features_df['no_show_before_hist'].fillna(0, inplace=True)
-    features_df['no_show_before'] = features_df['no_show_before_current'] + features_df['no_show_before_hist']
-    features_df.drop(['no_show_before_current', 'no_show_before_hist'], axis=1, inplace=True)
-    features_df['no_show_before_sq'] = features_df['no_show_before'] ** 2
-
     prediction_df = features_df.copy()
 
     model_dirs = Path(model_dir).glob('*')

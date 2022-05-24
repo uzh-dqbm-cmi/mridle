@@ -209,23 +209,19 @@ def build_slot_df(input_status_df: pd.DataFrame, valid_date_range: List[str], ag
     status_df['end_time'] = status_df.groupby('FillerOrderNo')['end_time'].fillna(method='bfill')
 
     if build_future_slots:
-        # agg_dict['now_sched_for_date'] = 'last'
-        # Replicate data that will be used in reality, i.e. we won't have status changes that happened within 2 days of
-        # appointment and then use build_future_slots=True when building slot_df
-        status_df = status_df[status_df['now_sched_for'] > 2]
-
+        agg_dict['now_sched_for_date'] = 'last'
         if 'sched_days_advanced' in agg_dict.keys():
             agg_dict['sched_days_advanced'] = 'last'
             agg_dict['sched_days_advanced_sq'] = 'last'
             agg_dict['sched_2_days'] = 'last'
 
-        future_slot_df = status_df.groupby(['FillerOrderNo', 'MRNCmpdId', 'now_sched_for_date']).agg(agg_dict)
-        if len(future_slot_df) > 0:
-            # if there are 0 slots, the index column will be 'index', and reset_index will create an extra index col
-            future_slot_df.reset_index(inplace=True)
+        future_slot_df = status_df.groupby(['FillerOrderNo', 'MRNCmpdId']).agg(agg_dict)
         future_slot_df['start_time'] = future_slot_df['now_sched_for_date']
         future_slot_df['end_time'] = future_slot_df['start_time'] + pd.to_timedelta(30, unit='minutes')
         future_slot_df.drop(columns=['now_sched_for_date'], inplace=True)
+        if len(future_slot_df) > 0:
+            # if there are 0 slots, the index column will be 'index', and reset_index will create an extra index col
+            future_slot_df.reset_index(inplace=True)
 
         slot_df = future_slot_df.copy()
     else:

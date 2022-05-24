@@ -5,12 +5,11 @@ import numpy as np
 import plotly.express as px
 import random
 from mridle.utilities.plotting_utilities import DEFAULT_COLOR_MAP, DETAILED_COLOR_MAP, OUTCOME_STROKE_MAP
-from typing import List
 
 alt.data_transformers.disable_max_rows()
 
 
-def plot_dave_b(slot_df: pd.DataFrame, slot_w_dicom_df: pd.DataFrame, valid_date_range: List[str],
+def plot_dave_b(slot_df: pd.DataFrame, slot_w_dicom_df: pd.DataFrame, start_date: str, end_date: str,
                 example_date: str = None, anonymize: bool = True) -> alt.Chart:
     """
     Create the Dave B figure, which consists of three subplots:
@@ -24,13 +23,13 @@ def plot_dave_b(slot_df: pd.DataFrame, slot_w_dicom_df: pd.DataFrame, valid_date
          than RIS.
         example_date: date to represent in the example day subplot. If none, a random date between start_date and
          end_date is chosen.
-        valid_date_range: date range for the 2 aggregate plots
+        start_date: start date for the 2 aggregate plots
+        end_date: end date for the 2 aggregate plots
         anonymize: Whether to anonymize the example_day subplot
 
     Returns: altair plot
     """
 
-    start_date, end_date = valid_date_range
     if example_date is None:
         # choose a random date
         random_row = slot_w_dicom_df[(~slot_w_dicom_df['start_time'].isna())

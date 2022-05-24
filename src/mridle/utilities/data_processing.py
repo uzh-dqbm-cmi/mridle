@@ -34,17 +34,17 @@ def convert_DtTm_cols(df: pd.DataFrame, known_datetime_cols: List[str] = None) -
     # if there are other columns that need to be coverted to datetime format, add them here
     if known_datetime_cols is None:
         known_datetime_cols = []
-    df_copy = df.copy()
-    time_cols = [col for col in df_copy.columns if 'DtTm' in col]
-    time_cols.extend([col for col in known_datetime_cols if col in df_copy.columns])
+
+    time_cols = [col for col in df.columns if 'DtTm' in col]
+    time_cols.extend([col for col in known_datetime_cols if col in df.columns])
     for col in time_cols:
         try:
-            df_copy[col] = pd.to_datetime(df_copy[col])
+            df[col] = pd.to_datetime(df[col])
         except pd.errors.OutOfBoundsDatetime:
-            df_copy[col] = df_copy[col].apply(fix_out_of_bounds_str_datetime)
-            df_copy = df_copy[~df_copy[col].isna()]
-            df_copy[col] = pd.to_datetime(df_copy[col])
-    return df_copy
+            df[col] = df[col].apply(fix_out_of_bounds_str_datetime)
+            df = df[~df[col].isna()]
+            df[col] = pd.to_datetime(df[col])
+    return df
 
 
 def fix_out_of_bounds_str_datetime(val: str) -> str:

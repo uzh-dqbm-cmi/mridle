@@ -37,7 +37,7 @@ def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic
                          ('XGBoost', xgboost_model), ('Neural Net', neural_net_model)]
 
     evaluation_table = []
-    avg_appts_per_week = 105  # taken from aggregation of df_features_original data for the year 2017 (in notebook 52)
+    avg_appts_per_week = 166  # taken from aggregation of df_features_original data for the year 2017 (in notebook 52)
 
     for (model_name, serialised_m) in serialised_models:
         model_validation_data = validation_data.copy()
@@ -54,7 +54,7 @@ def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic
         calc_list = []
 
         for i in range(1, 11):
-            top_i_cut = preds_prob_sorted[int(np.round((10/avg_appts_per_week) * i * len(preds_prob_sorted)))]
+            top_i_cut = preds_prob_sorted[int(np.round(0.06 * i * len(preds_prob_sorted)))]
             preds_i_pw = (top_i_cut, np.where(preds_prob > top_i_cut, 1, 0))
             calc_list.append(preds_i_pw)
 
