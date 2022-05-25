@@ -94,7 +94,7 @@ models:
                             end: 10
                 search_type: bayesian
                 num_cv_folds: 5
-                num_iters: 50  # 150
+                num_iters: 20  # 150
                 scoring_function: log_loss
                 verbose: 0
                 hyperopt_timeout: 10000000
@@ -250,7 +250,7 @@ models:
                             end: 10
                 search_type: bayesian
                 num_cv_folds: 5
-                num_iters: 50
+                num_iters: 20
                 scoring_function: log_loss
                 verbose: 0
                 hyperopt_timeout: 10000000
