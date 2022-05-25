@@ -75,7 +75,7 @@ models:
                     config:
                         solver: 'liblinear'
                         class_weight: 'balanced'
-                        penalty: 'L2'
+                        penalty: 'l2'
                         C: 0.1
         Trainer:
             flavor: Trainer
