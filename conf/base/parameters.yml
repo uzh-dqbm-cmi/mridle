@@ -439,9 +439,8 @@ models:
                         subsample: .9
                         colsample_bytree: .8
                         reg_alpha: .25 # L1, will sparsify v weak features
-                        tree_method: 'hist', # fast with less overfit
-                        grow_policy: 'depthwise', # less overfit w/ hist vs. lossguide
-                      # scale_pos_weight: 6
+                        tree_method: 'hist' # fast with less overfit
+                        grow_policy: 'depthwise' # less overfit w/ hist vs. lossguide
         Trainer:
             flavor: Trainer
 #        Tuner:
