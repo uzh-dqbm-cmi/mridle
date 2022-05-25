@@ -173,6 +173,13 @@ models:
 #                scoring_function: log_loss
 #                verbose: 0
 #                hyperopt_timeout: 10000000
+        Metrics:
+            - flavor: F1_Macro
+              config:
+                  classification_cutoff: 0.5
+            - flavor: AUPRC
+            - flavor: AUROC
+            - flavor: LogLoss
 
 
     logistic_regression:
@@ -575,28 +582,28 @@ models:
                             instantiate: True
         Trainer:
             flavor: SkorchTrainer
-        Tuner:
-            flavor: BayesianTuner
-            config:
-                hyperparameters:
-#                    classifier__batch_size:
-#                        parse_hp_choice:
-#                            choice_list:
-#                                - 16
-#                                - 32
-#                                - 64
-#                                - 128
-#                                - 256
-                    classifier__lr:
-                        parse_hp_loguniform:
-                            start: -5.5
-                            end: -1.5
-                search_type: bayesian
-                num_cv_folds: 2
-                num_iters: 2  # 150
-                scoring_function: log_loss
-                verbose: 1
-                hyperopt_timeout: 10000000
+#        Tuner:
+#            flavor: BayesianTuner
+#            config:
+#                hyperparameters:
+##                    classifier__batch_size:
+##                        parse_hp_choice:
+##                            choice_list:
+##                                - 16
+##                                - 32
+##                                - 64
+##                                - 128
+##                                - 256
+#                    classifier__lr:
+#                        parse_hp_loguniform:
+#                            start: -5.5
+#                            end: -1.5
+#                search_type: bayesian
+#                num_cv_folds: 2
+#                num_iters: 2  # 150
+#                scoring_function: log_loss
+#                verbose: 1
+#                hyperopt_timeout: 10000000
         Metrics:
             - flavor: F1_Macro
               config:
