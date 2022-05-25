@@ -31,6 +31,7 @@ def main(data_path, model_dir, output_path, valid_date_range, file_encoding, mas
     formatted_df = prep_raw_df_for_parquet(raw_df)
     status_df = build_status_df(formatted_df, exclude_pat_ids)
     status_df = status_df.merge(rfs_df)
+    print(status_df.columns)
     features_df_maybe_na = build_feature_set(status_df, valid_date_range, build_future_slots=True)
     features_df = remove_na(features_df_maybe_na)
 
