@@ -223,6 +223,7 @@ class TestDaysScheduleInAdvance(unittest.TestCase):
         raw_df['EnteringOrganisationDeviceID'] = 'MR1'
         raw_df['UniversalServiceName'] = 'MR'
         raw_df['OrderStatus'] = raw_df[now_status_col].tail(1).iloc[0]
+        raw_df['ReasonForStudy'] = 'cancer'
 
         if slot_df is not None:
             if create_fon:
@@ -432,7 +433,8 @@ class TestFutureSlots(unittest.TestCase):
         raw_df['Zivilstand'] = 'UNB'
         raw_df['Zip'] = '8001'
         raw_df['Beruf'] = 'Arzt'
-
+        raw_df['ReasonForStudy'] = 'cancer'
+        
         if slot_df is not None:
             if create_fon:
                 slot_df['FillerOrderNo'] = 0
@@ -636,6 +638,7 @@ class TestGenerateModelData(unittest.TestCase):
         raw_df['Zivilstand'] = 'UNB'
         raw_df['Zip'] = '8001'
         raw_df['Beruf'] = 'Arzt'
+        raw_df['ReasonForStudy'] = 'cancer'
 
         if slot_df is not None:
             if create_fon:
