@@ -17,3 +17,13 @@ validation_data:
   type: pandas.ParquetDataSet
   filepath: /data/mridle/data/kedro_data_catalog/05_model_input/validation_data.parquet
   layer: model input
+
+switz_covid_cases:
+  type: pandas.CSVDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/01_raw/switz_covid_cases.csv
+  layer: primary
+
+switz_covid_cases_transformed:
+  type: pandas.ParquetDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/03_primary/switz_covid_cases_transformed.parquet
+  layer: primary
