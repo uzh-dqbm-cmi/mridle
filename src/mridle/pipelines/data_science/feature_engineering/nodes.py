@@ -291,7 +291,6 @@ def feature_age(status_df: pd.DataFrame) -> pd.DataFrame:
     status_df['age'] = pd.to_datetime(status_df['date']).dt.year - pd.to_datetime(status_df['DateOfBirth']).dt.year
     status_df['age_sq'] = status_df['age'] ** 2
     status_df['age_20_60'] = (status_df['age'] > 20) & (status_df['age'] < 60)
-
     return status_df
 
 
@@ -379,7 +378,7 @@ def feature_no_show_before(slot_df: pd.DataFrame) -> pd.DataFrame:
     return slot_df_ordered
 
 
-def feature_modality(slot_df: pd.DataFrame, group_categories_less_than: int = None) -> pd.DataFrame:
+def feature_modality(slot_df: pd.DataFrame) -> pd.DataFrame:
     """
     Renames UniversalServiceName to modality, and maps this column to more general groups, defined by us.
 
@@ -552,7 +551,7 @@ def feature_occupation(df):
     df_remap = df_remap.drop('Beruf', axis=1)
     return df_remap
 
-  
+
 def feature_covid_info(slot_df, switz_covid_cases_transformed):
     covid_cases = switz_covid_cases_transformed.copy()
     slot_df['date'] = slot_df['start_time'].dt.date
@@ -562,7 +561,7 @@ def feature_covid_info(slot_df, switz_covid_cases_transformed):
                                           'covid_7day_ch', 'covid_7day_zh']].fillna(0)
     return slot_df
 
-  
+
 def feature_reason(status_df):
     df_remap = status_df.copy()
 
