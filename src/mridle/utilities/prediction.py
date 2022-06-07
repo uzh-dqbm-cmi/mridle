@@ -9,7 +9,7 @@ from mridle.experiment.experiment import Experiment
 from mridle.experiment.dataset import DataSet
 
 
-def main(data_path, model_dir, output_path, valid_date_range, file_encoding, master_feature_set):  # , rfs_df):
+def main(data_path, model_dir, output_path, valid_date_range, file_encoding, master_feature_set, rfs_df):
     """
     Make predictions for all models in model_dir on the given data, saving the resulting predictions to output_path.
     Args:
@@ -30,7 +30,7 @@ def main(data_path, model_dir, output_path, valid_date_range, file_encoding, mas
     exclude_pat_ids = list()  # TODO!
     formatted_df = prep_raw_df_for_parquet(raw_df)
     status_df = build_status_df(formatted_df, exclude_pat_ids)
-    # status_df = status_df.merge(rfs_df)
+    status_df = status_df.merge(rfs_df, how='left')
 
     features_df_maybe_na = build_feature_set(status_df, valid_date_range, build_future_slots=True)
     features_df = remove_na(features_df_maybe_na)
