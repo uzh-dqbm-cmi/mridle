@@ -138,6 +138,7 @@ def build_status_df(raw_df: pd.DataFrame,  exclude_patient_ids: List[str]) -> pd
     df = format_patient_id_col(df)
     df = exclude_test_patient_ids(df, exclude_patient_ids)
     df = add_appt_first_created_date(df)
+    print(df.head())
     df = add_final_scheduled_date(df)
     df['patient_class_adj'] = df['PatientClass'].apply(adjust_patient_class)
     df['NoShow'] = df.apply(find_no_shows, axis=1)

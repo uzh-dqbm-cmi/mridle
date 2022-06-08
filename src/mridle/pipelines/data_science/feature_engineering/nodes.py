@@ -119,6 +119,9 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str],
     slot_df = feature_cyclical_month(slot_df)
     if switz_covid_cases_transformed:
         slot_df = feature_covid_info(slot_df, switz_covid_cases_transformed)
+    else:
+        slot_df[['covid_cases_ch', 'covid_cases_zh', 'covid_7day_ch',
+                 'covid_7day_zh']] = 0
     slot_df = slot_df[slot_df['day_of_week_str'].isin(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])]
     slot_df = slot_df[slot_df['sched_days_advanced'] > 2]
 
