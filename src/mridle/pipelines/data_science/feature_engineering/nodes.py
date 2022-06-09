@@ -119,7 +119,7 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str],
     slot_df = feature_cyclical_hour(slot_df)
     slot_df = feature_cyclical_day_of_week(slot_df)
     slot_df = feature_cyclical_month(slot_df)
-    if switz_covid_cases_transformed:
+    if switz_covid_cases_transformed is not None:
         slot_df = feature_covid_info(slot_df, switz_covid_cases_transformed)
     else:
         slot_df[['covid_cases_ch', 'covid_cases_zh', 'covid_7day_ch',
