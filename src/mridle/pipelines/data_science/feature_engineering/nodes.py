@@ -20,6 +20,7 @@ def build_model_data(status_df, valid_date_range, slot_df: pd.DataFrame = None,
     than 2 days in advance, then wait and find out the outcome and join it onto our predictions)
 
     Args:
+        switz_covid_cases_transformed:
         status_df:
         slot_df:
         valid_date_range:
@@ -30,6 +31,7 @@ def build_model_data(status_df, valid_date_range, slot_df: pd.DataFrame = None,
     # valid_date_range = catalog.load('params:ris.valid_date_range')
     status_df_copy = status_df.copy()
     status_df_copy = status_df_copy[status_df_copy['now_sched_for'] > 2]
+
     model_data = build_feature_set(status_df_copy, valid_date_range=valid_date_range, build_future_slots=True,
                                    switz_covid_cases_transformed=switz_covid_cases_transformed)
     model_data = remove_na(model_data)

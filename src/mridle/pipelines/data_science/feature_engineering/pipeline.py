@@ -13,7 +13,7 @@ def create_pipeline(**kwargs):
             ),
             node(
                 func=build_model_data,
-                inputs=["status_df", "params:ris.valid_date_range", "slot_df", "switz_covid_cases_transformed"],
+                inputs=["status_df", "params:ris.valid_date_range", "slot_df"],
                 outputs="master_feature_set",
                 name="build_feature_set",
             ),
