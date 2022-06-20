@@ -81,7 +81,8 @@ def filter_duplicate_patient_time_slots(slot_df: pd.DataFrame) -> pd.DataFrame:
     Returns: A subset of slot_df, where there is only one appointment per patient-time slot.
 
     """
-    slot_df.sort_values(['MRNCmpdId', 'start_time', 'NoShow'], inplace=True)  # shows/NoShow == False will be on top
+    slot_df.sort_values(['MRNCmpdId', 'start_time', 'NoShow',
+                         'FillerOrderNo'], inplace=True)  # shows/NoShow == False will be on top
     slot_df['multi_slot'] = slot_df.groupby(['MRNCmpdId', 'start_time']).cumcount()
     first_slot_only = slot_df[slot_df['multi_slot'] == 0].copy()
     first_slot_only.drop(columns=['multi_slot'], axis=1, inplace=True)
