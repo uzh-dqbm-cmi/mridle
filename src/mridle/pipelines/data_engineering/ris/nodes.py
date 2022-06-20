@@ -257,7 +257,8 @@ def build_slot_df(input_status_df: pd.DataFrame, valid_date_range: List[str], ag
         slot_df['FillerOrderNo'] = slot_df['FillerOrderNo'].astype(int)
 
         # filter out duplicate appointments for the same patient & time slot (weird dispo behavior)
-        slot_df = data_processing.filter_duplicate_patient_time_slots(slot_df)
+        if not build_future_slots:
+            slot_df = data_processing.filter_duplicate_patient_time_slots(slot_df)
 
         if not include_id_cols:
             slot_df.drop('FillerOrderNo', axis=1, inplace=True)
