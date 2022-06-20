@@ -33,8 +33,9 @@ def main(data_path, model_dir, output_path, valid_date_range, file_encoding, mas
     status_df = status_df.merge(rfs_df)
 
     features_df_maybe_na = build_feature_set(status_df, valid_date_range, build_future_slots=True)
+    print(features_df_maybe_na.head())
+    print("ola")
     features_df = remove_na(features_df_maybe_na)
-    print(features_df.head())
 
     # Get number of previous no shows from historical data and add to data set
     master_df = master_feature_set.copy()
