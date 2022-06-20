@@ -34,6 +34,7 @@ def main(data_path, model_dir, output_path, valid_date_range, file_encoding, mas
 
     features_df_maybe_na = build_feature_set(status_df, valid_date_range, build_future_slots=True)
     features_df = remove_na(features_df_maybe_na)
+    print(features_df.head())
 
     # Get number of previous no shows from historical data and add to data set
     master_df = master_feature_set.copy()
@@ -46,7 +47,6 @@ def main(data_path, model_dir, output_path, valid_date_range, file_encoding, mas
     features_df['no_show_before'] = features_df['no_show_before_current'] + features_df['no_show_before_hist']
     features_df.drop(['no_show_before_current', 'no_show_before_hist'], axis=1, inplace=True)
     features_df['no_show_before_sq'] = features_df['no_show_before'] ** 2
-    print(features_df.head())
 
     prediction_df = features_df.copy()
 
