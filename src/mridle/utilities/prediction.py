@@ -28,11 +28,9 @@ def main(data_path, model_dir, output_path, valid_date_range, file_encoding, mas
         raw_df = pd.read_csv(data_path)
 
     exclude_pat_ids = list()  # TODO!
-    print(raw_df[raw_df['MRNCmpdId'].str.contains('_')].head())
     raw_df['MRNCmpdId'] = raw_df['MRNCmpdId'].str.replace('_', '')  # because some MRNCmpdIds have leading underscores,
     # which usually denotes a test appointment and is thus removed, but in silent live test and with 'future' data,
     # sometimes the MRNCmpdId has a leading underscore which is later removed/changed to a 'proper' MRNCmpdId
-    print(raw_df[raw_df['MRNCmpdId'] == '2570441'])  # because some MRNCmpdIds have leading underscores,
 
     formatted_df = prep_raw_df_for_parquet(raw_df)
     status_df = build_status_df(formatted_df, exclude_pat_ids)
