@@ -307,7 +307,7 @@ def feature_marital(status_df: pd.DataFrame) -> pd.DataFrame:
         np.NaN: 'not known',
     }
 
-    status_df['marital'] = status_df['Zivilstand'].map(zivilstand_abbreviation_mapping)
+    status_df['marital'] = status_df['Zivilstand'].map(zivilstand_abbreviation_mapping).astype(str)
     status_df['marital'].fillna('not known', inplace=True)
     return status_df
 
