@@ -12,6 +12,7 @@ class Metric(ConfigurableComponent):
 
     def __init__(self, config: Dict = None):
         super().__init__(config)
+        self.model_type = None
         self.classification_cutoff = self.config.get('classification_cutoff', 0.5)
 
     @abstractmethod
@@ -35,7 +36,10 @@ class Metric(ConfigurableComponent):
 class F1_Macro(Metric):
 
     name = 'f1_macro'
-    model_type = 'classification'
+
+    def __init__(self, config: Dict):
+        super().__init__(config)
+        self.model_type = 'classification'
 
     def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
         y_pred = self.convert_proba_to_class(y_pred_proba)
@@ -45,8 +49,11 @@ class F1_Macro(Metric):
 
 class BrierScore(Metric):
 
-    name = 'f1_macro'
-    model_type = 'classification'
+    name = 'brier_score'
+
+    def __init__(self, config: Dict):
+        super().__init__(config)
+        self.model_type = 'classification'
 
     def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
         y_pred = y_pred_proba
@@ -57,7 +64,10 @@ class BrierScore(Metric):
 class AUPRC(Metric):
 
     name = 'auprc'
-    model_type = 'classification'
+
+    def __init__(self, config: Dict):
+        super().__init__(config)
+        self.model_type = 'classification'
 
     def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
         y_pred = y_pred_proba
@@ -69,7 +79,10 @@ class AUPRC(Metric):
 class AUROC(Metric):
 
     name = 'auroc'
-    model_type = 'classification'
+
+    def __init__(self, config: Dict):
+        super().__init__(config)
+        self.model_type = 'classification'
 
     def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
         y_pred = y_pred_proba
@@ -80,7 +93,10 @@ class AUROC(Metric):
 class LogLoss(Metric):
 
     name = 'log_loss'
-    model_type = 'classification'
+
+    def __init__(self, config: Dict):
+        super().__init__(config)
+        self.model_type = 'classification'
 
     def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
         y_pred = y_pred_proba
@@ -91,7 +107,10 @@ class LogLoss(Metric):
 class MSE(Metric):
 
     name = 'mse'
-    model_type = 'regression'
+
+    def __init__(self, config: Dict):
+        super().__init__(config)
+        self.model_type = 'regression'
 
     def calculate(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
         metric = mean_squared_error(y_true, y_pred)
