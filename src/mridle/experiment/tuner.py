@@ -7,7 +7,7 @@ from sklearn.model_selection import RandomizedSearchCV
 from typing import Dict, List, Tuple
 from .architecture import Architecture
 from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
-from .metric import AUPRC, LogLoss, F1_Macro, AUROC, BrierScore
+from .metric import AUPRC, LogLoss, F1_Macro, AUROC, BrierScore, MSE
 
 
 class Tuner(ConfigurableComponent):
@@ -120,6 +120,9 @@ class BayesianTuner(Tuner):
                 loss = -AUPRC().calculate(y_test_cv, y_proba_preds)
             elif scoring_fn == 'auroc':
                 loss = -AUROC().calculate(y_test_cv, y_proba_preds)
+            elif scoring_fn == 'mse':
+                y_preds = model_copy.predict(x_test_cv)
+                loss = MSE().calculate(y_test_cv, y_preds)
             else:
                 raise NotImplementedError(
                     'scoring_fn should be one of ''f1_macro'', ''log_loss'', ''auprc'', ''auroc''or ''brier_score''. ' +

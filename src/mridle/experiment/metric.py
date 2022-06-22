@@ -1,6 +1,7 @@
 from abc import abstractmethod
 import numpy as np
-from sklearn.metrics import log_loss, f1_score, precision_recall_curve, auc, roc_auc_score, brier_score_loss
+from sklearn.metrics import log_loss, f1_score, precision_recall_curve, auc, roc_auc_score, brier_score_loss, \
+    mean_squared_error
 from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
 from typing import Dict, List
 
@@ -79,6 +80,15 @@ class LogLoss(Metric):
     def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
         y_pred = y_pred_proba
         metric = log_loss(y_true, y_pred)
+        return metric
+
+
+class MSE(Metric):
+
+    name = 'mse'
+
+    def calculate(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
+        metric = mean_squared_error(y_true, y_pred)
         return metric
 
 
