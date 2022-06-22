@@ -37,8 +37,8 @@ class F1_Macro(Metric):
 
     name = 'f1_macro'
 
-    def __init__(self, config: Dict):
-        super().__init__(config)
+    def __init__(self):
+        super().__init__()
         self.model_type = 'classification'
 
     def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
@@ -51,8 +51,8 @@ class BrierScore(Metric):
 
     name = 'brier_score'
 
-    def __init__(self, config: Dict):
-        super().__init__(config)
+    def __init__(self):
+        super().__init__()
         self.model_type = 'classification'
 
     def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
@@ -65,8 +65,8 @@ class AUPRC(Metric):
 
     name = 'auprc'
 
-    def __init__(self, config: Dict):
-        super().__init__(config)
+    def __init__(self):
+        super().__init__()
         self.model_type = 'classification'
 
     def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
@@ -80,8 +80,8 @@ class AUROC(Metric):
 
     name = 'auroc'
 
-    def __init__(self, config: Dict):
-        super().__init__(config)
+    def __init__(self):
+        super().__init__()
         self.model_type = 'classification'
 
     def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
@@ -94,8 +94,8 @@ class LogLoss(Metric):
 
     name = 'log_loss'
 
-    def __init__(self, config: Dict):
-        super().__init__(config)
+    def __init__(self):
+        super().__init__()
         self.model_type = 'classification'
 
     def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
@@ -108,8 +108,8 @@ class MSE(Metric):
 
     name = 'mse'
 
-    def __init__(self, config: Dict):
-        super().__init__(config)
+    def __init__(self):
+        super().__init__()
         self.model_type = 'regression'
 
     def calculate(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
