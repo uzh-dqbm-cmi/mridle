@@ -93,6 +93,7 @@ class BayesianTuner(Tuner):
             Loss associated with the given parameters, which is to be minimised over time.
 
         """
+        print(scoring_fn)
 
         model_copy = model.set_params(**params)
 
