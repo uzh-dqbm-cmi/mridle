@@ -94,7 +94,7 @@ class BayesianTuner(Tuner):
 
         """
         model_copy = model.set_params(**params)
-
+        print(scoring_fn)
         cv_results = []
         for k in range(nfolds):
             x_train_cv = x_train[ids != k]
