@@ -93,8 +93,6 @@ class BayesianTuner(Tuner):
             Loss associated with the given parameters, which is to be minimised over time.
 
         """
-        print(scoring_fn)
-
         model_copy = model.set_params(**params)
 
         cv_results = []
@@ -106,7 +104,6 @@ class BayesianTuner(Tuner):
 
             model_copy = model_copy.fit(x_train_cv, y_train_cv)
 
-            print(scoring_fn)
             if scoring_fn != 'mse':
                 y_proba_preds = model_copy.predict_proba(x_test_cv)
                 y_proba_preds = np.clip(y_proba_preds, 1e-5, 1 - 1e-5)
