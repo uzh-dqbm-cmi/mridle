@@ -37,8 +37,8 @@ class F1_Macro(Metric):
 
     name = 'f1_macro'
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, config: Dict = None):
+        super().__init__(config)
         self.model_type = 'classification'
 
     def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
