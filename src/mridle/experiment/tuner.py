@@ -104,7 +104,7 @@ class BayesianTuner(Tuner):
 
             model_copy = model_copy.fit(x_train_cv, y_train_cv)
 
-            if scoring_fn not in ['mse', 'mae']:
+            if scoring_fn not in ['mse', 'mae', 'rmse']:
                 y_proba_preds = model_copy.predict_proba(x_test_cv)
                 y_proba_preds = np.clip(y_proba_preds, 1e-5, 1 - 1e-5)
                 if y_proba_preds.shape[1] == 2:

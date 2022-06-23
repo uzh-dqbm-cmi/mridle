@@ -117,6 +117,19 @@ class MSE(Metric):
         return metric
 
 
+class RMSE(Metric):
+
+    name = 'rmse'
+
+    def __init__(self):
+        super().__init__()
+        self.model_type = 'regression'
+
+    def calculate(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
+        metric = mean_squared_error(y_true, y_pred, squared=False)
+        return metric
+
+
 class MAE(Metric):
 
     name = 'mae'
