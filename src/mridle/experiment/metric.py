@@ -13,11 +13,25 @@ class Metric(ConfigurableComponent):
     def __init__(self, config: Dict = None):
         super().__init__(config)
         self.model_type = None
-        self.classification_cutoff = self.config.get('classification_cutoff', 0.5)
 
     @abstractmethod
     def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
         pass
+
+
+class F1_Macro(Metric):
+
+    name = 'f1_macro'
+
+    def __init__(self, config: Dict = None):
+        super().__init__()
+        self.model_type = 'classification'
+        self.classification_cutoff = self.config.get('classification_cutoff', 0.5)
+
+    def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
+        y_pred = self.convert_proba_to_class(y_pred_proba)
+        metric = f1_score(y_true, y_pred, average='macro')
+        return metric
 
     def convert_proba_to_class(self, y_pred_proba: np.ndarray):
         """
@@ -31,20 +45,6 @@ class Metric(ConfigurableComponent):
         """
         classification = np.where(y_pred_proba > self.classification_cutoff, 1, 0)
         return classification
-
-
-class F1_Macro(Metric):
-
-    name = 'f1_macro'
-
-    def __init__(self, config: Dict = None):
-        super().__init__(config)
-        self.model_type = 'classification'
-
-    def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
-        y_pred = self.convert_proba_to_class(y_pred_proba)
-        metric = f1_score(y_true, y_pred, average='macro')
-        return metric
 
 
 class BrierScore(Metric):
