@@ -112,10 +112,10 @@ class Experiment:
         """
         results = {}
         for metric in metrics:
-            if metric.model_type == 'regression':
+            if metric.metric_type == 'regression':
                 y_pred = predictor.predict(x)
                 val = metric.calculate(y_true, y_pred)
-            elif metric.model_type == 'classification':
+            elif metric.metric_type == 'classification':
                 y_pred_proba = predictor.predict_proba(x)
                 val = metric.calculate(y_true, y_pred_proba)
 

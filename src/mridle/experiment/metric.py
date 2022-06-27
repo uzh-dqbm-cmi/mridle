@@ -9,29 +9,15 @@ from typing import Dict, List
 class Metric(ConfigurableComponent):
 
     name = 'Metric'
+    metric_type = 'Metric_Type'
 
     def __init__(self, config: Dict = None):
         super().__init__(config)
-        self.model_type = None
+        self.classification_cutoff = self.config.get('classification_cutoff', 0.5)
 
     @abstractmethod
     def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
         pass
-
-
-class F1_Macro(Metric):
-
-    name = 'f1_macro'
-
-    def __init__(self, config: Dict = None):
-        super().__init__()
-        self.model_type = 'classification'
-        self.classification_cutoff = self.config.get('classification_cutoff', 0.5)
-
-    def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
-        y_pred = self.convert_proba_to_class(y_pred_proba)
-        metric = f1_score(y_true, y_pred, average='macro')
-        return metric
 
     def convert_proba_to_class(self, y_pred_proba: np.ndarray):
         """
@@ -47,13 +33,21 @@ class F1_Macro(Metric):
         return classification
 
 
+class F1_Macro(Metric):
+
+    name = 'f1_macro'
+    metric_type = 'classification'
+
+    def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
+        y_pred = self.convert_proba_to_class(y_pred_proba)
+        metric = f1_score(y_true, y_pred, average='macro')
+        return metric
+
+
 class BrierScore(Metric):
 
     name = 'brier_score'
-
-    def __init__(self):
-        super().__init__()
-        self.model_type = 'classification'
+    metric_type = 'classification'
 
     def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
         y_pred = y_pred_proba
@@ -64,10 +58,7 @@ class BrierScore(Metric):
 class AUPRC(Metric):
 
     name = 'auprc'
-
-    def __init__(self):
-        super().__init__()
-        self.model_type = 'classification'
+    metric_type = 'classification'
 
     def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
         y_pred = y_pred_proba
@@ -79,10 +70,7 @@ class AUPRC(Metric):
 class AUROC(Metric):
 
     name = 'auroc'
-
-    def __init__(self):
-        super().__init__()
-        self.model_type = 'classification'
+    metric_type = 'classification'
 
     def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
         y_pred = y_pred_proba
@@ -93,10 +81,7 @@ class AUROC(Metric):
 class LogLoss(Metric):
 
     name = 'log_loss'
-
-    def __init__(self):
-        super().__init__()
-        self.model_type = 'classification'
+    metric_type = 'classification'
 
     def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
         y_pred = y_pred_proba
@@ -107,10 +92,7 @@ class LogLoss(Metric):
 class MSE(Metric):
 
     name = 'mse'
-
-    def __init__(self):
-        super().__init__()
-        self.model_type = 'regression'
+    metric_type = 'regression'
 
     def calculate(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
         metric = mean_squared_error(y_true, y_pred)
@@ -120,10 +102,7 @@ class MSE(Metric):
 class RMSE(Metric):
 
     name = 'rmse'
-
-    def __init__(self):
-        super().__init__()
-        self.model_type = 'regression'
+    metric_type = 'regression'
 
     def calculate(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
         metric = mean_squared_error(y_true, y_pred, squared=False)
@@ -133,10 +112,7 @@ class RMSE(Metric):
 class MAE(Metric):
 
     name = 'mae'
-
-    def __init__(self):
-        super().__init__()
-        self.model_type = 'regression'
+    metric_type = 'regression'
 
     def calculate(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
         metric = mean_absolute_error(y_true, y_pred)
