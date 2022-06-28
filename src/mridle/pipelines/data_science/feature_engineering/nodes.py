@@ -490,10 +490,10 @@ def feature_cyclical_month(slot_df):
 def feature_occupation(df):
     df_remap = df.copy()
     #  df_remap['occupation'] = df_remap['Beruf']
-    df_remap['occupation'] = None
+    df_remap['occupation'] = ''
     df_remap['Beruf'] = df_remap['Beruf'].astype(str)
     df_remap['occupation'] = df_remap['occupation'].astype(str)
-
+    print("HERE")
     df_remap.loc[df_remap['Beruf'] == 'nan', 'occupation'] = 'none_given'
     df_remap.loc[df_remap['Beruf'] == '-', 'occupation'] = 'none_given'
     df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='rentner|Renter|pensioniert|pens.|rente'),
@@ -533,6 +533,7 @@ def feature_occupation(df):
                  'occupation'] = 'hospital_worker'
     df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='Tourist'), 'occupation'] = 'other'
     # df_remap['occupation_freq'] = df_remap[['occupation', 'FillerOrderNo']].groupby('occupation').transform(len)
+    df_remap.loc[df_remap['occupation'] == '', 'occupation'] = 'other'
     df_remap.loc[df_remap['occupation'].isna(), 'occupation'] = 'other'
     df_remap = df_remap.drop('Beruf', axis=1)
     return df_remap
