@@ -7,7 +7,7 @@ from sklearn.model_selection import RandomizedSearchCV
 from typing import Dict, List, Tuple
 from .architecture import Architecture
 from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
-from .metric import AUPRC, LogLoss, F1_Macro, AUROC, BrierScore
+from .metric import AUPRC, LogLoss, F1_Macro, AUROC, BrierScore, MSE, MAE
 
 
 class Tuner(ConfigurableComponent):
@@ -93,7 +93,6 @@ class BayesianTuner(Tuner):
             Loss associated with the given parameters, which is to be minimised over time.
 
         """
-
         model_copy = model.set_params(**params)
 
         cv_results = []
@@ -105,10 +104,11 @@ class BayesianTuner(Tuner):
 
             model_copy = model_copy.fit(x_train_cv, y_train_cv)
 
-            y_proba_preds = model_copy.predict_proba(x_test_cv)
-            y_proba_preds = np.clip(y_proba_preds, 1e-5, 1 - 1e-5)
-            if y_proba_preds.shape[1] == 2:
-                y_proba_preds = y_proba_preds[:, 1]
+            if scoring_fn not in ['mse', 'mae', 'rmse']:
+                y_proba_preds = model_copy.predict_proba(x_test_cv)
+                y_proba_preds = np.clip(y_proba_preds, 1e-5, 1 - 1e-5)
+                if y_proba_preds.shape[1] == 2:
+                    y_proba_preds = y_proba_preds[:, 1]
 
             if scoring_fn == 'f1_macro':
                 loss = -F1_Macro().calculate(y_test_cv, y_proba_preds)
@@ -120,10 +120,16 @@ class BayesianTuner(Tuner):
                 loss = -AUPRC().calculate(y_test_cv, y_proba_preds)
             elif scoring_fn == 'auroc':
                 loss = -AUROC().calculate(y_test_cv, y_proba_preds)
+            elif scoring_fn == 'mse':
+                y_preds = model_copy.predict(x_test_cv)
+                loss = MSE().calculate(y_test_cv, y_preds)
+            elif scoring_fn == 'mae':
+                y_preds = model_copy.predict(x_test_cv)
+                loss = MAE().calculate(y_test_cv, y_preds)
             else:
                 raise NotImplementedError(
-                    'scoring_fn should be one of ''f1_macro'', ''log_loss'', ''auprc'', ''auroc''or ''brier_score''. ' +
-                    '{} given'.format(scoring_fn))
+                    'scoring_fn should be one of ''f1_macro'', ''log_loss'', ''auprc'', ''auroc'', ''brier_score' +
+                    ', ''mae'', ''rmse'', or ''mse''. {} given'.format(scoring_fn))
 
             cv_results.append(loss)
 
