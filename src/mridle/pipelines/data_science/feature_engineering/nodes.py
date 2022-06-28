@@ -8,7 +8,8 @@ from sklearn.model_selection import train_test_split
 from typing import Dict, List
 
 
-def build_model_data(status_df, valid_date_range, slot_df=None):
+def build_model_data(status_df, valid_date_range, slot_df: pd.DataFrame = None,
+                     switz_covid_cases_transformed: pd.DataFrame = None):
     """
     Build data for use in models by trying to replicate the conditions under which the model would be used in reality
     (i.e. no status changes 2 days before appt (since that's when the prediction would be done)). We then use the
@@ -19,6 +20,7 @@ def build_model_data(status_df, valid_date_range, slot_df=None):
     than 2 days in advance, then wait and find out the outcome and join it onto our predictions)
 
     Args:
+        switz_covid_cases_transformed:
         status_df:
         slot_df:
         valid_date_range:
@@ -29,7 +31,9 @@ def build_model_data(status_df, valid_date_range, slot_df=None):
     # valid_date_range = catalog.load('params:ris.valid_date_range')
     status_df_copy = status_df.copy()
     status_df_copy = status_df_copy[status_df_copy['now_sched_for'] > 2]
-    model_data = build_feature_set(status_df_copy, valid_date_range=valid_date_range, build_future_slots=True)
+
+    model_data = build_feature_set(status_df_copy, valid_date_range=valid_date_range, build_future_slots=True,
+                                   switz_covid_cases_transformed=switz_covid_cases_transformed)
     model_data = remove_na(model_data)
     if slot_df is not None:
         model_data.drop('NoShow', axis=1, inplace=True)
@@ -48,8 +52,9 @@ def build_model_data(status_df, valid_date_range, slot_df=None):
     return model_data
 
 
-def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], master_slot_df: pd.DataFrame = None,
-                      build_future_slots: bool = True) -> pd.DataFrame:
+def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str],
+                      build_future_slots: bool = True, switz_covid_cases_transformed: pd.DataFrame = None
+                      ) -> pd.DataFrame:
     """
     Builds a feature set that replicates the Harvey et al model as best we can.
     So far includes:
@@ -60,7 +65,7 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], mast
         - distance_to_usz: distance from the patient's home address to the hospital, approximated from Post Codes
         - no_show_before: The number of no shows the patient has had up to the date of the appt
     Args:
-        master_slot_df:
+        switz_covid_cases_transformed: dataframe containing information of the daily covid cases in Switzerland
         build_future_slots:
         status_df: status_df
         valid_date_range: List of 2 strings defining the starting date of the valid slot data period (status_df contains
@@ -114,10 +119,27 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], mast
     slot_df = feature_cyclical_hour(slot_df)
     slot_df = feature_cyclical_day_of_week(slot_df)
     slot_df = feature_cyclical_month(slot_df)
+    if switz_covid_cases_transformed is not None:
+        slot_df = feature_covid_info(slot_df, switz_covid_cases_transformed)
+    else:
+        slot_df[['covid_cases_ch', 'covid_cases_zh', 'covid_7day_ch',
+                 'covid_7day_zh']] = 0
     slot_df = slot_df[slot_df['day_of_week_str'].isin(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])]
     slot_df = slot_df[slot_df['sched_days_advanced'] > 2]
 
     return slot_df
+
+
+def transform_covid_data(covid_cases_df):
+    covid_cases_raw = covid_cases_df.copy()
+    covid_cases_raw = covid_cases_raw[covid_cases_raw['geoRegion'].isin(['ZH', 'CH'])]
+    covid_cases = covid_cases_raw.pivot(columns='geoRegion', index='datum')
+    covid_cases.columns = ['_'.join(col).strip() for col in covid_cases.columns.values]
+    covid_cases = covid_cases.reset_index()
+    covid_cases['datum'] = pd.to_datetime(covid_cases['datum']).dt.date
+    covid_cases = covid_cases[['datum', 'entries_CH', 'entries_ZH', 'sum7d_CH', 'sum7d_ZH']]
+    covid_cases.columns = ['date', 'covid_cases_ch', 'covid_cases_zh', 'covid_7day_ch', 'covid_7day_zh']
+    return covid_cases
 
 
 def remove_na(dataframe: pd.DataFrame) -> pd.DataFrame:
@@ -275,7 +297,6 @@ def feature_age(status_df: pd.DataFrame) -> pd.DataFrame:
     status_df['age'] = pd.to_datetime(status_df['date']).dt.year - pd.to_datetime(status_df['DateOfBirth']).dt.year
     status_df['age_sq'] = status_df['age'] ** 2
     status_df['age_20_60'] = (status_df['age'] > 20) & (status_df['age'] < 60)
-
     return status_df
 
 
@@ -363,7 +384,7 @@ def feature_no_show_before(slot_df: pd.DataFrame) -> pd.DataFrame:
     return slot_df_ordered
 
 
-def feature_modality(slot_df: pd.DataFrame, group_categories_less_than: int = None) -> pd.DataFrame:
+def feature_modality(slot_df: pd.DataFrame) -> pd.DataFrame:
     """
     Renames UniversalServiceName to modality, and maps this column to more general groups, defined by us.
 
@@ -537,6 +558,16 @@ def feature_occupation(df):
     df_remap.loc[df_remap['occupation'].isna(), 'occupation'] = 'other'
     df_remap = df_remap.drop('Beruf', axis=1)
     return df_remap
+
+
+def feature_covid_info(slot_df, switz_covid_cases_transformed):
+    covid_cases = switz_covid_cases_transformed.copy()
+    slot_df['date'] = slot_df['start_time'].dt.date
+    slot_df = slot_df.merge(covid_cases, on='date', how='left')
+    slot_df[['covid_cases_ch', 'covid_cases_zh', 'covid_7day_ch',
+             'covid_7day_zh']] = slot_df[['covid_cases_ch', 'covid_cases_zh',
+                                          'covid_7day_ch', 'covid_7day_zh']].fillna(0)
+    return slot_df
 
 
 def feature_reason(status_df):
