@@ -1,6 +1,7 @@
 from abc import abstractmethod
 import numpy as np
-from sklearn.metrics import log_loss, f1_score, precision_recall_curve, auc, roc_auc_score, brier_score_loss
+from sklearn.metrics import log_loss, f1_score, precision_recall_curve, auc, roc_auc_score, brier_score_loss, \
+    mean_squared_error, mean_absolute_error
 from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
 from typing import Dict, List
 
@@ -8,6 +9,7 @@ from typing import Dict, List
 class Metric(ConfigurableComponent):
 
     name = 'Metric'
+    metric_type = 'Metric_Type'
 
     def __init__(self, config: Dict = None):
         super().__init__(config)
@@ -34,6 +36,7 @@ class Metric(ConfigurableComponent):
 class F1_Macro(Metric):
 
     name = 'f1_macro'
+    metric_type = 'classification'
 
     def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
         y_pred = self.convert_proba_to_class(y_pred_proba)
@@ -43,7 +46,8 @@ class F1_Macro(Metric):
 
 class BrierScore(Metric):
 
-    name = 'f1_macro'
+    name = 'brier_score'
+    metric_type = 'classification'
 
     def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
         y_pred = y_pred_proba
@@ -54,6 +58,7 @@ class BrierScore(Metric):
 class AUPRC(Metric):
 
     name = 'auprc'
+    metric_type = 'classification'
 
     def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
         y_pred = y_pred_proba
@@ -65,6 +70,7 @@ class AUPRC(Metric):
 class AUROC(Metric):
 
     name = 'auroc'
+    metric_type = 'classification'
 
     def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
         y_pred = y_pred_proba
@@ -75,10 +81,41 @@ class AUROC(Metric):
 class LogLoss(Metric):
 
     name = 'log_loss'
+    metric_type = 'classification'
 
     def calculate(self, y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
         y_pred = y_pred_proba
         metric = log_loss(y_true, y_pred)
+        return metric
+
+
+class MSE(Metric):
+
+    name = 'mse'
+    metric_type = 'regression'
+
+    def calculate(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
+        metric = mean_squared_error(y_true, y_pred)
+        return metric
+
+
+class RMSE(Metric):
+
+    name = 'rmse'
+    metric_type = 'regression'
+
+    def calculate(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
+        metric = mean_squared_error(y_true, y_pred, squared=False)
+        return metric
+
+
+class MAE(Metric):
+
+    name = 'mae'
+    metric_type = 'regression'
+
+    def calculate(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
+        metric = mean_absolute_error(y_true, y_pred)
         return metric
 
 
