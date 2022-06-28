@@ -492,7 +492,7 @@ def feature_occupation(df):
     #  df_remap['occupation'] = df_remap['Beruf']
     df_remap['occupation'] = None
     df_remap['Beruf'] = df_remap['Beruf'].astype(str)
-    # df_remap['occupation'] = df_remap['occupation'].astype(str)
+    df_remap['occupation'] = df_remap['occupation'].astype(str)
 
     df_remap.loc[df_remap['Beruf'] == 'nan', 'occupation'] = 'none_given'
     df_remap.loc[df_remap['Beruf'] == '-', 'occupation'] = 'none_given'
