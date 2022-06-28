@@ -129,7 +129,7 @@ class BayesianTuner(Tuner):
             else:
                 raise NotImplementedError(
                     'scoring_fn should be one of ''f1_macro'', ''log_loss'', ''auprc'', ''auroc'', ''brier_score' +
-                    '. or ''mse''. {} given'.format(scoring_fn))
+                    ', ''mae'', ''rmse'', or ''mse''. {} given'.format(scoring_fn))
 
             cv_results.append(loss)
 
