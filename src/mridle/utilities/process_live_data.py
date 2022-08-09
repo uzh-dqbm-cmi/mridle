@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import datetime
 from mridle.pipelines.data_engineering.ris.nodes import build_status_df, build_slot_df, prep_raw_df_for_parquet
-from mridle.pipelines.data_engineering.feature_engineering.nodes import build_model_data, remove_na
+from mridle.pipelines.data_science.feature_engineering.nodes import build_model_data, remove_na
 from mridle.utilities.prediction import main as prediction_main
 import os
 import re
