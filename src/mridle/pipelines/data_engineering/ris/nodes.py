@@ -209,7 +209,7 @@ def build_slot_df(input_status_df: pd.DataFrame, valid_date_range: List[str], ag
     status_df['end_time'] = status_df.groupby('FillerOrderNo')['end_time'].fillna(method='bfill')
 
     if build_future_slots:
-        # agg_dict['now_sched_for_date'] = 'last'
+        agg_dict['now_sched_for_date'] = 'last'
         # Replicate data that will be used in reality, i.e. we won't have status changes that happened within 2 days of
         # appointment and then use build_future_slots=True when building slot_df
         status_df = status_df[status_df['now_sched_for'] > 2]
@@ -219,7 +219,7 @@ def build_slot_df(input_status_df: pd.DataFrame, valid_date_range: List[str], ag
             agg_dict['sched_days_advanced_sq'] = 'last'
             agg_dict['sched_2_days'] = 'last'
 
-        future_slot_df = status_df.groupby(['FillerOrderNo', 'MRNCmpdId', 'now_sched_for_date']).agg(agg_dict)
+        future_slot_df = status_df.groupby(['FillerOrderNo', 'MRNCmpdId']).agg(agg_dict)
         if len(future_slot_df) > 0:
             # if there are 0 slots, the index column will be 'index', and reset_index will create an extra index col
             future_slot_df.reset_index(inplace=True)
@@ -252,12 +252,16 @@ def build_slot_df(input_status_df: pd.DataFrame, valid_date_range: List[str], ag
     day_after_last_valid_date = pd.to_datetime(valid_end_date) + pd.to_timedelta(1, 'days')
     slot_df = slot_df[slot_df['start_time'] >= valid_start_date]
     slot_df = slot_df[slot_df['start_time'] < day_after_last_valid_date]
+    #print("Within: ")
+    #display(slot_df[future_slot_df['FillerOrderNo']==fon])
 
     if len(slot_df) > 0:
         slot_df['FillerOrderNo'] = slot_df['FillerOrderNo'].astype(int)
 
         # filter out duplicate appointments for the same patient & time slot (weird dispo behavior)
         slot_df = data_processing.filter_duplicate_patient_time_slots(slot_df)
+        #print("Within 2: ")
+        #display(slot_df[future_slot_df['FillerOrderNo']==fon])
 
         if not include_id_cols:
             slot_df.drop('FillerOrderNo', axis=1, inplace=True)
