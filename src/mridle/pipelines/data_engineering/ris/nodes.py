@@ -252,16 +252,12 @@ def build_slot_df(input_status_df: pd.DataFrame, valid_date_range: List[str], ag
     day_after_last_valid_date = pd.to_datetime(valid_end_date) + pd.to_timedelta(1, 'days')
     slot_df = slot_df[slot_df['start_time'] >= valid_start_date]
     slot_df = slot_df[slot_df['start_time'] < day_after_last_valid_date]
-    #print("Within: ")
-    #display(slot_df[future_slot_df['FillerOrderNo']==fon])
 
     if len(slot_df) > 0:
         slot_df['FillerOrderNo'] = slot_df['FillerOrderNo'].astype(int)
 
         # filter out duplicate appointments for the same patient & time slot (weird dispo behavior)
         slot_df = data_processing.filter_duplicate_patient_time_slots(slot_df)
-        #print("Within 2: ")
-        #display(slot_df[future_slot_df['FillerOrderNo']==fon])
 
         if not include_id_cols:
             slot_df.drop('FillerOrderNo', axis=1, inplace=True)
