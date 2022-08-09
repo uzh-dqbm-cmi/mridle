@@ -4,7 +4,7 @@ from pathlib import Path
 import pickle
 
 from mridle.pipelines.data_engineering.ris.nodes import build_status_df, prep_raw_df_for_parquet
-from mridle.pipelines.data_science.feature_engineering.nodes import build_feature_set, remove_na
+from mridle.pipelines.data_science.feature_engineering.nodes import remove_na, build_model_data
 from mridle.experiment.experiment import Experiment
 from mridle.experiment.dataset import DataSet
 
@@ -32,7 +32,7 @@ def main(data_path, model_dir, output_path, valid_date_range, file_encoding, mas
     status_df = build_status_df(formatted_df, exclude_pat_ids)
     status_df = status_df.merge(rfs_df, how='left')
 
-    features_df_maybe_na = build_feature_set(status_df, valid_date_range, build_future_slots=True)
+    features_df_maybe_na = build_model_data(status_df, valid_date_range, slot_df=None)
     features_df = remove_na(features_df_maybe_na)
 
     # Get number of previous no shows from historical data and add to data set
