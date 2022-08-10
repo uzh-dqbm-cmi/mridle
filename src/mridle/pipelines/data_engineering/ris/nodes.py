@@ -438,8 +438,6 @@ def set_slot_outcome(row: pd.DataFrame) -> str:
     Returns: one of ['rescheduled', 'canceled', 'show', or 'inpatient']
 
     """
-    print("Ja")
-
     if row['NoShow']:
         if row['now_status'] == 'canceled':
             return 'canceled'
