@@ -82,9 +82,9 @@ def main():
             ago_features_df.drop(['no_show_before_current', 'no_show_before_hist'], axis=1, inplace=True)
             ago_features_df['no_show_before_sq'] = ago_features_df['no_show_before'] ** 2
             ago_features_df.to_csv(
-                '/data/mridle/data/silent_live_test/live_files/all/actuals/actuals_{}_{}_{}_test.csv'.format(ago_day,
-                                                                                                             ago_month,
-                                                                                                             ago_year))
+                '/data/mridle/data/silent_live_test/live_files/all/actuals/actuals_{}_{}_{}.csv'.format(ago_day,
+                                                                                                        ago_month,
+                                                                                                        ago_year))
             with open(already_processed_filename, 'a') as ap_f:
                 ap_f.write(f'\n{filename}')
 
@@ -107,7 +107,7 @@ def main():
             data_path = '/data/mridle/data/silent_live_test/live_files/all/out/{}'.format(filename)
             model_dir = '/data/mridle/data/kedro_data_catalog/06_models/'
             output_path = '/data/mridle/data/silent_live_test/live_files/all/' \
-                          'predictions/preds_{}_{}_{}_test.csv'.format(out_day, out_month, out_year)
+                          'predictions/preds_{}_{}_{}.csv'.format(out_day, out_month, out_year)
 
             prediction_main(data_path, model_dir, output_path, valid_date_range=out_valid_date_range,
                             file_encoding='utf-16', master_feature_set=master_feature_set, rfs_df=rfs)
