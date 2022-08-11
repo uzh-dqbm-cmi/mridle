@@ -41,15 +41,6 @@ def build_model_data(status_df, valid_date_range, slot_df=None):
     else:  # If slot_df not provided, then we are generating data for the future (e.g. Silent Live Test), therefore
         # NoShow should be false for all appointments (since they're future appts)
 
-        # Remove appts where last status is 'canceled'
-        last_status = status_df_copy.groupby(['FillerOrderNo']).apply(
-            lambda x: x.sort_values('History_MessageDtTm', ascending=False).head(1)
-        ).reset_index(drop=True)[['MRNCmpdId', 'FillerOrderNo', 'now_status', 'now_sched_for_busday']]
-        fon_to_remove = last_status.loc[(last_status['now_status'] == 'canceled') &
-                                        (last_status['now_sched_for_busday'] > 3),
-                                        'FillerOrderNo']
-        status_df_copy = status_df_copy[~status_df_copy['FillerOrderNo'].isin(fon_to_remove)]
-
         appt_time = status_df_copy.groupby(['FillerOrderNo']).apply(
             lambda x: x.sort_values('History_MessageDtTm', ascending=False).head(1)
         ).reset_index(drop=True)[['MRNCmpdId', 'FillerOrderNo', 'now_sched_for_date']]

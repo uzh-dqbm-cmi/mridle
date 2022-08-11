@@ -32,6 +32,15 @@ def main(data_path, model_dir, output_path, valid_date_range, file_encoding, mas
     status_df = build_status_df(formatted_df, exclude_pat_ids)
     status_df = status_df.merge(rfs_df, how='left')
 
+    # Remove appts where last status is 'canceled'
+    last_status = status_df.groupby(['FillerOrderNo']).apply(
+        lambda x: x.sort_values('History_MessageDtTm', ascending=False).head(1)
+    ).reset_index(drop=True)[['MRNCmpdId', 'FillerOrderNo', 'now_status', 'now_sched_for_busday']]
+    fon_to_remove = last_status.loc[(last_status['now_status'] == 'canceled') &
+                                    (last_status['now_sched_for_busday'] > 3),
+                                    'FillerOrderNo']
+    status_df = status_df[~status_df['FillerOrderNo'].isin(fon_to_remove)]
+
     features_df_maybe_na = build_model_data(status_df, valid_date_range, slot_df=None)
     features_df = remove_na(features_df_maybe_na)
 
