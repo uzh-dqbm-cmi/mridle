@@ -445,8 +445,6 @@ def set_slot_outcome(row: pd.DataFrame) -> str:
             return 'canceled'
         else:
             return 'rescheduled'
-    elif row['now_status'] == 'canceled' and row['now_sched_for_busday'] > 2:
-        return 'canceled_show'
     elif row['slot_type'] == 'show' or row['slot_type'] == 'inpatient':
         return 'show'
     else:
