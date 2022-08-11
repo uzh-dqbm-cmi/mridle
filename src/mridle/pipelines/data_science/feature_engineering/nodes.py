@@ -87,7 +87,7 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], mast
 
     agg_dict = {
         'NoShow': 'min',
-        #  'slot_outcome': 'last',
+        'slot_outcome': 'last',
         'modality': 'last',
         'occupation': 'last',
         'reason': 'last',
