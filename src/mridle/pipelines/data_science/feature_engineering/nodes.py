@@ -29,6 +29,7 @@ def build_model_data(status_df, valid_date_range, slot_df=None):
     # valid_date_range = catalog.load('params:ris.valid_date_range')
     status_df_copy = status_df.copy()
     status_df_copy = status_df_copy[status_df_copy['now_sched_for'] > 2]
+
     model_data = build_feature_set(status_df_copy, valid_date_range=valid_date_range, build_future_slots=True)
     model_data = remove_na(model_data)
     if slot_df is not None:
@@ -39,6 +40,7 @@ def build_model_data(status_df, valid_date_range, slot_df=None):
         model_data = model_data.merge(slot_df_copy, how='inner')
     else:  # If slot_df not provided, then we are generating data for the future (e.g. Silent Live Test), therefore
         # NoShow should be false for all appointments (since they're future appts)
+
         appt_time = status_df_copy.groupby(['FillerOrderNo']).apply(
             lambda x: x.sort_values('History_MessageDtTm', ascending=False).head(1)
         ).reset_index(drop=True)[['MRNCmpdId', 'FillerOrderNo', 'now_sched_for_date']]
@@ -304,10 +306,12 @@ def feature_marital(status_df: pd.DataFrame) -> pd.DataFrame:
         # 'LV': 'life partnership dissolved by death',
         # 'LA': 'forcible partnership',
         # 'LE': 'civil partnership dissolved by declaration of death',
-        np.NaN: 'blank',
+        np.NaN: 'not known',
     }
 
     status_df['marital'] = status_df['Zivilstand'].map(zivilstand_abbreviation_mapping)
+    status_df['marital'] = status_df['Zivilstand'].map(zivilstand_abbreviation_mapping).astype(str)
+    status_df['marital'].fillna('not known', inplace=True)
     return status_df
 
 

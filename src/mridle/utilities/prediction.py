@@ -4,7 +4,7 @@ from pathlib import Path
 import pickle
 
 from mridle.pipelines.data_engineering.ris.nodes import build_status_df, prep_raw_df_for_parquet
-from mridle.pipelines.data_science.feature_engineering.nodes import build_feature_set, remove_na
+from mridle.pipelines.data_science.feature_engineering.nodes import remove_na, build_model_data
 from mridle.experiment.experiment import Experiment
 from mridle.experiment.dataset import DataSet
 
@@ -28,11 +28,25 @@ def main(data_path, model_dir, output_path, valid_date_range, file_encoding, mas
         raw_df = pd.read_csv(data_path)
 
     exclude_pat_ids = list()  # TODO!
+
+    raw_df['MRNCmpdId'] = raw_df['MRNCmpdId'].str.replace('_', '')  # because some MRNCmpdIds have leading underscores,
+    # which usually denotes a test appointment and is thus removed, but in silent live test and with 'future' data,
+    # sometimes the MRNCmpdId has a leading underscore which is later removed/changed to a 'proper' MRNCmpdId
+
     formatted_df = prep_raw_df_for_parquet(raw_df)
     status_df = build_status_df(formatted_df, exclude_pat_ids)
     status_df = status_df.merge(rfs_df, how='left')
 
-    features_df_maybe_na = build_feature_set(status_df, valid_date_range, build_future_slots=True)
+    # Remove appts where last status is 'canceled'
+    last_status = status_df.groupby(['FillerOrderNo']).apply(
+        lambda x: x.sort_values('History_MessageDtTm', ascending=False).head(1)
+    ).reset_index(drop=True)[['MRNCmpdId', 'FillerOrderNo', 'now_status', 'now_sched_for_busday']]
+    fon_to_remove = last_status.loc[(last_status['now_status'] == 'canceled') &
+                                    (last_status['now_sched_for_busday'] > 3),
+                                    'FillerOrderNo']
+    status_df = status_df[~status_df['FillerOrderNo'].isin(fon_to_remove)]
+
+    features_df_maybe_na = build_model_data(status_df, valid_date_range, slot_df=None)
     features_df = remove_na(features_df_maybe_na)
 
     # Get number of previous no shows from historical data and add to data set
