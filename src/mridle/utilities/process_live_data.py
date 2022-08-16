@@ -119,7 +119,7 @@ def process_live_data():
                 ap_f.write(f'\n{filename}')
 
 
-def get_silent_live_test_predictions(model_str='prediction_xgboost'):
+def get_silent_live_test_predictions(model_str='prediction_xgboost', all_columns=True):
     """
     We would provide names on Wednesday for the following Monday, Tuesday, Wednesday, and then on Monday for the coming
     Thursday and Friday. 60% of the names on the Wed, and 40% on the Monday.
@@ -129,8 +129,7 @@ def get_silent_live_test_predictions(model_str='prediction_xgboost'):
     for filename in os.listdir(preds_dir):
         if filename.endswith("2022.csv"):
             test_predictions = pd.read_csv(os.path.join(preds_dir, filename), parse_dates=['start_time'])
-            # preds = test_predictions[['start_time', 'MRNCmpdId', 'FillerOrderNo', model_str]]
-            # preds.columns = ['start_time', 'MRNCmpdId', 'FillerOrderNo', filename]
+
             preds = test_predictions.copy()
             preds.rename(columns={model_str: filename}, inplace=True)
             preds.drop(columns=[x for x in preds.columns if 'prediction_' in x], inplace=True)
@@ -143,6 +142,9 @@ def get_silent_live_test_predictions(model_str='prediction_xgboost'):
 
     pred_cols = [col for col in preds_merged.columns if 'preds' in col]
     preds_merged['prediction'] = preds_merged[pred_cols].bfill(axis=1).iloc[:, 0]
+    if not all_columns:
+        preds_merged = preds_merged[['start_time', 'MRNCmpdId', 'FillerOrderNo', 'prediction']]
+
     return preds_merged
 
 
