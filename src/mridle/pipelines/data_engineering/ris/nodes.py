@@ -329,7 +329,7 @@ def add_custom_status_change_cols(df: pd.DataFrame) -> pd.DataFrame:
     Returns:row-per-status-change df with more columns.
 
     """
-    df.sort_values(['FillerOrderNo', 'History_MessageDtTm'])
+    df = df.sort_values(['FillerOrderNo', 'History_MessageDtTm'])
     df['date'] = df['History_MessageDtTm']
     df['prev_status'] = df.groupby('FillerOrderNo')['History_OrderStatus'].shift(1)
     df['was_status'] = df['prev_status'].apply(lambda x: get_status_text(x))
