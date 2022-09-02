@@ -302,7 +302,8 @@ def find_no_shows(row: pd.DataFrame) -> bool:
             and row['now_status'] in no_show_now_status_changes \
             and row['was_status'] not in ok_was_status_changes \
             and row['was_sched_for_date'].hour != 0 \
-            and row['first_created_date'].date() != row['was_sched_for_date'].date():
+            and row['first_created_date'].date() != row['was_sched_for_date'].date()\
+            and row['now_sched_for_date'] != row['was_sched_for_date']:
         return True
     return False
 
