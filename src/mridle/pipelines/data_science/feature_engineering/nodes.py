@@ -26,7 +26,6 @@ def build_model_data(status_df, valid_date_range, slot_df=None):
     Returns:
 
     """
-    # valid_date_range = catalog.load('params:ris.valid_date_range')
     status_df_copy = status_df.copy()
     status_df_copy = status_df_copy[status_df_copy['now_sched_for'] > 2]
 
@@ -34,7 +33,6 @@ def build_model_data(status_df, valid_date_range, slot_df=None):
     model_data = remove_na(model_data)
     if slot_df is not None:
         model_data.drop('NoShow', axis=1, inplace=True)
-        # slot_df = catalog.load('slot_df')
         slot_df_copy = slot_df.copy()[['MRNCmpdId', 'FillerOrderNo', 'start_time', 'patient_class_adj', 'NoShow',
                                        'slot_outcome', 'slot_type', 'slot_type_detailed']]
         model_data = model_data.merge(slot_df_copy, how='inner')
@@ -86,6 +84,7 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], mast
     status_df = feature_distance_to_usz(status_df)
     status_df = feature_occupation(status_df)
     status_df = feature_reason(status_df)
+    status_df = feature_times_rescheduled(status_df)
 
     agg_dict = {
         'NoShow': 'min',
@@ -102,6 +101,7 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], mast
         'distance_to_usz': 'last',
         'distance_to_usz_sq': 'last',
         'close_to_usz': 'last',
+        'times_rescheduled': 'last',
         'start_time': 'last'
     }
 
@@ -560,6 +560,13 @@ def feature_reason(status_df):
     df_remap.loc[df_remap['ReasonForStudy'] == 'nan', 'reason'] = 'none_given'
     df_remap.loc[df_remap['reason'] == 0, 'reason'] = 'other'
     return df_remap
+
+
+def feature_times_rescheduled(status_df):
+    status_df['times_rescheduled'] = status_df.sort_values('date').groupby('FillerOrderNo')['now_sched_for_date'].apply(
+        lambda x: (~pd.Series(x).duplicated()).cumsum() - 1)
+    status_df['times_rescheduled'] = status_df['times_rescheduled'].clip(lower=0)
+    return status_df
 
 
 # feature engineering for the duration model
