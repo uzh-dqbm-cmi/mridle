@@ -564,7 +564,7 @@ def feature_reason(status_df):
 
 def feature_times_rescheduled(status_df):
     status_df['times_rescheduled'] = status_df.sort_values('date').groupby('FillerOrderNo')['now_sched_for_date'].apply(
-        lambda x: (~pd.Series(x).duplicated()).cumsum() - 1)
+        lambda x: (~pd.Series(x).duplicated()).cumsum() - 2)
     status_df['times_rescheduled'] = status_df['times_rescheduled'].clip(lower=0)
     return status_df
 
