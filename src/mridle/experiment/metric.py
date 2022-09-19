@@ -7,7 +7,6 @@ from typing import Dict, List
 
 
 class Metric(ConfigurableComponent):
-
     name = 'Metric'
     metric_type = 'Metric_Type'
 
@@ -34,7 +33,6 @@ class Metric(ConfigurableComponent):
 
 
 class F1_Macro(Metric):
-
     name = 'f1_macro'
     metric_type = 'classification'
 
@@ -45,7 +43,6 @@ class F1_Macro(Metric):
 
 
 class BrierScore(Metric):
-
     name = 'brier_score'
     metric_type = 'classification'
 
@@ -56,7 +53,6 @@ class BrierScore(Metric):
 
 
 class AUPRC(Metric):
-
     name = 'auprc'
     metric_type = 'classification'
 
@@ -68,7 +64,6 @@ class AUPRC(Metric):
 
 
 class AUROC(Metric):
-
     name = 'auroc'
     metric_type = 'classification'
 
@@ -79,7 +74,6 @@ class AUROC(Metric):
 
 
 class LogLoss(Metric):
-
     name = 'log_loss'
     metric_type = 'classification'
 
@@ -90,7 +84,6 @@ class LogLoss(Metric):
 
 
 class MSE(Metric):
-
     name = 'mse'
     metric_type = 'regression'
 
@@ -100,7 +93,6 @@ class MSE(Metric):
 
 
 class RMSE(Metric):
-
     name = 'rmse'
     metric_type = 'regression'
 
@@ -110,7 +102,6 @@ class RMSE(Metric):
 
 
 class MAE(Metric):
-
     name = 'mae'
     metric_type = 'regression'
 
@@ -120,7 +111,6 @@ class MAE(Metric):
 
 
 class MAPE(Metric):
-
     name = 'mape'
     metric_type = 'regression'
 
@@ -130,7 +120,6 @@ class MAPE(Metric):
 
 
 class MetricInterface(ComponentInterface):
-
     registered_flavors = {
         'F1_Macro': F1_Macro,
         'BrierScore': BrierScore,
