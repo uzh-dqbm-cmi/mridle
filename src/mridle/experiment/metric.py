@@ -1,7 +1,7 @@
 from abc import abstractmethod
 import numpy as np
 from sklearn.metrics import log_loss, f1_score, precision_recall_curve, auc, roc_auc_score, brier_score_loss, \
-    mean_squared_error, mean_absolute_error
+    mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
 from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
 from typing import Dict, List
 
@@ -116,6 +116,16 @@ class MAE(Metric):
 
     def calculate(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
         metric = mean_absolute_error(y_true, y_pred)
+        return metric
+
+
+class MAPE(Metric):
+
+    name = 'mape'
+    metric_type = 'regression'
+
+    def calculate(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
+        metric = mean_absolute_percentage_error(y_true, y_pred)
         return metric
 
 
