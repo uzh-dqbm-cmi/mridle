@@ -91,9 +91,9 @@ class Experiment:
         self.final_predictor, self.final_training_metadata = self.trainer.fit(self.stratified_dataset.x,
                                                                               self.stratified_dataset.y)
 
-        print("\nTest Partition Results: ")
+        print("Finished")
 
-        return self.evaluation_test
+        return None  # self.evaluation_test
 
     @staticmethod
     def evaluate(predictor: Predictor, metrics: List[Metric], x, y_true) -> Dict[str, Union[int, float]]:

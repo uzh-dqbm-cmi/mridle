@@ -8,6 +8,11 @@ import os
 import re
 
 
+AGO_DIR = '/data/mridle/data/silent_live_test/live_files/all/ago/'
+OUT_DIR = '/data/mridle/data/silent_live_test/live_files/all/out/'
+PREDS_DIR = '/data/mridle/data/silent_live_test/live_files/all/predictions/'
+
+
 def add_business_days(from_date, add_days):
     business_days_to_add = add_days
     current_date = from_date
@@ -32,9 +37,8 @@ def subtract_business_days(from_date, subtract_days):
     return current_date
 
 
-def main():
+def process_live_data():
 
-    ago_dir = '/data/mridle/data/silent_live_test/live_files/all/ago/'
     already_processed_filename = '/data/mridle/data/silent_live_test/live_files/already_processed.txt'
     master_feature_set = pd.read_parquet(
         '/data/mridle/data/kedro_data_catalog/04_feature/master_feature_set_na_removed.parquet')
@@ -52,7 +56,7 @@ def main():
     with open('/data/mridle/data/silent_live_test/live_files/dates_to_ignore.txt', 'r') as f:
         dates_to_ignore = f.read().splitlines()
 
-    for filename in os.listdir(ago_dir):
+    for filename in os.listdir(AGO_DIR):
         if filename.endswith(".csv") and filename not in dates_to_ignore and filename not in already_processed_files:
 
             _, ago_day, ago_month, ago_year = re.split('_', os.path.splitext(filename)[0])
@@ -88,8 +92,7 @@ def main():
             with open(already_processed_filename, 'a') as ap_f:
                 ap_f.write(f'\n{filename}')
 
-    out_dir = '/data/mridle/data/silent_live_test/live_files/all/out/'
-    for filename in os.listdir(out_dir):
+    for filename in os.listdir(OUT_DIR):
         if filename.endswith(".csv") and filename not in dates_to_ignore and filename not in already_processed_files:
             _, out_day, out_month, out_year = re.split('_', os.path.splitext(filename)[0])
             print(filename)
@@ -114,3 +117,100 @@ def main():
 
             with open(already_processed_filename, 'a') as ap_f:
                 ap_f.write(f'\n{filename}')
+
+
+def get_silent_live_test_predictions(model_str='prediction_xgboost', all_columns=True):
+    """
+    We would provide names on Wednesday for the following Monday, Tuesday, Wednesday, and then on Monday for the coming
+    Thursday and Friday. 60% of the names on the Wed, and 40% on the Monday.
+    """
+    i = 0
+    preds_dir = '/data/mridle/data/silent_live_test/live_files/all/predictions/'
+    for filename in os.listdir(preds_dir):
+        if filename.endswith("2022.csv"):
+            test_predictions = pd.read_csv(os.path.join(preds_dir, filename), parse_dates=['start_time'])
+
+            preds = test_predictions.copy()
+            preds.rename(columns={model_str: filename}, inplace=True)
+            preds.drop(columns=[x for x in preds.columns if 'prediction_' in x], inplace=True)
+            preds.drop(columns=[x for x in preds.columns if 'Unnamed:' in x], inplace=True)
+            if i == 0:
+                preds_merged = preds.copy()
+                i = 1
+            else:
+                preds_merged = preds_merged.merge(preds, how='outer')
+
+    pred_cols = [col for col in preds_merged.columns if 'preds' in col]
+    preds_merged['prediction'] = preds_merged[pred_cols].bfill(axis=1).iloc[:, 0]
+    if not all_columns:
+        preds_merged = preds_merged[['start_time', 'MRNCmpdId', 'FillerOrderNo', 'prediction']]
+
+    return preds_merged
+
+
+def get_predictions_for_nurses(split_config=None, model_str='prediction_xgboost', all_columns=True):
+    """
+    We would provide names on Wednesday for the following Monday, Tuesday, Wednesday, and then on Monday for the coming
+    Thursday and Friday. 60% of the names on the Wed, and 40% on the Monday.
+    """
+    if split_config is None:
+        split_config = {
+            'Monday': {
+                'days': ['Monday', 'Tuesday', 'Wednesday'],
+                'num_preds': 6
+            },
+            'Thursday': {
+                'days': ['Thursday', 'Friday'],
+                'num_preds': 4
+            }
+        }
+
+    all_preds = pd.DataFrame()
+
+    for filename in os.listdir(PREDS_DIR):
+        if filename.endswith("2022.csv"):
+            _, out_day, out_month, out_year = re.split('_', os.path.splitext(filename)[0])
+            day_of_week_from_filename = datetime.datetime(int(out_year), int(out_month), int(out_day)).strftime('%A')
+
+            if day_of_week_from_filename in split_config.keys():
+                test_predictions = pd.read_csv(os.path.join(PREDS_DIR, filename), parse_dates=['start_time'])
+                preds = test_predictions.copy()
+
+                preds = preds[
+                    preds['start_time'].dt.strftime('%A').isin(split_config[day_of_week_from_filename]['days'])]
+
+                preds.rename(columns={model_str: "pred_{}".format(filename)}, inplace=True)
+                preds.drop(columns=[x for x in preds.columns if 'prediction_' in x], inplace=True)
+                preds.drop(columns=[x for x in preds.columns if 'Unnamed:' in x], inplace=True)
+
+                preds = preds.sort_values("pred_{}".format(filename), ascending=False)[
+                        :split_config[day_of_week_from_filename]['num_preds']]
+                pred_cols = [col for col in preds.columns if 'preds' in col]
+                preds['prediction'] = preds[pred_cols].bfill(axis=1).iloc[:, 0]
+                preds.drop(columns=pred_cols, inplace=True)
+                if not all_columns:
+                    preds = preds[['start_time', 'MRNCmpdId', 'FillerOrderNo', 'prediction']]
+                all_preds = pd.concat([all_preds, preds], axis=0)
+
+    return all_preds
+
+
+def get_silent_live_test_actuals(all_columns=True):
+    all_actuals = pd.DataFrame()
+    actuals_dir = '/data/mridle/data/silent_live_test/live_files/all/actuals/'
+    i = 0
+    for filename in os.listdir(actuals_dir):
+        if filename.endswith("_2022.csv"):
+            actuals = pd.read_csv(os.path.join(actuals_dir, filename), parse_dates=['start_time'])
+
+            if not all_columns:
+                actuals = actuals[['start_time', 'NoShow', 'MRNCmpdId', 'FillerOrderNo']]
+
+            actuals['filename'] = filename
+
+            if i == 0:
+                all_actuals = actuals.copy()
+                i = 1
+            else:
+                all_actuals = pd.concat([all_actuals, actuals], axis=0)
+    return all_actuals
