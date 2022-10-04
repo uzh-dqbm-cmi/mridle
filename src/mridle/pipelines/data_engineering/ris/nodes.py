@@ -304,6 +304,10 @@ def find_no_shows(row: pd.DataFrame) -> bool:
             and row['was_sched_for_date'].hour != 0 \
             and row['first_created_date'].date() != row['was_sched_for_date'].date():
         return True
+        # if (row['now_sched_for_date'] == row['was_sched_for_date']) and (row['now_status'] != 'canceled'):
+        #     return False
+        # else:
+        # return True
     return False
 
 
@@ -329,7 +333,7 @@ def add_custom_status_change_cols(df: pd.DataFrame) -> pd.DataFrame:
     Returns:row-per-status-change df with more columns.
 
     """
-    df.sort_values(['FillerOrderNo', 'History_MessageDtTm'])
+    df = df.sort_values(['FillerOrderNo', 'History_MessageDtTm'])
     df['date'] = df['History_MessageDtTm']
     df['prev_status'] = df.groupby('FillerOrderNo')['History_OrderStatus'].shift(1)
     df['was_status'] = df['prev_status'].apply(lambda x: get_status_text(x))
@@ -340,6 +344,7 @@ def add_custom_status_change_cols(df: pd.DataFrame) -> pd.DataFrame:
     df['was_sched_for'] = (df['was_sched_for_date'] - df['History_MessageDtTm']).dt.days
     df['was_sched_for'] = np.where(df['was_sched_for_date'].dt.time < df['History_MessageDtTm'].dt.time,
                                    df['was_sched_for'] + 1, df['was_sched_for'])
+
     df['now_sched_for'] = (df['History_ObsStartPlanDtTm'] - df['History_MessageDtTm']).dt.days
     df['now_sched_for'] = np.where(df['History_ObsStartPlanDtTm'].dt.time < df['History_MessageDtTm'].dt.time,
                                    df['now_sched_for'] + 1, df['now_sched_for'])

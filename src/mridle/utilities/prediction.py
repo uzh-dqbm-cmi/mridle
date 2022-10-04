@@ -75,7 +75,7 @@ def main(data_path, model_dir, output_path, valid_date_range, file_encoding, mas
             model_name = exp.metadata.get('name', model_path.name)
             prediction_df[f'prediction_{model_name}'] = preds_proba
 
-    prediction_df.to_csv(output_path)
+    prediction_df.to_csv(output_path, index=False)
 
 
 if __name__ == "__main__":
