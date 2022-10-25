@@ -51,6 +51,7 @@ def main(data_path, model_dir, output_path, valid_date_range, file_encoding, mas
 
     # Get number of previous no shows from historical data and add to data set
     master_df = master_feature_set.copy()
+    master_df = master_df[master_df['MRNCmpdID'] != 'SMS0016578']
     prev_no_shows = master_df[['MRNCmpdId', 'no_show_before']].groupby('MRNCmpdId').max().reset_index()
     prev_no_shows['MRNCmpdId'] = prev_no_shows['MRNCmpdId'] .astype(int)
     features_df['MRNCmpdId'] = features_df['MRNCmpdId'] .astype(int)
