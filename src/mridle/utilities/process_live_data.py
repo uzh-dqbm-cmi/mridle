@@ -37,6 +37,33 @@ def subtract_business_days(from_date, subtract_days):
     return current_date
 
 
+def get_slt_status_data(ago_out, with_source_file_info=False):
+    file_dir = '/data/mridle/data/silent_live_test/live_files/all/{}/'.format(ago_out)
+
+    all_status = pd.DataFrame()
+
+    for filename in os.listdir(file_dir):
+        if filename.endswith(".csv"):
+            f_status = pd.read_csv(os.path.join(file_dir, filename), encoding='utf-16')
+            slt_df = f_status.copy()
+            if with_source_file_info:
+                slt_df['source_file'] = filename
+        all_status = pd.concat([all_status, slt_df])
+
+    rfs_df = pd.read_csv('/data/mridle/data/silent_live_test/live_files/all/'
+                         'retrospective_reasonforstudy/content/[dbo].[MRIdle_retrospective].csv')
+    rfs_df[['FillerOrderNo', 'ReasonForStudy']].drop_duplicates()
+    all_status = all_status.merge(rfs_df[['FillerOrderNo', 'ReasonForStudy']].drop_duplicates(), on='FillerOrderNo',
+                                  how='left')
+    all_status['ReasonForStudy'] = all_status['ReasonForStudy_x'].fillna(all_status['ReasonForStudy_y'])
+    all_status = all_status.drop(columns=['ReasonForStudy_x', 'ReasonForStudy_y'])
+
+    all_status = all_status.drop_duplicates()
+    all_status = prep_raw_df_for_parquet(all_status)
+    all_status = build_status_df(all_status, exclude_patient_ids=[])
+    return all_status
+
+
 def process_live_data():
 
     already_processed_filename = '/data/mridle/data/silent_live_test/live_files/already_processed.txt'
