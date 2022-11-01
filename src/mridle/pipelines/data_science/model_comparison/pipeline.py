@@ -1,6 +1,6 @@
 from kedro.pipeline import Pipeline, node
 from .nodes import create_evaluation_table, create_model_precision_comparison_plot, plot_pr_roc_curve_comparison, \
-    plot_permutation_imp
+    plot_permutation_importance_charts
 
 
 def create_pipeline(**kwargs):
@@ -27,7 +27,7 @@ def create_pipeline(**kwargs):
                 name="plot_pr_roc_curve_comparison"
             ),
             node(
-                func=plot_permutation_imp,
+                func=plot_permutation_importance_charts,
                 inputs=["harvey_model_logistic_reg", "harvey_model_random_forest", "logistic_regression_model",
                         "random_forest_model", "xgboost_model", "neural_net_model", "train_data", "validation_data"],
                 outputs=["harvey_logistic_reg_permutation_imp_train", "harvey_logistic_reg_permutation_imp_validation",
