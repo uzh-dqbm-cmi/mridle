@@ -64,6 +64,79 @@ def get_slt_status_data(ago_out, with_source_file_info=False):
     return all_status
 
 
+def get_slt_features():
+    file_dir = '/data/mridle/data/silent_live_test/live_files/all/out/'
+    all_slt_features = pd.DataFrame()
+
+    rfs_df = pd.read_csv('/data/mridle/data/silent_live_test/live_files/all/'
+                         'retrospective_reasonforstudy/content/[dbo].[MRIdle_retrospective].csv')
+    rfs_df[['FillerOrderNo', 'ReasonForStudy']].drop_duplicates()
+
+    for filename in os.listdir(file_dir):
+        if filename.endswith(".csv"):
+
+            _, out_day, out_month, out_year = re.split('_', os.path.splitext(filename)[0])
+            out_date_start = datetime.datetime(int(out_year), int(out_month), int(out_day))
+            file_generation_date = subtract_business_days(out_date_start, 3)
+
+            out_status = pd.read_csv(os.path.join(file_dir, filename), encoding='utf-16')
+
+            out_status = out_status.merge(rfs_df[['FillerOrderNo', 'ReasonForStudy']].drop_duplicates(),
+                                          on='FillerOrderNo', how='left')
+
+            if 'ReasonForStudy_x' in out_status.columns:
+                out_status['ReasonForStudy'] = out_status['ReasonForStudy_x'].fillna(out_status['ReasonForStudy_y'])
+                # Drop the columns no longer needed
+                out_status.drop(columns=['ReasonForStudy_x', 'ReasonForStudy_y'], inplace=True)
+
+            out_status = out_status.drop_duplicates()
+            out_status = prep_raw_df_for_parquet(out_status)
+            out_status = build_status_df(out_status, exclude_patient_ids=[])
+            slt_data_features = generate_3_5_days_ahead_features(out_status, dt=file_generation_date)
+
+        all_slt_features = pd.concat([all_slt_features, slt_data_features])
+
+    return all_slt_features
+
+
+def generate_3_5_days_ahead_features(status_df, dt):
+    fn_status_df = status_df.copy()
+
+    start_dt = add_business_days(dt, 3).date()
+    end_dt = add_business_days(dt, 5).date()
+
+    pertinent_appts = fn_status_df.loc[(fn_status_df['now_sched_for_date'].dt.date >= start_dt) &
+                                       (fn_status_df['now_sched_for_date'].dt.date <= end_dt),
+                                       ['FillerOrderNo', 'MRNCmpdId', 'now_sched_for_date']].drop_duplicates()
+
+    fn_status_df_fons = fn_status_df[
+        (fn_status_df['date'].dt.date < dt.date()) & fn_status_df['FillerOrderNo'].isin(
+            pertinent_appts['FillerOrderNo'])].copy()
+
+    last_status = fn_status_df_fons.groupby(['FillerOrderNo']).apply(
+        lambda x: x.sort_values('History_MessageDtTm', ascending=False).head(1)
+    ).reset_index(drop=True)[['MRNCmpdId', 'FillerOrderNo', 'now_status', 'now_sched_for_date', 'now_sched_for_busday']]
+    fon_to_remove = last_status.loc[(last_status['now_status'] == 'canceled') &
+                                    (last_status['now_sched_for_busday'] > 3),
+                                    'FillerOrderNo']
+    fn_status_df_fons = fn_status_df_fons[~fn_status_df_fons['FillerOrderNo'].isin(fon_to_remove)]
+    if len(fn_status_df_fons):
+        features_df_maybe_na = build_model_data(fn_status_df_fons,
+                                                valid_date_range=[add_business_days(dt, 3).strftime("%Y-%m-%d"),
+                                                                  add_business_days(dt, 5).strftime("%Y-%m-%d")],
+                                                slot_df=None)
+        features_df = remove_na(features_df_maybe_na)
+
+        # only take those that are actually currently scheduled for that time!!
+        features_df = features_df.merge(last_status[['FillerOrderNo', 'now_sched_for_date']],
+                                        left_on=['FillerOrderNo', 'start_time'],
+                                        right_on=['FillerOrderNo', 'now_sched_for_date'],
+                                        how='inner')
+
+        features_df['no_show_before_sq'] = features_df['no_show_before'] ** 2
+    return features_df
+
+
 def process_live_data():
 
     already_processed_filename = '/data/mridle/data/silent_live_test/live_files/already_processed.txt'
