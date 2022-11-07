@@ -48,6 +48,73 @@ def build_model_data(status_df, valid_date_range, slot_df=None):
     return model_data
 
 
+def generate_3_5_days_ahead_features(status_df, f_dt):
+    """
+    Take in dataframe of status changes and a date, and generate upcoming appts - defined as appts that are due to take
+    place within 3-5 business days from the provided date. Returns these appts as slots with features
+
+    """
+    fn_status_df = status_df.copy()
+
+    start_dt = add_business_days(f_dt, 3).date()
+    end_dt = add_business_days(f_dt, 5).date()
+
+    pertinent_appts = fn_status_df.loc[(fn_status_df['now_sched_for_date'].dt.date >= start_dt) &
+                                       (fn_status_df['now_sched_for_date'].dt.date <= end_dt),
+                                       ['FillerOrderNo', 'MRNCmpdId', 'now_sched_for_date']].drop_duplicates()
+
+    fn_status_df_fons = fn_status_df[
+        (fn_status_df['date'].dt.date < f_dt.date()) & fn_status_df['FillerOrderNo'].isin(
+            pertinent_appts['FillerOrderNo'])].copy()
+
+    last_status = fn_status_df_fons.groupby(['FillerOrderNo']).apply(
+        lambda x: x.sort_values('History_MessageDtTm', ascending=False).head(1)
+    ).reset_index(drop=True)[['MRNCmpdId', 'FillerOrderNo', 'now_status', 'now_sched_for_date', 'now_sched_for_busday']]
+    fon_to_remove = last_status.loc[(last_status['now_status'] == 'canceled') &
+                                    (last_status['now_sched_for_busday'] > 3),
+                                    'FillerOrderNo']
+    fn_status_df_fons = fn_status_df_fons[~fn_status_df_fons['FillerOrderNo'].isin(fon_to_remove)]
+    if len(fn_status_df_fons):
+        features_df_maybe_na = build_model_data(fn_status_df_fons,
+                                                valid_date_range=[add_business_days(f_dt, 3).strftime("%Y-%m-%d"),
+                                                                  add_business_days(f_dt, 5).strftime("%Y-%m-%d")],
+                                                slot_df=None)
+        features_df = remove_na(features_df_maybe_na)
+
+        # only take those that are actually currently scheduled for that time!!
+        features_df = features_df.merge(last_status[['FillerOrderNo', 'now_sched_for_date']],
+                                        left_on=['FillerOrderNo', 'start_time'],
+                                        right_on=['FillerOrderNo', 'now_sched_for_date'],
+                                        how='inner')
+
+        features_df['no_show_before_sq'] = features_df['no_show_before'] ** 2
+    return features_df
+
+
+def add_business_days(from_date, add_days):
+    business_days_to_add = add_days
+    current_date = from_date
+    while business_days_to_add > 0:
+        current_date += dt.timedelta(days=1)
+        weekday = current_date.weekday()
+        if weekday >= 5:  # sunday = 6
+            continue
+        business_days_to_add -= 1
+    return current_date
+
+
+def subtract_business_days(from_date, subtract_days):
+    business_days_to_subtract = subtract_days
+    current_date = from_date
+    while business_days_to_subtract > 0:
+        current_date -= dt.timedelta(days=1)
+        weekday = current_date.weekday()
+        if weekday >= 5:  # sunday = 6
+            continue
+        business_days_to_subtract -= 1
+    return current_date
+
+
 def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], master_slot_df: pd.DataFrame = None,
                       build_future_slots: bool = True) -> pd.DataFrame:
     """

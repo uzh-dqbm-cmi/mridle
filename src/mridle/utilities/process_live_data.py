@@ -2,7 +2,8 @@ import pandas as pd
 import numpy as np
 import datetime
 from mridle.pipelines.data_engineering.ris.nodes import build_status_df, build_slot_df, prep_raw_df_for_parquet
-from mridle.pipelines.data_science.feature_engineering.nodes import build_model_data, remove_na
+from mridle.pipelines.data_science.feature_engineering.nodes import build_model_data, remove_na, \
+    generate_3_5_days_ahead_features, add_business_days, subtract_business_days
 from mridle.utilities.prediction import main as prediction_main
 import os
 import re
@@ -13,28 +14,66 @@ OUT_DIR = '/data/mridle/data/silent_live_test/live_files/all/out/'
 PREDS_DIR = '/data/mridle/data/silent_live_test/live_files/all/predictions/'
 
 
-def add_business_days(from_date, add_days):
-    business_days_to_add = add_days
-    current_date = from_date
-    while business_days_to_add > 0:
-        current_date += datetime.timedelta(days=1)
-        weekday = current_date.weekday()
-        if weekday >= 5:  # sunday = 6
-            continue
-        business_days_to_add -= 1
-    return current_date
+def get_slt_status_data(ago_out, with_source_file_info=False):
+    file_dir = '/data/mridle/data/silent_live_test/live_files/all/{}/'.format(ago_out)
+
+    all_status = pd.DataFrame()
+
+    for filename in os.listdir(file_dir):
+        if filename.endswith(".csv"):
+            f_status = pd.read_csv(os.path.join(file_dir, filename), encoding='utf-16')
+            slt_df = f_status.copy()
+            if with_source_file_info:
+                slt_df['source_file'] = filename
+        all_status = pd.concat([all_status, slt_df])
+
+    rfs_df = pd.read_csv('/data/mridle/data/silent_live_test/live_files/all/'
+                         'retrospective_reasonforstudy/content/[dbo].[MRIdle_retrospective].csv')
+    rfs_df[['FillerOrderNo', 'ReasonForStudy']].drop_duplicates()
+    all_status = all_status.merge(rfs_df[['FillerOrderNo', 'ReasonForStudy']].drop_duplicates(), on='FillerOrderNo',
+                                  how='left')
+    all_status['ReasonForStudy'] = all_status['ReasonForStudy_x'].fillna(all_status['ReasonForStudy_y'])
+    all_status = all_status.drop(columns=['ReasonForStudy_x', 'ReasonForStudy_y'])
+
+    all_status = all_status.drop_duplicates()
+    all_status = prep_raw_df_for_parquet(all_status)
+    all_status = build_status_df(all_status, exclude_patient_ids=[])
+    return all_status
 
 
-def subtract_business_days(from_date, subtract_days):
-    business_days_to_subtract = subtract_days
-    current_date = from_date
-    while business_days_to_subtract > 0:
-        current_date -= datetime.timedelta(days=1)
-        weekday = current_date.weekday()
-        if weekday >= 5:  # sunday = 6
-            continue
-        business_days_to_subtract -= 1
-    return current_date
+def get_slt_features():
+    file_dir = '/data/mridle/data/silent_live_test/live_files/all/out/'
+    all_slt_features = pd.DataFrame()
+
+    rfs_df = pd.read_csv('/data/mridle/data/silent_live_test/live_files/all/'
+                         'retrospective_reasonforstudy/content/[dbo].[MRIdle_retrospective].csv')
+    rfs_df[['FillerOrderNo', 'ReasonForStudy']].drop_duplicates()
+
+    for filename in os.listdir(file_dir):
+        if filename.endswith(".csv"):
+
+            _, out_day, out_month, out_year = re.split('_', os.path.splitext(filename)[0])
+            out_date_start = datetime.datetime(int(out_year), int(out_month), int(out_day))
+            file_generation_date = subtract_business_days(out_date_start, 3)
+
+            out_status = pd.read_csv(os.path.join(file_dir, filename), encoding='utf-16')
+
+            out_status = out_status.merge(rfs_df[['FillerOrderNo', 'ReasonForStudy']].drop_duplicates(),
+                                          on='FillerOrderNo', how='left')
+
+            if 'ReasonForStudy_x' in out_status.columns:
+                out_status['ReasonForStudy'] = out_status['ReasonForStudy_x'].fillna(out_status['ReasonForStudy_y'])
+                # Drop the columns no longer needed
+                out_status.drop(columns=['ReasonForStudy_x', 'ReasonForStudy_y'], inplace=True)
+
+            out_status = out_status.drop_duplicates()
+            out_status = prep_raw_df_for_parquet(out_status)
+            out_status = build_status_df(out_status, exclude_patient_ids=[])
+            slt_data_features = generate_3_5_days_ahead_features(out_status, dt=file_generation_date)
+
+        all_slt_features = pd.concat([all_slt_features, slt_data_features])
+
+    return all_slt_features
 
 
 def process_live_data():

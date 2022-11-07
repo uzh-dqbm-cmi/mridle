@@ -215,8 +215,9 @@ def plot_pr_roc_curve_comparison(harvey_model_log_reg, harvey_random_forest, log
     return pr_curves, roc_curves
 
 
-def plot_permutation_imp(harvey_model_log_reg, harvey_random_forest, logistic_regression_model, random_forest_model,
-                         xgboost_model, neural_net_model, train_data, validation_data):
+def plot_permutation_importance_charts(harvey_model_log_reg, harvey_random_forest, logistic_regression_model,
+                                       random_forest_model, xgboost_model, neural_net_model, train_data,
+                                       validation_data):
     """
     Create permutation importance charts for each combination of the supplied models and the two supplied datasets
     """
@@ -237,26 +238,46 @@ def plot_permutation_imp(harvey_model_log_reg, harvey_random_forest, logistic_re
             y = data_set.y
 
             experiment = Experiment.deserialize(serialised_m)
+            model_fit = experiment.final_predictor.model
 
-            result = permutation_importance(experiment.final_predictor.model, X, y, n_repeats=10,
-                                            scoring=log_loss_scorer, random_state=42, n_jobs=1)
-
-            sorted_idx = result.importances_mean.argsort()
-            x_columns = list(X.columns)
-            sorted_vars = [x_columns[i] for i in sorted_idx]
-            sorted_vars.reverse()
-
-            results_df = pd.DataFrame(result.importances[sorted_idx].T, columns=X.columns[sorted_idx]).T.reset_index()
-
-            results_df_alt = pd.melt(results_df, value_name="Permutation Importances", id_vars="index")
-
-            c = alt.Chart(results_df_alt).mark_boxplot(extent='min-max').encode(
-                x=alt.X('Permutation Importances'),
-                y=alt.Y('index', sort=sorted_vars, title='Feature Name'),
-            ).properties(
-                title='{} Permutation Importance - {} Data'.format(model_name, s)
-            )
-
+            c = plot_permutation_imp(model_fit, X, y, train_or_test=s, scoring=log_loss_scorer, model_name=model_name)
             p_imp_plot_list.append(c)
 
     return p_imp_plot_list
+
+
+def plot_permutation_imp(model_fit, X, y, scoring, train_or_test="", model_name=""):
+    """
+    Takes in a model that was fit by the experiment class as well as X and y data, and creates a permutation importance
+    plot.
+
+    Args:
+        model_fit: experiment object from the Experiment class
+        X: X data that the model uses to predict an outcome
+        y: y data for corresponding X data
+        scoring: scoring criteria to use. Should be first created with sklearn's make_scorer() function
+        train_or_test: label to add to chart title, indicating the type of X & y data that was passed
+        model_name: label to add to chart title, indicating the name of the model
+
+    Returns:
+        altair chart showing the permutation importance of the features of the model.
+    """
+
+    result = permutation_importance(model_fit, X, y, n_repeats=10, scoring=scoring, random_state=42, n_jobs=1)
+
+    sorted_idx = result.importances_mean.argsort()
+    x_columns = list(X.columns)
+    sorted_vars = [x_columns[i] for i in sorted_idx]
+    sorted_vars.reverse()
+
+    results_df = pd.DataFrame(result.importances[sorted_idx].T, columns=X.columns[sorted_idx]).T.reset_index()
+
+    results_df_alt = pd.melt(results_df, value_name="Permutation Importances", id_vars="index")
+
+    imp_c = alt.Chart(results_df_alt).mark_boxplot(extent='min-max').encode(
+        x=alt.X('Permutation Importances'),
+        y=alt.Y('index', sort=sorted_vars, title='Feature Name'),
+    ).properties(
+        title='{} Permutation Importance - {} Data'.format(model_name, train_or_test)
+    )
+    return imp_c
