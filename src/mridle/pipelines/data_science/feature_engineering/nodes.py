@@ -6,6 +6,59 @@ import datetime as dt
 import re
 from sklearn.model_selection import train_test_split
 from typing import Dict, List
+from datetime import timedelta
+from mridle.utilities.process_live_data import generate_3_5_days_ahead_features
+
+
+def daterange(date1, date2):
+    for n in range(int((date2 - date1).days)+1):
+        yield date1 + timedelta(n)
+
+
+def generate_training_data(status_df, valid_date_range, append_outcome=True):
+    """
+    Build data for use in models by trying to replicate the conditions under which the model would be used in reality
+    (i.e. no status changes 2 days before appt (since that's when the prediction would be done)). We then use the
+    previously created slot_df (i.e. master appointment list) to filter the appts for only those that are relevant - the
+    build_feature_set function with build_future_slots=True will create too many appointment slots, so we that's why we
+    have to filter. We also need to use slot_df to get the outcome of the appointment, since build_future_slots=True,
+    results in all appts appearing as NoShow=False. (replicating what would happen in reality...we would predict more
+    than 2 days in advance, then wait and find out the outcome and join it onto our predictions)
+
+    Args:
+        append_outcome:
+        status_df:
+        valid_date_range:
+
+    Returns:
+
+    """
+    training_data = pd.DataFrame()
+    actuals_data = pd.DataFrame()
+    weekdays = [5, 6]
+
+    start_dt = valid_date_range[0] - timedelta(days=5)  # to give 'lead-in time' and catch the first week or so of appts
+    end_dt = valid_date_range[1]  # pd.to_datetime('2021-12-31')
+
+    for f_dt in daterange(start_dt, end_dt):
+        if f_dt.weekday() not in weekdays:
+            features_df = generate_3_5_days_ahead_features(status_df, f_dt)
+            training_data = pd.concat([training_data, features_df]).drop_duplicates()
+
+    if append_outcome:
+        actuals_data = build_slot_df(status_df, valid_date_range=[start_dt, end_dt])
+        training_data.drop(columns='NoShow', inplace=True)
+        training_data = training_data.merge(actuals_data[['MRNCmpdId', 'start_time', 'NoShow']].drop_duplicates(),
+                                            how='left', on=['MRNCmpdId', 'start_time'])
+        training_data['NoShow'].fillna(False, inplace=True)
+
+    # restrict to the valid date range
+    day_after_last_valid_date = pd.to_datetime(end_dt) + pd.to_timedelta(1, 'days')
+    training_data = training_data[training_data['start_time'] >= start_dt]
+    training_data = training_data[training_data['start_time'] < day_after_last_valid_date]
+
+    # training_data = feature_no_show_before(training_data)
+    return training_data, actuals_data
 
 
 def build_model_data(status_df, valid_date_range, slot_df=None):
