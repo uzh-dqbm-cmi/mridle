@@ -57,7 +57,7 @@ def generate_training_data(status_df, valid_date_range, append_outcome=True):
     training_data = training_data[training_data['start_time'] < day_after_last_valid_date]
 
     # training_data = feature_no_show_before(training_data)
-    return training_data, actuals_data
+    return training_data
 
 
 def build_model_data(status_df, valid_date_range, slot_df=None):
