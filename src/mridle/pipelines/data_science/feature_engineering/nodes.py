@@ -7,7 +7,6 @@ import re
 from sklearn.model_selection import train_test_split
 from typing import Dict, List
 from datetime import timedelta
-from mridle.utilities.process_live_data import generate_3_5_days_ahead_features
 
 
 def daterange(date1, date2):
