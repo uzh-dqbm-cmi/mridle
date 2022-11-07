@@ -1,7 +1,7 @@
 ris:
     valid_date_range:
         # valid range is starting ≤ x ≤ ending
-        - '2015-01-01'
+        - '2014-12-25'    # to give 'lead-in time' and catch the first week or so of appts
         - '2021-12-31'
 
 dispo:

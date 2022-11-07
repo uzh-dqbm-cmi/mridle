@@ -36,8 +36,8 @@ def generate_training_data(status_df, valid_date_range, append_outcome=True):
     actuals_data = pd.DataFrame()
     weekdays = [5, 6]
 
-    start_dt = valid_date_range[0] - timedelta(days=5)  # to give 'lead-in time' and catch the first week or so of appts
-    end_dt = valid_date_range[1]  # pd.to_datetime('2021-12-31')
+    start_dt = valid_date_range[0]
+    end_dt = valid_date_range[1]
 
     for f_dt in daterange(start_dt, end_dt):
         if f_dt.weekday() not in weekdays:
