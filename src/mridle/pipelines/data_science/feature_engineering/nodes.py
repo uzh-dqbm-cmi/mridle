@@ -36,8 +36,8 @@ def generate_training_data(status_df, valid_date_range, append_outcome=True):
     actuals_data = pd.DataFrame()
     weekdays = [5, 6]
 
-    start_dt = valid_date_range[0]
-    end_dt = valid_date_range[1]
+    start_dt = subtract_business_days(pd.to_datetime(valid_date_range[0]), 5)  # to catch the first week or so of appts
+    end_dt = pd.to_datetime(valid_date_range[1])
 
     for f_dt in daterange(start_dt, end_dt):
         if f_dt.weekday() not in weekdays:
@@ -45,14 +45,14 @@ def generate_training_data(status_df, valid_date_range, append_outcome=True):
             training_data = pd.concat([training_data, features_df]).drop_duplicates()
 
     if append_outcome:
-        actuals_data = build_slot_df(status_df, valid_date_range=[start_dt, end_dt])
+        actuals_data = build_slot_df(status_df, valid_date_range=valid_date_range)
         training_data.drop(columns='NoShow', inplace=True)
         training_data = training_data.merge(actuals_data[['MRNCmpdId', 'start_time', 'NoShow']].drop_duplicates(),
                                             how='left', on=['MRNCmpdId', 'start_time'])
         training_data['NoShow'].fillna(False, inplace=True)
 
     # restrict to the valid date range
-    day_after_last_valid_date = pd.to_datetime(end_dt) + pd.to_timedelta(1, 'days')
+    day_after_last_valid_date = end_dt + pd.to_timedelta(1, 'days')
     training_data = training_data[training_data['start_time'] >= start_dt]
     training_data = training_data[training_data['start_time'] < day_after_last_valid_date]
 
