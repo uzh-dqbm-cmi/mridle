@@ -2,7 +2,8 @@ import pandas as pd
 import numpy as np
 import datetime
 from mridle.pipelines.data_engineering.ris.nodes import build_status_df, build_slot_df, prep_raw_df_for_parquet
-from mridle.pipelines.data_science.feature_engineering.nodes import build_model_data, remove_na
+from mridle.pipelines.data_science.feature_engineering.nodes import build_model_data, remove_na, \
+    generate_3_5_days_ahead_features, add_business_days, subtract_business_days
 from mridle.utilities.prediction import main as prediction_main
 import os
 import re
@@ -11,30 +12,6 @@ import re
 AGO_DIR = '/data/mridle/data/silent_live_test/live_files/all/ago/'
 OUT_DIR = '/data/mridle/data/silent_live_test/live_files/all/out/'
 PREDS_DIR = '/data/mridle/data/silent_live_test/live_files/all/predictions/'
-
-
-def add_business_days(from_date, add_days):
-    business_days_to_add = add_days
-    current_date = from_date
-    while business_days_to_add > 0:
-        current_date += datetime.timedelta(days=1)
-        weekday = current_date.weekday()
-        if weekday >= 5:  # sunday = 6
-            continue
-        business_days_to_add -= 1
-    return current_date
-
-
-def subtract_business_days(from_date, subtract_days):
-    business_days_to_subtract = subtract_days
-    current_date = from_date
-    while business_days_to_subtract > 0:
-        current_date -= datetime.timedelta(days=1)
-        weekday = current_date.weekday()
-        if weekday >= 5:  # sunday = 6
-            continue
-        business_days_to_subtract -= 1
-    return current_date
 
 
 def get_slt_status_data(ago_out, with_source_file_info=False):
@@ -97,44 +74,6 @@ def get_slt_features():
         all_slt_features = pd.concat([all_slt_features, slt_data_features])
 
     return all_slt_features
-
-
-def generate_3_5_days_ahead_features(status_df, dt):
-    fn_status_df = status_df.copy()
-
-    start_dt = add_business_days(dt, 3).date()
-    end_dt = add_business_days(dt, 5).date()
-
-    pertinent_appts = fn_status_df.loc[(fn_status_df['now_sched_for_date'].dt.date >= start_dt) &
-                                       (fn_status_df['now_sched_for_date'].dt.date <= end_dt),
-                                       ['FillerOrderNo', 'MRNCmpdId', 'now_sched_for_date']].drop_duplicates()
-
-    fn_status_df_fons = fn_status_df[
-        (fn_status_df['date'].dt.date < dt.date()) & fn_status_df['FillerOrderNo'].isin(
-            pertinent_appts['FillerOrderNo'])].copy()
-
-    last_status = fn_status_df_fons.groupby(['FillerOrderNo']).apply(
-        lambda x: x.sort_values('History_MessageDtTm', ascending=False).head(1)
-    ).reset_index(drop=True)[['MRNCmpdId', 'FillerOrderNo', 'now_status', 'now_sched_for_date', 'now_sched_for_busday']]
-    fon_to_remove = last_status.loc[(last_status['now_status'] == 'canceled') &
-                                    (last_status['now_sched_for_busday'] > 3),
-                                    'FillerOrderNo']
-    fn_status_df_fons = fn_status_df_fons[~fn_status_df_fons['FillerOrderNo'].isin(fon_to_remove)]
-    if len(fn_status_df_fons):
-        features_df_maybe_na = build_model_data(fn_status_df_fons,
-                                                valid_date_range=[add_business_days(dt, 3).strftime("%Y-%m-%d"),
-                                                                  add_business_days(dt, 5).strftime("%Y-%m-%d")],
-                                                slot_df=None)
-        features_df = remove_na(features_df_maybe_na)
-
-        # only take those that are actually currently scheduled for that time!!
-        features_df = features_df.merge(last_status[['FillerOrderNo', 'now_sched_for_date']],
-                                        left_on=['FillerOrderNo', 'start_time'],
-                                        right_on=['FillerOrderNo', 'now_sched_for_date'],
-                                        how='inner')
-
-        features_df['no_show_before_sq'] = features_df['no_show_before'] ** 2
-    return features_df
 
 
 def process_live_data():
