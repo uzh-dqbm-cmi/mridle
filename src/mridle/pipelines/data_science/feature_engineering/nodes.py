@@ -14,7 +14,7 @@ def daterange(date1, date2):
         yield date1 + timedelta(n)
 
 
-def generate_training_data(status_df, valid_date_range, append_outcome=True, add_no_show_before=False):
+def generate_training_data(status_df, valid_date_range, append_outcome=True, add_no_show_before=True):
     """
     Build data for use in models by trying to replicate the conditions under which the model would be used in reality
     (i.e. no status changes 2 days before appt (since that's when the prediction would be done)). We then use the
@@ -25,6 +25,7 @@ def generate_training_data(status_df, valid_date_range, append_outcome=True, add
     than 2 days in advance, then wait and find out the outcome and join it onto our predictions)
 
     Args:
+        add_no_show_before:
         append_outcome:
         status_df:
         valid_date_range:
