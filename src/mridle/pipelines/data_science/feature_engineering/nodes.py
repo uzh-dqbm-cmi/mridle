@@ -93,7 +93,6 @@ def build_model_data(status_df, valid_date_range, slot_df=None):
 
     """
     status_df_copy = status_df.copy()
-    status_df_copy = status_df_copy[status_df_copy['now_sched_for'] > 2]
 
     model_data = build_feature_set(status_df_copy, valid_date_range=valid_date_range, build_future_slots=True)
     model_data = remove_na(model_data)
