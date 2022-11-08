@@ -14,7 +14,7 @@ def daterange(date1, date2):
         yield date1 + timedelta(n)
 
 
-def generate_training_data(status_df, valid_date_range, append_outcome=True):
+def generate_training_data(status_df, valid_date_range, append_outcome=True, add_no_show_before=False):
     """
     Build data for use in models by trying to replicate the conditions under which the model would be used in reality
     (i.e. no status changes 2 days before appt (since that's when the prediction would be done)). We then use the
@@ -33,7 +33,6 @@ def generate_training_data(status_df, valid_date_range, append_outcome=True):
 
     """
     training_data = pd.DataFrame()
-    actuals_data = pd.DataFrame()
     weekdays = [5, 6]
 
     start_dt = subtract_business_days(pd.to_datetime(valid_date_range[0]), 5)  # to catch the first week or so of appts
@@ -56,7 +55,21 @@ def generate_training_data(status_df, valid_date_range, append_outcome=True):
     training_data = training_data[training_data['start_time'] >= start_dt]
     training_data = training_data[training_data['start_time'] < day_after_last_valid_date]
 
-    # training_data = feature_no_show_before(training_data)
+    if add_no_show_before:
+        training_data.drop(columns=['no_show_before', 'no_show_before_sq'], inplace=True)
+        for_no_show_before = training_data[
+            ['MRNCmpdId', 'FillerOrderNo', 'start_time', 'NoShow']].drop_duplicates().reset_index(drop=True)
+        for_no_show_before['no_show_before'] = for_no_show_before.sort_values('start_time').groupby('MRNCmpdId')[
+            'NoShow'].cumsum()
+        for_no_show_before['no_show_before'] = np.where(for_no_show_before['NoShow'],
+                                                        for_no_show_before['no_show_before'] - 1,
+                                                        for_no_show_before['no_show_before'])
+
+        for_no_show_before['no_show_before_sq'] = for_no_show_before['no_show_before'] ** 2
+        training_data = training_data.merge(
+            for_no_show_before[['MRNCmpdId', 'start_time', 'FillerOrderNo', 'no_show_before', 'no_show_before_sq']],
+            on=['MRNCmpdId', 'FillerOrderNo', 'start_time'], how='left')
+
     return training_data
 
 
