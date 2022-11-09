@@ -82,9 +82,9 @@ def filter_duplicate_patient_time_slots(slot_df: pd.DataFrame) -> pd.DataFrame:
 
     """
     if 'reason' in slot_df.columns:  # if 'reason' (categ) present, want to use that as tiebreak if needed in duplicates
-        slot_df.sort_values(['MRNCmpdId', 'start_time', 'NoShow'], inplace=True)
-    else:
         slot_df.sort_values(['MRNCmpdId', 'start_time', 'NoShow', 'reason'], inplace=True)
+    else:
+        slot_df.sort_values(['MRNCmpdId', 'start_time', 'NoShow'], inplace=True)
 
     slot_df['multi_slot'] = slot_df.groupby(['MRNCmpdId', 'start_time']).cumcount()
     first_slot_only = slot_df[slot_df['multi_slot'] == 0].copy()
