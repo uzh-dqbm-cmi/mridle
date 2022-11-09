@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from mridle.pipelines.data_engineering.ris.nodes import build_slot_df
+from mridle.utilities import data_processing
 import pgeocode
 import datetime as dt
 import re
@@ -73,6 +74,8 @@ def generate_training_data(status_df, valid_date_range, append_outcome=True, add
         training_data = training_data.merge(
             for_no_show_before[['MRNCmpdId', 'start_time', 'FillerOrderNo', 'no_show_before', 'no_show_before_sq']],
             on=['MRNCmpdId', 'FillerOrderNo', 'start_time'], how='left')
+
+    training_data = data_processing.filter_duplicate_patient_time_slots(training_data)
 
     return training_data
 
