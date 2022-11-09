@@ -666,7 +666,6 @@ def feature_reason(status_df):
 
     # in case of duplicates appts except for different reasons, we take any info over no info
     cat_order = list(df_remap['reason'].unique())
-    print(cat_order)
     if 'none_given' in cat_order:
         cat_order.append(cat_order.pop(cat_order.index('none_given')))
 
