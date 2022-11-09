@@ -77,51 +77,13 @@ def generate_training_data(status_df, valid_date_range, append_outcome=True, add
     return training_data
 
 
-def build_model_data(status_df, valid_date_range, slot_df=None):
-    """
-    Build data for use in models by trying to replicate the conditions under which the model would be used in reality
-    (i.e. no status changes 2 days before appt (since that's when the prediction would be done)). We then use the
-    previously created slot_df (i.e. master appointment list) to filter the appts for only those that are relevant - the
-    build_feature_set function with build_future_slots=True will create too many appointment slots, so we that's why we
-    have to filter. We also need to use slot_df to get the outcome of the appointment, since build_future_slots=True,
-    results in all appts appearing as NoShow=False. (replicating what would happen in reality...we would predict more
-    than 2 days in advance, then wait and find out the outcome and join it onto our predictions)
-
-    Args:
-        status_df:
-        slot_df:
-        valid_date_range:
-
-    Returns:
-
-    """
-    status_df_copy = status_df.copy()
-
-    model_data = build_feature_set(status_df_copy, valid_date_range=valid_date_range, build_future_slots=True)
-    model_data = remove_na(model_data)
-    if slot_df is not None:
-        model_data.drop('NoShow', axis=1, inplace=True)
-        slot_df_copy = slot_df.copy()[['MRNCmpdId', 'FillerOrderNo', 'start_time', 'patient_class_adj', 'NoShow',
-                                       'slot_outcome', 'slot_type', 'slot_type_detailed']]
-        model_data = model_data.merge(slot_df_copy, how='inner')
-    else:  # If slot_df not provided, then we are generating data for the future (e.g. Silent Live Test), therefore
-        # NoShow should be false for all appointments (since they're future appts)
-
-        appt_time = status_df_copy.groupby(['FillerOrderNo']).apply(
-            lambda x: x.sort_values('History_MessageDtTm', ascending=False).head(1)
-        ).reset_index(drop=True)[['MRNCmpdId', 'FillerOrderNo', 'now_sched_for_date']]
-        appt_time.columns = ['MRNCmpdId', 'FillerOrderNo', 'start_time']
-        model_data = model_data.merge(appt_time, how='inner')
-        model_data['NoShow'] = False
-    return model_data
-
-
 def generate_3_5_days_ahead_features(status_df, f_dt):
     """
     Take in dataframe of status changes and a date, and generate upcoming appts - defined as appts that are due to take
     place within 3-5 business days from the provided date. Returns these appts as slots with features
 
     """
+    features_df = pd.DataFrame()
     fn_status_df = status_df.copy()
 
     start_dt = add_business_days(f_dt, 3).date()
@@ -143,11 +105,14 @@ def generate_3_5_days_ahead_features(status_df, f_dt):
                                     'FillerOrderNo']
     fn_status_df_fons = fn_status_df_fons[~fn_status_df_fons['FillerOrderNo'].isin(fon_to_remove)]
     if len(fn_status_df_fons):
-        features_df_maybe_na = build_model_data(fn_status_df_fons,
-                                                valid_date_range=[add_business_days(f_dt, 3).strftime("%Y-%m-%d"),
-                                                                  add_business_days(f_dt, 5).strftime("%Y-%m-%d")],
-                                                slot_df=None)
-        features_df = remove_na(features_df_maybe_na)
+        features_df = build_feature_set(fn_status_df_fons,
+                                        valid_date_range=[add_business_days(f_dt, 3).strftime("%Y-%m-%d"),
+                                                          add_business_days(f_dt, 5).strftime("%Y-%m-%d")],
+                                        build_future_slots=True)
+
+        # These model_data appts now are looking ahead, so NoShow should be No (since we won't know yet)
+        features_df['NoShow'] = False
+        features_df = remove_na(features_df)
 
         # only take those that are actually currently scheduled for that time!!
         features_df = features_df.merge(last_status[['FillerOrderNo', 'now_sched_for_date']],
@@ -155,7 +120,8 @@ def generate_3_5_days_ahead_features(status_df, f_dt):
                                         right_on=['FillerOrderNo', 'now_sched_for_date'],
                                         how='inner')
 
-        features_df['no_show_before_sq'] = features_df['no_show_before'] ** 2
+        # features_df['no_show_before_sq'] = features_df['no_show_before'] ** 2
+
     return features_df
 
 
