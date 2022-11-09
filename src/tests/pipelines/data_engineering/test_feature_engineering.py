@@ -5,7 +5,7 @@ from mridle.pipelines.data_science.feature_engineering.nodes import feature_no_s
 from mridle.pipelines.data_engineering.ris.nodes import build_status_df, build_slot_df, find_no_shows, \
     set_no_show_severity, STATUS_MAP
 from mridle.pipelines.data_science.feature_engineering.nodes import build_feature_set, \
-    feature_days_scheduled_in_advance, feature_days_scheduled_in_advance, build_model_data
+    feature_days_scheduled_in_advance, feature_days_scheduled_in_advance, generate_training_data
 
 
 def day(num_days_from_start, hour=9):
@@ -479,7 +479,7 @@ class TestFutureSlots(unittest.TestCase):
 
         raw_df = self._fill_out_static_columns(raw_df, create_fon=True)
         status_df = build_status_df(raw_df, exclude_patient_ids=[])
-        feature_df = build_model_data(status_df, valid_date_range)
+        feature_df = build_feature_set(status_df, valid_date_range)
         cols = [c for c in expected_feature_df.columns.values]
         feature_df = feature_df.loc[:, feature_df.columns.isin(cols)]
         pd.testing.assert_frame_equal(feature_df, expected_feature_df, check_like=True)
@@ -505,7 +505,7 @@ class TestFutureSlots(unittest.TestCase):
 
         raw_df = self._fill_out_static_columns(raw_df, create_fon=True)
         status_df = build_status_df(raw_df, exclude_patient_ids=[])
-        feature_df = build_model_data(status_df, valid_date_range)
+        feature_df = generate_training_data(status_df, valid_date_range)
         cols = [c for c in expected_feature_df.columns.values]
         feature_df = feature_df.loc[:, feature_df.columns.isin(cols)]
         feature_df = feature_df.reindex(cols, axis=1)
@@ -533,7 +533,7 @@ class TestFutureSlots(unittest.TestCase):
 
         raw_df = self._fill_out_static_columns(raw_df, create_fon=True)
         status_df = build_status_df(raw_df, exclude_patient_ids=[])
-        feature_df = build_model_data(status_df, valid_date_range)
+        feature_df = generate_training_data(status_df, valid_date_range)
 
         cols = [c for c in expected_feature_df.columns.values]
         feature_df = feature_df.loc[:, feature_df.columns.isin(cols)]
@@ -562,7 +562,7 @@ class TestFutureSlots(unittest.TestCase):
 
         raw_df = self._fill_out_static_columns(raw_df, create_fon=True)
         status_df = build_status_df(raw_df, exclude_patient_ids=[])
-        feature_df = build_model_data(status_df, valid_date_range)
+        feature_df = generate_training_data(status_df, valid_date_range)
 
         cols = [c for c in expected_feature_df.columns.values]
         feature_df = feature_df.loc[:, feature_df.columns.isin(cols)]
@@ -614,7 +614,7 @@ class TestFutureSlots(unittest.TestCase):
         raw_df = pd.concat([raw_df_1, raw_df_2], axis=0)
 
         status_df = build_status_df(raw_df, exclude_patient_ids=[])
-        feature_df = build_model_data(status_df, valid_date_range)
+        feature_df = generate_training_data(status_df, valid_date_range)
 
         cols = [c for c in expected_feature_df.columns.values]
         feature_df = feature_df.loc[:, feature_df.columns.isin(cols)]
@@ -689,8 +689,8 @@ class TestGenerateModelData(unittest.TestCase):
 
         raw_df = self._fill_out_static_columns(raw_df, create_fon=True)
         status_df = build_status_df(raw_df, exclude_patient_ids=[])
-        slot_df = build_slot_df(status_df, valid_date_range)
-        model_data_df = build_model_data(status_df, valid_date_range, slot_df=slot_df)
+
+        model_data_df = generate_training_data(status_df, valid_date_range)
 
         cols = [c for c in expected_model_data_df.columns.values]
         model_data_df = model_data_df.loc[:, model_data_df.columns.isin(cols)]
@@ -752,8 +752,8 @@ class TestGenerateModelData(unittest.TestCase):
         raw_df = pd.concat([raw_df_1, raw_df_2], axis=0)
 
         status_df = build_status_df(raw_df, exclude_patient_ids=[])
-        slot_df = build_slot_df(status_df, valid_date_range)
-        model_data_df = build_model_data(status_df, valid_date_range, slot_df=slot_df)
+
+        model_data_df = generate_training_data(status_df, valid_date_range)
         cols = [c for c in expected_model_data_df.columns.values]
         model_data_df = model_data_df.loc[:, model_data_df.columns.isin(cols)]
         model_data_df = model_data_df.reindex(cols, axis=1)

@@ -212,7 +212,6 @@ def build_slot_df(input_status_df: pd.DataFrame, valid_date_range: List[str], ag
         # agg_dict['now_sched_for_date'] = 'last'
         # Replicate data that will be used in reality, i.e. we won't have status changes that happened within 2 days of
         # appointment and then use build_future_slots=True when building slot_df
-        status_df = status_df[status_df['now_sched_for'] > 2]
 
         if 'sched_days_advanced' in agg_dict.keys():
             agg_dict['sched_days_advanced'] = 'last'
