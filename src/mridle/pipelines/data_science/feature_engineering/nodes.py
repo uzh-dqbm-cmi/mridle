@@ -36,16 +36,19 @@ def generate_training_data(status_df, valid_date_range, append_outcome=True, add
     training_data = pd.DataFrame()
     weekdays = [5, 6]
 
-    start_dt = subtract_business_days(pd.to_datetime(valid_date_range[0]), 5)  # to catch the first week or so of appts
+    start_dt = pd.to_datetime(valid_date_range[0])
+    start_dt_buffer = subtract_business_days(start_dt, 5)  # to catch the appts at the start of 2015
+    start_dt_buffer_str = start_dt_buffer.strftime('%Y-%m-%d')
+
     end_dt = pd.to_datetime(valid_date_range[1])
 
-    for f_dt in daterange(start_dt, end_dt):
+    for f_dt in daterange(start_dt_buffer, end_dt):
         if f_dt.weekday() not in weekdays:
             features_df = generate_3_5_days_ahead_features(status_df, f_dt)
             training_data = pd.concat([training_data, features_df]).drop_duplicates()
 
     if append_outcome:
-        actuals_data = build_slot_df(status_df, valid_date_range=valid_date_range)
+        actuals_data = build_slot_df(status_df, valid_date_range=[start_dt_buffer_str, valid_date_range[1]])
         training_data.drop(columns='NoShow', inplace=True)
         training_data = training_data.merge(actuals_data[['MRNCmpdId', 'start_time', 'NoShow']].drop_duplicates(),
                                             how='left', on=['MRNCmpdId', 'start_time'])
