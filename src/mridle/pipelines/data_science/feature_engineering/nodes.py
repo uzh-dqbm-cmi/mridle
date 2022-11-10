@@ -51,7 +51,8 @@ def generate_training_data(status_df, valid_date_range, append_outcome=True, add
     if append_outcome:
         actuals_data = build_slot_df(status_df, valid_date_range=[start_dt_buffer_str, valid_date_range[1]])
         training_data.drop(columns='NoShow', inplace=True)
-        training_data = training_data.merge(actuals_data[['MRNCmpdId', 'start_time', 'NoShow']].drop_duplicates(),
+        noshow_cols = ['NoShow', 'slot_outcome', 'slot_type_detailed', 'slot_type']
+        training_data = training_data.merge(actuals_data[['MRNCmpdId', 'start_time']+noshow_cols].drop_duplicates(),
                                             how='left', on=['MRNCmpdId', 'start_time'])
         training_data['NoShow'].fillna(False, inplace=True)
 
@@ -100,17 +101,19 @@ def generate_3_5_days_ahead_features(status_df, f_dt):
         (fn_status_df['date'].dt.date < f_dt.date()) & fn_status_df['FillerOrderNo'].isin(
             pertinent_appts['FillerOrderNo'])].copy()
 
-    last_status = fn_status_df_fons.groupby(['FillerOrderNo']).apply(
-        lambda x: x.sort_values('History_MessageDtTm', ascending=False).head(1)
-    ).reset_index(drop=True)[['MRNCmpdId', 'FillerOrderNo', 'now_status', 'now_sched_for_date', 'now_sched_for_busday']]
-    fon_to_remove = last_status.loc[(last_status['now_status'] == 'canceled') &
-                                    (last_status['now_sched_for_busday'] > 3),
-                                    'FillerOrderNo']
-    fn_status_df_fons = fn_status_df_fons[~fn_status_df_fons['FillerOrderNo'].isin(fon_to_remove)]
     if len(fn_status_df_fons):
+
+        last_status = fn_status_df_fons.groupby(['FillerOrderNo']).apply(
+            lambda x: x.sort_values('History_MessageDtTm', ascending=False).head(1)
+        ).reset_index(drop=True)[['MRNCmpdId', 'FillerOrderNo', 'now_status', 'now_sched_for_date',
+                                  'now_sched_for_busday']]
+        fon_to_remove = last_status.loc[(last_status['now_status'] == 'canceled') &
+                                        (last_status['now_sched_for_busday'] > 3),
+                                        'FillerOrderNo']
+        fn_status_df_fons = fn_status_df_fons[~fn_status_df_fons['FillerOrderNo'].isin(fon_to_remove)]
+
         features_df = build_feature_set(fn_status_df_fons,
-                                        valid_date_range=[add_business_days(f_dt, 3).strftime("%Y-%m-%d"),
-                                                          add_business_days(f_dt, 5).strftime("%Y-%m-%d")],
+                                        valid_date_range=[start_dt.strftime("%Y-%m-%d"), end_dt.strftime("%Y-%m-%d")],
                                         build_future_slots=True)
 
         # These model_data appts now are looking ahead, so NoShow should be No (since we won't know yet)
