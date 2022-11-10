@@ -61,6 +61,8 @@ def generate_training_data(status_df, valid_date_range, append_outcome=True, add
     training_data = training_data[training_data['start_time'] >= start_dt]
     training_data = training_data[training_data['start_time'] < day_after_last_valid_date]
 
+    training_data = data_processing.filter_duplicate_patient_time_slots(training_data)
+
     if add_no_show_before:
         training_data.drop(columns=['no_show_before', 'no_show_before_sq'], inplace=True)
         for_no_show_before = training_data[
@@ -75,8 +77,6 @@ def generate_training_data(status_df, valid_date_range, append_outcome=True, add
         training_data = training_data.merge(
             for_no_show_before[['MRNCmpdId', 'start_time', 'FillerOrderNo', 'no_show_before', 'no_show_before_sq']],
             on=['MRNCmpdId', 'FillerOrderNo', 'start_time'], how='left')
-
-    training_data = data_processing.filter_duplicate_patient_time_slots(training_data)
 
     return training_data
 
