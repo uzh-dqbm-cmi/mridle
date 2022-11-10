@@ -1,8 +1,8 @@
 import pandas as pd
 import numpy as np
 import datetime
-from mridle.pipelines.data_engineering.ris.nodes import build_status_df, build_slot_df, prep_raw_df_for_parquet
-from mridle.pipelines.data_science.feature_engineering.nodes import build_model_data, remove_na, \
+from mridle.pipelines.data_engineering.ris.nodes import build_status_df, prep_raw_df_for_parquet
+from mridle.pipelines.data_science.feature_engineering.nodes import generate_training_data, remove_na, \
     generate_3_5_days_ahead_features, add_business_days, subtract_business_days
 from mridle.utilities.prediction import main as prediction_main
 import os
@@ -113,9 +113,7 @@ def process_live_data():
             formatted_ago_df = prep_raw_df_for_parquet(ago)
             ago_status_df = build_status_df(formatted_ago_df, list())
             ago_status_df = ago_status_df.merge(rfs, how='left')
-            ago_slot_df = build_slot_df(ago_status_df, valid_date_range=ago_valid_date_range)
-            ago_features_df_maybe_na = build_model_data(ago_status_df, valid_date_range=ago_valid_date_range,
-                                                        slot_df=ago_slot_df)
+            ago_features_df_maybe_na = generate_training_data(ago_status_df, valid_date_range=ago_valid_date_range)
             ago_features_df = remove_na(ago_features_df_maybe_na)
             ago_features_df = ago_features_df.merge(previous_no_shows, on='MRNCmpdId', how='left',
                                                     suffixes=['_current', '_hist'])
