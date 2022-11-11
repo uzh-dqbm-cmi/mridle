@@ -69,7 +69,7 @@ def get_slt_features():
             out_status = out_status.drop_duplicates()
             out_status = prep_raw_df_for_parquet(out_status)
             out_status = build_status_df(out_status, exclude_patient_ids=[])
-            slt_data_features = generate_3_5_days_ahead_features(out_status, dt=file_generation_date)
+            slt_data_features = generate_3_5_days_ahead_features(out_status, f_dt=file_generation_date)
 
         all_slt_features = pd.concat([all_slt_features, slt_data_features])
 
