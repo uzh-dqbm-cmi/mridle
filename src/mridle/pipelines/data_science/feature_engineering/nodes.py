@@ -78,8 +78,8 @@ def generate_training_data(status_df, valid_date_range, append_outcome=True, add
         for_no_show_before['appts_before'] = for_no_show_before.sort_values('start_time').groupby(
             'MRNCmpdId')['start_time'].cumcount()
         for_no_show_before['show_before'] = for_no_show_before['appts_before'] - for_no_show_before['no_show_before']
-        for_no_show_before['noshow_rate'] = for_no_show_before['no_show_before'] / for_no_show_before['appts_before']
-        for_no_show_before['noshow_rate'].fillna(0, inplace=True)
+        for_no_show_before['no_show_rate'] = for_no_show_before['no_show_before'] / for_no_show_before['appts_before']
+        for_no_show_before['no_show_rate'].fillna(0, inplace=True)
 
         training_data = training_data.merge(
             for_no_show_before[['MRNCmpdId', 'start_time', 'FillerOrderNo', 'no_show_before', 'no_show_before_sq',
