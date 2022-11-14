@@ -804,9 +804,9 @@ class TestGenerateModelData(unittest.TestCase):
                 'start_time': day(9),
                 'end_time': day(9) + pd.Timedelta(minutes=30),
                 'NoShow': False,
-                'slot_outcome': np.nan,
-                'slot_type': np.nan,
-                'slot_type_detailed': np.nan
+                'slot_outcome': 'ok_rescheduled',
+                'slot_type': 'ok_rescheduled',
+                'slot_type_detailed': 'ok_rescheduled'
             }
         ])
 
