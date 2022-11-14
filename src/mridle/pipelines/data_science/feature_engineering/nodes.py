@@ -54,7 +54,9 @@ def generate_training_data(status_df, valid_date_range, append_outcome=True, add
         noshow_cols = ['NoShow', 'slot_outcome', 'slot_type_detailed', 'slot_type']
         training_data = training_data.merge(actuals_data[['MRNCmpdId', 'start_time']+noshow_cols].drop_duplicates(),
                                             how='left', on=['MRNCmpdId', 'start_time'])
-        training_data[noshow_cols] = training_data[noshow_cols].fillna(False)
+        training_data['NoShow'] = training_data['NoShow'].fillna(False)
+        training_data[['slot_outcome', 'slot_type_detailed', 'slot_type']] = training_data[
+            ['slot_outcome', 'slot_type_detailed', 'slot_type']].fillna('ok_rescheduled')
 
     # restrict to the valid date range
     day_after_last_valid_date = end_dt + pd.to_timedelta(1, 'days')
