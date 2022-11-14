@@ -101,15 +101,17 @@ def get_slt_features():
                                                         for_slt_no_show_before['no_show_before'] - 1,
                                                         for_slt_no_show_before['no_show_before'])
     for_slt_no_show_before['no_show_before_sq'] = for_slt_no_show_before['no_show_before'] ** 2
-    for_slt_no_show_before['num_appts_before'] = for_slt_no_show_before.sort_values('start_time').groupby('MRNCmpdId')[
+    for_slt_no_show_before['appts_before'] = for_slt_no_show_before.sort_values('start_time').groupby('MRNCmpdId')[
         'start_time'].cumcount()
+    for_slt_no_show_before['show_before'] = for_slt_no_show_before['appts_before'] - for_slt_no_show_before[
+        'no_show_before']
     for_slt_no_show_before['noshow_rate'] = for_slt_no_show_before['no_show_before'] / for_slt_no_show_before[
         'num_appts_before']
     for_slt_no_show_before['noshow_rate'].fillna(0, inplace=True)
 
     all_slt_features = all_slt_features.merge(for_slt_no_show_before[
                                                 ['MRNCmpdId', 'start_time', 'FillerOrderNo', 'no_show_before',
-                                                 'no_show_before_sq', 'num_appts_before', 'noshow_rate']],
+                                                 'no_show_before_sq', 'appts_before', 'show_before', 'no_show_rate']],
                                               on=['MRNCmpdId', 'FillerOrderNo', 'start_time'], how='left')
 
     return all_slt_features
