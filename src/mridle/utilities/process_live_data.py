@@ -80,7 +80,6 @@ def get_slt_features():
 
         all_slt_features = pd.concat([all_slt_features, slt_data_features])
 
-    print("all_slt_features", all_slt_features.columns, sep=" : ")
     all_slt_features.drop(columns=['NoShow'], inplace=True)
     actuals_end_dt = datetime.datetime.today() + relativedelta(months=1)
     print(pd.to_datetime('2022-02-01'), actuals_end_dt.date())
@@ -88,7 +87,6 @@ def get_slt_features():
     all_slt_features = all_slt_features.merge(actuals_data[['MRNCmpdId', 'start_time', 'NoShow']].drop_duplicates(),
                                               how='left', on=['MRNCmpdId', 'start_time'])
     all_slt_features['NoShow'].fillna(False, inplace=True)
-    print(all_slt_features.columns)
 
     all_slt_features.drop(columns=['no_show_before', 'no_show_before_sq', 'appts_before',
                                    'show_before', 'no_show_rate'], inplace=True)
@@ -116,6 +114,7 @@ def get_slt_features():
     # for_slt_no_show_before['no_show_rate'] = for_slt_no_show_before['no_show_before'] / for_slt_no_show_before[
     #     'appts_before']
     # for_slt_no_show_before['no_show_rate'].fillna(0, inplace=True)
+    print(no_shows_before.shape, no_shows_before.columns)
 
     all_slt_features = all_slt_features.merge(no_shows_before[
                                                 ['MRNCmpdId', 'start_time', 'FillerOrderNo', 'no_show_before',
