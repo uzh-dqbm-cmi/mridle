@@ -82,12 +82,13 @@ def get_slt_features():
 
     all_slt_features.drop(columns=['NoShow'], inplace=True)
     actuals_end_dt = datetime.datetime.today() + relativedelta(months=1)
-
+    print(pd.to_datetime('2022-02-01'), actuals_end_dt.date())
     actuals_data = build_slot_df(ago_st, valid_date_range=[pd.to_datetime('2022-02-01'), actuals_end_dt.date()])
-
+    print(actuals_data.shape)
     all_slt_features = all_slt_features.merge(actuals_data[['MRNCmpdId', 'start_time', 'NoShow']].drop_duplicates(),
                                               how='left', on=['MRNCmpdId', 'start_time'])
     all_slt_features['NoShow'].fillna(False, inplace=True)
+    print(all_slt_features.shape)
 
     all_slt_features.drop(columns=['no_show_before', 'no_show_before_sq', 'appts_before',
                                    'show_before', 'no_show_rate'], inplace=True)
