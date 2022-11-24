@@ -88,7 +88,7 @@ def get_slt_features():
     all_slt_features = all_slt_features.merge(actuals_data[['MRNCmpdId', 'start_time', 'NoShow']].drop_duplicates(),
                                               how='left', on=['MRNCmpdId', 'start_time'])
     all_slt_features['NoShow'].fillna(False, inplace=True)
-    print(all_slt_features.shape)
+    print(all_slt_features.columns)
 
     all_slt_features.drop(columns=['no_show_before', 'no_show_before_sq', 'appts_before',
                                    'show_before', 'no_show_rate'], inplace=True)
