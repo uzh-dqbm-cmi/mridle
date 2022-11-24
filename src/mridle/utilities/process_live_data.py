@@ -95,8 +95,8 @@ def get_slt_features():
     all_slt_features = all_slt_features.drop_duplicates()
 
     for_slt_no_show_before = pd.concat([historical_data, all_slt_features], axis=0)
-    historical_data.drop(columns=['no_show_before', 'no_show_before_sq', 'appts_before',
-                                  'show_before', 'no_show_rate'], inplace=True)
+    for_slt_no_show_before.drop(columns=['no_show_before', 'no_show_before_sq', 'appts_before',
+                                         'show_before', 'no_show_rate'], inplace=True)
 
     no_shows_before = feature_no_show_before(for_slt_no_show_before)
 
