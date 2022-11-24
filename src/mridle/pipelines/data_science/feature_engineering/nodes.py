@@ -209,7 +209,6 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], mast
     slot_df = feature_hour_sched(slot_df)
     slot_df = feature_day_of_week(slot_df)
     slot_df = feature_no_show_before(slot_df)
-    print("Slot_df", slot_df.columns, sep=" : ")
     slot_df = feature_cyclical_hour(slot_df)
     slot_df = feature_cyclical_day_of_week(slot_df)
     slot_df = feature_cyclical_month(slot_df)

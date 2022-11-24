@@ -80,6 +80,7 @@ def get_slt_features():
 
         all_slt_features = pd.concat([all_slt_features, slt_data_features])
 
+    print("all_slt_features", all_slt_features.columns, sep=" : ")
     all_slt_features.drop(columns=['NoShow'], inplace=True)
     actuals_end_dt = datetime.datetime.today() + relativedelta(months=1)
     print(pd.to_datetime('2022-02-01'), actuals_end_dt.date())
