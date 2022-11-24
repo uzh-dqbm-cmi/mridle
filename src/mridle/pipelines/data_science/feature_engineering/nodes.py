@@ -66,28 +66,7 @@ def generate_training_data(status_df, valid_date_range, append_outcome=True, add
     training_data = data_processing.filter_duplicate_patient_time_slots(training_data)
 
     if add_no_show_before:
-        training_data.drop(columns=['no_show_before', 'no_show_before_sq'], inplace=True)
-        for_no_show_before = training_data[
-            ['MRNCmpdId', 'FillerOrderNo', 'start_time', 'NoShow']].drop_duplicates().reset_index(drop=True)
-        for_no_show_before['no_show_before'] = for_no_show_before.sort_values('start_time').groupby('MRNCmpdId')[
-            'NoShow'].cumsum()
-        for_no_show_before['no_show_before'] = np.where(for_no_show_before['NoShow'],
-                                                        for_no_show_before['no_show_before'] - 1,
-                                                        for_no_show_before['no_show_before'])
-
-        for_no_show_before['no_show_before_sq'] = for_no_show_before['no_show_before'] ** 2
-
-        for_no_show_before['appts_before'] = for_no_show_before.sort_values('start_time').groupby(
-            'MRNCmpdId')['start_time'].cumcount()
-        for_no_show_before['show_before'] = for_no_show_before['appts_before'] - for_no_show_before['no_show_before']
-        for_no_show_before['no_show_rate'] = for_no_show_before['no_show_before'] / for_no_show_before['appts_before']
-        for_no_show_before['no_show_rate'].fillna(0, inplace=True)
-
-        training_data = training_data.merge(
-            for_no_show_before[['MRNCmpdId', 'start_time', 'FillerOrderNo', 'no_show_before', 'no_show_before_sq',
-                                'appts_before', 'show_before', 'no_show_rate']],
-            on=['MRNCmpdId', 'FillerOrderNo', 'start_time'], how='left')
-
+        training_data = feature_no_show_before(training_data)
     return training_data
 
 
@@ -473,15 +452,29 @@ def feature_no_show_before(slot_df: pd.DataFrame) -> pd.DataFrame:
     Returns: A row-per-appointment dataframe with additional columns 'no_show_before', 'no_show_before_sq'.
 
     """
-    slot_df_ordered = slot_df.sort_values('start_time')
-    slot_df_ordered['no_show_before'] = slot_df_ordered.groupby('MRNCmpdId')['NoShow'].cumsum()
+    slot_df_copy = slot_df.copy()
+
+    nsb_df = slot_df_copy[
+        ['MRNCmpdId', 'FillerOrderNo', 'start_time', 'NoShow']].drop_duplicates().reset_index(drop=True)
+    nsb_df['no_show_before'] = nsb_df.sort_values('start_time').groupby('MRNCmpdId')['NoShow'].cumsum()
+
     # cumsum will include the current no show, so subtract 1, except don't go negative
-    slot_df_ordered['no_show_before'] = np.where(slot_df_ordered['NoShow'], slot_df_ordered['no_show_before'] - 1,
-                                                 slot_df_ordered['no_show_before'])
+    nsb_df['no_show_before'] = np.where(nsb_df['NoShow'], nsb_df['no_show_before'] - 1, nsb_df['no_show_before'])
 
-    slot_df_ordered['no_show_before_sq'] = slot_df_ordered['no_show_before'] ** 2
+    nsb_df['no_show_before_sq'] = nsb_df['no_show_before'] ** 2
 
-    return slot_df_ordered
+    nsb_df['appts_before'] = nsb_df.sort_values('start_time').groupby(
+        'MRNCmpdId')['start_time'].cumcount()
+    nsb_df['show_before'] = nsb_df['appts_before'] - nsb_df['no_show_before']
+    nsb_df['no_show_rate'] = nsb_df['no_show_before'] / nsb_df['appts_before']
+    nsb_df['no_show_rate'].fillna(0, inplace=True)
+
+    slot_df_copy = slot_df_copy.merge(
+        nsb_df[['MRNCmpdId', 'start_time', 'FillerOrderNo', 'no_show_before', 'no_show_before_sq', 'appts_before',
+                'show_before', 'no_show_rate']],
+        on=['MRNCmpdId', 'FillerOrderNo', 'start_time'], how='left')
+
+    return slot_df_copy
 
 
 def feature_modality(slot_df: pd.DataFrame, group_categories_less_than: int = None) -> pd.DataFrame:

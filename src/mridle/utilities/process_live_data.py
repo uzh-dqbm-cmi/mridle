@@ -3,10 +3,11 @@ import numpy as np
 import datetime
 from mridle.pipelines.data_engineering.ris.nodes import build_status_df, prep_raw_df_for_parquet, build_slot_df
 from mridle.pipelines.data_science.feature_engineering.nodes import generate_training_data, remove_na, \
-    generate_3_5_days_ahead_features, add_business_days, subtract_business_days
+    generate_3_5_days_ahead_features, add_business_days, subtract_business_days, feature_no_show_before
 from mridle.utilities.prediction import main as prediction_main
 import os
 import re
+from dateutil.relativedelta import relativedelta
 
 
 AGO_DIR = '/data/mridle/data/silent_live_test/live_files/all/ago/'
@@ -80,36 +81,42 @@ def get_slt_features():
         all_slt_features = pd.concat([all_slt_features, slt_data_features])
 
     all_slt_features.drop(columns=['NoShow'], inplace=True)
-    actuals_data = build_slot_df(ago_st, valid_date_range=[pd.to_datetime('2022-02-01'), pd.to_datetime('2022-11-01')])
+    actuals_end_dt = datetime.today() + relativedelta(months=1)
+
+    actuals_data = build_slot_df(ago_st, valid_date_range=[pd.to_datetime('2022-02-01'), actuals_end_dt.date()])
 
     all_slt_features = all_slt_features.merge(actuals_data[['MRNCmpdId', 'start_time', 'NoShow']].drop_duplicates(),
                                               how='left', on=['MRNCmpdId', 'start_time'])
     all_slt_features['NoShow'].fillna(False, inplace=True)
 
-    all_slt_features.drop(columns=['no_show_before', 'no_show_before_sq'], inplace=True)
+    all_slt_features.drop(columns=['no_show_before', 'no_show_before_sq', 'appts_before',
+                                   'show_before', 'no_show_rate'], inplace=True)
     # duplicates coming from no_show_before being removed - some patients have two rows, one with noshowbefore=0,
     # some with it equal to 1. LOOK INTO THAT
     all_slt_features = all_slt_features.drop_duplicates()
 
     for_slt_no_show_before = pd.concat([historical_data, all_slt_features], axis=0)
-    for_slt_no_show_before = for_slt_no_show_before[
-        ['MRNCmpdId', 'FillerOrderNo', 'start_time', 'NoShow']].drop_duplicates().reset_index(drop=True)
-    for_slt_no_show_before['no_show_before'] = for_slt_no_show_before.sort_values('start_time').groupby('MRNCmpdId')[
-        'NoShow'].cumsum()
-    # cumsum will include the current no show, so subtract 1, except don't go negative
-    for_slt_no_show_before['no_show_before'] = np.where(for_slt_no_show_before['NoShow'],
-                                                        for_slt_no_show_before['no_show_before'] - 1,
-                                                        for_slt_no_show_before['no_show_before'])
-    for_slt_no_show_before['no_show_before_sq'] = for_slt_no_show_before['no_show_before'] ** 2
-    for_slt_no_show_before['appts_before'] = for_slt_no_show_before.sort_values('start_time').groupby('MRNCmpdId')[
-        'start_time'].cumcount()
-    for_slt_no_show_before['show_before'] = for_slt_no_show_before['appts_before'] - for_slt_no_show_before[
-        'no_show_before']
-    for_slt_no_show_before['no_show_rate'] = for_slt_no_show_before['no_show_before'] / for_slt_no_show_before[
-        'appts_before']
-    for_slt_no_show_before['no_show_rate'].fillna(0, inplace=True)
 
-    all_slt_features = all_slt_features.merge(for_slt_no_show_before[
+    no_shows_before = feature_no_show_before(for_slt_no_show_before)
+
+    # for_slt_no_show_before = for_slt_no_show_before[
+    #     ['MRNCmpdId', 'FillerOrderNo', 'start_time', 'NoShow']].drop_duplicates().reset_index(drop=True)
+    # for_slt_no_show_before['no_show_before'] = for_slt_no_show_before.sort_values('start_time').groupby('MRNCmpdId')[
+    #     'NoShow'].cumsum()
+    # cumsum will include the current no show, so subtract 1, except don't go negative
+    # for_slt_no_show_before['no_show_before'] = np.where(for_slt_no_show_before['NoShow'],
+    #                                                     for_slt_no_show_before['no_show_before'] - 1,
+    #                                                     for_slt_no_show_before['no_show_before'])
+    # for_slt_no_show_before['no_show_before_sq'] = for_slt_no_show_before['no_show_before'] ** 2
+    # for_slt_no_show_before['appts_before'] = for_slt_no_show_before.sort_values('start_time').groupby('MRNCmpdId')[
+    #     'start_time'].cumcount()
+    # for_slt_no_show_before['show_before'] = for_slt_no_show_before['appts_before'] - for_slt_no_show_before[
+    #     'no_show_before']
+    # for_slt_no_show_before['no_show_rate'] = for_slt_no_show_before['no_show_before'] / for_slt_no_show_before[
+    #     'appts_before']
+    # for_slt_no_show_before['no_show_rate'].fillna(0, inplace=True)
+
+    all_slt_features = all_slt_features.merge(no_shows_before[
                                                 ['MRNCmpdId', 'start_time', 'FillerOrderNo', 'no_show_before',
                                                  'no_show_before_sq', 'appts_before', 'show_before', 'no_show_rate']],
                                               on=['MRNCmpdId', 'FillerOrderNo', 'start_time'], how='left')
