@@ -94,7 +94,7 @@ def get_slt_features():
     # some with it equal to 1. LOOK INTO THAT
     all_slt_features = all_slt_features.drop_duplicates()
 
-    all_slt_features = feature_no_show_before(all_slt_features, historical_data=historical_data)
+    all_slt_features = feature_no_show_before(all_slt_features, hist_data_df=historical_data)
 
     return all_slt_features
 
