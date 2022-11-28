@@ -441,20 +441,30 @@ def feature_distance_to_usz(status_df: pd.DataFrame) -> pd.DataFrame:
     return status_df
 
 
-def feature_no_show_before(slot_df: pd.DataFrame) -> pd.DataFrame:
+def feature_no_show_before(slot_df: pd.DataFrame, hist_data_df: pd.DataFrame = None) -> pd.DataFrame:
     """
     The number of no-shows the patient has had up to and _not including_ this one.
     Historic no show counts are limited to the bounds of the dataset- it does not include no-shows not included in the
      present dataset.
     Args:
         slot_df: A row-per-appointment dataframe.
+        hist_data_df: Row-per-appointment dataframe of past data, not included in slot_df, which may include noshows
+                    for patients in the slot_df
 
     Returns: A row-per-appointment dataframe with additional columns 'no_show_before', 'no_show_before_sq'.
 
     """
-    slot_df_copy = slot_df.copy()
+    original_df = slot_df.copy()
+    for_no_show_before = slot_df.copy()
 
-    nsb_df = slot_df_copy[
+    if hist_data_df is not None:
+        hist_data_df_copy = hist_data_df.copy()
+        hist_data_df_copy.drop(columns=['no_show_before', 'no_show_before_sq', 'appts_before',
+                                        'show_before', 'no_show_rate'], inplace=True)
+
+        for_no_show_before = pd.concat([hist_data_df_copy, for_no_show_before], axis=0)
+
+    nsb_df = for_no_show_before[
         ['MRNCmpdId', 'FillerOrderNo', 'start_time', 'NoShow']].drop_duplicates().reset_index(drop=True)
     nsb_df['no_show_before'] = nsb_df.sort_values('start_time').groupby('MRNCmpdId')['NoShow'].cumsum()
 
@@ -469,12 +479,12 @@ def feature_no_show_before(slot_df: pd.DataFrame) -> pd.DataFrame:
     nsb_df['no_show_rate'] = nsb_df['no_show_before'] / nsb_df['appts_before']
     nsb_df['no_show_rate'].fillna(0, inplace=True)
 
-    slot_df_copy = slot_df_copy.merge(
+    original_df = original_df.merge(
         nsb_df[['MRNCmpdId', 'start_time', 'FillerOrderNo', 'no_show_before', 'no_show_before_sq', 'appts_before',
                 'show_before', 'no_show_rate']],
         on=['MRNCmpdId', 'FillerOrderNo', 'start_time'], how='left')
 
-    return slot_df_copy
+    return original_df
 
 
 def feature_modality(slot_df: pd.DataFrame, group_categories_less_than: int = None) -> pd.DataFrame:

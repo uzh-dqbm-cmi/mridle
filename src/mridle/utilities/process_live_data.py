@@ -94,33 +94,7 @@ def get_slt_features():
     # some with it equal to 1. LOOK INTO THAT
     all_slt_features = all_slt_features.drop_duplicates()
 
-    for_slt_no_show_before = pd.concat([historical_data, all_slt_features], axis=0)
-    for_slt_no_show_before.drop(columns=['no_show_before', 'no_show_before_sq', 'appts_before',
-                                         'show_before', 'no_show_rate'], inplace=True)
-
-    no_shows_before = feature_no_show_before(for_slt_no_show_before)
-
-    # for_slt_no_show_before = for_slt_no_show_before[
-    #     ['MRNCmpdId', 'FillerOrderNo', 'start_time', 'NoShow']].drop_duplicates().reset_index(drop=True)
-    # for_slt_no_show_before['no_show_before'] = for_slt_no_show_before.sort_values('start_time').groupby('MRNCmpdId')[
-    #     'NoShow'].cumsum()
-    # cumsum will include the current no show, so subtract 1, except don't go negative
-    # for_slt_no_show_before['no_show_before'] = np.where(for_slt_no_show_before['NoShow'],
-    #                                                     for_slt_no_show_before['no_show_before'] - 1,
-    #                                                     for_slt_no_show_before['no_show_before'])
-    # for_slt_no_show_before['no_show_before_sq'] = for_slt_no_show_before['no_show_before'] ** 2
-    # for_slt_no_show_before['appts_before'] = for_slt_no_show_before.sort_values('start_time').groupby('MRNCmpdId')[
-    #     'start_time'].cumcount()
-    # for_slt_no_show_before['show_before'] = for_slt_no_show_before['appts_before'] - for_slt_no_show_before[
-    #     'no_show_before']
-    # for_slt_no_show_before['no_show_rate'] = for_slt_no_show_before['no_show_before'] / for_slt_no_show_before[
-    #     'appts_before']
-    # for_slt_no_show_before['no_show_rate'].fillna(0, inplace=True)
-
-    all_slt_features = all_slt_features.merge(no_shows_before[
-                                                ['MRNCmpdId', 'start_time', 'FillerOrderNo', 'no_show_before',
-                                                 'no_show_before_sq', 'appts_before', 'show_before', 'no_show_rate']],
-                                              on=['MRNCmpdId', 'FillerOrderNo', 'start_time'], how='left')
+    all_slt_features = feature_no_show_before(all_slt_features, historical_data=historical_data)
 
     return all_slt_features
 
@@ -164,6 +138,7 @@ def process_live_data():
             ago_status_df = ago_status_df.merge(rfs, how='left')
             ago_features_df_maybe_na = generate_training_data(ago_status_df, valid_date_range=ago_valid_date_range)
             ago_features_df = remove_na(ago_features_df_maybe_na)
+
             ago_features_df = ago_features_df.merge(previous_no_shows, on='MRNCmpdId', how='left',
                                                     suffixes=['_current', '_hist'])
             ago_features_df['no_show_before_hist'].fillna(0, inplace=True)
