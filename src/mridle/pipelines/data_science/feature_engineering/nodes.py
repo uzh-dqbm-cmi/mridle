@@ -454,13 +454,14 @@ def feature_no_show_before(slot_df: pd.DataFrame, hist_data_df: pd.DataFrame = N
     Returns: A row-per-appointment dataframe with additional columns 'no_show_before', 'no_show_before_sq'.
 
     """
+
     original_df = slot_df.copy()
     for_no_show_before = slot_df.copy()
 
     if hist_data_df is not None:
         hist_data_df_copy = hist_data_df.copy()
         hist_data_df_copy.drop(columns=['no_show_before', 'no_show_before_sq', 'appts_before',
-                                        'show_before', 'no_show_rate'], inplace=True)
+                                        'show_before', 'no_show_rate'], )
 
         for_no_show_before = pd.concat([hist_data_df_copy, for_no_show_before], axis=0)
 
@@ -478,6 +479,10 @@ def feature_no_show_before(slot_df: pd.DataFrame, hist_data_df: pd.DataFrame = N
     nsb_df['show_before'] = nsb_df['appts_before'] - nsb_df['no_show_before']
     nsb_df['no_show_rate'] = nsb_df['no_show_before'] / nsb_df['appts_before']
     nsb_df['no_show_rate'].fillna(0, inplace=True)
+
+    # May have been created before, so just drop to make sure
+    original_df.drop(columns=['no_show_before', 'no_show_before_sq', 'appts_before',  'show_before', 'no_show_rate'],
+                     inplace=True, errors='ignore')
 
     original_df = original_df.merge(
         nsb_df[['MRNCmpdId', 'start_time', 'FillerOrderNo', 'no_show_before', 'no_show_before_sq', 'appts_before',
