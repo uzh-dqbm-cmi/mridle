@@ -145,6 +145,9 @@ def build_status_df(raw_df: pd.DataFrame,  exclude_patient_ids: List[str]) -> pd
     df['slot_type'] = df.apply(set_slot_type, axis=1)
     df['slot_outcome'] = df.apply(set_slot_outcome, axis=1)
     df['slot_type_detailed'] = df.apply(set_slot_type_detailed, axis=1)
+
+    # status 'changes' that aren't actually changes, that can often cause issues...let's remove these
+    df = df[~((df['now_status'] == df['was_status']) & (df['now_sched_for_date'] == df['was_sched_for_date']))]
     return df
 
 
