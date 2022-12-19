@@ -1,13 +1,13 @@
 from kedro.pipeline import Pipeline, node
-from .nodes import build_model_data, train_val_split, remove_na
+from .nodes import generate_training_data, train_val_split, remove_na
 
 
 def create_pipeline(**kwargs):
     return Pipeline(
         [
             node(
-                func=build_model_data,
-                inputs=["status_df", "params:ris.valid_date_range", "slot_df"],
+                func=generate_training_data,
+                inputs=["status_df", "params:ris.valid_date_range"],
                 outputs="master_feature_set",
                 name="build_feature_set",
             ),

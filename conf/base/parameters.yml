@@ -343,29 +343,29 @@ models:
 
         Trainer:
             flavor: Trainer
-#        Tuner:
-#            flavor: BayesianTuner
-#            config:
-#                hyperparameters:
-#                    classifier__max_depth:
-#                        parse_hp_uniformint:
-#                            start: 2
-#                            end: 100
-#                    classifier__min_samples_split:
-#                        parse_hp_uniformint:
-#                            start: 2
-#                            end: 20
-#                    classifier__max_features:
-#                        parse_hp_choice:
-#                            choice_list:
-#                                - 'sqrt'
-#                                - 'log2'
-#                search_type: bayesian
-#                num_cv_folds: 5
-#                num_iters: 50  # 150
-#                scoring_function: log_loss
-#                verbose: 0
-#                hyperopt_timeout: 10000000
+        Tuner:
+            flavor: BayesianTuner
+            config:
+                hyperparameters:
+                    classifier__max_depth:
+                        parse_hp_uniformint:
+                            start: 2
+                            end: 100
+                    classifier__min_samples_split:
+                        parse_hp_uniformint:
+                            start: 2
+                            end: 20
+                    classifier__max_features:
+                        parse_hp_choice:
+                            choice_list:
+                                - 'sqrt'
+                                - 'log2'
+                search_type: bayesian
+                num_cv_folds: 5
+                num_iters: 50  # 150
+                scoring_function: log_loss
+                verbose: 0
+                hyperopt_timeout: 10000000
         Metrics:
             - flavor: F1_Macro
               config:
@@ -453,40 +453,40 @@ models:
                         grow_policy: 'depthwise' # less overfit w/ hist vs. lossguide
         Trainer:
             flavor: Trainer
-#        Tuner:
-#            flavor: BayesianTuner
-#            config:
-#                hyperparameters:
-#                    classifier__n_estimators:
-#                        parse_hp_uniformint:
-#                            start: 10
-#                            end: 400
-#                    classifier__max_depth:
-#                        parse_hp_uniformint:
-#                            start: 2
-#                            end: 20
-#                    classifier__learning_rate:
-#                        parse_hp_loguniform:
-#                            start: -5.5
-#                            end: -1.5
-#                    classifier__gamma:
-#                        parse_hp_uniform:
-#                            start: 0
-#                            end: 0.1
-#                    classifier__subsample:
-#                        parse_hp_uniform:
-#                            start: 0.5
-#                            end: 1
-#                    classifier__reg_lambda:
-#                        parse_hp_loguniform:
-#                            start: -3
-#                            end: 2
-#                search_type: bayesian
-#                num_cv_folds: 5
-#                num_iters: 50  # 150
-#                scoring_function: log_loss
-#                verbose: 0
-#                hyperopt_timeout: 10000000
+        Tuner:
+            flavor: BayesianTuner
+            config:
+                hyperparameters:
+                    classifier__n_estimators:
+                        parse_hp_uniformint:
+                            start: 10
+                            end: 400
+                    classifier__max_depth:
+                        parse_hp_uniformint:
+                            start: 2
+                            end: 20
+                    classifier__learning_rate:
+                        parse_hp_loguniform:
+                            start: -5.5
+                            end: -1.5
+                    classifier__gamma:
+                        parse_hp_uniform:
+                            start: 0
+                            end: 0.1
+                    classifier__subsample:
+                        parse_hp_uniform:
+                            start: 0.5
+                            end: 1
+                    classifier__reg_lambda:
+                        parse_hp_loguniform:
+                            start: -3
+                            end: 2
+                search_type: bayesian
+                num_cv_folds: 5
+                num_iters: 50  # 150
+                scoring_function: log_loss
+                verbose: 0
+                hyperopt_timeout: 10000000
         Metrics:
             - flavor: F1_Macro
               config:

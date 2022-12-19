@@ -1,14 +1,21 @@
 import pandas as pd
 import numpy as np
 from mridle.pipelines.data_engineering.ris.nodes import build_slot_df
+from mridle.utilities import data_processing
 import pgeocode
 import datetime as dt
 import re
 from sklearn.model_selection import train_test_split
 from typing import Dict, List
+from datetime import timedelta
 
 
-def build_model_data(status_df, valid_date_range, slot_df=None):
+def daterange(date1, date2):
+    for n in range(int((date2 - date1).days)+1):
+        yield date1 + timedelta(n)
+
+
+def generate_training_data(status_df, valid_date_range, append_outcome=True, add_no_show_before=True):
     """
     Build data for use in models by trying to replicate the conditions under which the model would be used in reality
     (i.e. no status changes 2 days before appt (since that's when the prediction would be done)). We then use the
@@ -19,33 +26,48 @@ def build_model_data(status_df, valid_date_range, slot_df=None):
     than 2 days in advance, then wait and find out the outcome and join it onto our predictions)
 
     Args:
+        add_no_show_before:
+        append_outcome:
         status_df:
-        slot_df:
         valid_date_range:
 
     Returns:
 
     """
-    status_df_copy = status_df.copy()
-    status_df_copy = status_df_copy[status_df_copy['now_sched_for'] > 2]
+    training_data = pd.DataFrame()
+    weekdays = [5, 6]
 
-    model_data = build_feature_set(status_df_copy, valid_date_range=valid_date_range, build_future_slots=True)
-    model_data = remove_na(model_data)
-    if slot_df is not None:
-        model_data.drop('NoShow', axis=1, inplace=True)
-        slot_df_copy = slot_df.copy()[['MRNCmpdId', 'FillerOrderNo', 'start_time', 'patient_class_adj', 'NoShow',
-                                       'slot_outcome', 'slot_type', 'slot_type_detailed']]
-        model_data = model_data.merge(slot_df_copy, how='inner')
-    else:  # If slot_df not provided, then we are generating data for the future (e.g. Silent Live Test), therefore
-        # NoShow should be false for all appointments (since they're future appts)
+    start_dt = pd.to_datetime(valid_date_range[0])
+    start_dt_buffer = subtract_business_days(start_dt, 5)  # to catch the appts at the start of 2015
+    start_dt_buffer_str = start_dt_buffer.strftime('%Y-%m-%d')
 
-        appt_time = status_df_copy.groupby(['FillerOrderNo']).apply(
-            lambda x: x.sort_values('History_MessageDtTm', ascending=False).head(1)
-        ).reset_index(drop=True)[['MRNCmpdId', 'FillerOrderNo', 'now_sched_for_date']]
-        appt_time.columns = ['MRNCmpdId', 'FillerOrderNo', 'start_time']
-        model_data = model_data.merge(appt_time, how='inner')
-        model_data['NoShow'] = False
-    return model_data
+    end_dt = pd.to_datetime(valid_date_range[1])
+
+    for f_dt in daterange(start_dt_buffer, end_dt):
+        if f_dt.weekday() not in weekdays:
+            features_df = generate_3_5_days_ahead_features(status_df, f_dt)
+            training_data = pd.concat([training_data, features_df]).drop_duplicates()
+
+    if append_outcome:
+        actuals_data = build_slot_df(status_df, valid_date_range=[start_dt_buffer_str, valid_date_range[1]])
+        training_data.drop(columns='NoShow', inplace=True)
+        noshow_cols = ['NoShow', 'slot_outcome', 'slot_type_detailed', 'slot_type']
+        training_data = training_data.merge(actuals_data[['MRNCmpdId', 'start_time']+noshow_cols].drop_duplicates(),
+                                            how='left', on=['MRNCmpdId', 'start_time'])
+        training_data['NoShow'] = training_data['NoShow'].fillna(False)
+        training_data[['slot_outcome', 'slot_type_detailed', 'slot_type']] = training_data[
+            ['slot_outcome', 'slot_type_detailed', 'slot_type']].fillna('ok_rescheduled')
+
+    # restrict to the valid date range
+    day_after_last_valid_date = end_dt + pd.to_timedelta(1, 'days')
+    training_data = training_data[training_data['start_time'] >= start_dt]
+    training_data = training_data[training_data['start_time'] < day_after_last_valid_date]
+
+    training_data = data_processing.filter_duplicate_patient_time_slots(training_data)
+
+    if add_no_show_before:
+        training_data = feature_no_show_before(training_data)
+    return training_data
 
 
 def generate_3_5_days_ahead_features(status_df, f_dt):
@@ -54,6 +76,7 @@ def generate_3_5_days_ahead_features(status_df, f_dt):
     place within 3-5 business days from the provided date. Returns these appts as slots with features
 
     """
+    features_df = pd.DataFrame()
     fn_status_df = status_df.copy()
 
     start_dt = add_business_days(f_dt, 3).date()
@@ -67,19 +90,24 @@ def generate_3_5_days_ahead_features(status_df, f_dt):
         (fn_status_df['date'].dt.date < f_dt.date()) & fn_status_df['FillerOrderNo'].isin(
             pertinent_appts['FillerOrderNo'])].copy()
 
-    last_status = fn_status_df_fons.groupby(['FillerOrderNo']).apply(
-        lambda x: x.sort_values('History_MessageDtTm', ascending=False).head(1)
-    ).reset_index(drop=True)[['MRNCmpdId', 'FillerOrderNo', 'now_status', 'now_sched_for_date', 'now_sched_for_busday']]
-    fon_to_remove = last_status.loc[(last_status['now_status'] == 'canceled') &
-                                    (last_status['now_sched_for_busday'] > 3),
-                                    'FillerOrderNo']
-    fn_status_df_fons = fn_status_df_fons[~fn_status_df_fons['FillerOrderNo'].isin(fon_to_remove)]
     if len(fn_status_df_fons):
-        features_df_maybe_na = build_model_data(fn_status_df_fons,
-                                                valid_date_range=[add_business_days(f_dt, 3).strftime("%Y-%m-%d"),
-                                                                  add_business_days(f_dt, 5).strftime("%Y-%m-%d")],
-                                                slot_df=None)
-        features_df = remove_na(features_df_maybe_na)
+
+        last_status = fn_status_df_fons.groupby(['FillerOrderNo']).apply(
+            lambda x: x.sort_values('History_MessageDtTm', ascending=False).head(1)
+        ).reset_index(drop=True)[['MRNCmpdId', 'FillerOrderNo', 'now_status', 'now_sched_for_date',
+                                  'now_sched_for_busday']]
+        fon_to_remove = last_status.loc[(last_status['now_status'] == 'canceled') &
+                                        (last_status['now_sched_for_busday'] > 3),
+                                        'FillerOrderNo']
+        fn_status_df_fons = fn_status_df_fons[~fn_status_df_fons['FillerOrderNo'].isin(fon_to_remove)]
+
+        features_df = build_feature_set(fn_status_df_fons,
+                                        valid_date_range=[start_dt.strftime("%Y-%m-%d"), end_dt.strftime("%Y-%m-%d")],
+                                        build_future_slots=True)
+
+        # These model_data appts now are looking ahead, so NoShow should be No (since we won't know yet)
+        features_df['NoShow'] = False
+        features_df = remove_na(features_df)
 
         # only take those that are actually currently scheduled for that time!!
         features_df = features_df.merge(last_status[['FillerOrderNo', 'now_sched_for_date']],
@@ -87,7 +115,8 @@ def generate_3_5_days_ahead_features(status_df, f_dt):
                                         right_on=['FillerOrderNo', 'now_sched_for_date'],
                                         how='inner')
 
-        features_df['no_show_before_sq'] = features_df['no_show_before'] ** 2
+        # features_df['no_show_before_sq'] = features_df['no_show_before'] ** 2
+
     return features_df
 
 
@@ -412,26 +441,55 @@ def feature_distance_to_usz(status_df: pd.DataFrame) -> pd.DataFrame:
     return status_df
 
 
-def feature_no_show_before(slot_df: pd.DataFrame) -> pd.DataFrame:
+def feature_no_show_before(slot_df: pd.DataFrame, hist_data_df: pd.DataFrame = None) -> pd.DataFrame:
     """
     The number of no-shows the patient has had up to and _not including_ this one.
     Historic no show counts are limited to the bounds of the dataset- it does not include no-shows not included in the
      present dataset.
     Args:
         slot_df: A row-per-appointment dataframe.
+        hist_data_df: Row-per-appointment dataframe of past data, not included in slot_df, which may include noshows
+                    for patients in the slot_df
 
     Returns: A row-per-appointment dataframe with additional columns 'no_show_before', 'no_show_before_sq'.
 
     """
-    slot_df_ordered = slot_df.sort_values('start_time')
-    slot_df_ordered['no_show_before'] = slot_df_ordered.groupby('MRNCmpdId')['NoShow'].cumsum()
+
+    original_df = slot_df.copy()
+    for_no_show_before = slot_df.copy()
+
+    if hist_data_df is not None:
+        hist_data_df_copy = hist_data_df.copy()
+        hist_data_df_copy.drop(columns=['no_show_before', 'no_show_before_sq', 'appts_before',
+                                        'show_before', 'no_show_rate'], )
+
+        for_no_show_before = pd.concat([hist_data_df_copy, for_no_show_before], axis=0)
+
+    nsb_df = for_no_show_before[
+        ['MRNCmpdId', 'FillerOrderNo', 'start_time', 'NoShow']].drop_duplicates().reset_index(drop=True)
+    nsb_df['no_show_before'] = nsb_df.sort_values('start_time').groupby('MRNCmpdId')['NoShow'].cumsum()
+
     # cumsum will include the current no show, so subtract 1, except don't go negative
-    slot_df_ordered['no_show_before'] = np.where(slot_df_ordered['NoShow'], slot_df_ordered['no_show_before'] - 1,
-                                                 slot_df_ordered['no_show_before'])
+    nsb_df['no_show_before'] = np.where(nsb_df['NoShow'], nsb_df['no_show_before'] - 1, nsb_df['no_show_before'])
 
-    slot_df_ordered['no_show_before_sq'] = slot_df_ordered['no_show_before'] ** 2
+    nsb_df['no_show_before_sq'] = nsb_df['no_show_before'] ** 2
 
-    return slot_df_ordered
+    nsb_df['appts_before'] = nsb_df.sort_values('start_time').groupby(
+        'MRNCmpdId')['start_time'].cumcount()
+    nsb_df['show_before'] = nsb_df['appts_before'] - nsb_df['no_show_before']
+    nsb_df['no_show_rate'] = nsb_df['no_show_before'] / nsb_df['appts_before']
+    nsb_df['no_show_rate'].fillna(0, inplace=True)
+
+    # May have been created before, so just drop to make sure
+    original_df.drop(columns=['no_show_before', 'no_show_before_sq', 'appts_before',  'show_before', 'no_show_rate'],
+                     inplace=True, errors='ignore')
+
+    original_df = original_df.merge(
+        nsb_df[['MRNCmpdId', 'start_time', 'FillerOrderNo', 'no_show_before', 'no_show_before_sq', 'appts_before',
+                'show_before', 'no_show_rate']],
+        on=['MRNCmpdId', 'FillerOrderNo', 'start_time'], how='left')
+
+    return original_df
 
 
 def feature_modality(slot_df: pd.DataFrame, group_categories_less_than: int = None) -> pd.DataFrame:
@@ -626,6 +684,13 @@ def feature_reason(status_df):
                  'reason'] = 'cancer'
     df_remap.loc[df_remap['ReasonForStudy'] == 'nan', 'reason'] = 'none_given'
     df_remap.loc[df_remap['reason'] == 0, 'reason'] = 'other'
+
+    # in case of duplicates appts except for different reasons, we take any info over no info
+    cat_order = list(df_remap['reason'].unique())
+    if 'none_given' in cat_order:
+        cat_order.append(cat_order.pop(cat_order.index('none_given')))
+
+    df_remap['reason'] = pd.Categorical(df_remap['reason'], cat_order)
     return df_remap
 
 

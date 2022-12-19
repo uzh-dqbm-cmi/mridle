@@ -4,7 +4,7 @@ from pathlib import Path
 import pickle
 
 from mridle.pipelines.data_engineering.ris.nodes import build_status_df, prep_raw_df_for_parquet
-from mridle.pipelines.data_science.feature_engineering.nodes import remove_na, build_model_data
+from mridle.pipelines.data_science.feature_engineering.nodes import remove_na, generate_training_data
 from mridle.experiment.experiment import Experiment
 from mridle.experiment.dataset import DataSet
 
@@ -46,7 +46,7 @@ def main(data_path, model_dir, output_path, valid_date_range, file_encoding, mas
                                     'FillerOrderNo']
     status_df = status_df[~status_df['FillerOrderNo'].isin(fon_to_remove)]
 
-    features_df_maybe_na = build_model_data(status_df, valid_date_range, slot_df=None)
+    features_df_maybe_na = generate_training_data(status_df, valid_date_range, append_outcome=False)
     features_df = remove_na(features_df_maybe_na)
 
     # Get number of previous no shows from historical data and add to data set

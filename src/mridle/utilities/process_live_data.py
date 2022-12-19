@@ -1,12 +1,13 @@
 import pandas as pd
 import numpy as np
 import datetime
-from mridle.pipelines.data_engineering.ris.nodes import build_status_df, build_slot_df, prep_raw_df_for_parquet
-from mridle.pipelines.data_science.feature_engineering.nodes import build_model_data, remove_na, \
-    generate_3_5_days_ahead_features, add_business_days, subtract_business_days
+from mridle.pipelines.data_engineering.ris.nodes import build_status_df, prep_raw_df_for_parquet, build_slot_df
+from mridle.pipelines.data_science.feature_engineering.nodes import generate_training_data, remove_na, \
+    generate_3_5_days_ahead_features, add_business_days, subtract_business_days, feature_no_show_before
 from mridle.utilities.prediction import main as prediction_main
 import os
 import re
+from dateutil.relativedelta import relativedelta
 
 
 AGO_DIR = '/data/mridle/data/silent_live_test/live_files/all/ago/'
@@ -45,9 +46,15 @@ def get_slt_features():
     file_dir = '/data/mridle/data/silent_live_test/live_files/all/out/'
     all_slt_features = pd.DataFrame()
 
+    historical_data = pd.read_parquet('/data/mridle/data/kedro_data_catalog/04_feature/'
+                                      'master_feature_set_na_removed.parquet')
+
     rfs_df = pd.read_csv('/data/mridle/data/silent_live_test/live_files/all/'
                          'retrospective_reasonforstudy/content/[dbo].[MRIdle_retrospective].csv')
     rfs_df[['FillerOrderNo', 'ReasonForStudy']].drop_duplicates()
+
+    # add on proper noshow
+    ago_st = get_slt_status_data('ago')
 
     for filename in os.listdir(file_dir):
         if filename.endswith(".csv"):
@@ -69,9 +76,25 @@ def get_slt_features():
             out_status = out_status.drop_duplicates()
             out_status = prep_raw_df_for_parquet(out_status)
             out_status = build_status_df(out_status, exclude_patient_ids=[])
-            slt_data_features = generate_3_5_days_ahead_features(out_status, dt=file_generation_date)
+            slt_data_features = generate_3_5_days_ahead_features(out_status, f_dt=file_generation_date)
 
         all_slt_features = pd.concat([all_slt_features, slt_data_features])
+
+    all_slt_features.drop(columns=['NoShow'], inplace=True)
+    actuals_end_dt = datetime.datetime.today() + relativedelta(months=1)
+
+    actuals_data = build_slot_df(ago_st, valid_date_range=[pd.to_datetime('2022-02-01'), actuals_end_dt.date()])
+    all_slt_features = all_slt_features.merge(actuals_data[['MRNCmpdId', 'start_time', 'NoShow']].drop_duplicates(),
+                                              how='left', on=['MRNCmpdId', 'start_time'])
+    all_slt_features['NoShow'].fillna(False, inplace=True)
+
+    all_slt_features.drop(columns=['no_show_before', 'no_show_before_sq', 'appts_before',
+                                   'show_before', 'no_show_rate'], inplace=True)
+    # duplicates coming from no_show_before being removed - some patients have two rows, one with noshowbefore=0,
+    # some with it equal to 1. LOOK INTO THAT
+    all_slt_features = all_slt_features.drop_duplicates()
+
+    all_slt_features = feature_no_show_before(all_slt_features, hist_data_df=historical_data)
 
     return all_slt_features
 
@@ -113,10 +136,9 @@ def process_live_data():
             formatted_ago_df = prep_raw_df_for_parquet(ago)
             ago_status_df = build_status_df(formatted_ago_df, list())
             ago_status_df = ago_status_df.merge(rfs, how='left')
-            ago_slot_df = build_slot_df(ago_status_df, valid_date_range=ago_valid_date_range)
-            ago_features_df_maybe_na = build_model_data(ago_status_df, valid_date_range=ago_valid_date_range,
-                                                        slot_df=ago_slot_df)
+            ago_features_df_maybe_na = generate_training_data(ago_status_df, valid_date_range=ago_valid_date_range)
             ago_features_df = remove_na(ago_features_df_maybe_na)
+
             ago_features_df = ago_features_df.merge(previous_no_shows, on='MRNCmpdId', how='left',
                                                     suffixes=['_current', '_hist'])
             ago_features_df['no_show_before_hist'].fillna(0, inplace=True)
