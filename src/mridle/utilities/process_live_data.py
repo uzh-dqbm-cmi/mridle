@@ -42,6 +42,23 @@ def get_slt_status_data(ago_out, with_source_file_info=False):
     return all_status
 
 
+def get_slt_with_outcome():
+    preds = pd.read_csv(
+        '/data/mridle/data/silent_live_test/live_files/all/out_features_data/features_master_slt_features.csv',
+        parse_dates=['start_time', 'end_time'])
+    preds.drop(columns=['NoShow'], inplace=True)
+    actuals = pd.read_csv('/data/mridle/data/silent_live_test/live_files/all/actuals/master_actuals_with_filename.csv',
+                          parse_dates=['start_time', 'end_time'])
+
+    slt_with_outcome = preds.merge(actuals[['start_time', 'MRNCmpdId', 'NoShow']], on=['start_time', 'MRNCmpdId'],
+                                   how='left')
+    slt_with_outcome['NoShow'].fillna(False, inplace=True)
+
+    most_recent_actuals = np.max(actuals['start_time']).date()
+    slt_with_outcome = slt_with_outcome[slt_with_outcome['start_time'].dt.date <= most_recent_actuals]
+    return slt_with_outcome
+
+
 def get_slt_features():
     file_dir = '/data/mridle/data/silent_live_test/live_files/all/out/'
     all_slt_features = pd.DataFrame()

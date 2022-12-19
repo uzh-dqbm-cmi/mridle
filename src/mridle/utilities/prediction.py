@@ -2,14 +2,25 @@ import argparse
 import pandas as pd
 from pathlib import Path
 import pickle
+import os
 
 from mridle.pipelines.data_engineering.ris.nodes import build_status_df, prep_raw_df_for_parquet
-from mridle.pipelines.data_science.feature_engineering.nodes import remove_na, generate_training_data
+from mridle.pipelines.data_science.feature_engineering.nodes import remove_na, generate_training_data, \
+    feature_no_show_before
 from mridle.experiment.experiment import Experiment
 from mridle.experiment.dataset import DataSet
+from mridle.utilities.process_live_data import get_slt_with_outcome
 
 
-def main(data_path, model_dir, output_path, valid_date_range, file_encoding, master_feature_set, rfs_df):
+def remove_redundant(status_df):
+    """status 'changes' that aren't actually changes, that can often cause issues...let's remove these"""
+    status_df_copy = status_df.copy()
+    status_df_copy = status_df_copy[~((status_df_copy['now_status'] == status_df_copy['was_status'])
+                                      & (status_df_copy['now_sched_for_date'] == status_df_copy['was_sched_for_date']))]
+    return status_df_copy
+
+
+def main(data_path, model_dir, output_path, valid_date_range, file_encoding, master_feature_set, rfs_df, filename):
     """
     Make predictions for all models in model_dir on the given data, saving the resulting predictions to output_path.
     Args:
@@ -29,40 +40,45 @@ def main(data_path, model_dir, output_path, valid_date_range, file_encoding, mas
 
     exclude_pat_ids = list()  # TODO!
 
-    raw_df['MRNCmpdId'] = raw_df['MRNCmpdId'].str.replace('_', '')  # because some MRNCmpdIds have leading underscores,
-    # which usually denotes a test appointment and is thus removed, but in silent live test and with 'future' data,
-    # sometimes the MRNCmpdId has a leading underscore which is later removed/changed to a 'proper' MRNCmpdId
-
     formatted_df = prep_raw_df_for_parquet(raw_df)
     status_df = build_status_df(formatted_df, exclude_pat_ids)
     status_df = status_df.merge(rfs_df, how='left')
+    status_df = remove_redundant(status_df)
 
     # Remove appts where last status is 'canceled'
-    last_status = status_df.groupby(['FillerOrderNo']).apply(
-        lambda x: x.sort_values('History_MessageDtTm', ascending=False).head(1)
+    status_df = status_df.rename_axis('idx').sort_values('idx')
+    last_status = status_df.rename_axis('idx').groupby(['FillerOrderNo']).apply(
+        lambda x: x.sort_values(['History_MessageDtTm', 'idx'], ascending=[True, True]).head(1)
     ).reset_index(drop=True)[['MRNCmpdId', 'FillerOrderNo', 'now_status', 'now_sched_for_busday']]
     fon_to_remove = last_status.loc[(last_status['now_status'] == 'canceled') &
                                     (last_status['now_sched_for_busday'] > 3),
                                     'FillerOrderNo']
+
     status_df = status_df[~status_df['FillerOrderNo'].isin(fon_to_remove)]
 
-    features_df_maybe_na = generate_training_data(status_df, valid_date_range, append_outcome=False)
+    features_df_maybe_na = generate_training_data(status_df, valid_date_range, append_outcome=False,
+                                                  add_no_show_before=False)
     features_df = remove_na(features_df_maybe_na)
 
     # Get number of previous no shows from historical data and add to data set
     master_df = master_feature_set.copy()
     master_df = master_df[master_df['MRNCmpdId'] != 'SMS0016578']
-    prev_no_shows = master_df[['MRNCmpdId', 'no_show_before']].groupby('MRNCmpdId').max().reset_index()
-    prev_no_shows['MRNCmpdId'] = prev_no_shows['MRNCmpdId'] .astype(int)
-    features_df['MRNCmpdId'] = features_df['MRNCmpdId'] .astype(int)
+    master_slt_filepath = '/data/mridle/data/silent_live_test/live_files/all/' \
+                          'out_features_data/features_master_slt_features.csv'
+    if os.path.exists(master_slt_filepath):
+        master_slt = get_slt_with_outcome()
+    else:
+        master_slt = pd.DataFrame()
+    historic_data = pd.concat([master_df, master_slt], axis=0)
 
-    features_df = features_df.merge(prev_no_shows, on=['MRNCmpdId'], how='left', suffixes=['_current', '_hist'])
-    features_df['no_show_before_hist'].fillna(0, inplace=True)
-    features_df['no_show_before'] = features_df['no_show_before_current'] + features_df['no_show_before_hist']
-    features_df.drop(['no_show_before_current', 'no_show_before_hist'], axis=1, inplace=True)
-    features_df['no_show_before_sq'] = features_df['no_show_before'] ** 2
+    historic_data['MRNCmpdId'] = historic_data['MRNCmpdId'].astype(str)
+    features_df['MRNCmpdId'] = features_df['MRNCmpdId'].astype(str)
 
-    prediction_df = features_df.copy()
+    hist_no_dupe = historic_data.merge(features_df[['FillerOrderNo', 'start_time']], how='left', indicator=True)
+    hist_no_dupe = hist_no_dupe[hist_no_dupe['_merge'] == 'left_only']
+
+    features_df = feature_no_show_before(features_df, hist_no_dupe)
+    features_df['filename'] = filename
 
     model_dirs = Path(model_dir).glob('*')
     for model_dir in model_dirs:
@@ -74,9 +90,17 @@ def main(data_path, model_dir, output_path, valid_date_range, file_encoding, mas
             data_set = DataSet(exp.stratified_dataset.config, features_df)
             preds_proba = exp.final_predictor.predict_proba(data_set.x)
             model_name = exp.metadata.get('name', model_path.name)
-            prediction_df[f'prediction_{model_name}'] = preds_proba
+            features_df[f'prediction_{model_name}'] = preds_proba
 
-    prediction_df.to_csv(output_path, index=False)
+    features_df.to_csv(output_path, index=False)
+
+    new_appts = features_df.merge(historic_data[['FillerOrderNo', 'start_time']], how='left', indicator=True)
+    new_appts = new_appts[new_appts['_merge'] == 'left_only']
+    new_appts.drop(columns=['_merge'], inplace=True)
+
+    master_slt_updated = pd.concat([master_slt, new_appts], axis=0)
+    master_slt_updated.drop_duplicates(inplace=True)
+    master_slt_updated.to_csv(master_slt_filepath, index=False)
 
 
 if __name__ == "__main__":
