@@ -9,7 +9,7 @@ from mridle.experiment.dataset import DataSet
 import os
 import re
 from dateutil.relativedelta import relativedelta
-import Path
+from pathlib import Path
 import pickle
 
 
