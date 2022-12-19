@@ -2,17 +2,16 @@ import pandas as pd
 import numpy as np
 import datetime
 from mridle.pipelines.data_engineering.ris.nodes import build_status_df, prep_raw_df_for_parquet, build_slot_df
-from mridle.pipelines.data_science.feature_engineering.nodes import generate_training_data, remove_na, \
+from mridle.pipelines.data_science.feature_engineering.nodes import remove_na, \
     generate_3_5_days_ahead_features, add_business_days, subtract_business_days, feature_no_show_before
 from mridle.utilities.prediction import main as prediction_main
 import os
 import re
 from dateutil.relativedelta import relativedelta
 
-
 AGO_DIR = '/data/mridle/data/silent_live_test/live_files/all/ago/'
 OUT_DIR = '/data/mridle/data/silent_live_test/live_files/all/out/'
-PREDS_DIR = '/data/mridle/data/silent_live_test/live_files/all/predictions/'
+PREDS_DIR = '/data/mridle/data/silent_live_test/live_files/all/out_features_data/'
 
 
 def get_slt_status_data(ago_out, with_source_file_info=False):
@@ -116,13 +115,23 @@ def get_slt_features():
     return all_slt_features
 
 
+def get_sorted_filenames(file_dir):
+    files_list = os.listdir(file_dir)
+    relevant_files = [x for x in files_list if x.endswith(".csv")]
+    splits = pd.DataFrame([re.split('_', os.path.splitext(x)[0]) for x in relevant_files])
+    splits['filename'] = relevant_files
+    splits.columns = ['type', 'day', 'month', 'year', 'filename']
+    splits.sort_values(['year', 'month', 'day'], inplace=True)
+    return splits
+
+
 def process_live_data():
 
+    # process_live_data() function
     already_processed_filename = '/data/mridle/data/silent_live_test/live_files/already_processed.txt'
     master_feature_set = pd.read_parquet(
         '/data/mridle/data/kedro_data_catalog/04_feature/master_feature_set_na_removed.parquet')
-    previous_no_shows = master_feature_set[['MRNCmpdId', 'no_show_before']].groupby(['MRNCmpdId']).apply(
-        np.max).reset_index(drop=True)
+
     rfs_file = "/data/mridle/data/silent_live_test/live_files/all/" \
                "retrospective_reasonforstudy/content/[dbo].[MRIdle_retrospective].csv"
     rfs = pd.read_csv(rfs_file)
@@ -135,10 +144,13 @@ def process_live_data():
     with open('/data/mridle/data/silent_live_test/live_files/dates_to_ignore.txt', 'r') as f:
         dates_to_ignore = f.read().splitlines()
 
-    for filename in os.listdir(AGO_DIR):
-        if filename.endswith(".csv") and filename not in dates_to_ignore and filename not in already_processed_files:
+    ago_files = get_sorted_filenames(AGO_DIR)
+    for idx, filename_row in ago_files.iterrows():
+        if filename_row['filename'] not in dates_to_ignore and filename_row['filename'] not in already_processed_files:
+            ago_day, ago_month, ago_year = filename_row[['day', 'month', 'year']]
+            print(ago_day, ago_month, ago_year)
+            filename = filename_row['filename']
 
-            _, ago_day, ago_month, ago_year = re.split('_', os.path.splitext(filename)[0])
             ago_date_start = datetime.datetime(int(ago_year), int(ago_month), int(ago_day))
             ago_date_end = ago_date_start
             ago_start_year, ago_start_month, ago_start_date = ago_date_start.strftime("%Y"), ago_date_start.strftime(
@@ -148,32 +160,45 @@ def process_live_data():
 
             ago_valid_date_range = ['{}-{}-{}'.format(ago_start_year, ago_start_month, ago_start_date),
                                     '{}-{}-{}'.format(ago_end_year, ago_end_month, ago_end_date)]
-            ago = pd.read_csv('/data/mridle/data/silent_live_test/live_files/all/ago/{}'.format(filename),
-                              encoding="utf_16")
+            ago = pd.read_csv(
+                '/data/mridle/data/silent_live_test/live_files/all/ago/{}'.format(filename_row['filename']),
+                encoding="utf_16")
             formatted_ago_df = prep_raw_df_for_parquet(ago)
             ago_status_df = build_status_df(formatted_ago_df, list())
             ago_status_df = ago_status_df.merge(rfs, how='left')
-            ago_features_df_maybe_na = generate_training_data(ago_status_df, valid_date_range=ago_valid_date_range)
+            ago_features_df_maybe_na = build_slot_df(ago_status_df, valid_date_range=ago_valid_date_range)
             ago_features_df = remove_na(ago_features_df_maybe_na)
 
-            ago_features_df = ago_features_df.merge(previous_no_shows, on='MRNCmpdId', how='left',
-                                                    suffixes=['_current', '_hist'])
-            ago_features_df['no_show_before_hist'].fillna(0, inplace=True)
-            ago_features_df['no_show_before'] = ago_features_df['no_show_before_current'] + ago_features_df[
-                'no_show_before_hist']
-            ago_features_df.drop(['no_show_before_current', 'no_show_before_hist'], axis=1, inplace=True)
-            ago_features_df['no_show_before_sq'] = ago_features_df['no_show_before'] ** 2
+            ago_features_df['file'] = filename
+
+            master_ago_filepath = '/data/mridle/data/silent_live_test/live_files/all/' \
+                                  'actuals/master_actuals_with_filename.csv'
+            if os.path.exists(master_ago_filepath):
+                master_ago = pd.read_csv(master_ago_filepath)
+            else:
+                master_ago = pd.DataFrame()
+
+            master_ago_updated = pd.concat([master_ago, ago_features_df], axis=0)
+            master_ago_updated.drop_duplicates(inplace=True)
+            master_ago_updated.to_csv(master_ago_filepath, index=False)
+
             ago_features_df.to_csv(
-                '/data/mridle/data/silent_live_test/live_files/all/actuals/actuals_{}_{}_{}.csv'.format(ago_day,
-                                                                                                        ago_month,
-                                                                                                        ago_year))
+                '/data/mridle/data/silent_live_test/live_files/all/actuals/actuals_{}_{}_{}_with_filename.csv'.format(
+                    ago_day,
+                    ago_month,
+                    ago_year))
+
             with open(already_processed_filename, 'a') as ap_f:
                 ap_f.write(f'\n{filename}')
 
-    for filename in os.listdir(OUT_DIR):
-        if filename.endswith(".csv") and filename not in dates_to_ignore and filename not in already_processed_files:
-            _, out_day, out_month, out_year = re.split('_', os.path.splitext(filename)[0])
-            print(filename)
+    out_files = get_sorted_filenames(OUT_DIR)
+    for idx, filename_row in out_files.iterrows():
+        if filename_row['filename'] not in dates_to_ignore and filename_row['filename'] not in already_processed_files:
+            filename = filename_row['filename']
+
+            out_day, out_month, out_year = filename_row[['day', 'month', 'year']]
+            print(filename_row['filename'], out_day, out_month, out_year)
+
             out_date_start = datetime.datetime(int(out_year), int(out_month), int(out_day))
             out_date_end = add_business_days(out_date_start, 2)
 
@@ -185,13 +210,14 @@ def process_live_data():
             out_valid_date_range = ['{}-{}-{}'.format(out_start_year, out_start_month, out_start_date),
                                     '{}-{}-{}'.format(out_end_year, out_end_month, out_end_date)]
 
-            data_path = '/data/mridle/data/silent_live_test/live_files/all/out/{}'.format(filename)
+            data_path = '/data/mridle/data/silent_live_test/live_files/all/out/{}'.format(filename_row['filename'])
             model_dir = '/data/mridle/data/kedro_data_catalog/06_models/'
             output_path = '/data/mridle/data/silent_live_test/live_files/all/' \
-                          'predictions/preds_{}_{}_{}.csv'.format(out_day, out_month, out_year)
+                          'out_features_data/features_{}_{}_{}.csv'.format(out_day, out_month, out_year)
 
             prediction_main(data_path, model_dir, output_path, valid_date_range=out_valid_date_range,
-                            file_encoding='utf-16', master_feature_set=master_feature_set, rfs_df=rfs)
+                            file_encoding='utf-16', master_feature_set=master_feature_set, rfs_df=rfs,
+                            filename=filename)
 
             with open(already_processed_filename, 'a') as ap_f:
                 ap_f.write(f'\n{filename}')
