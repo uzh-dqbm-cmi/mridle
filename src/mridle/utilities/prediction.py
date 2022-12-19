@@ -12,14 +12,6 @@ from mridle.experiment.dataset import DataSet
 from mridle.utilities.process_live_data import get_slt_with_outcome
 
 
-def remove_redundant(status_df):
-    """status 'changes' that aren't actually changes, that can often cause issues...let's remove these"""
-    status_df_copy = status_df.copy()
-    status_df_copy = status_df_copy[~((status_df_copy['now_status'] == status_df_copy['was_status'])
-                                      & (status_df_copy['now_sched_for_date'] == status_df_copy['was_sched_for_date']))]
-    return status_df_copy
-
-
 def main(data_path, model_dir, output_path, valid_date_range, file_encoding, master_feature_set, rfs_df, filename):
     """
     Make predictions for all models in model_dir on the given data, saving the resulting predictions to output_path.
@@ -33,6 +25,14 @@ def main(data_path, model_dir, output_path, valid_date_range, file_encoding, mas
 
     Returns: None
     """
+
+    def remove_redundant(df):
+        """status 'changes' that aren't actually changes, that can often cause issues...let's remove these"""
+        st_df = df.copy()
+        st_df = st_df[~((st_df['now_status'] == st_df['was_status'])
+                        & (st_df['now_sched_for_date'] == st_df['was_sched_for_date']))]
+        return st_df
+
     if file_encoding:
         raw_df = pd.read_csv(data_path, encoding=file_encoding)
     else:
@@ -105,12 +105,12 @@ def main(data_path, model_dir, output_path, valid_date_range, file_encoding, mas
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process some integers.')
-    parser.add_argument('data_path',  type=str, help='Path to the input data')
-    parser.add_argument('model_dir',  type=str, help='Parent directory containing model subdirectories.')
-    parser.add_argument('output_path',  type=str, help='Destination to save the prediction data')
-    parser.add_argument('start_date',  type=str, help='Destination to save the prediction data')
-    parser.add_argument('end_date',  type=str, help='Destination to save the prediction data')
-    parser.add_argument('file_encoding',  type=str, help='Encoding arg for read_csv()')
+    parser.add_argument('data_path', type=str, help='Path to the input data')
+    parser.add_argument('model_dir', type=str, help='Parent directory containing model subdirectories.')
+    parser.add_argument('output_path', type=str, help='Destination to save the prediction data')
+    parser.add_argument('start_date', type=str, help='Destination to save the prediction data')
+    parser.add_argument('end_date', type=str, help='Destination to save the prediction data')
+    parser.add_argument('file_encoding', type=str, help='Encoding arg for read_csv()')
     args = parser.parse_args()
     valid_date_range = (args.start_date, args.end_date)
     main(args.data_path, args.model_dir, args.output_path, valid_date_range)
