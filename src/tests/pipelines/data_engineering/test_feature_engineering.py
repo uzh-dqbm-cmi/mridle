@@ -28,16 +28,19 @@ class TestNoShowBefore(unittest.TestCase):
         slot_df = pd.DataFrame([
             {
                 'MRNCmpdId': 1,
+                'FillerOrderNo': 1,
                 'start_time': str(day(2)),
                 'NoShow': 1
             },
             {
                 'MRNCmpdId': 1,
+                'FillerOrderNo': 1,
                 'start_time': str(day(3)),
                 'NoShow': 1
             },
             {
                 'MRNCmpdId': 1,
+                'FillerOrderNo': 1,
                 'start_time': str(day(4)),
                 'NoShow': 0
             }
@@ -46,24 +49,38 @@ class TestNoShowBefore(unittest.TestCase):
         expected = pd.DataFrame([
             {
                 'MRNCmpdId': 1,
+                'FillerOrderNo': 1,
                 'start_time': str(day(2)),
                 'NoShow': 1,
                 'no_show_before': 0,
-                'no_show_before_sq': 0
+                'no_show_before_sq': 0,
+                'appts_before': 0,
+                'show_before': 0,
+                'no_show_rate': 0.0
             },
             {
                 'MRNCmpdId': 1,
+                'FillerOrderNo': 1,
                 'start_time': str(day(3)),
                 'NoShow': 1,
                 'no_show_before': 1,
-                'no_show_before_sq': 1
+                'no_show_before_sq': 1,
+                'appts_before': 1,
+                'show_before': 0,
+                'no_show_rate': 1.0
+
             },
             {
                 'MRNCmpdId': 1,
+                'FillerOrderNo': 1,
                 'start_time': str(day(4)),
                 'NoShow': 0,
                 'no_show_before': 2,
-                'no_show_before_sq': 4
+                'no_show_before_sq': 4,
+                'appts_before': 2,
+                'show_before': 0,
+                'no_show_rate': 1.0
+
             }
         ])
         result = feature_no_show_before(slot_df)
@@ -74,11 +91,13 @@ class TestNoShowBefore(unittest.TestCase):
         slot_df = pd.DataFrame([
             {
                 'MRNCmpdId': 2,
+                'FillerOrderNo': 1,
                 'start_time': str(day(2)),
                 'NoShow': 0
             },
             {
                 'MRNCmpdId': 2,
+                'FillerOrderNo': 1,
                 'start_time': str(day(3)),
                 'NoShow': 0
             }
@@ -87,17 +106,25 @@ class TestNoShowBefore(unittest.TestCase):
         expected = pd.DataFrame([
             {
                 'MRNCmpdId': 2,
+                'FillerOrderNo': 1,
                 'start_time': str(day(2)),
                 'NoShow': 0,
                 'no_show_before': 0,
-                'no_show_before_sq': 0
+                'no_show_before_sq': 0,
+                'appts_before': 0,
+                'show_before': 0,
+                'no_show_rate': 0.0
             },
             {
                 'MRNCmpdId': 2,
+                'FillerOrderNo': 1,
                 'start_time': str(day(3)),
                 'NoShow': 0,
                 'no_show_before': 0,
-                'no_show_before_sq': 0
+                'no_show_before_sq': 0,
+                'appts_before': 1,
+                'show_before': 1,
+                'no_show_rate': 0.0
             }
         ])
         result = feature_no_show_before(slot_df)
@@ -108,26 +135,31 @@ class TestNoShowBefore(unittest.TestCase):
         slot_df = pd.DataFrame([
             {
                 'MRNCmpdId': 1,
+                'FillerOrderNo': 1,
                 'start_time': str(day(2)),
                 'NoShow': 1
             },
             {
                 'MRNCmpdId': 1,
+                'FillerOrderNo': 1,
                 'start_time': str(day(3)),
                 'NoShow': 1
             },
             {
                 'MRNCmpdId': 1,
+                'FillerOrderNo': 1,
                 'start_time': str(day(4)),
                 'NoShow': 0
             },
             {
                 'MRNCmpdId': 2,
+                'FillerOrderNo': 2,
                 'start_time': str(day(2)),
                 'NoShow': 0
             },
             {
                 'MRNCmpdId': 2,
+                'FillerOrderNo': 2,
                 'start_time': str(day(3)),
                 'NoShow': 0
             }
@@ -136,39 +168,62 @@ class TestNoShowBefore(unittest.TestCase):
         expected = pd.DataFrame([
             {
                 'MRNCmpdId': 1,
+                'FillerOrderNo': 1,
                 'start_time': str(day(2)),
                 'NoShow': 1,
                 'no_show_before': 0,
-                'no_show_before_sq': 0
+                'no_show_before_sq': 0,
+                'appts_before': 0,
+                'show_before': 0,
+                'no_show_rate': 0.0
+
             },
             {
                 'MRNCmpdId': 1,
+                'FillerOrderNo': 1,
                 'start_time': str(day(3)),
                 'NoShow': 1,
                 'no_show_before': 1,
-                'no_show_before_sq': 1
+                'no_show_before_sq': 1,
+                'appts_before': 1,
+                'show_before': 0,
+                'no_show_rate': 1.0
+
             },
             {
                 'MRNCmpdId': 1,
+                'FillerOrderNo': 1,
                 'start_time': str(day(4)),
                 'NoShow': 0,
                 'no_show_before': 2,
-                'no_show_before_sq': 4
-            },
-            {
-                'MRNCmpdId': 2,
-                'start_time': str(day(2)),
-                'NoShow': 0,
-                'no_show_before': 0,
-                'no_show_before_sq': 0
+                'no_show_before_sq': 4,
+                'appts_before': 2,
+                'show_before': 0,
+                'no_show_rate': 1.0
 
             },
             {
                 'MRNCmpdId': 2,
+                'FillerOrderNo': 2,
+                'start_time': str(day(2)),
+                'NoShow': 0,
+                'no_show_before': 0,
+                'no_show_before_sq': 0,
+                'appts_before': 0,
+                'show_before': 0,
+                'no_show_rate': 0.0
+
+            },
+            {
+                'MRNCmpdId': 2,
+                'FillerOrderNo': 2,
                 'start_time': str(day(3)),
                 'NoShow': 0,
                 'no_show_before': 0,
-                'no_show_before_sq': 0
+                'no_show_before_sq': 0,
+                'appts_before': 1,
+                'show_before': 1,
+                'no_show_rate': 0.0
 
             }
         ])
@@ -180,11 +235,13 @@ class TestNoShowBefore(unittest.TestCase):
         slot_df = pd.DataFrame([
             {
                 'MRNCmpdId': 2,
+                'FillerOrderNo': 1,
                 'start_time': str(day(3)),
                 'NoShow': 0
             },
             {
                 'MRNCmpdId': 2,
+                'FillerOrderNo': 1,
                 'start_time': str(day(2)),
                 'NoShow': 1
             }
@@ -193,23 +250,30 @@ class TestNoShowBefore(unittest.TestCase):
         expected = pd.DataFrame([
             {
                 'MRNCmpdId': 2,
-                'start_time': str(day(2)),
-                'NoShow': 1,
-                'no_show_before': 0,
-                'no_show_before_sq': 0
+                'FillerOrderNo': 1,
+                'start_time': str(day(3)),
+                'NoShow': 0,
+                'no_show_before': 1,
+                'no_show_before_sq': 1,
+                'appts_before': 1,
+                'show_before': 0,
+                'no_show_rate': 1.0
 
             },
             {
                 'MRNCmpdId': 2,
-                'start_time': str(day(3)),
-                'NoShow': 0,
-                'no_show_before': 1,
-                'no_show_before_sq': 1
-
+                'FillerOrderNo': 1,
+                'start_time': str(day(2)),
+                'NoShow': 1,
+                'no_show_before': 0,
+                'no_show_before_sq': 0,
+                'appts_before': 0,
+                'show_before': 0,
+                'no_show_rate': 0.0
             }
         ])
         result = feature_no_show_before(slot_df)
-
+        print(result.columns)
         pd.testing.assert_frame_equal(result.reset_index(drop=True), expected.reset_index(drop=True), check_like=True)
 
 
