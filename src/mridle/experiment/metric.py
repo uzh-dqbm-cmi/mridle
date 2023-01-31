@@ -110,7 +110,7 @@ class MAE(Metric):
         return metric
 
 
-class Median_Absolute_Error(Metric):
+class MedianAbsoluteError(Metric):
     name = 'median_absolute_error'
     metric_type = 'regression'
 
