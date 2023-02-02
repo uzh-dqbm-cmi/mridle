@@ -95,7 +95,7 @@ def generate_3_5_days_ahead_features(status_df, f_dt, live_data=False):
             pertinent_appts['FillerOrderNo'])].copy()
 
     if len(fn_status_df_fons):
-
+        print("OK")
         last_status = fn_status_df_fons.groupby(['FillerOrderNo']).apply(
             lambda x: x.sort_values('History_MessageDtTm', ascending=False).head(1)
         ).reset_index(drop=True)[['MRNCmpdId', 'FillerOrderNo', 'now_status', 'now_sched_for_date',
@@ -104,10 +104,12 @@ def generate_3_5_days_ahead_features(status_df, f_dt, live_data=False):
                                         (last_status['now_sched_for_busday'] > 3),
                                         'FillerOrderNo']
         fn_status_df_fons = fn_status_df_fons[~fn_status_df_fons['FillerOrderNo'].isin(fon_to_remove)]
+        print(fn_status_df_fons.shape)
 
         features_df = build_feature_set(fn_status_df_fons,
                                         valid_date_range=[start_dt.strftime("%Y-%m-%d"), end_dt.strftime("%Y-%m-%d")],
                                         build_future_slots=True)
+        print(features_df.shape)
 
         # These model_data appts now are looking ahead, so NoShow should be No (since we won't know yet)
         features_df['NoShow'] = False
