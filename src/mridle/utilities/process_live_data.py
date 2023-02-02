@@ -277,9 +277,10 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
 
     features_df_maybe_na = generate_3_5_days_ahead_features(status_df, start_dt, live_data=True)
     features_df = remove_na(features_df_maybe_na)
-
+    print(features_df.shape)
     features_df = features_df[features_df['start_time'] >= start_dt]
     features_df = features_df[features_df['start_time'] <= end_dt]
+    print(features_df.shape, start_dt, end_dt)
 
     # Get number of previous no shows from historical data and add to data set
     master_df = master_feature_set.copy()
