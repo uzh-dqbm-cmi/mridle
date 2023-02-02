@@ -280,8 +280,10 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
     features_df_maybe_na = generate_3_5_days_ahead_features(status_df, start_dt, live_data=True)
     features_df = remove_na(features_df_maybe_na)
     print(features_df.shape)
+
+    day_after_last_valid_date = end_dt + pd.to_timedelta(1, 'days')
     features_df = features_df[features_df['start_time'] >= start_dt]
-    features_df = features_df[features_df['start_time'] <= end_dt]
+    features_df = features_df[features_df['start_time'] < day_after_last_valid_date]
     print(features_df.shape, start_dt, end_dt)
 
     # Get number of previous no shows from historical data and add to data set
@@ -304,18 +306,17 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
     features_df = feature_no_show_before(features_df, hist_no_dupe)
     features_df['filename'] = filename
 
-    if features_df.shape[0] > 0:
-        model_dirs = Path(model_dir).glob('*')
-        for model_dir in model_dirs:
-            model_paths = model_dir.glob('*')
-            for model_path in model_paths:
-                with open(model_path, "rb+") as f:
-                    serialized_model = pickle.load(f)
-                exp = Experiment.deserialize(serialized_model)
-                data_set = DataSet(exp.stratified_dataset.config, features_df)
-                preds_proba = exp.final_predictor.predict_proba(data_set.x)
-                model_name = exp.metadata.get('name', model_path.name)
-                features_df[f'prediction_{model_name}'] = preds_proba
+    model_dirs = Path(model_dir).glob('*')
+    for model_dir in model_dirs:
+        model_paths = model_dir.glob('*')
+        for model_path in model_paths:
+            with open(model_path, "rb+") as f:
+                serialized_model = pickle.load(f)
+            exp = Experiment.deserialize(serialized_model)
+            data_set = DataSet(exp.stratified_dataset.config, features_df)
+            preds_proba = exp.final_predictor.predict_proba(data_set.x)
+            model_name = exp.metadata.get('name', model_path.name)
+            features_df[f'prediction_{model_name}'] = preds_proba
 
     features_df.to_csv(output_path, index=False)
 
