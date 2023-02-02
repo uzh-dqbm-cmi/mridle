@@ -70,7 +70,7 @@ def generate_training_data(status_df, valid_date_range, append_outcome=True, add
     return training_data
 
 
-def generate_3_5_days_ahead_features(status_df, f_dt):
+def generate_3_5_days_ahead_features(status_df, f_dt, live_data=False):
     """
     Take in dataframe of status changes and a date, and generate upcoming appts - defined as appts that are due to take
     place within 3-5 business days from the provided date. Returns these appts as slots with features
@@ -79,8 +79,12 @@ def generate_3_5_days_ahead_features(status_df, f_dt):
     features_df = pd.DataFrame()
     fn_status_df = status_df.copy()
 
-    start_dt = add_business_days(f_dt, 3).date()
-    end_dt = add_business_days(f_dt, 5).date()
+    if live_data:
+        start_dt = f_dt
+        end_dt = add_business_days(f_dt, 2).date()
+    else:
+        start_dt = add_business_days(f_dt, 3).date()
+        end_dt = add_business_days(f_dt, 5).date()
 
     pertinent_appts = fn_status_df.loc[(fn_status_df['now_sched_for_date'].dt.date >= start_dt) &
                                        (fn_status_df['now_sched_for_date'].dt.date <= end_dt),

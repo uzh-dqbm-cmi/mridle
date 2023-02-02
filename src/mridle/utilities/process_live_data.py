@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import datetime
 from mridle.pipelines.data_engineering.ris.nodes import build_status_df, prep_raw_df_for_parquet, build_slot_df
-from mridle.pipelines.data_science.feature_engineering.nodes import remove_na, generate_training_data, \
+from mridle.pipelines.data_science.feature_engineering.nodes import remove_na, \
     generate_3_5_days_ahead_features, add_business_days, subtract_business_days, feature_no_show_before
 from mridle.experiment.experiment import Experiment
 from mridle.experiment.dataset import DataSet
@@ -256,6 +256,9 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
 
     exclude_pat_ids = list()  # TODO!
 
+    start_dt = pd.to_datetime(valid_date_range[0])
+    end_dt = pd.to_datetime(valid_date_range[0])
+
     formatted_df = prep_raw_df_for_parquet(raw_df)
     status_df = build_status_df(formatted_df, exclude_pat_ids)
     status_df = status_df.merge(rfs_df, how='left')
@@ -272,9 +275,11 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
 
     status_df = status_df[~status_df['FillerOrderNo'].isin(fon_to_remove)]
 
-    features_df_maybe_na = generate_training_data(status_df, valid_date_range, append_outcome=False,
-                                                  add_no_show_before=False)
+    features_df_maybe_na = generate_3_5_days_ahead_features(status_df, start_dt, live_data=True)
     features_df = remove_na(features_df_maybe_na)
+
+    features_df = features_df[features_df['start_time'] >= start_dt]
+    features_df = features_df[features_df['start_time'] <= end_dt]
 
     # Get number of previous no shows from historical data and add to data set
     master_df = master_feature_set.copy()
