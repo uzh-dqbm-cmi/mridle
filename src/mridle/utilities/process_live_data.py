@@ -304,17 +304,18 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
     features_df = feature_no_show_before(features_df, hist_no_dupe)
     features_df['filename'] = filename
 
-    model_dirs = Path(model_dir).glob('*')
-    for model_dir in model_dirs:
-        model_paths = model_dir.glob('*')
-        for model_path in model_paths:
-            with open(model_path, "rb+") as f:
-                serialized_model = pickle.load(f)
-            exp = Experiment.deserialize(serialized_model)
-            data_set = DataSet(exp.stratified_dataset.config, features_df)
-            preds_proba = exp.final_predictor.predict_proba(data_set.x)
-            model_name = exp.metadata.get('name', model_path.name)
-            features_df[f'prediction_{model_name}'] = preds_proba
+    if features_df.shape[0] > 0:
+        model_dirs = Path(model_dir).glob('*')
+        for model_dir in model_dirs:
+            model_paths = model_dir.glob('*')
+            for model_path in model_paths:
+                with open(model_path, "rb+") as f:
+                    serialized_model = pickle.load(f)
+                exp = Experiment.deserialize(serialized_model)
+                data_set = DataSet(exp.stratified_dataset.config, features_df)
+                preds_proba = exp.final_predictor.predict_proba(data_set.x)
+                model_name = exp.metadata.get('name', model_path.name)
+                features_df[f'prediction_{model_name}'] = preds_proba
 
     features_df.to_csv(output_path, index=False)
 
