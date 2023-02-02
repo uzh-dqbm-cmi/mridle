@@ -257,7 +257,7 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
     exclude_pat_ids = list()  # TODO!
 
     start_dt = pd.to_datetime(valid_date_range[0])
-    end_dt = pd.to_datetime(valid_date_range[0])
+    end_dt = pd.to_datetime(valid_date_range[1])
 
     formatted_df = prep_raw_df_for_parquet(raw_df)
     status_df = build_status_df(formatted_df, exclude_pat_ids)
