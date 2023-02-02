@@ -53,6 +53,8 @@ def get_slt_with_outcome():
     actuals = pd.read_csv('/data/mridle/data/silent_live_test/live_files/all/actuals/master_actuals_with_filename.csv',
                           parse_dates=['start_time', 'end_time'])
 
+    preds['MRNCmpdId'] = preds['MRNCmpdId'].astype(str)
+    actuals['MRNCmpdId'] = actuals['MRNCmpdId'].astype(str)
     slt_with_outcome = preds.merge(actuals[['start_time', 'MRNCmpdId', 'NoShow']], on=['start_time', 'MRNCmpdId'],
                                    how='left')
     slt_with_outcome['NoShow'].fillna(False, inplace=True)
