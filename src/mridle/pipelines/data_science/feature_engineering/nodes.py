@@ -85,7 +85,7 @@ def generate_3_5_days_ahead_features(status_df, f_dt, live_data=False):
     else:
         start_dt = add_business_days(f_dt, 3).date()
         end_dt = add_business_days(f_dt, 5).date()
-
+    print(start_dt, end_dt)
     pertinent_appts = fn_status_df.loc[(fn_status_df['now_sched_for_date'].dt.date >= start_dt) &
                                        (fn_status_df['now_sched_for_date'].dt.date <= end_dt),
                                        ['FillerOrderNo', 'MRNCmpdId', 'now_sched_for_date']].drop_duplicates()
