@@ -175,6 +175,8 @@ def process_live_data():
             ago_features_df_maybe_na = build_slot_df(ago_status_df, valid_date_range=ago_valid_date_range)
             ago_features_df = remove_na(ago_features_df_maybe_na)
 
+            ago_features_df = ago_features_df[ago_features_df['MRNCmpdId'].str[:3] != 'SMS']
+
             ago_features_df['file'] = filename
 
             master_ago_filepath = '/data/mridle/data/silent_live_test/live_files/all/' \
@@ -279,6 +281,9 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
 
     features_df_maybe_na = generate_3_5_days_ahead_features(status_df, start_dt, live_data=True)
     features_df = remove_na(features_df_maybe_na)
+
+    features_df = features_df[features_df['MRNCmpdId'].str[:3] != 'SMS']
+
     print(features_df.shape)
 
     day_after_last_valid_date = end_dt + pd.to_timedelta(1, 'days')
