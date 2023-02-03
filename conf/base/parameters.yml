@@ -427,7 +427,6 @@ models:
                                   - 'occupation'
                                   - 'reason'
                                   - 'modality'
-                                  - 'day_of_week_str'
                           - name: 'cyc'
                             flavor: mridle.utilities.modeling.CyclicalTransformer
                             config:
