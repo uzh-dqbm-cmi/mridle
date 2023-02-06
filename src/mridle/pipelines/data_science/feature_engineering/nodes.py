@@ -60,8 +60,8 @@ def generate_training_data(status_df, valid_date_range, append_outcome=True, add
 
     # restrict to the valid date range
     day_after_last_valid_date = end_dt + pd.to_timedelta(1, 'days')
-    training_data = training_data[training_data['start_time'] >= start_dt]
-    training_data = training_data[training_data['start_time'] < day_after_last_valid_date]
+    training_data = training_data[training_data['start_time'] >= start_dt.date()]
+    training_data = training_data[training_data['start_time'] < day_after_last_valid_date.date()]
 
     training_data = data_processing.filter_duplicate_patient_time_slots(training_data)
 
