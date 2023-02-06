@@ -64,7 +64,7 @@ def get_slt_with_outcome():
     return slt_with_outcome
 
 
-def get_slt_features():
+def get_slt_features_delete_if_ok_to_do_so():
     file_dir = '/data/mridle/data/silent_live_test/live_files/all/out/'
     all_slt_features = pd.DataFrame()
 
