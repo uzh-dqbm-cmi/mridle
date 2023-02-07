@@ -33,6 +33,6 @@ def concat_master_data(master_feature_set_na_removed, live_data):
     live_data_train = live_data[live_data['start_time'].dt.date < five_weeks_ago]
     val_data_with_live = live_data[live_data['start_time'].dt.date >= five_weeks_ago]
 
-    train_data_with_live = pd.concat([master_feature_set_na_removed, live_data_train], axis=1)
+    train_data_with_live = pd.concat([master_feature_set_na_removed, live_data_train], join="inner")
 
     return train_data_with_live, val_data_with_live
