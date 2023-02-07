@@ -55,12 +55,13 @@ def get_slt_with_outcome():
 
     preds['MRNCmpdId'] = preds['MRNCmpdId'].astype(str)
     actuals['MRNCmpdId'] = actuals['MRNCmpdId'].astype(str)
+    print(preds.shape, actuals.shape)
     slt_with_outcome = preds.merge(actuals[['start_time', 'MRNCmpdId', 'NoShow']], on=['start_time', 'MRNCmpdId'],
                                    how='left')
     slt_with_outcome['NoShow'].fillna(False, inplace=True)
 
-    most_recent_actuals = np.max(actuals['start_time']).date()
-    slt_with_outcome = slt_with_outcome[slt_with_outcome['start_time'].dt.date <= most_recent_actuals]
+    most_recent_actuals = np.max(actuals['start_time'])  # .date()
+    slt_with_outcome = slt_with_outcome[slt_with_outcome['start_time'] <= most_recent_actuals]
     return slt_with_outcome
 
 
