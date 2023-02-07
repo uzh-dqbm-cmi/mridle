@@ -60,8 +60,8 @@ def generate_training_data(status_df, valid_date_range, append_outcome=True, add
 
     # restrict to the valid date range
     day_after_last_valid_date = end_dt + pd.to_timedelta(1, 'days')
-    training_data = training_data[training_data['start_time'] >= start_dt.date()]
-    training_data = training_data[training_data['start_time'] < day_after_last_valid_date.date()]
+    training_data = training_data[training_data['start_time'].date() >= start_dt.date()]
+    training_data = training_data[training_data['start_time'].date() < day_after_last_valid_date.date()]
 
     training_data = data_processing.filter_duplicate_patient_time_slots(training_data)
 
@@ -86,8 +86,8 @@ def generate_3_5_days_ahead_features(status_df, f_dt, live_data=False):
         start_dt = add_business_days(f_dt, 3).date()
         end_dt = add_business_days(f_dt, 5).date()
 
-    pertinent_appts = fn_status_df.loc[(fn_status_df['now_sched_for_date'].dt.date >= start_dt) &
-                                       (fn_status_df['now_sched_for_date'].dt.date <= end_dt),
+    pertinent_appts = fn_status_df.loc[(fn_status_df['now_sched_for_date'].dt.date >= start_dt.date()) &
+                                       (fn_status_df['now_sched_for_date'].dt.date <= end_dt.date()),
                                        ['FillerOrderNo', 'MRNCmpdId', 'now_sched_for_date']].drop_duplicates()
 
     fn_status_df_fons = fn_status_df[

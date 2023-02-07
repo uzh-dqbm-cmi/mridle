@@ -55,7 +55,7 @@ def get_slt_with_outcome():
 
     preds['MRNCmpdId'] = preds['MRNCmpdId'].astype(str)
     actuals['MRNCmpdId'] = actuals['MRNCmpdId'].astype(str)
-    print(preds.shape, actuals.shape)
+
     slt_with_outcome = preds.merge(actuals[['start_time', 'MRNCmpdId', 'NoShow']], on=['start_time', 'MRNCmpdId'],
                                    how='left')
     slt_with_outcome['NoShow'].fillna(False, inplace=True)
