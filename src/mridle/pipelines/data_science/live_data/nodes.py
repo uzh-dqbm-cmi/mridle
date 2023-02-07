@@ -27,8 +27,8 @@ def concat_master_data(master_feature_set_na_removed, live_data):
     """Take live data up until start of last month, and concat with master feature set. That is then training data.
     Rest of live data (i.e. from start of last month until now) is then validation data"""
     print(live_data.columns)
-    print(pd.Series(list(set(live_data.columns) & set(master_feature_set_na_removed.columns))))
-    for col in master_feature_set_na_removed.columns:
+
+    for col in list(set(live_data.columns) & set(master_feature_set_na_removed.columns)):
         live_data[col] = live_data[col].astype(master_feature_set_na_removed[col].dtypes.name)
 
     last_monday = datetime.date.today() + datetime.timedelta(days=-datetime.date.today().weekday())
