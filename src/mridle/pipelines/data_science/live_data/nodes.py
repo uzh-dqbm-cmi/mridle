@@ -29,12 +29,13 @@ def concat_master_data(master_feature_set_na_removed, live_data):
 
     last_monday = datetime.date.today() + datetime.timedelta(days=-datetime.date.today().weekday())
     five_weeks_ago = last_monday - datetime.timedelta(weeks=5)
-    master_feature_set_na_removed['post_code'] = master_feature_set_na_removed['post_code'].astype(int)
 
     live_data_train = live_data[live_data['start_time'].dt.date < five_weeks_ago]
     val_data_with_live = live_data[live_data['start_time'].dt.date >= five_weeks_ago]
 
     train_data_with_live = pd.concat([master_feature_set_na_removed, live_data_train], join="inner")
-    train_data_with_live['post_code'] = train_data_with_live['post_code'].astype(int)
+
+    for col in train_data_with_live.columns:
+        train_data_with_live[col] = train_data_with_live[col].astype(master_feature_set_na_removed[col].dtypes.name)
 
     return train_data_with_live, val_data_with_live
