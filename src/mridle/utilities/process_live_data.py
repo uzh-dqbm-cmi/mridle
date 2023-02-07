@@ -285,12 +285,9 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
 
     features_df = features_df[features_df['MRNCmpdId'].str[:3] != 'SMS']
 
-    print(features_df.shape)
-
     day_after_last_valid_date = end_dt + pd.to_timedelta(1, 'days')
     features_df = features_df[features_df['start_time'] >= start_dt]
     features_df = features_df[features_df['start_time'] < day_after_last_valid_date]
-    print(features_df.shape, start_dt, end_dt)
 
     # Get number of previous no shows from historical data and add to data set
     master_df = master_feature_set.copy()
