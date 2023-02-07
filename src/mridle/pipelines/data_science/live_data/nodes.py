@@ -29,7 +29,8 @@ def concat_master_data(master_feature_set_na_removed, live_data):
 
     for col in list(set(live_data.columns) & set(master_feature_set_na_removed.columns)):
         print(col)
-        live_data[col] = live_data[col].astype(master_feature_set_na_removed[col].dtypes.name)
+        master_feature_set_na_removed[col] = master_feature_set_na_removed[col].astype(
+            live_data[col].dtypes.name)
 
     print(pd.concat([live_data.dtypes, master_feature_set_na_removed.dtypes], axis=1))
     last_monday = datetime.date.today() + datetime.timedelta(days=-datetime.date.today().weekday())
