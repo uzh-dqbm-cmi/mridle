@@ -278,7 +278,6 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
                           'out_features_data/features_master_slt_features.csv'
     if os.path.exists(master_slt_filepath):
         master_slt = pd.read_parquet('/data/mridle/data/kedro_data_catalog/04_feature/live_data.parquet')
-
     else:
         master_slt = pd.DataFrame()
     historic_data = pd.concat([master_df, master_slt], axis=0)
