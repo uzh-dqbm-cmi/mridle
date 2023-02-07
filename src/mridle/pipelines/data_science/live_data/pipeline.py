@@ -14,7 +14,7 @@ def create_pipeline(**kwargs):
             node(
                 func=concat_master_data,
                 inputs=["master_feature_set_na_removed", 'live_data'],
-                outputs=["train_data_with_live", "val_data_with_live"],
+                outputs="train_data_with_live",
                 name="concat_master_data",
             )
         ]
