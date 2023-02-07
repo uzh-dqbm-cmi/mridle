@@ -7,7 +7,7 @@ def create_pipeline(**kwargs):
         [
             node(
                 func=get_slt_with_outcome,
-                inputs=[""],
+                inputs=[],
                 outputs="live_data",
                 name="get_slt_with_outcome",
             )
