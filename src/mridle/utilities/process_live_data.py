@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 import datetime
 from mridle.pipelines.data_engineering.ris.nodes import build_status_df, prep_raw_df_for_parquet, build_slot_df
 from mridle.pipelines.data_science.feature_engineering.nodes import remove_na, \
@@ -43,26 +42,6 @@ def get_slt_status_data(ago_out, with_source_file_info=False):
     all_status = prep_raw_df_for_parquet(all_status)
     all_status = build_status_df(all_status, exclude_patient_ids=[])
     return all_status
-
-
-def get_slt_with_outcome():
-    preds = pd.read_csv(
-        '/data/mridle/data/silent_live_test/live_files/all/out_features_data/features_master_slt_features.csv',
-        parse_dates=['start_time', 'end_time'])
-    preds.drop(columns=['NoShow'], inplace=True)
-    actuals = pd.read_csv('/data/mridle/data/silent_live_test/live_files/all/actuals/master_actuals_with_filename.csv',
-                          parse_dates=['start_time', 'end_time'])
-
-    preds['MRNCmpdId'] = preds['MRNCmpdId'].astype(str)
-    actuals['MRNCmpdId'] = actuals['MRNCmpdId'].astype(str)
-
-    slt_with_outcome = preds.merge(actuals[['start_time', 'MRNCmpdId', 'NoShow']], on=['start_time', 'MRNCmpdId'],
-                                   how='left')
-    slt_with_outcome['NoShow'].fillna(False, inplace=True)
-
-    most_recent_actuals = np.max(actuals['start_time'])  # .date()
-    slt_with_outcome = slt_with_outcome[slt_with_outcome['start_time'] <= most_recent_actuals]
-    return slt_with_outcome
 
 
 def get_slt_features_delete_if_ok_to_do_so():
@@ -298,7 +277,8 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
     master_slt_filepath = '/data/mridle/data/silent_live_test/live_files/all/' \
                           'out_features_data/features_master_slt_features.csv'
     if os.path.exists(master_slt_filepath):
-        master_slt = get_slt_with_outcome()
+        master_slt = pd.read_parquet('/data/mridle/data/kedro_data_catalog/04_feature/live_data.parquet')
+
     else:
         master_slt = pd.DataFrame()
     historic_data = pd.concat([master_df, master_slt], axis=0)
