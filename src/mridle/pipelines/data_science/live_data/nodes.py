@@ -29,18 +29,17 @@ def concat_master_data(master_feature_set_na_removed, live_data):
 
     mfs_df = master_feature_set_na_removed.copy()
     l_df = live_data.copy()
-    print(mfs_df.dtypes)
+
     for col in list(set(l_df.columns) & set(mfs_df.columns)):
-        print(col)
+
         mfs_df[col] = mfs_df[col].astype(l_df[col].dtypes.name)
 
     last_monday = datetime.date.today() + datetime.timedelta(days=-datetime.date.today().weekday())
     five_weeks_ago = last_monday - datetime.timedelta(weeks=5)
 
     live_data_train = l_df[l_df['start_time'].dt.date < five_weeks_ago]
-    # val_data_with_live = l_df[l_df['start_time'].dt.date >= five_weeks_ago]
+    val_data_with_live = l_df[l_df['start_time'].dt.date >= five_weeks_ago]
 
     train_data_with_live = pd.concat([mfs_df, live_data_train], join="inner")
-    print(pd.concat([l_df.dtypes, mfs_df.dtypes, train_data_with_live.dtypes], axis=1))
 
-    return train_data_with_live
+    return train_data_with_live, val_data_with_live
