@@ -80,7 +80,7 @@ def generate_3_5_days_ahead_features(status_df, f_dt, live_data=False):
     fn_status_df = status_df.copy()
 
     if live_data:
-        start_dt = f_dt
+        start_dt = f_dt.date()
         end_dt = add_business_days(f_dt, 2).date()
     else:
         start_dt = add_business_days(f_dt, 3).date()
