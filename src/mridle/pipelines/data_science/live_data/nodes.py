@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import datetime
 
 
 def get_slt_with_outcome():
@@ -20,3 +21,18 @@ def get_slt_with_outcome():
     most_recent_actuals = np.max(actuals['start_time'])  # .date()
     slt_with_outcome = slt_with_outcome[slt_with_outcome['start_time'] <= most_recent_actuals]
     return slt_with_outcome
+
+
+def concat_master_data(master_feature_set_na_removed, live_data):
+    """Take live data up until start of last month, and concat with master feature set. That is then training data.
+    Rest of live data (i.e. from start of last month until now) is then validation data"""
+
+    last_monday = datetime.date.today() + datetime.timedelta(days=-datetime.date.today().weekday())
+    five_weeks_ago = last_monday - datetime.timedelta(weeks=5)
+
+    live_data_train = live_data[live_data['start_time'].dt.date < five_weeks_ago]
+    val_data_with_live = live_data[live_data['start_time'].dt.date >= five_weeks_ago]
+
+    train_data_with_live = pd.concat([master_feature_set_na_removed, live_data_train], axis=1)
+
+    return train_data_with_live, val_data_with_live
