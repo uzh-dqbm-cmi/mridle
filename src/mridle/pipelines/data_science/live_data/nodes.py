@@ -26,6 +26,8 @@ def get_slt_with_outcome():
 def concat_master_data(master_feature_set_na_removed, live_data):
     """Take live data up until start of last month, and concat with master feature set. That is then training data.
     Rest of live data (i.e. from start of last month until now) is then validation data"""
+    for col in live_data.columns:
+        live_data[col] = live_data[col].astype(master_feature_set_na_removed[col].dtypes.name)
 
     last_monday = datetime.date.today() + datetime.timedelta(days=-datetime.date.today().weekday())
     five_weeks_ago = last_monday - datetime.timedelta(weeks=5)
@@ -34,9 +36,5 @@ def concat_master_data(master_feature_set_na_removed, live_data):
     val_data_with_live = live_data[live_data['start_time'].dt.date >= five_weeks_ago]
 
     train_data_with_live = pd.concat([master_feature_set_na_removed, live_data_train], join="inner")
-    print(train_data_with_live.dtypes)
-    for col in train_data_with_live.columns:
-        train_data_with_live[col] = train_data_with_live[col].astype(master_feature_set_na_removed[col].dtypes.name)
-    print(train_data_with_live.dtypes)
 
     return train_data_with_live, val_data_with_live
