@@ -383,9 +383,9 @@ models:
             config:
                 features:
                     - 'no_show_before'
-                    - 'appts_before',
-                    - 'show_before',
-                    - 'no_show_rate',
+                    - 'appts_before'
+                    - 'show_before'
+                    - 'no_show_rate'
                     - 'sched_days_advanced'
                     - 'month'
                     - 'age'
