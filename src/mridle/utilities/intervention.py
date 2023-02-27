@@ -3,7 +3,7 @@ import datetime
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.utils import COMMASPACE, formatdate
+from email.utils import formatdate
 import configparser
 
 # Read the configuration file
@@ -27,10 +27,9 @@ smtp_obj.login(username, password)
 # create the email message
 msg = MIMEMultipart()
 msg['From'] = username
-msg['To'] = COMMASPACE.join([recipients])
+msg['To'] = ", ".join(recipients)
 msg['Date'] = formatdate(localtime=True)
 msg['Subject'] = 'DataFrame as csv attachment'
-
 body = "Time sent {}".format(datetime.datetime.now())
 msg.attach(MIMEText(body, 'plain'))
 
@@ -42,7 +41,7 @@ with open('/data/mridle/data/silent_live_test/my_dataframe.csv', 'rb') as csv_fi
 
 
 # send the email
-smtp_obj.sendmail(username, recipients, msg.as_string())
+smtp_obj.sendmail(msg['From'], msg['To'], msg.as_string())
 
 # close the SMTP connection
 smtp_obj.quit()
