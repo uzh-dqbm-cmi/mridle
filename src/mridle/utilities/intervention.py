@@ -13,7 +13,7 @@ config.read('/home/USZ/mcmamacc/config.ini')
 # Access the values in the configuration file
 username = config['DEFAULT']['username']
 password = config['DEFAULT']['password']
-recipients = config['DEFAULT']['recipients']
+recipients = ['mark.mcmahon@uzh.ch', 'markronan.mcmahon@usz.ch']  # config['DEFAULT']['recipients']
 
 # create an SMTP object
 smtp_obj = smtplib.SMTP('outlook.usz.ch', 587)
@@ -23,6 +23,7 @@ smtp_obj.starttls()
 
 # login to the email server using your email address and password
 smtp_obj.login(username, password)
+print(username)
 print(recipients)
 # create the email message
 msg = MIMEMultipart()
