@@ -383,6 +383,9 @@ models:
             config:
                 features:
                     - 'no_show_before'
+                    - 'appts_before'
+                    - 'show_before'
+                    - 'no_show_rate'
                     - 'sched_days_advanced'
                     - 'month'
                     - 'age'
@@ -394,6 +397,7 @@ models:
                     - 'distance_to_usz'
                     - 'day_of_week_str'
                     - 'marital'
+                    - 'times_rescheduled'
                 target: NoShow
         Stratifier:
             flavor: PartitionedLabelStratifier
@@ -418,6 +422,10 @@ models:
                                   - 'age'
                                   - 'hour_sched'
                                   - 'distance_to_usz'
+                                  - 'times_rescheduled'
+                                  - 'appts_before'
+                                  - 'show_before'
+                                  - 'no_show_rate'
                           - name: 'onehot'
                             flavor: sklearn.preprocessing.OneHotEncoder
                             config:
@@ -453,40 +461,40 @@ models:
                         grow_policy: 'depthwise' # less overfit w/ hist vs. lossguide
         Trainer:
             flavor: Trainer
-        Tuner:
-            flavor: BayesianTuner
-            config:
-                hyperparameters:
-                    classifier__n_estimators:
-                        parse_hp_uniformint:
-                            start: 10
-                            end: 400
-                    classifier__max_depth:
-                        parse_hp_uniformint:
-                            start: 2
-                            end: 20
-                    classifier__learning_rate:
-                        parse_hp_loguniform:
-                            start: -5.5
-                            end: -1.5
-                    classifier__gamma:
-                        parse_hp_uniform:
-                            start: 0
-                            end: 0.1
-                    classifier__subsample:
-                        parse_hp_uniform:
-                            start: 0.5
-                            end: 1
-                    classifier__reg_lambda:
-                        parse_hp_loguniform:
-                            start: -3
-                            end: 2
-                search_type: bayesian
-                num_cv_folds: 5
-                num_iters: 50  # 150
-                scoring_function: log_loss
-                verbose: 0
-                hyperopt_timeout: 10000000
+#        Tuner:
+#            flavor: BayesianTuner
+#            config:
+#                hyperparameters:
+#                    classifier__n_estimators:
+#                        parse_hp_uniformint:
+#                            start: 10
+#                            end: 400
+#                    classifier__max_depth:
+#                        parse_hp_uniformint:
+#                            start: 2
+#                            end: 10
+#                    classifier__learning_rate:
+#                        parse_hp_loguniform:
+#                            start: -5.5
+#                            end: -1.5
+#                    classifier__gamma:
+#                        parse_hp_uniform:
+#                            start: 0
+#                            end: 0.1
+#                    classifier__subsample:
+#                        parse_hp_uniform:
+#                            start: 0.5
+#                            end: 1
+#                    classifier__reg_lambda:
+#                        parse_hp_loguniform:
+#                            start: -3
+#                            end: 2
+#                search_type: bayesian
+#                num_cv_folds: 5
+#                num_iters: 50  # 150
+#                scoring_function: log_loss
+#                verbose: 0
+#                hyperopt_timeout: 10000000
         Metrics:
             - flavor: F1_Macro
               config:

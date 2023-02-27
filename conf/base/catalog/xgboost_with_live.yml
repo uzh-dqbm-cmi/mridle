@@ -1,0 +1,9 @@
+xgboost_model_with_live:
+  type: pickle.PickleDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/06_models/xgboost_with_live/xgboost_model_with_live.pkl
+  layer: models
+
+xgboost_model_results_with_live:
+  type: pandas.CSVDataSet
+  filepath: /data/mridle/data/kedro_data_catalog/07_model_output/xgboost_with_live/xgboost_model_results_with_live.csv
+  layer: model output
