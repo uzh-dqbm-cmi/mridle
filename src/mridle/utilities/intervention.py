@@ -8,7 +8,7 @@ import configparser
 
 # Read the configuration file
 config = configparser.ConfigParser()
-config.read('config.ini')
+config.read('/home/USZ/mcmamacc/config.ini')
 
 # Access the values in the configuration file
 username = config['DEFAULT']['username']
