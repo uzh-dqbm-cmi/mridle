@@ -23,7 +23,7 @@ smtp_obj.starttls()
 
 # login to the email server using your email address and password
 smtp_obj.login(username, password)
-
+print(recipients)
 # create the email message
 msg = MIMEMultipart()
 msg['From'] = username
@@ -41,7 +41,7 @@ with open('/data/mridle/data/silent_live_test/my_dataframe.csv', 'rb') as csv_fi
 
 
 # send the email
-smtp_obj.sendmail(msg['From'], msg['To'], msg.as_string())
+smtp_obj.sendmail(username, recipients, msg.as_string())
 
 # close the SMTP connection
 smtp_obj.quit()
