@@ -13,7 +13,8 @@ config.read('/home/USZ/mcmamacc/config.ini')
 # Access the values in the configuration file
 username = config['DEFAULT']['username']
 password = config['DEFAULT']['password']
-recipients = ['mark.mcmahon@uzh.ch', 'markronan.mcmahon@usz.ch']  # config['DEFAULT']['recipients']
+# recipients = ['mark.mcmahon@uzh.ch', 'markronan.mcmahon@usz.ch']
+recipients = config['DEFAULT']['recipients'].split(',')
 
 # create an SMTP object
 smtp_obj = smtplib.SMTP('outlook.usz.ch', 587)
