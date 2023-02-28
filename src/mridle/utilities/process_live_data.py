@@ -201,7 +201,7 @@ def process_live_data():
             data_path = '/data/mridle/data/silent_live_test/live_files/all/out/{}'.format(filename_row['filename'])
             model_dir = '/data/mridle/data/kedro_data_catalog/06_models/'
             output_path = '/data/mridle/data/silent_live_test/live_files/all/' \
-                          'out_features_data/features_{}_{}_{}.csv'.format(out_day, out_month, out_year)
+                          'out_features_data/features_{}_{}_{}.csv'.format(out_year, out_month, out_day)
 
             make_out_prediction(data_path, model_dir, output_path, valid_date_range=out_valid_date_range,
                                 file_encoding='utf-16', master_feature_set=master_feature_set, rfs_df=rfs,
