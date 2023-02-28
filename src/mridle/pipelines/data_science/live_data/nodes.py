@@ -8,7 +8,7 @@ def get_slt_with_outcome():
         '/data/mridle/data/silent_live_test/live_files/all/out_features_data/features_master_slt_features.csv',
         parse_dates=['start_time', 'end_time'])
     preds.drop(columns=['NoShow'], inplace=True)
-    actuals = pd.read_csv('/data/mridle/data/silent_live_test/live_files/all/actuals/master_actuals_with_filename.csv',
+    actuals = pd.read_csv('/data/mridle/data/silent_live_test/live_files/all/actuals/master_actuals.csv',
                           parse_dates=['start_time', 'end_time'])
 
     preds['MRNCmpdId'] = preds['MRNCmpdId'].astype(str)
