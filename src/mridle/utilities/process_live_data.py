@@ -160,7 +160,7 @@ def process_live_data():
             ago_features_df['file'] = filename
 
             master_ago_filepath = '/data/mridle/data/silent_live_test/live_files/all/' \
-                                  'actuals/master_actuals_with_filename.csv'
+                                  'actuals/master_actuals.csv'
             if os.path.exists(master_ago_filepath):
                 master_ago = pd.read_csv(master_ago_filepath)
             else:
@@ -171,7 +171,7 @@ def process_live_data():
             master_ago_updated.to_csv(master_ago_filepath, index=False)
 
             ago_features_df.to_csv(
-                '/data/mridle/data/silent_live_test/live_files/all/actuals/actuals_{}_{}_{}_with_filename.csv'.format(
+                '/data/mridle/data/silent_live_test/live_files/all/actuals/actuals_{}_{}_{}.csv'.format(
                     ago_day,
                     ago_month,
                     ago_year))
