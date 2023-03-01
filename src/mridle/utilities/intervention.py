@@ -85,7 +85,7 @@ def intervention(dt):
     As discussed, could you please:
 
     1. Try to call these patients today and remind them of their appointment
-    2. Send me an email with some feedback (i.e. whether you could get talking with the patient, what they said, etc.) \
+    2. Send me an email with some feedback (i.e. whether you could get talking with the patient, what they said, etc.)\
     in whatever form that suits you.
 
     Let me know if you have any questions.
