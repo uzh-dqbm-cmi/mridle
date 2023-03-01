@@ -273,7 +273,7 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
     master_slt_filepath = '/data/mridle/data/silent_live_test/live_files/all/' \
                           'out_features_data/features_master_slt_features.csv'
     if os.path.exists(master_slt_filepath):
-        master_slt = pd.read_csv(master_slt_filepath)
+        master_slt = pd.read_csv(master_slt_filepath, parse_dates=['start_time'])
     else:
         master_slt = pd.DataFrame()
     historic_data = pd.concat([master_df, master_slt], axis=0)
