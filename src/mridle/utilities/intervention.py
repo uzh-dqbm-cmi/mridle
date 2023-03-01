@@ -12,14 +12,14 @@ import configparser
 from mridle.pipelines.data_science.feature_engineering.nodes import add_business_days
 
 
-def intervention():
+def intervention(dt):
     """
     df: dataframe with appointments that need to be called for that day. Both intervention and control included . i.e.
     just the top 20 (or above threshold...). Should have a col called 'control' indicating if it is control or
     intervention.
     """
 
-    filename_date = add_business_days(datetime.datetime.today(), 3).date().strftime('%Y_%m_%d')
+    filename_date = add_business_days(dt, 3).date().strftime('%Y_%m_%d')
     filename = '/data/mridle/data/silent_live_test/live_files/all/out_features_data/features_{}.csv'.format(
         filename_date)
 
@@ -107,3 +107,7 @@ def intervention():
 
     # close the SMTP connection
     smtp_obj.quit()
+
+
+if __name__ == '__main__':
+    intervention(dt=datetime.datetime.today())
