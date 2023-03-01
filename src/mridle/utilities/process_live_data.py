@@ -301,11 +301,12 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
             features_df[f'prediction_{model_name}'] = preds_proba
 
     features_df.to_csv(output_path, index=False)
+    print(features_df.shape)
 
     new_appts = features_df.merge(historic_data[['FillerOrderNo', 'start_time']], how='left', indicator=True)
     new_appts = new_appts[new_appts['_merge'] == 'left_only']
     new_appts.drop(columns=['_merge'], inplace=True)
-
+    print(new_appts.shape)
     master_slt_updated = pd.concat([master_slt, new_appts], axis=0)
     master_slt_updated.drop_duplicates(inplace=True)
     master_slt_updated.to_csv(master_slt_filepath, index=False)
