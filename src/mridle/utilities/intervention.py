@@ -9,7 +9,7 @@ from email.mime.text import MIMEText
 from email.utils import formatdate
 import configparser
 
-from mridle.src.mridle.pipelines.data_science.feature_engineering.nodes import add_business_days
+from mridle.pipelines.data_science.feature_engineering.nodes import add_business_days
 
 
 def intervention():
