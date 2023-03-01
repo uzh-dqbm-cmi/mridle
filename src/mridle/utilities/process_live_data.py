@@ -113,7 +113,6 @@ def get_sorted_filenames(file_dir):
 
 def process_live_data():
 
-    # process_live_data() function
     already_processed_filename = '/data/mridle/data/silent_live_test/live_files/already_processed.txt'
     master_feature_set = pd.read_parquet(
         '/data/mridle/data/kedro_data_catalog/04_feature/master_feature_set_na_removed.parquet')
@@ -274,7 +273,7 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
     master_slt_filepath = '/data/mridle/data/silent_live_test/live_files/all/' \
                           'out_features_data/features_master_slt_features.csv'
     if os.path.exists(master_slt_filepath):
-        master_slt = pd.read_parquet('/data/mridle/data/kedro_data_catalog/04_feature/live_data.parquet')
+        master_slt = pd.read_parquet(master_slt_filepath)
     else:
         master_slt = pd.DataFrame()
     historic_data = pd.concat([master_df, master_slt], axis=0)
