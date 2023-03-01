@@ -10,7 +10,8 @@ import re
 from dateutil.relativedelta import relativedelta
 from pathlib import Path
 import pickle
-
+import numpy as np
+import csv
 
 AGO_DIR = '/data/mridle/data/silent_live_test/live_files/all/ago/'
 OUT_DIR = '/data/mridle/data/silent_live_test/live_files/all/out/'
@@ -232,10 +233,11 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
                         & (st_df['now_sched_for_date'] == st_df['was_sched_for_date']))]
         return st_df
 
-    if file_encoding:
+    try:
         raw_df = pd.read_csv(data_path, encoding=file_encoding)
-    else:
-        raw_df = pd.read_csv(data_path)
+    except pd.errors.ParserError:
+        fix_csv_file(data_path)
+        raw_df = pd.read_csv(data_path, encoding=file_encoding)
 
     exclude_pat_ids = list()  # TODO!
 
@@ -406,3 +408,27 @@ def get_silent_live_test_actuals(all_columns=True):
             else:
                 all_actuals = pd.concat([all_actuals, actuals], axis=0)
     return all_actuals
+
+
+def fix_csv_file(filename_to_fix):
+
+    res = []
+
+    with open(filename_to_fix, 'r', encoding='utf-16') as read_obj:
+        # pass the file object to reader() to get the reader object
+        # csv_reader = reader(read_obj, skipinitialspace=True)
+        csv_reader = csv.DictReader(read_obj, restkey='ReasonForStudy2')
+        for row in csv_reader:
+            # row variable is a list that represents a row in csv
+            res.append(row)
+
+    res_df = pd.DataFrame(res)
+    if 'ReasonForStudy2' in res_df.columns:
+        res_df['ReasonForStudy'] = np.where(res_df['ReasonForStudy2'].isna(), res_df['ReasonForStudy'],
+                                            res_df['ReasonForStudy'].astype(str) + res_df['ReasonForStudy2'].astype(
+                                                str))
+        res_df.drop(columns=['ReasonForStudy2'], inplace=True)
+        res_df['ReasonForStudy'].replace('"|,', " ", inplace=True)
+
+    res_df.to_csv(filename_to_fix, encoding='utf-16')
+    return None
