@@ -291,7 +291,9 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
 
     model_dirs = Path(model_dir).glob('*')
     for model_dir in model_dirs:
-        if model_dir != '/data/mridle/data/kedro_data_catalog/06_models/xgboost_with_live':
+        if str(model_dir) in ['/data/mridle/data/kedro_data_catalog/06_models/xgboost',
+                              '/data/mridle/data/kedro_data_catalog/06_models/random_forest',
+                              '/data/mridle/data/kedro_data_catalog/06_models/logistic_regression']:
             model_paths = model_dir.glob('*')
             for model_path in model_paths:
                 with open(model_path, "rb+") as f:
