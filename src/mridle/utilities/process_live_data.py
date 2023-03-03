@@ -3,6 +3,7 @@ import datetime
 from mridle.pipelines.data_engineering.ris.nodes import build_status_df, prep_raw_df_for_parquet, build_slot_df
 from mridle.pipelines.data_science.feature_engineering.nodes import remove_na, \
     generate_3_5_days_ahead_features, add_business_days, subtract_business_days, feature_no_show_before
+from mridle.pipelines.data_science.live_data.nodes import get_slt_with_outcome
 from mridle.experiment.experiment import Experiment
 from mridle.experiment.dataset import DataSet
 import os
@@ -272,13 +273,9 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
     # Get number of previous no shows from historical data and add to data set
     master_df = master_feature_set.copy()
     master_df = master_df[master_df['MRNCmpdId'] != 'SMS0016578']
-    master_slt_filepath = '/data/mridle/data/silent_live_test/live_files/all/' \
-                          'out_features_data/features_master_slt_features.csv'
-    if os.path.exists(master_slt_filepath):
-        master_slt = pd.read_csv(master_slt_filepath, parse_dates=['start_time'])
-    else:
-        master_slt = pd.DataFrame()
-    historic_data = pd.concat([master_df, master_slt], axis=0)
+
+    master_slt_with_outcome = get_slt_with_outcome()
+    historic_data = pd.concat([master_df, master_slt_with_outcome], axis=0)
 
     historic_data['MRNCmpdId'] = historic_data['MRNCmpdId'].astype(str)
     features_df['MRNCmpdId'] = features_df['MRNCmpdId'].astype(str)
@@ -311,9 +308,18 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
     new_appts = new_appts[new_appts['_merge'] == 'left_only']
     new_appts.drop(columns=['_merge'], inplace=True)
     print(new_appts.shape)
-    master_slt_updated = pd.concat([master_slt, new_appts], axis=0)
+
+    master_slt_feature_filepath = '/data/mridle/data/silent_live_test/live_files/all/' \
+                                  'out_features_data/features_master_slt_features.csv'
+
+    if os.path.exists(master_slt_feature_filepath):
+        master_feature_slt = pd.read_csv(master_slt_feature_filepath, parse_dates=['start_time'])
+    else:
+        master_feature_slt = pd.DataFrame()
+
+    master_slt_updated = pd.concat([master_feature_slt, new_appts], axis=0)
     master_slt_updated.drop_duplicates(inplace=True)
-    master_slt_updated.to_csv(master_slt_filepath, index=False)
+    master_slt_updated.to_csv(master_slt_feature_filepath, index=False)
 
 
 def get_silent_live_test_predictions(model_str='prediction_xgboost', all_columns=True):
