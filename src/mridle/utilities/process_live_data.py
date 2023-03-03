@@ -317,8 +317,8 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
     new_appts = new_appts[new_appts['_merge'] == 'left_only']
     new_appts.drop(columns=['_merge'], inplace=True)
     print(new_appts.shape)
-    print(features_df[features_df['MRNCmpdId'] == '60184934'][['MRNCmpdId', 'FillerOrderNo', 'no_show_before',
-                                                               'start_time', 'no_show_rate', 'NoShow']])
+    # print(features_df[features_df['MRNCmpdId'] == '60184934'][['MRNCmpdId', 'FillerOrderNo', 'no_show_before',
+    #                                                            'start_time', 'no_show_rate', 'NoShow']])
     master_slt_updated = pd.concat([master_feature_slt, new_appts], axis=0)
     master_slt_updated.drop_duplicates(inplace=True)
     master_slt_updated.to_csv(master_slt_feature_filepath, index=False)
