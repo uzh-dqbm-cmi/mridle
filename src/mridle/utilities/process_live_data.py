@@ -274,7 +274,16 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
     master_df = master_feature_set.copy()
     master_df = master_df[master_df['MRNCmpdId'] != 'SMS0016578']
 
-    master_slt_with_outcome = get_slt_with_outcome()
+    master_slt_feature_filepath = '/data/mridle/data/silent_live_test/live_files/all/' \
+                                  'out_features_data/features_master_slt_features.csv'
+
+    if os.path.exists(master_slt_feature_filepath):
+        master_slt_with_outcome = get_slt_with_outcome()
+        master_feature_slt = pd.read_csv(master_slt_feature_filepath, parse_dates=['start_time'])
+    else:
+        master_slt_with_outcome = pd.DataFrame()
+        master_feature_slt = pd.DataFrame()
+
     historic_data = pd.concat([master_df, master_slt_with_outcome], axis=0)
 
     historic_data['MRNCmpdId'] = historic_data['MRNCmpdId'].astype(str)
@@ -308,14 +317,6 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
     new_appts = new_appts[new_appts['_merge'] == 'left_only']
     new_appts.drop(columns=['_merge'], inplace=True)
     print(new_appts.shape)
-
-    master_slt_feature_filepath = '/data/mridle/data/silent_live_test/live_files/all/' \
-                                  'out_features_data/features_master_slt_features.csv'
-
-    if os.path.exists(master_slt_feature_filepath):
-        master_feature_slt = pd.read_csv(master_slt_feature_filepath, parse_dates=['start_time'])
-    else:
-        master_feature_slt = pd.DataFrame()
 
     master_slt_updated = pd.concat([master_feature_slt, new_appts], axis=0)
     master_slt_updated.drop_duplicates(inplace=True)
