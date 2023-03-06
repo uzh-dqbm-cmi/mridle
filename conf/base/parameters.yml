@@ -382,17 +382,17 @@ models:
             flavor: DataSet
             config:
                 features:
-                    - 'no_show_before'
+                    # - 'no_show_before'
                     - 'appts_before'
-                    - 'show_before'
+                    # - 'show_before'
                     - 'no_show_rate'
                     - 'sched_days_advanced'
-                    - 'month'
+                    # - 'month'
                     - 'age'
                     - 'modality'
                     - 'occupation'
                     - 'reason'
-                    - 'sex'
+                    # - 'sex'
                     - 'hour_sched'
                     - 'distance_to_usz'
                     - 'day_of_week_str'
@@ -417,14 +417,14 @@ models:
                                 with_mean: True
                             args:
                                 columns:
-                                  - 'no_show_before'
+                                  # - 'no_show_before'
                                   - 'sched_days_advanced'
                                   - 'age'
                                   - 'hour_sched'
                                   - 'distance_to_usz'
                                   - 'times_rescheduled'
                                   - 'appts_before'
-                                  - 'show_before'
+                                  # - 'show_before'
                                   - 'no_show_rate'
                           - name: 'onehot'
                             flavor: sklearn.preprocessing.OneHotEncoder
@@ -437,13 +437,13 @@ models:
                                   - 'reason'
                                   - 'modality'
                                   - 'day_of_week_str'
-                          - name: 'cyc'
-                            flavor: mridle.utilities.modeling.CyclicalTransformer
-                            config:
-                                period: 12
-                            args:
-                                columns:
-                                    - 'month'
+                          #- name: 'cyc'
+                          #  flavor: mridle.utilities.modeling.CyclicalTransformer
+                          #  config:
+                          #      period: 12
+                          #  args:
+                          #      columns:
+                          #          - 'month'
                   - flavor: XGBClassifier
                     name: 'classifier'
                     config:
