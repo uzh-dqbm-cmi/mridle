@@ -78,7 +78,7 @@ def intervention(dt):
     msg['Date'] = formatdate(localtime=True)
     msg['Subject'] = 'Intervention Study - {}'.format(filename_date)
     body = """
-    Dear you,
+    Dear Namka,
 
     Here are the upcoming appointments which we would like to include in the study.
 
@@ -86,7 +86,7 @@ def intervention(dt):
 
     1. Try to call these patients today and remind them of their appointment
     2. Send me an email with some feedback (i.e. whether you could get talking with the patient, what they said, etc.)\
-    in whatever form that suits you.
+    in whichever form suits you.
 
     Let me know if you have any questions.
 
@@ -99,7 +99,7 @@ def intervention(dt):
 
     with open(path_to_pdf, "rb") as f:
         attach = MIMEApplication(f.read(), _subtype="pdf")
-    attach.add_header('Content-Disposition', 'attachment', filename=str(path_to_pdf))
+    attach.add_header('Content-Disposition', 'attachment', filename=str(filename_date))
     msg.attach(attach)
 
     # send the email
