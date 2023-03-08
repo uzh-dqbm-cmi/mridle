@@ -202,7 +202,7 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], mast
         'close_to_usz': 'last',
         'times_rescheduled': 'last',
         'start_time': 'last',
-        'Telefon': 'max'
+        'Telefon': 'last'
     }
 
     slot_df = build_slot_df(status_df, valid_date_range, agg_dict, build_future_slots=build_future_slots,
