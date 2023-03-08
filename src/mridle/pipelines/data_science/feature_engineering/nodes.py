@@ -629,10 +629,6 @@ def feature_occupation(df):
 
     df_remap.loc[df_remap['Beruf'] == 'nan', 'occupation'] = 'none_given'
     df_remap.loc[df_remap['Beruf'] == '-', 'occupation'] = 'none_given'
-    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='rentner|Renter|pensioniert|pens.|rente'),
-                 'occupation'] = 'retired'
-    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='keine Angaben|keine Ang'),
-                 'occupation'] = 'none_given'
     df_remap.loc[df_remap['Beruf'].apply(regex_search,
                                          search_str='Angestellte|ang.|baue|angest.|Hauswart|dozent|designer|^KV$|'
                                                     'masseu|Raumpflegerin|Apothekerin|Ing.|fotog|Psycholog|'
@@ -650,14 +646,24 @@ def feature_occupation(df):
                                                     'ingenieur|Kauf|mitarbeiter|Verkäufer|Informatiker|koch|'
                                                     'lehrer|arbeiter|architekt'),
                  'occupation'] = 'employed'
+    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='rentner|Renter|pensioniert|pens.|rente'),
+                 'occupation'] = 'retired'
+    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='IV-Rentner'),
+                 'occupation'] = 'iv_retired'
+
+    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='keine Angaben|keine Ang'),
+                 'occupation'] = 'none_given'
+
     df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='student|Schüler|Doktorand|'
                                                                   'Kind|Stud.|Ausbildung|^MA$'),
                  'occupation'] = 'student'
     df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='^IV$|^IV-Bezüger|^$|arbeitslos|ohne Arbeit|'
                                                                   'ohne|o.A.|nicht Arbeitstätig|'
                                                                   'Sozialhilfeempfänger|o. Arbeit|keine Arbeit|'
-                                                                  'Asyl|RAV|Hausfrau|Hausmann'),
+                                                                  'Asyl|RAV'),
                  'occupation'] = 'unemployed'
+    df_remap.loc[
+        df_remap['Beruf'].apply(regex_search, search_str='Hausfrau|Hausmann'), 'occupation'] = 'stay_at_home_parent'
     df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='selbst'), 'occupation'] = 'self_employed'
     df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='arzt|aerzt|ärzt|pflegefachfrau|Pflegehelfer|'
                                                                   'MTRA|Erzieherin|Fachfrau Betreuung|'
@@ -668,7 +674,9 @@ def feature_occupation(df):
 
     df_remap.loc[df_remap['occupation'] == '', 'occupation'] = 'other'
     df_remap.loc[df_remap['occupation'].isna(), 'occupation'] = 'other'
+
     df_remap = df_remap.drop('Beruf', axis=1)
+
     return df_remap
 
 
