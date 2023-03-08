@@ -99,7 +99,7 @@ def intervention(dt):
 
     with open(path_to_pdf, "rb") as f:
         attach = MIMEApplication(f.read(), _subtype="pdf")
-    attach.add_header('Content-Disposition', 'attachment', filename=str(filename_date))
+    attach.add_header('Content-Disposition', 'attachment', filename='Intervention_{}'.format(filename_date))
     msg.attach(attach)
 
     # send the email
