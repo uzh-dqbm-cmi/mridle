@@ -19,6 +19,17 @@ def intervention(dt):
     intervention.
     """
 
+    # Read the configuration file
+    config = configparser.ConfigParser()
+    config.read('/data/mridle/data/intervention/config.ini')
+
+    # Access the values in the configuration file
+    username = config['DEFAULT']['username']
+    password = config['DEFAULT']['password']
+    recipients = config['DEFAULT']['recipients'].split(',')
+    threshold = float(config['DEFAULT']['threshold'])
+
+    today = dt.strftime('%Y_%m_%d')
     filename_date = add_business_days(dt, 3).date().strftime('%Y_%m_%d')
     filename = '/data/mridle/data/silent_live_test/live_files/all/out_features_data/features_{}.csv'.format(
         filename_date)
@@ -32,7 +43,7 @@ def intervention(dt):
     # preds = preds.sort_values("prediction", ascending=False)[:split_config[day_of_week_from_filename]['num_preds']]
 
     # Take appts above a certain threshold
-    preds = preds[preds['prediction'] > 0.185]
+    preds = preds[preds['prediction'] > threshold]
 
     preds['control'] = 'control'
 
@@ -42,25 +53,16 @@ def intervention(dt):
     intervention_df = preds[preds['control'] == 'intervention'][['MRNCmpdId', 'FillerOrderNo', 'start_time', 'Telefon']]
 
     # Save the original as csv, and then the intervention one as PDF to be emailed
-    preds.to_csv("/data/mridle/data/intervention/intervention_{}.csv".format(filename_date), index=False)
+    preds.to_csv("/data/mridle/data/intervention/intervention_{}.csv".format(today), index=False)
 
     fig, ax = plt.subplots(figsize=(12, 4))
     ax.axis('tight')
     ax.axis('off')
     ax.table(cellText=intervention_df.values, colLabels=intervention_df.columns, loc='center')
 
-    pp = PdfPages("/data/mridle/data/intervention/intervention_{}.pdf".format(filename_date))
+    pp = PdfPages("/data/mridle/data/intervention/intervention_{}.pdf".format(today))
     pp.savefig(fig, bbox_inches='tight')
     pp.close()
-
-    # Read the configuration file
-    config = configparser.ConfigParser()
-    config.read('/data/mridle/data/intervention/config.ini')
-
-    # Access the values in the configuration file
-    username = config['DEFAULT']['username']
-    password = config['DEFAULT']['password']
-    recipients = config['DEFAULT']['recipients'].split(',')
 
     # create an SMTP object
     smtp_obj = smtplib.SMTP('outlook.usz.ch', 587)
@@ -76,7 +78,7 @@ def intervention(dt):
     msg['From'] = username
     msg['To'] = ", ".join(recipients)
     msg['Date'] = formatdate(localtime=True)
-    msg['Subject'] = 'Intervention Study - {}'.format(filename_date)
+    msg['Subject'] = 'Intervention Study - {}'.format(today)
     body = """
     Dear Namka,
 
@@ -95,11 +97,11 @@ def intervention(dt):
     """
     msg.attach(MIMEText(body, 'plain'))
 
-    path_to_pdf = '/data/mridle/data/intervention/intervention_{}.pdf'.format(filename_date)
+    path_to_pdf = '/data/mridle/data/intervention/intervention_{}.pdf'.format(today)
 
     with open(path_to_pdf, "rb") as f:
         attach = MIMEApplication(f.read(), _subtype="pdf")
-    attach.add_header('Content-Disposition', 'attachment', filename='Intervention_{}'.format(filename_date))
+    attach.add_header('Content-Disposition', 'attachment', filename='Intervention_{}'.format(today))
     msg.attach(attach)
 
     # send the email
