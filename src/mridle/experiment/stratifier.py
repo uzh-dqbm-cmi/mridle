@@ -126,6 +126,7 @@ class PartitionedFeatureStratifier(Stratifier):
 class StratifierInterface(ComponentInterface):
 
     registered_flavors = {
+        'PartitionedFeatureStratifier': PartitionedFeatureStratifier,
         'PartitionedLabelStratifier': PartitionedLabelStratifier,
         'TrainTestStratifier': TrainTestStratifier,
     }
