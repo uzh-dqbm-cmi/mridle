@@ -216,6 +216,7 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], mast
                             include_id_cols=True)
 
     slot_df = feature_days_scheduled_in_advance(status_df, slot_df)
+    slot_df = feature_year(slot_df)
     slot_df = feature_month(slot_df)
     slot_df = feature_hour_sched(slot_df)
     slot_df = feature_day_of_week(slot_df)
@@ -279,6 +280,20 @@ def feature_month(slot_df: pd.DataFrame) -> pd.DataFrame:
 
     """
     slot_df['month'] = slot_df['start_time'].dt.month
+    return slot_df
+
+
+def feature_year(slot_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Append the year feature to the dataframe.
+
+    Args:
+        slot_df: A dataframe containing appointment slots.
+
+    Returns: A row-per-status-change dataframe with additional column 'year'.
+
+    """
+    slot_df['month'] = slot_df['start_time'].dt.year
     return slot_df
 
 
