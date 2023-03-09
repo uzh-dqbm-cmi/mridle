@@ -15,6 +15,13 @@ def daterange(date1, date2):
         yield date1 + timedelta(n)
 
 
+def get_last_non_na(x):
+    if x.last_valid_index() is None:
+        return '0'
+    else:
+        return x[x.last_valid_index()]
+
+
 def generate_training_data(status_df, valid_date_range, append_outcome=True, add_no_show_before=True):
     """
     Build data for use in models by trying to replicate the conditions under which the model would be used in reality
@@ -202,7 +209,7 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], mast
         'close_to_usz': 'last',
         'times_rescheduled': 'last',
         'start_time': 'last',
-        'Telefon': 'last'
+        'Telefon': lambda x: get_last_non_na(x)
     }
 
     slot_df = build_slot_df(status_df, valid_date_range, agg_dict, build_future_slots=build_future_slots,
