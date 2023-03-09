@@ -293,7 +293,7 @@ def feature_year(slot_df: pd.DataFrame) -> pd.DataFrame:
     Returns: A row-per-status-change dataframe with additional column 'year'.
 
     """
-    slot_df['month'] = slot_df['start_time'].dt.year
+    slot_df['year'] = slot_df['start_time'].dt.year
     return slot_df
 
 
