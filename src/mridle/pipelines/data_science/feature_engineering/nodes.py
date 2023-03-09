@@ -225,7 +225,7 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], mast
     slot_df = feature_cyclical_month(slot_df)
     slot_df = slot_df[slot_df['day_of_week_str'].isin(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])]
     slot_df = slot_df[slot_df['sched_days_advanced'] > 2]
-
+    slot_df = limit_to_day_hours(slot_df)
     return slot_df
 
 
@@ -729,6 +729,10 @@ def feature_duration(dicom_df: pd.DataFrame) -> pd.DataFrame:
 
     dicom_df["duration"] = (dicom_df["image_end"] - dicom_df["image_start"]) / np.timedelta64(1, "m")
     return dicom_df
+
+
+def limit_to_day_hours(df):
+    return df[(df['hour_sched'] < 18) & (df['hour_sched'] > 6)]
 
 
 def regex_search(x, search_str):
