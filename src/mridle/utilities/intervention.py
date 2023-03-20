@@ -8,6 +8,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formatdate
 import configparser
+import numpy as np
 
 from mridle.pipelines.data_science.feature_engineering.nodes import add_business_days
 
@@ -67,7 +68,7 @@ def intervention(dt):
     for_feedback_file = intervention_df[['MRNCmpdId', 'FillerOrderNo', 'start_time']]
     feedback_file = "/data/mridle/data/intervention/feedback.txt"
     with open(feedback_file, 'a') as ap_f:
-        ap_f.write(f'\n{for_feedback_file}')
+        np.savetxt(ap_f, for_feedback_file.values, fmt='%d')
 
     # create an SMTP object
     smtp_obj = smtplib.SMTP('outlook.usz.ch', 587)
