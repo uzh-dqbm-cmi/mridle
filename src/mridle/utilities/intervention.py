@@ -64,6 +64,11 @@ def intervention(dt):
     pp.savefig(fig, bbox_inches='tight')
     pp.close()
 
+    for_feedback_file = intervention_df[['MRNCmpdId', 'FillerOrderNo', 'start_time']]
+    feedback_file = "/data/mridle/data/intervention/feedback.txt"
+    with open(feedback_file, 'a') as ap_f:
+        ap_f.write(f'\n{for_feedback_file}')
+
     # create an SMTP object
     smtp_obj = smtplib.SMTP('outlook.usz.ch', 587)
 
