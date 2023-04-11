@@ -41,7 +41,8 @@ class DataSet(ConfigurableComponent):
                 raise ValueError(f"Target column {config['target']} not found in dataset.")
         elif isinstance(config['target'], list):
             if not set(config['target']).issubset(data.columns):
-                raise ValueError(f"Target columns {config['target']} not found in dataset.")
+                not_in_list = list(set(config['target']).difference(data.columns))
+                raise ValueError(f"Target columns {not_in_list} not found in dataset.")
 
         return True
 
