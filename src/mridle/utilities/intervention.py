@@ -85,7 +85,7 @@ def intervention(dt):
     msg['Date'] = formatdate(localtime=True)
     msg['Subject'] = 'Intervention Study - {}'.format(today)
     body = """
-    Dear Namka,
+    Dear Namka, Dear Emir,
 
     Here are the upcoming appointments which we would like to include in the study.
 
