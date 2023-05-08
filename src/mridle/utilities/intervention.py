@@ -8,6 +8,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formatdate
 import configparser
+import os
 
 from mridle.pipelines.data_science.feature_engineering.nodes import add_business_days
 
@@ -111,6 +112,73 @@ def intervention(dt):
 
     # send the email
     smtp_obj.sendmail(username, recipients, msg.as_string())
+
+    # close the SMTP connection
+    smtp_obj.quit()
+
+
+def send_results():
+    """
+    Sends updated results by email to me
+
+    """
+    all_actuals = pd.read_csv("/data/mridle/data/silent_live_test/live_files/all/actuals/master_actuals.csv",
+                              parse_dates=['start_time'])
+    most_recent_data = all_actuals['start_time'].max()
+    file_dir = '/data/mridle/data/intervention/'
+
+    intervention_df = pd.DataFrame()
+
+    for filename in os.listdir(file_dir):
+        if filename.endswith(".csv"):
+            i_df = pd.read_csv(os.path.join(file_dir, filename), parse_dates=['start_time'])
+            i_df['file'] = filename
+            intervention_df = pd.concat([intervention_df, i_df])
+
+    intervention_df = intervention_df[intervention_df['start_time'] < most_recent_data]
+    intervention_df.drop(columns=['NoShow'], inplace=True)
+    intervention_df = intervention_df.merge(all_actuals[['FillerOrderNo', 'start_time', 'NoShow']], how='left')
+    feedback = pd.read_csv('/data/mridle/data/intervention/feedback.txt', sep=",")
+    feedback['start_time'] = pd.to_datetime(feedback['start_time'])
+    intervention_df = intervention_df.merge(feedback, how='left')
+    intervention_df = intervention_df[intervention_df['feedback'] != 'appt not found']
+    intervention_df['NoShow'].fillna(False, inplace=True)
+    intervention_df.loc[intervention_df['control'] == 'control', 'feedback'] = 'control'
+    r_1 = intervention_df.groupby('control').agg({'NoShow': ['count', 'sum', 'mean']}).reset_index()
+    r_2 = intervention_df.groupby(['control', 'feedback']).agg({'NoShow': ['count', 'sum', 'mean']}).reset_index()
+
+    # Read the configuration file
+    config = configparser.ConfigParser()
+    config.read('/data/mridle/data/intervention/config.ini')
+
+    # Access the values in the configuration file
+    username = config['DEFAULT']['username']
+    password = config['DEFAULT']['password']
+
+    # create an SMTP object
+    smtp_obj = smtplib.SMTP('outlook.usz.ch', 587)
+
+    # establish a secure connection
+    smtp_obj.starttls()
+
+    # login to the email server using your email address and password
+    smtp_obj.login(username, password)
+
+    # create the email message
+    msg = MIMEMultipart()
+    msg['From'] = username
+    msg['To'] = 'markronan.mcmahon@usz.ch'
+    msg['Date'] = formatdate(localtime=True)
+    msg['Subject'] = 'Intervention results - {}'.format(datetime.datetime.today().strftime('%Y_%m_%d'))
+    body = """
+    {}
+
+    {}
+    """.format(r_1.to_html(), r_2.to_html())
+    msg.attach(MIMEText(body, 'html'))
+
+    # send the email
+    smtp_obj.sendmail(username, username, msg.as_string())
 
     # close the SMTP connection
     smtp_obj.quit()
