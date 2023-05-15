@@ -141,7 +141,7 @@ def send_results():
     feedback = pd.read_csv('/data/mridle/data/intervention/feedback.txt', sep=",")
     feedback['start_time'] = pd.to_datetime(feedback['start_time'])
     intervention_df = intervention_df.merge(feedback, how='left')
-    intervention_df = intervention_df[intervention_df['feedback'] != 'appt not found']
+    intervention_df = intervention_df[~(intervention_df['feedback'].isin(['appt not found', 'delete']))]
     intervention_df['NoShow'].fillna(False, inplace=True)
     intervention_df.loc[intervention_df['control'] == 'control', 'feedback'] = 'control'
     r_1 = intervention_df.groupby('control').agg({'NoShow': ['count', 'sum', 'mean']}).reset_index()
