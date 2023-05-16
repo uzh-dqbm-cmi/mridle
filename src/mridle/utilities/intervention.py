@@ -45,6 +45,11 @@ def intervention(dt):
 
     # Take appts above a certain threshold
     preds = preds[preds['prediction'] > threshold]
+    # We don't want overlap (i.e. appts being in both the Monday batch of calls as well as the thursday batch, so for
+    # the Thursday batch we remove the appts for following Thursday (which would be the day where a potential overlap
+    # would occur)
+    if dt.strftime("%A") == 'Thursday':
+        preds = preds[preds['start_time'].dt.strftime("%A") != "Thursday"]
 
     preds['control'] = 'control'
 
@@ -144,6 +149,10 @@ def send_results():
     intervention_df = intervention_df[~(intervention_df['feedback'].isin(['appt not found', 'delete']))]
     intervention_df['NoShow'].fillna(False, inplace=True)
     intervention_df.loc[intervention_df['control'] == 'control', 'feedback'] = 'control'
+
+    # remove duplicates (some appts were included in both monday and thursday's intervention/control group)
+    intervention_df = intervention_df.sort_values('file').groupby(['FillerOrderNo', 'start_time']).last().reset_index()
+
     r_1 = intervention_df.groupby('control').agg({'NoShow': ['count', 'sum', 'mean']}).reset_index()
     r_2 = intervention_df.groupby(['control', 'feedback']).agg({'NoShow': ['count', 'sum', 'mean']}).reset_index()
 
