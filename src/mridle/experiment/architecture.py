@@ -2,7 +2,7 @@ from abc import abstractmethod
 
 import skorch
 from sklearn.base import BaseEstimator
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
@@ -34,6 +34,7 @@ class ArchitectureInterface(ComponentInterface):
 
     registered_flavors = {
         'RandomForestClassifier': RandomForestClassifier,  # TODO enable auto-loading from sklearn
+        'RandomForestRegressor': RandomForestRegressor,  # TODO enable auto-loading from sklearn
         'LogisticRegression': LogisticRegression,
         'XGBClassifier': xgb.XGBClassifier,
         'Pipeline': Pipeline,
