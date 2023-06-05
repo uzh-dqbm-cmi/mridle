@@ -135,6 +135,9 @@ class MetricInterface(ComponentInterface):
         'AUPRC': AUPRC,
         'AUROC': AUROC,
         'LogLoss': LogLoss,
+        'MSE': MSE,
+        'RMSE': RMSE,
+        'MedianAbsoluteError': MedianAbsoluteError
     }
 
     @classmethod
