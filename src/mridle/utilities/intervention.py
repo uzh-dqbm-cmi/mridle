@@ -152,9 +152,23 @@ def send_results():
 
     # remove duplicates (some appts were included in both monday and thursday's intervention/control group)
     intervention_df = intervention_df.sort_values('file').groupby(['FillerOrderNo', 'start_time']).last().reset_index()
+    intervention_df['reached'] = intervention_df['feedback'].map({
+        'control': 'control',
+        'comes': 'reached',
+        'not reached': 'not reached',
+        'to be rescheduled': 'reached'
+    })
+    intervention_df['reached_2'] = intervention_df['feedback'].map({
+        'control': 'control',
+        'comes': 'reached',
+        'not reached': 'control',
+        'to be rescheduled': 'reached'
+    })
 
     r_1 = intervention_df.groupby('control').agg({'NoShow': ['count', 'sum', 'mean']}).reset_index()
     r_2 = intervention_df.groupby(['control', 'feedback']).agg({'NoShow': ['count', 'sum', 'mean']}).reset_index()
+    r_3 = intervention_df.groupby(['reached']).agg({'NoShow': ['count', 'sum', 'mean']})
+    r_4 = intervention_df.groupby(['reached_2']).agg({'NoShow': ['count', 'sum', 'mean']})
 
     # Read the configuration file
     config = configparser.ConfigParser()
@@ -183,7 +197,11 @@ def send_results():
     {}
 
     {}
-    """.format(r_1.to_html(), r_2.to_html())
+
+    {}
+
+    {}
+    """.format(r_1.to_html(), r_2.to_html(), r_3.to_html(), r_4.to_html())
     msg.attach(MIMEText(body, 'html'))
 
     # send the email
