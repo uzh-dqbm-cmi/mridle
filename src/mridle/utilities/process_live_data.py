@@ -55,7 +55,7 @@ def get_slt_features_delete_if_ok_to_do_so():
 
     rfs_df = pd.read_csv('/data/mridle/data/silent_live_test/live_files/all/'
                          'retrospective_reasonforstudy/content/[dbo].[MRIdle_retrospective].csv')
-    rfs_df[['FillerOrderNo', 'ReasonForStudy']].drop_duplicates()
+    rfs_df[['FillerOrderNo', 'ReasonForStudy']].drop_duplicates(inplace=True)
 
     # add on proper noshow
     ago_st = get_slt_status_data('ago')

@@ -543,6 +543,7 @@ class TestFutureSlots(unittest.TestCase):
 
         raw_df = self._fill_out_static_columns(raw_df, create_fon=True)
         status_df = build_status_df(raw_df, exclude_patient_ids=[])
+        status_df['Telefon'] = '0'
         feature_df = build_feature_set(status_df, valid_date_range)
         cols = [c for c in expected_feature_df.columns.values]
         feature_df = feature_df.loc[:, feature_df.columns.isin(cols)]
@@ -569,6 +570,7 @@ class TestFutureSlots(unittest.TestCase):
 
         raw_df = self._fill_out_static_columns(raw_df, create_fon=True)
         status_df = build_status_df(raw_df, exclude_patient_ids=[])
+        status_df['Telefon'] = '0'
 
         test_dt = day(2)
         feature_df = generate_3_5_days_ahead_features(status_df, test_dt)
@@ -600,6 +602,7 @@ class TestFutureSlots(unittest.TestCase):
 
         raw_df = self._fill_out_static_columns(raw_df, create_fon=True)
         status_df = build_status_df(raw_df, exclude_patient_ids=[])
+        status_df['Telefon'] = '0'
         feature_df = generate_training_data(status_df, valid_date_range)
 
         cols = [c for c in expected_feature_df.columns.values]
@@ -701,6 +704,7 @@ class TestFutureSlots(unittest.TestCase):
         raw_df = pd.concat([raw_df_1, raw_df_2, raw_df_3, raw_df_4], axis=0)
 
         status_df = build_status_df(raw_df, exclude_patient_ids=[])
+        status_df['Telefon'] = '0'
 
         # Set valid date range to as if we were generating this data on day(12)
         test_vdr = [pd.Timestamp(year=2019, month=1, day=1, hour=0, minute=0),
@@ -780,6 +784,7 @@ class TestGenerateModelData(unittest.TestCase):
 
         raw_df = self._fill_out_static_columns(raw_df, create_fon=True)
         status_df = build_status_df(raw_df, exclude_patient_ids=[])
+        status_df['Telefon'] = '0'
 
         model_data_df = generate_training_data(status_df, valid_date_range)
 
@@ -887,6 +892,7 @@ class TestGenerateModelData(unittest.TestCase):
         raw_df = pd.concat([raw_df_1, raw_df_2, raw_df_3, raw_df_4], axis=0)
 
         status_df = build_status_df(raw_df, exclude_patient_ids=[])
+        status_df['Telefon'] = '0'
 
         # Set valid date range to as if we were generating this data on day(12)
         test_vdr = [pd.Timestamp(year=2019, month=1, day=1, hour=0, minute=0),
