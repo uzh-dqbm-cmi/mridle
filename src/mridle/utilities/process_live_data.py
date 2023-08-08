@@ -3,6 +3,7 @@ import datetime
 from mridle.pipelines.data_engineering.ris.nodes import build_status_df, prep_raw_df_for_parquet, build_slot_df
 from mridle.pipelines.data_science.feature_engineering.nodes import remove_na, \
     generate_3_5_days_ahead_features, add_business_days, subtract_business_days, feature_no_show_before
+from mridle.pipelines.data_science.live_data.nodes import get_slt_with_outcome
 from mridle.experiment.experiment import Experiment
 from mridle.experiment.dataset import DataSet
 import os
@@ -10,7 +11,8 @@ import re
 from dateutil.relativedelta import relativedelta
 from pathlib import Path
 import pickle
-
+import numpy as np
+import csv
 
 AGO_DIR = '/data/mridle/data/silent_live_test/live_files/all/ago/'
 OUT_DIR = '/data/mridle/data/silent_live_test/live_files/all/out/'
@@ -53,7 +55,7 @@ def get_slt_features_delete_if_ok_to_do_so():
 
     rfs_df = pd.read_csv('/data/mridle/data/silent_live_test/live_files/all/'
                          'retrospective_reasonforstudy/content/[dbo].[MRIdle_retrospective].csv')
-    rfs_df[['FillerOrderNo', 'ReasonForStudy']].drop_duplicates()
+    rfs_df[['FillerOrderNo', 'ReasonForStudy']].drop_duplicates(inplace=True)
 
     # add on proper noshow
     ago_st = get_slt_status_data('ago')
@@ -113,7 +115,6 @@ def get_sorted_filenames(file_dir):
 
 def process_live_data():
 
-    # process_live_data() function
     already_processed_filename = '/data/mridle/data/silent_live_test/live_files/already_processed.txt'
     master_feature_set = pd.read_parquet(
         '/data/mridle/data/kedro_data_catalog/04_feature/master_feature_set_na_removed.parquet')
@@ -160,7 +161,7 @@ def process_live_data():
             ago_features_df['file'] = filename
 
             master_ago_filepath = '/data/mridle/data/silent_live_test/live_files/all/' \
-                                  'actuals/master_actuals_with_filename.csv'
+                                  'actuals/master_actuals.csv'
             if os.path.exists(master_ago_filepath):
                 master_ago = pd.read_csv(master_ago_filepath)
             else:
@@ -171,7 +172,7 @@ def process_live_data():
             master_ago_updated.to_csv(master_ago_filepath, index=False)
 
             ago_features_df.to_csv(
-                '/data/mridle/data/silent_live_test/live_files/all/actuals/actuals_{}_{}_{}_with_filename.csv'.format(
+                '/data/mridle/data/silent_live_test/live_files/all/actuals/actuals_{}_{}_{}.csv'.format(
                     ago_day,
                     ago_month,
                     ago_year))
@@ -201,7 +202,7 @@ def process_live_data():
             data_path = '/data/mridle/data/silent_live_test/live_files/all/out/{}'.format(filename_row['filename'])
             model_dir = '/data/mridle/data/kedro_data_catalog/06_models/'
             output_path = '/data/mridle/data/silent_live_test/live_files/all/' \
-                          'out_features_data/features_{}_{}_{}.csv'.format(out_day, out_month, out_year)
+                          'out_features_data/features_{}_{}_{}.csv'.format(out_year, out_month, out_day)
 
             make_out_prediction(data_path, model_dir, output_path, valid_date_range=out_valid_date_range,
                                 file_encoding='utf-16', master_feature_set=master_feature_set, rfs_df=rfs,
@@ -233,10 +234,11 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
                         & (st_df['now_sched_for_date'] == st_df['was_sched_for_date']))]
         return st_df
 
-    if file_encoding:
+    try:
         raw_df = pd.read_csv(data_path, encoding=file_encoding)
-    else:
-        raw_df = pd.read_csv(data_path)
+    except pd.errors.ParserError:
+        fix_csv_file(data_path)
+        raw_df = pd.read_csv(data_path, encoding=file_encoding)
 
     exclude_pat_ids = list()  # TODO!
 
@@ -271,13 +273,18 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
     # Get number of previous no shows from historical data and add to data set
     master_df = master_feature_set.copy()
     master_df = master_df[master_df['MRNCmpdId'] != 'SMS0016578']
-    master_slt_filepath = '/data/mridle/data/silent_live_test/live_files/all/' \
-                          'out_features_data/features_master_slt_features.csv'
-    if os.path.exists(master_slt_filepath):
-        master_slt = pd.read_parquet('/data/mridle/data/kedro_data_catalog/04_feature/live_data.parquet')
+
+    master_slt_feature_filepath = '/data/mridle/data/silent_live_test/live_files/all/' \
+                                  'out_features_data/features_master_slt_features.csv'
+
+    if os.path.exists(master_slt_feature_filepath):
+        master_slt_with_outcome = get_slt_with_outcome()
+        master_feature_slt = pd.read_csv(master_slt_feature_filepath, parse_dates=['start_time'])
     else:
-        master_slt = pd.DataFrame()
-    historic_data = pd.concat([master_df, master_slt], axis=0)
+        master_slt_with_outcome = pd.DataFrame()
+        master_feature_slt = pd.DataFrame()
+
+    historic_data = pd.concat([master_df, master_slt_with_outcome], axis=0)
 
     historic_data['MRNCmpdId'] = historic_data['MRNCmpdId'].astype(str)
     features_df['MRNCmpdId'] = features_df['MRNCmpdId'].astype(str)
@@ -290,25 +297,31 @@ def make_out_prediction(data_path, model_dir, output_path, valid_date_range, fil
 
     model_dirs = Path(model_dir).glob('*')
     for model_dir in model_dirs:
-        model_paths = model_dir.glob('*')
-        for model_path in model_paths:
-            with open(model_path, "rb+") as f:
-                serialized_model = pickle.load(f)
-            exp = Experiment.deserialize(serialized_model)
-            data_set = DataSet(exp.stratified_dataset.config, features_df)
-            preds_proba = exp.final_predictor.predict_proba(data_set.x)
-            model_name = exp.metadata.get('name', model_path.name)
-            features_df[f'prediction_{model_name}'] = preds_proba
+        if str(model_dir) in ['/data/mridle/data/kedro_data_catalog/06_models/xgboost',
+                              '/data/mridle/data/kedro_data_catalog/06_models/random_forest',
+                              '/data/mridle/data/kedro_data_catalog/06_models/logistic_regression']:
+            model_paths = model_dir.glob('*')
+            for model_path in model_paths:
+                with open(model_path, "rb+") as f:
+                    serialized_model = pickle.load(f)
+                exp = Experiment.deserialize(serialized_model)
+                data_set = DataSet(exp.stratified_dataset.config, features_df)
+                preds_proba = exp.final_predictor.predict_proba(data_set.x)
+                model_name = exp.metadata.get('name', model_path.name)
+                features_df[f'prediction_{model_name}'] = preds_proba
 
     features_df.to_csv(output_path, index=False)
+    print(features_df.shape)
 
     new_appts = features_df.merge(historic_data[['FillerOrderNo', 'start_time']], how='left', indicator=True)
     new_appts = new_appts[new_appts['_merge'] == 'left_only']
     new_appts.drop(columns=['_merge'], inplace=True)
-
-    master_slt_updated = pd.concat([master_slt, new_appts], axis=0)
+    print(new_appts.shape)
+    # print(features_df[features_df['MRNCmpdId'] == '60184934'][['MRNCmpdId', 'FillerOrderNo', 'no_show_before',
+    #                                                            'start_time', 'no_show_rate', 'NoShow']])
+    master_slt_updated = pd.concat([master_feature_slt, new_appts], axis=0)
     master_slt_updated.drop_duplicates(inplace=True)
-    master_slt_updated.to_csv(master_slt_filepath, index=False)
+    master_slt_updated.to_csv(master_slt_feature_filepath, index=False)
 
 
 def get_silent_live_test_predictions(model_str='prediction_xgboost', all_columns=True):
@@ -406,3 +419,27 @@ def get_silent_live_test_actuals(all_columns=True):
             else:
                 all_actuals = pd.concat([all_actuals, actuals], axis=0)
     return all_actuals
+
+
+def fix_csv_file(filename_to_fix):
+
+    res = []
+
+    with open(filename_to_fix, 'r', encoding='utf-16') as read_obj:
+        # pass the file object to reader() to get the reader object
+        # csv_reader = reader(read_obj, skipinitialspace=True)
+        csv_reader = csv.DictReader(read_obj, restkey='ReasonForStudy2')
+        for row in csv_reader:
+            # row variable is a list that represents a row in csv
+            res.append(row)
+
+    res_df = pd.DataFrame(res)
+    if 'ReasonForStudy2' in res_df.columns:
+        res_df['ReasonForStudy'] = np.where(res_df['ReasonForStudy2'].isna(), res_df['ReasonForStudy'],
+                                            res_df['ReasonForStudy'].astype(str) + res_df['ReasonForStudy2'].astype(
+                                                str))
+        res_df.drop(columns=['ReasonForStudy2'], inplace=True)
+        res_df['ReasonForStudy'].replace('"|,', " ", inplace=True)
+
+    res_df.to_csv(filename_to_fix, encoding='utf-16')
+    return None

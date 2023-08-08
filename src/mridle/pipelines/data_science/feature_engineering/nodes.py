@@ -15,6 +15,13 @@ def daterange(date1, date2):
         yield date1 + timedelta(n)
 
 
+def get_last_non_na(x):
+    if x.last_valid_index() is None:
+        return '0'
+    else:
+        return x[x.last_valid_index()]
+
+
 def generate_training_data(status_df, valid_date_range, append_outcome=True, add_no_show_before=True):
     """
     Build data for use in models by trying to replicate the conditions under which the model would be used in reality
@@ -201,13 +208,15 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], mast
         'distance_to_usz_sq': 'last',
         'close_to_usz': 'last',
         'times_rescheduled': 'last',
-        'start_time': 'last'
+        'start_time': 'last',
+        'Telefon': lambda x: get_last_non_na(x)
     }
 
     slot_df = build_slot_df(status_df, valid_date_range, agg_dict, build_future_slots=build_future_slots,
                             include_id_cols=True)
 
     slot_df = feature_days_scheduled_in_advance(status_df, slot_df)
+    slot_df = feature_year(slot_df)
     slot_df = feature_month(slot_df)
     slot_df = feature_hour_sched(slot_df)
     slot_df = feature_day_of_week(slot_df)
@@ -217,7 +226,7 @@ def build_feature_set(status_df: pd.DataFrame, valid_date_range: List[str], mast
     slot_df = feature_cyclical_month(slot_df)
     slot_df = slot_df[slot_df['day_of_week_str'].isin(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])]
     slot_df = slot_df[slot_df['sched_days_advanced'] > 2]
-
+    slot_df = limit_to_day_hours(slot_df)
     return slot_df
 
 
@@ -271,6 +280,20 @@ def feature_month(slot_df: pd.DataFrame) -> pd.DataFrame:
 
     """
     slot_df['month'] = slot_df['start_time'].dt.month
+    return slot_df
+
+
+def feature_year(slot_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Append the year feature to the dataframe.
+
+    Args:
+        slot_df: A dataframe containing appointment slots.
+
+    Returns: A row-per-status-change dataframe with additional column 'year'.
+
+    """
+    slot_df['year'] = slot_df['start_time'].dt.year
     return slot_df
 
 
@@ -628,10 +651,6 @@ def feature_occupation(df):
 
     df_remap.loc[df_remap['Beruf'] == 'nan', 'occupation'] = 'none_given'
     df_remap.loc[df_remap['Beruf'] == '-', 'occupation'] = 'none_given'
-    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='rentner|Renter|pensioniert|pens.|rente'),
-                 'occupation'] = 'retired'
-    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='keine Angaben|keine Ang'),
-                 'occupation'] = 'none_given'
     df_remap.loc[df_remap['Beruf'].apply(regex_search,
                                          search_str='Angestellte|ang.|baue|angest.|Hauswart|dozent|designer|^KV$|'
                                                     'masseu|Raumpflegerin|Apothekerin|Ing.|fotog|Psycholog|'
@@ -649,14 +668,24 @@ def feature_occupation(df):
                                                     'ingenieur|Kauf|mitarbeiter|Verkäufer|Informatiker|koch|'
                                                     'lehrer|arbeiter|architekt'),
                  'occupation'] = 'employed'
+    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='rentner|Renter|pensioniert|pens.|rente'),
+                 'occupation'] = 'retired'
+    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='IV-Rentner'),
+                 'occupation'] = 'iv_retired'
+
+    df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='keine Angaben|keine Ang'),
+                 'occupation'] = 'none_given'
+
     df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='student|Schüler|Doktorand|'
                                                                   'Kind|Stud.|Ausbildung|^MA$'),
                  'occupation'] = 'student'
     df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='^IV$|^IV-Bezüger|^$|arbeitslos|ohne Arbeit|'
                                                                   'ohne|o.A.|nicht Arbeitstätig|'
                                                                   'Sozialhilfeempfänger|o. Arbeit|keine Arbeit|'
-                                                                  'Asyl|RAV|Hausfrau|Hausmann'),
+                                                                  'Asyl|RAV'),
                  'occupation'] = 'unemployed'
+    df_remap.loc[
+        df_remap['Beruf'].apply(regex_search, search_str='Hausfrau|Hausmann'), 'occupation'] = 'stay_at_home_parent'
     df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='selbst'), 'occupation'] = 'self_employed'
     df_remap.loc[df_remap['Beruf'].apply(regex_search, search_str='arzt|aerzt|ärzt|pflegefachfrau|Pflegehelfer|'
                                                                   'MTRA|Erzieherin|Fachfrau Betreuung|'
@@ -667,7 +696,9 @@ def feature_occupation(df):
 
     df_remap.loc[df_remap['occupation'] == '', 'occupation'] = 'other'
     df_remap.loc[df_remap['occupation'].isna(), 'occupation'] = 'other'
+
     df_remap = df_remap.drop('Beruf', axis=1)
+
     return df_remap
 
 
@@ -713,6 +744,10 @@ def feature_duration(dicom_df: pd.DataFrame) -> pd.DataFrame:
 
     dicom_df["duration"] = (dicom_df["image_end"] - dicom_df["image_start"]) / np.timedelta64(1, "m")
     return dicom_df
+
+
+def limit_to_day_hours(df):
+    return df[(df['hour_sched'] < 18) & (df['hour_sched'] > 6)]
 
 
 def regex_search(x, search_str):

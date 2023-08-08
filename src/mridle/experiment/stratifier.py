@@ -58,7 +58,7 @@ class Stratifier(ConfigurableComponent):
 class PartitionedLabelStratifier(Stratifier):
 
     def partition_data(self, data_set: DataSet) -> List[Tuple[List[int], List[int]]]:
-        """Randomly shuffle and split the doc_list into n_partitions roughly equal lists, stratified by label."""
+        """Randomly shuffle and split the data_set into n_partitions roughly equal lists, stratified by label."""
         label_list = data_set.y
         skf = StratifiedKFold(n_splits=self.config['n_partitions'], random_state=42, shuffle=True)
         x = np.zeros(len(label_list))  # split takes a X argument for backwards compatibility and is not used
@@ -100,9 +100,33 @@ class TrainTestStratifier(Stratifier):
         return True
 
 
+class PartitionedFeatureStratifier(Stratifier):
+
+    def partition_data(self, data_set: DataSet) -> List[Tuple[List[int], List[int]]]:
+        """Split dataset by feature values of provided column."""
+        data_set_copy = data_set.data.copy()
+        data_set_copy = data_set_copy.reset_index()
+        label_list = data_set_copy[self.config['split_feature']].unique()
+        partitions = []
+        for l_id, f_label in enumerate(label_list):
+            print(f_label)
+            train_ids = np.array(data_set_copy[data_set_copy[self.config['split_feature']] != f_label].index)
+            test_ids = np.array(data_set_copy[data_set_copy[self.config['split_feature']] == f_label].index)
+            partitions.append([train_ids, test_ids])
+        return partitions
+
+    @classmethod
+    def validate_config(cls, config):
+        for key in ['split_feature', ]:
+            if key not in config:
+                raise ValueError(f"{cls.__name__} config must contain entry '{key}'.")
+        return True
+
+
 class StratifierInterface(ComponentInterface):
 
     registered_flavors = {
+        'PartitionedFeatureStratifier': PartitionedFeatureStratifier,
         'PartitionedLabelStratifier': PartitionedLabelStratifier,
         'TrainTestStratifier': TrainTestStratifier,
     }
