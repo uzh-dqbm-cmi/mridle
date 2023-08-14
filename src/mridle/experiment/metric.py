@@ -98,8 +98,7 @@ class RedFlag(Metric):
 
     def calculate(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
         abs_error = np.abs(y_true - y_pred)
-        pct_error = abs_error/y_true
-        metric = np.mean(pct_error > 0.2)
+        metric = np.mean(abs_error > 240)
         return metric
 
 
