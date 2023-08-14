@@ -126,12 +126,14 @@ class PartitionedFeatureStratifier(Stratifier):
 class TimeSeriesStratifier(Stratifier):
 
     def partition_data(self, data_set: DataSet) -> List[Tuple[List[int], List[int]]]:
-        """Split dataset by feature values of provided column."""
+        """Split dataset by time. Take provided time variable and split the dataset based on the dates provided.
+        Automatically take the time range between first and second provided date as the test size."""
         data_set_copy = data_set.data.copy()
         data_set_copy = data_set_copy.reset_index()
         time_feature = self.config['time_feature']
         ordered_dates = self.config['ordered_dates']
         test_size_time = (pd.to_datetime(ordered_dates[1]) - pd.to_datetime(ordered_dates[0]))
+        print(test_size_time)
         partitions = []
         for l_id, d in enumerate(ordered_dates):
             print(d)

@@ -92,6 +92,17 @@ class MSE(Metric):
         return metric
 
 
+class RedFlag(Metric):
+    name = 'redflag'
+    metric_type = 'regression'
+
+    def calculate(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
+        abs_error = np.abs(y_true - y_pred)
+        pct_error = abs_error/y_true
+        metric = np.mean(pct_error > 0.2)
+        return metric
+
+
 class RMSE(Metric):
     name = 'rmse'
     metric_type = 'regression'
