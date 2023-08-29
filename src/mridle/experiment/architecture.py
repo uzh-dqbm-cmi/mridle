@@ -38,6 +38,7 @@ class ArchitectureInterface(ComponentInterface):
         'LassoRegressor': Lasso,  # TODO enable auto-loading from sklearn
         'LogisticRegression': LogisticRegression,
         'XGBClassifier': xgb.XGBClassifier,
+        'XGBRegressor': xgb.XGBRegressor,
         'Pipeline': Pipeline,
     }
 
