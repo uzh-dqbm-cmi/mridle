@@ -146,6 +146,7 @@ class MetricInterface(ComponentInterface):
         'AUROC': AUROC,
         'LogLoss': LogLoss,
         'MAE': MAE,
+        'MAPE': MAPE,
         'MSE': MSE,
         'RMSE': RMSE,
         'MedianAbsoluteError': MedianAbsoluteError
