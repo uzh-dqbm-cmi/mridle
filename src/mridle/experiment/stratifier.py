@@ -133,7 +133,6 @@ class TimeSeriesStratifier(Stratifier):
         time_feature = self.config['time_feature']
         ordered_dates = self.config['ordered_dates']
         test_size_time = (pd.to_datetime(ordered_dates[1]) - pd.to_datetime(ordered_dates[0]))
-        print(test_size_time)
         partitions = []
         for l_id, d in enumerate(ordered_dates):
             print(d)
