@@ -118,6 +118,13 @@ def create_model_precision_comparison_plot(evaluation_table_df: pd.DataFrame) ->
         altair scatter plot with number of positive predictions on the X-axis, and the precision on the Y-axis
 
     """
+    chart_config = alt.configure_axis(
+        labelFontSize=12,  # Axis label font size
+        titleFontSize=14  # Axis title font size
+    ).configure_legend(
+        labelFontSize=12,  # Legend label font size
+        titleFontSize=14  # Legend title font size
+    )
     model_precision_comparison_plot = alt.Chart(evaluation_table_df[['# No-show predictions per week',
                                                                      'PPV / Precision',
                                                                      'Model'
@@ -142,8 +149,9 @@ def create_model_precision_comparison_plot(evaluation_table_df: pd.DataFrame) ->
         y='PPV / Precision',
         color='Model'
     )
+    final_plot = (model_precision_comparison_plot + line_plot).apply(chart_config)
 
-    return model_precision_comparison_plot + line_plot
+    return final_plot
 
 
 def plot_pr_roc_curve_comparison(harvey_model_log_reg, harvey_random_forest, logistic_regression_model,
