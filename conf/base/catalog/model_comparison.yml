@@ -73,7 +73,3 @@ xgboost_permutation_imp_validation:
   filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/permutation_importances/xgboost_permutation_imp_validation.html
   layer: reporting
 
-neural_net_permutation_imp_validation:
-  type: mridle.extras.datasets.altair_dataset.AltairDataSet
-  filepath: /data/mridle/data/kedro_data_catalog/08_reporting/model_comparison/permutation_importances/neural_net_permutation_imp_validation.html
-  layer: reporting
