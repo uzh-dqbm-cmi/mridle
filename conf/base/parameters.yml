@@ -400,9 +400,13 @@ models:
                     - 'times_rescheduled'
                 target: NoShow
         Stratifier:
-            flavor: PartitionedFeatureStratifier
-            config:
-                split_feature: 'year'
+          flavor: PartitionedLabelStratifier
+          config:
+            n_partitions: 5
+        #Stratifier:
+        #    flavor: PartitionedFeatureStratifier
+        #    config:
+        #        split_feature: 'year'
         Architecture:
             flavor: Pipeline
             config:
