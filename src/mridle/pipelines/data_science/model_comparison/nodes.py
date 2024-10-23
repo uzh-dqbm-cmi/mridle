@@ -32,7 +32,7 @@ def create_evaluation_table(logistic_regression_model, random_forest_model,
 
     """
     serialised_models = [
-                         ('Logistic Regression', logistic_regression_model), ('RandomForest', random_forest_model),
+                         ('Logistic Regression', logistic_regression_model), ('Random Forest', random_forest_model),
                          ('XGBoost', xgboost_model)]
 
     evaluation_table = []
@@ -155,7 +155,7 @@ def plot_pr_roc_curve_comparison(logistic_regression_model,
                                  random_forest_model, xgboost_model, validation_data):
 
     serialised_models = [
-                         ('Logistic Regression', logistic_regression_model), ('RandomForest', random_forest_model),
+                         ('Logistic Regression', logistic_regression_model), ('Random Forest', random_forest_model),
                          ('XGBoost', xgboost_model)]
 
     alt.data_transformers.disable_max_rows()
@@ -227,7 +227,7 @@ def plot_permutation_importance_charts(logistic_regression_model,
     Create permutation importance charts for each combination of the supplied models and the two supplied datasets
     """
     serialised_models = [
-                         ('Logistic Regression', logistic_regression_model), ('RandomForest', random_forest_model),
+                         ('Logistic Regression', logistic_regression_model), ('Random Forest', random_forest_model),
                          ('XGBoost', xgboost_model)]
     dfs = [('Training', train_data), ('Validation', validation_data)]
 
