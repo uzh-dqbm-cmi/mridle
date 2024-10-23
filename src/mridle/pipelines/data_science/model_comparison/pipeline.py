@@ -30,10 +30,7 @@ def create_pipeline(**kwargs):
                 func=plot_permutation_importance_charts,
                 inputs=["logistic_regression_model",
                         "random_forest_model", "xgboost_model", "train_data", "validation_data"],
-                outputs=["harvey_logistic_reg_permutation_imp_train", "harvey_logistic_reg_permutation_imp_validation",
-                         "harvey_random_forest_permutation_imp_train",
-                         "harvey_random_forest_permutation_imp_validation",
-                         "logistic_regression_permutation_imp_train", "logistic_regression_permutation_imp_validation",
+                outputs=["logistic_regression_permutation_imp_train", "logistic_regression_permutation_imp_validation",
                          "random_forest_permutation_imp_train", "random_forest_permutation_imp_validation",
                          "xgboost_permutation_imp_train", "xgboost_permutation_imp_validation"
                          ],
