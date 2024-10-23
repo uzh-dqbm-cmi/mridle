@@ -8,7 +8,7 @@ def create_pipeline(**kwargs):
         [
             node(
                 func=create_evaluation_table,
-                inputs=["harvey_model_logistic_reg", "harvey_model_random_forest", "logistic_regression_model",
+                inputs=["logistic_regression_model",
                         "random_forest_model", "xgboost_model", "validation_data"],
                 outputs="evaluation_table",
                 name="create_evaluation_table"
@@ -21,14 +21,14 @@ def create_pipeline(**kwargs):
             ),
             node(
                 func=plot_pr_roc_curve_comparison,
-                inputs=["harvey_model_logistic_reg", "harvey_model_random_forest", "logistic_regression_model",
+                inputs=["logistic_regression_model",
                         "random_forest_model", "xgboost_model", "validation_data"],
                 outputs=["pr_curve_comparison", "roc_curve_comparison"],
                 name="plot_pr_roc_curve_comparison"
             ),
             node(
                 func=plot_permutation_importance_charts,
-                inputs=["harvey_model_logistic_reg", "harvey_model_random_forest", "logistic_regression_model",
+                inputs=["logistic_regression_model",
                         "random_forest_model", "xgboost_model", "train_data", "validation_data"],
                 outputs=["harvey_logistic_reg_permutation_imp_train", "harvey_logistic_reg_permutation_imp_validation",
                          "harvey_random_forest_permutation_imp_train",

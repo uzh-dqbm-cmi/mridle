@@ -75,31 +75,31 @@ models:
                     config:
                         solver: 'liblinear'
                         class_weight: 'balanced'
-                        penalty: 'l2'
-                        C: 0.1
+#                        penalty: 'l2'
+#                        C: 0.1
         Trainer:
             flavor: Trainer
-#        Tuner:
-#            flavor: BayesianTuner
-#            config:
-#                hyperparameters:
-#                    classifier__penalty:
-#                        parse_hp_choice:
-#                            choice_list:
-#                                - 'l1'
-#                                - 'l2'
-#                                # - 'elasticnet'
-#                                # - 'none'
-#                    classifier__C:
-#                        parse_hp_uniform:
-#                            start: 0
-#                            end: 10
-#                search_type: bayesian
-#                num_cv_folds: 5
-#                num_iters: 20  # 150
-#                scoring_function: log_loss
-#                verbose: 0
-#                hyperopt_timeout: 10000000
+        Tuner:
+            flavor: BayesianTuner
+            config:
+                hyperparameters:
+                    classifier__penalty:
+                        parse_hp_choice:
+                            choice_list:
+                                - 'l1'
+                                - 'l2'
+                                # - 'elasticnet'
+                                # - 'none'
+                    classifier__C:
+                        parse_hp_uniform:
+                            start: 0
+                            end: 10
+                search_type: bayesian
+                num_cv_folds: 5
+                num_iters: 50  # 150
+                scoring_function: log_loss
+                verbose: 0
+                hyperopt_timeout: 10000000
         Metrics:
             - flavor: F1_Macro
               config:
@@ -145,34 +145,34 @@ models:
                         n_estimators: 400
                         random_state: 94
                         n_jobs: 8
-                        max_depth: 10
-                        max_features: 6
+#                        max_depth: 10
+#                        max_features: 6
 
         Trainer:
             flavor: Trainer
-#        Tuner:
-#            flavor: BayesianTuner
-#            config:
-#                hyperparameters:
-#                    classifier__max_depth:
-#                        parse_hp_uniformint:
-#                            start: 2
-#                            end: 100
-#                    classifier__min_samples_split:
-#                        parse_hp_uniformint:
-#                            start: 2
-#                            end: 20
-#                    classifier__max_features:
-#                        parse_hp_choice:
-#                            choice_list:
-#                                - 'sqrt'
-#                                - 'log2'
-#                search_type: bayesian
-#                num_cv_folds: 5
-#                num_iters: 50  # 150
-#                scoring_function: log_loss
-#                verbose: 0
-#                hyperopt_timeout: 10000000
+        Tuner:
+            flavor: BayesianTuner
+            config:
+                hyperparameters:
+                    classifier__max_depth:
+                        parse_hp_uniformint:
+                            start: 2
+                            end: 100
+                    classifier__min_samples_split:
+                        parse_hp_uniformint:
+                            start: 2
+                            end: 20
+                    classifier__max_features:
+                        parse_hp_choice:
+                            choice_list:
+                                - 'sqrt'
+                                - 'log2'
+                search_type: bayesian
+                num_cv_folds: 5
+                num_iters: 50  # 150
+                scoring_function: log_loss
+                verbose: 0
+                hyperopt_timeout: 10000000
         Metrics:
             - flavor: F1_Macro
               config:
@@ -241,26 +241,31 @@ models:
                   - flavor: LogisticRegression
                     name: 'classifier'
                     config:
-                        penalty: 'l1'
+#                        penalty: 'l1'
                         solver: 'liblinear'
                         class_weight: 'balanced'
-                        C: 0.01
+#                        C: 0.01
         Trainer:
             flavor: Trainer
-#        Tuner:
-#            flavor: BayesianTuner
-#            config:
-#                hyperparameters:
-#                    classifier__C:
-#                        parse_hp_uniform:
-#                            start: 0
-#                            end: 10
-#                search_type: bayesian
-#                num_cv_folds: 5
-#                num_iters: 20
-#                scoring_function: log_loss
-#                verbose: 0
-#                hyperopt_timeout: 10000000
+        Tuner:
+            flavor: BayesianTuner
+            config:
+                hyperparameters:
+                    classifier__penalty:
+                        parse_hp_choice:
+                          choice_list:
+                            - 'l1'
+                            - 'l2'
+                    classifier__C:
+                        parse_hp_uniform:
+                            start: 0
+                            end: 10
+                search_type: bayesian
+                num_cv_folds: 5
+                num_iters: 50
+                scoring_function: log_loss
+                verbose: 0
+                hyperopt_timeout: 10000000
         Metrics:
             - flavor: F1_Macro
               config:
