@@ -8,8 +8,8 @@ import numpy as np
 from sklearn.inspection import permutation_importance
 
 
-def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic_regression_model, random_forest_model,
-                            xgboost_model, neural_net_model, validation_data):
+def create_evaluation_table(logistic_regression_model, random_forest_model,
+                            xgboost_model, validation_data):
     """
     Function to create a table of metrics for the models.
 
@@ -26,15 +26,14 @@ def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic
         logistic_regression_model: serialised logistic regression model
         random_forest_model: serialised random forest model
         xgboost_model: serialised xgboost model
-        neural_net_model: serialised neural net model
         validation_data: validation data, split out from master_feature_set before experiments were ran
 
     Returns:
 
     """
-    serialised_models = [('Harvey LogReg', harvey_model_log_reg), ('Harvey RandomForest', harvey_random_forest),
-                         ('Logistic Regression', logistic_regression_model), ('RandomForest', random_forest_model),
-                         ('XGBoost', xgboost_model), ('Neural Net', neural_net_model)]
+    serialised_models = [
+                         ('Logistic Regression', logistic_regression_model), ('Random Forest', random_forest_model),
+                         ('XGBoost', xgboost_model)]
 
     evaluation_table = []
     avg_appts_per_week = 105  # taken from aggregation of df_features_original data for the year 2017 (in notebook 52)
@@ -47,8 +46,7 @@ def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic
         experiment = Experiment.deserialize(serialised_m)
 
         preds_prob = experiment.final_predictor.predict_proba(val_dataset.x)
-        if model_name == 'Neural Net':
-            preds_prob = [prob for [prob] in preds_prob]
+
         preds_prob_sorted = np.sort(preds_prob)[::-1]
 
         calc_list = []
@@ -142,16 +140,23 @@ def create_model_precision_comparison_plot(evaluation_table_df: pd.DataFrame) ->
         y='PPV / Precision',
         color='Model'
     )
+    final_plot = (model_precision_comparison_plot + line_plot).configure_axis(
+        labelFontSize=12,  # Axis label font size
+        titleFontSize=14   # Axis title font size
+    ).configure_legend(
+        labelFontSize=12,  # Legend label font size
+        titleFontSize=14   # Legend title font size
+    )
 
-    return model_precision_comparison_plot + line_plot
+    return final_plot
 
 
-def plot_pr_roc_curve_comparison(harvey_model_log_reg, harvey_random_forest, logistic_regression_model,
-                                 random_forest_model, xgboost_model, neural_net_model, validation_data):
+def plot_pr_roc_curve_comparison(logistic_regression_model,
+                                 random_forest_model, xgboost_model, validation_data):
 
-    serialised_models = [('Harvey LogReg', harvey_model_log_reg), ('Harvey RandomForest', harvey_random_forest),
-                         ('Logistic Regression', logistic_regression_model), ('RandomForest', random_forest_model),
-                         ('XGBoost', xgboost_model),  ('Neural Net', neural_net_model)]
+    serialised_models = [
+                         ('Logistic Regression', logistic_regression_model), ('Random Forest', random_forest_model),
+                         ('XGBoost', xgboost_model)]
 
     alt.data_transformers.disable_max_rows()
     all_pr_df = pd.DataFrame()
@@ -215,15 +220,15 @@ def plot_pr_roc_curve_comparison(harvey_model_log_reg, harvey_random_forest, log
     return pr_curves, roc_curves
 
 
-def plot_permutation_importance_charts(harvey_model_log_reg, harvey_random_forest, logistic_regression_model,
-                                       random_forest_model, xgboost_model, neural_net_model, train_data,
+def plot_permutation_importance_charts(logistic_regression_model,
+                                       random_forest_model, xgboost_model, train_data,
                                        validation_data):
     """
     Create permutation importance charts for each combination of the supplied models and the two supplied datasets
     """
-    serialised_models = [('Harvey LogReg', harvey_model_log_reg), ('Harvey RandomForest', harvey_random_forest),
-                         ('Logistic Regression', logistic_regression_model), ('RandomForest', random_forest_model),
-                         ('XGBoost', xgboost_model),  ('Neural Net', neural_net_model)]
+    serialised_models = [
+                         ('Logistic Regression', logistic_regression_model), ('Random Forest', random_forest_model),
+                         ('XGBoost', xgboost_model)]
     dfs = [('Training', train_data), ('Validation', validation_data)]
 
     p_imp_plot_list = []

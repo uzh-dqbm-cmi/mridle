@@ -92,6 +92,16 @@ class MSE(Metric):
         return metric
 
 
+class RedFlag(Metric):
+    name = 'redflag'
+    metric_type = 'regression'
+
+    def calculate(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
+        abs_error = np.abs(y_true - y_pred)
+        metric = np.mean(abs_error > 240)
+        return metric
+
+
 class RMSE(Metric):
     name = 'rmse'
     metric_type = 'regression'
@@ -136,6 +146,7 @@ class MetricInterface(ComponentInterface):
         'AUROC': AUROC,
         'LogLoss': LogLoss,
         'MAE': MAE,
+        'MAPE': MAPE,
         'MSE': MSE,
         'RMSE': RMSE,
         'MedianAbsoluteError': MedianAbsoluteError

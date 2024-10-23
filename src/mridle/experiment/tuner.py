@@ -7,7 +7,7 @@ from sklearn.model_selection import RandomizedSearchCV
 from typing import Dict, List, Tuple
 from .architecture import Architecture
 from .ConfigurableComponent import ConfigurableComponent, ComponentInterface
-from .metric import AUPRC, LogLoss, F1_Macro, AUROC, BrierScore, MSE, MAE, MAPE
+from .metric import AUPRC, LogLoss, F1_Macro, AUROC, BrierScore, MSE, MAE, MAPE, RedFlag
 
 
 class Tuner(ConfigurableComponent):
@@ -104,7 +104,7 @@ class BayesianTuner(Tuner):
 
             model_copy = model_copy.fit(x_train_cv, y_train_cv)
 
-            if scoring_fn not in ['mse', 'mae', 'rmse', 'mape']:
+            if scoring_fn not in ['mse', 'mae', 'rmse', 'mape', 'redflag']:
                 y_proba_preds = model_copy.predict_proba(x_test_cv)
                 y_proba_preds = np.clip(y_proba_preds, 1e-5, 1 - 1e-5)
                 if y_proba_preds.shape[1] == 2:
@@ -129,6 +129,9 @@ class BayesianTuner(Tuner):
             elif scoring_fn == 'mape':
                 y_preds = model_copy.predict(x_test_cv)
                 loss = MAPE().calculate(y_test_cv, y_preds)
+            elif scoring_fn == 'redflag':
+                y_preds = model_copy.predict(x_test_cv)
+                loss = RedFlag().calculate(y_test_cv, y_preds)
             else:
                 raise NotImplementedError(
                     'scoring_fn should be one of ''f1_macro'', ''log_loss'', ''auprc'', ''auroc'', ''brier_score' +

@@ -123,12 +123,42 @@ class PartitionedFeatureStratifier(Stratifier):
         return True
 
 
+class TimeSeriesStratifier(Stratifier):
+
+    def partition_data(self, data_set: DataSet) -> List[Tuple[List[int], List[int]]]:
+        """Split dataset by time. Take provided time variable and split the dataset based on the dates provided.
+        Automatically take the time range between first and second provided date as the test size."""
+        data_set_copy = data_set.data.copy()
+        data_set_copy = data_set_copy.reset_index()
+        time_feature = self.config['time_feature']
+        ordered_dates = self.config['ordered_dates']
+        test_size_time = (pd.to_datetime(ordered_dates[1]) - pd.to_datetime(ordered_dates[0]))
+        partitions = []
+        for l_id, d in enumerate(ordered_dates):
+            print(d)
+            cut_off = pd.to_datetime(d)
+            train_ids = np.array(data_set_copy[data_set_copy[time_feature] < cut_off].index)
+            test_ids = np.array(data_set_copy[(data_set_copy[time_feature] >= cut_off) &
+                                              (data_set_copy[time_feature] < (cut_off + test_size_time))].index)
+            print(cut_off + test_size_time)
+            partitions.append([train_ids, test_ids])
+        return partitions
+
+    @classmethod
+    def validate_config(cls, config):
+        for key in ['time_feature', 'ordered_dates']:
+            if key not in config:
+                raise ValueError(f"{cls.__name__} config must contain entry '{key}'.")
+        return True
+
+
 class StratifierInterface(ComponentInterface):
 
     registered_flavors = {
         'PartitionedFeatureStratifier': PartitionedFeatureStratifier,
         'PartitionedLabelStratifier': PartitionedLabelStratifier,
         'TrainTestStratifier': TrainTestStratifier,
+        'TimeSeriesStratifier': TimeSeriesStratifier
     }
 
     serialization_schema = {
