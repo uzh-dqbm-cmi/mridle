@@ -8,7 +8,7 @@ import numpy as np
 from sklearn.inspection import permutation_importance
 
 
-def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic_regression_model, random_forest_model,
+def create_evaluation_table(logistic_regression_model, random_forest_model,
                             xgboost_model, validation_data):
     """
     Function to create a table of metrics for the models.
@@ -31,7 +31,7 @@ def create_evaluation_table(harvey_model_log_reg, harvey_random_forest, logistic
     Returns:
 
     """
-    serialised_models = [('Harvey LogReg', harvey_model_log_reg), ('Harvey RandomForest', harvey_random_forest),
+    serialised_models = [
                          ('Logistic Regression', logistic_regression_model), ('RandomForest', random_forest_model),
                          ('XGBoost', xgboost_model)]
 
@@ -151,10 +151,10 @@ def create_model_precision_comparison_plot(evaluation_table_df: pd.DataFrame) ->
     return final_plot
 
 
-def plot_pr_roc_curve_comparison(harvey_model_log_reg, harvey_random_forest, logistic_regression_model,
+def plot_pr_roc_curve_comparison(logistic_regression_model,
                                  random_forest_model, xgboost_model, validation_data):
 
-    serialised_models = [('Harvey LogReg', harvey_model_log_reg), ('Harvey RandomForest', harvey_random_forest),
+    serialised_models = [
                          ('Logistic Regression', logistic_regression_model), ('RandomForest', random_forest_model),
                          ('XGBoost', xgboost_model)]
 
@@ -220,13 +220,13 @@ def plot_pr_roc_curve_comparison(harvey_model_log_reg, harvey_random_forest, log
     return pr_curves, roc_curves
 
 
-def plot_permutation_importance_charts(harvey_model_log_reg, harvey_random_forest, logistic_regression_model,
+def plot_permutation_importance_charts(logistic_regression_model,
                                        random_forest_model, xgboost_model, train_data,
                                        validation_data):
     """
     Create permutation importance charts for each combination of the supplied models and the two supplied datasets
     """
-    serialised_models = [('Harvey LogReg', harvey_model_log_reg), ('Harvey RandomForest', harvey_random_forest),
+    serialised_models = [
                          ('Logistic Regression', logistic_regression_model), ('RandomForest', random_forest_model),
                          ('XGBoost', xgboost_model)]
     dfs = [('Training', train_data), ('Validation', validation_data)]
